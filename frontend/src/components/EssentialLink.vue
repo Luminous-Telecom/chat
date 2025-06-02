@@ -13,6 +13,14 @@
       avatar
     >
       <q-icon :name="color === 'negative' ? 'mdi-cellphone-nfc-off' : icon" />
+      <q-badge
+        v-if="badge && badge > 0"
+        color="red"
+        text-color="white"
+        floating
+      >
+        {{ badge }}
+      </q-badge>
     </q-item-section>
 
     <q-item-section>
@@ -60,6 +68,11 @@ export default {
     query: {
       type: Object,
       default: () => ({})
+    },
+
+    badge: {
+      type: Number,
+      default: 0
     }
   },
   computed: {

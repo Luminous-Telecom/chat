@@ -101,7 +101,7 @@
             </q-menu>
           </q-item>
           <EssentialLink
-            v-for="item in menuData"
+            v-for="item in cMenuData"
             :key="item.title"
             v-bind="item"
           />
@@ -197,6 +197,7 @@ import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { RealizarLogout } from 'src/service/login'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
+import { ContarTicketsNaoLidosPorFila } from 'src/service/filas'
 
 const socket = socketIO()
 
@@ -330,8 +331,8 @@ export default {
         ...objMenu.filter(item => item.routeName !== 'dashboard')
       ],
       menuDataAdmin: objMenuAdmin,
-      countTickets: 0,
-      ticketsList: []
+      ticketsList: [],
+      queueTicketCounts: {}
     }
   },
   computed: {
@@ -364,7 +365,25 @@ export default {
           return menu
         })
       }
-      return objMenu
+      return objMenu.map(menu => {
+        // Adicionar badge para atendimentos na fila
+        if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
+          const totalPending = Object.values(this.queueTicketCounts).reduce((sum, count) => sum + count, 0)
+          return { ...menu, badge: totalPending }
+        }
+        return menu
+      })
+    },
+    // Adicionar computed para menuData com badge
+    cMenuData () {
+      return this.menuData.map(menu => {
+        // Adicionar badge para atendimentos na fila
+        if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
+          const totalPending = Object.values(this.queueTicketCounts).reduce((sum, count) => sum + count, 0)
+          return { ...menu, badge: totalPending }
+        }
+        return menu
+      })
     }
   },
   methods: {
@@ -432,6 +451,12 @@ export default {
       socket.on(`${usuario.tenantId}:chat:updateOnlineBubbles`, data => {
         this.$store.commit('SET_USERS_APP', data)
       })
+      // Socket para atualizar contadores de tickets por fila
+      socket.on(`${usuario.tenantId}:ticketList`, async data => {
+        if (data.type === 'ticket:update' || data.type === 'notification:new') {
+          await this.buscarContadoresTicketsPorFila()
+        }
+      })
     },
     atualizarUsuario () {
       this.usuario = JSON.parse(localStorage.getItem('usuario'))
@@ -440,6 +465,18 @@ export default {
       }
       if (this.usuario.status === 'online') {
         socket.emit(`${this.usuario.tenantId}:setUserActive`)
+      }
+    },
+    async buscarContadoresTicketsPorFila () {
+      try {
+        const { data } = await ContarTicketsNaoLidosPorFila()
+        const counts = {}
+        data.queues.forEach(queue => {
+          counts[queue.queueId] = queue.count
+        })
+        this.queueTicketCounts = counts
+      } catch (error) {
+        console.error('Erro ao buscar contadores de tickets por fila:', error)
       }
     },
     async consultarTickets () {
@@ -523,6 +560,7 @@ export default {
     await this.listarWhatsapps()
     await this.listarConfiguracoes()
     await this.consultarTickets()
+    await this.buscarContadoresTicketsPorFila()
     if (!('Notification' in window)) {
     } else {
       Notification.requestPermission()

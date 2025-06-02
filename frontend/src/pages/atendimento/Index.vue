@@ -50,26 +50,39 @@
           <q-separator class="absolute-bottom" />
         </q-toolbar>
 
-        <!-- Botões de filtro abaixo da pesquisa -->
-        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md q-pt-sm q-pb-sm justify-center">
+        <!-- Filtros condicionais baseado no status -->
+        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md q-pt-sm q-pb-sm justify-center" v-if="pesquisaTickets.status && pesquisaTickets.status.includes('pending')">
           <q-btn
-            :color="filterMode === 'meus' ? 'positive' : 'grey-6'"
-            class="q-mr-xs filter-btn"
+            color="positive"
+            class="filter-btn"
+            size="sm"
+            dense
+            label="Tickets não atendidos"
+            disabled
+          />
+          <q-separator class="absolute-bottom" />
+        </q-toolbar>
+
+        <!-- Filtros originais para outros status -->
+        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md q-pt-sm q-pb-sm justify-center" v-else>
+          <q-btn
+            :color="cFiltroSelecionado === 'meus' ? 'positive' : 'primary'"
+            class="filter-btn"
             size="sm"
             dense
             label="Meus atendimentos"
             @click="setFilterMode('meus')"
           />
           <q-btn
-            :color="filterMode === 'fila' ? 'positive' : 'grey-6'"
-            class="q-mr-xs filter-btn"
+            :color="cFiltroSelecionado === 'fila' ? 'positive' : 'primary'"
+            class="filter-btn"
             size="sm"
             dense
             label="Meus departamentos"
             @click="setFilterMode('fila')"
           />
           <q-btn
-            :color="filterMode === 'todos' ? 'positive' : 'grey-6'"
+            :color="cFiltroSelecionado === 'todos' ? 'positive' : 'primary'"
             class="filter-btn"
             size="sm"
             dense
@@ -575,7 +588,6 @@ export default {
       atendimentos: [],
       countTickets: 0,
       searchTickets: '',
-      filterMode: 'meus',
       pesquisaTickets: {
         searchParam: '',
         pageNumber: 1,
@@ -584,7 +596,7 @@ export default {
         count: null,
         queuesIds: [],
         withUnreadMessages: false,
-        isNotAssignedUser: false,
+        isNotAssignedUser: initialStatus.includes('pending'),
         includeNotQueueDefined: true
         // date: new Date(),
       },
@@ -661,8 +673,19 @@ export default {
       return this.$route.name === 'chat-contatos'
     },
     cFiltroSelecionado () {
-      const { queuesIds, showAll, withUnreadMessages, isNotAssignedUser } = this.pesquisaTickets
-      return !!(queuesIds?.length || showAll || withUnreadMessages || isNotAssignedUser)
+      const { queuesIds, showAll, withUnreadMessages } = this.pesquisaTickets
+
+      // Para status 'pending', sempre retorna que não há filtro selecionado (usa filtro fixo)
+      if (this.pesquisaTickets.status && this.pesquisaTickets.status.includes('pending')) {
+        return null
+      }
+
+      // Para outros status (incluindo 'open'), determina qual filtro está ativo
+      if (showAll) return 'todos'
+      if (queuesIds?.length) return 'fila'
+      if (!showAll && !queuesIds?.length && !withUnreadMessages) return 'meus'
+
+      return null
     },
     cIsExtraInfo () {
       return this.ticketFocado?.contact?.extraInfo?.length > 0
@@ -676,29 +699,34 @@ export default {
       this.debounce(this.BuscarTicketFiltro(), 700)
     },
 
-    setFilterMode (mode) {
-      this.filterMode = mode
-
-      // Reset dos filtros
+    setFilterMode (filterMode) {
+      // Resetar filtros
       this.pesquisaTickets.showAll = false
       this.pesquisaTickets.withUnreadMessages = false
       this.pesquisaTickets.isNotAssignedUser = false
       this.pesquisaTickets.queuesIds = []
 
-      // Aplicar filtro baseado no modo selecionado
-      switch (mode) {
-        case 'meus':
-          // Meus atendimentos - tickets atribuídos ao usuário atual
-          // Não precisa configurar nada especial, é o comportamento padrão
-          break
-        case 'fila':
-          // Minha fila - tickets da fila do usuário
-          this.pesquisaTickets.queuesIds = this.cUserQueues.map(q => q.id) || []
-          break
-        case 'todos':
-          // Todos os tickets
-          this.pesquisaTickets.showAll = true
-          break
+      const currentStatus = this.pesquisaTickets.status
+
+      // Para status 'pending', sempre aplicar filtro de tickets não atendidos
+      if (currentStatus && currentStatus.includes('pending')) {
+        this.pesquisaTickets.isNotAssignedUser = true
+        this.pesquisaTickets.showAll = false
+        this.pesquisaTickets.queuesIds = []
+      } else {
+        // Para outros status (incluindo 'open'), aplicar filtros baseado no modo selecionado
+        if (filterMode === 'meus') {
+          this.pesquisaTickets.showAll = false
+          // Para 'open', meus atendimentos = atendimentos atribuídos a mim
+        } else if (filterMode === 'fila') {
+          this.pesquisaTickets.queuesIds = this.cUserQueues.map(q => q.id)
+          // Para 'open', atendimentos da minha fila em andamento
+        } else if (filterMode === 'todos') {
+          // Para 'open', todos os atendimentos em andamento independente da fila
+          // Não usar showAll para preservar o filtro de status
+          this.pesquisaTickets.showAll = false
+          this.pesquisaTickets.queuesIds = []
+        }
       }
 
       this.debounce(this.BuscarTicketFiltro(), 700)
@@ -913,13 +941,22 @@ export default {
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
 
-    // Carregar filtros do localStorage, mas manter status da query se existir
+    // Carregar filtros do localStorage
     const filtrosLocalStorage = JSON.parse(localStorage.getItem('filtrosAtendimento'))
     if (filtrosLocalStorage) {
       this.pesquisaTickets = {
         ...filtrosLocalStorage,
         // Manter o status da query da rota se existir
         status: this.$route.query.status ? [this.$route.query.status] : filtrosLocalStorage.status
+      }
+
+      // Aplicar filtro de tickets não atendidos apenas para status 'pending'
+      const currentStatus = this.pesquisaTickets.status
+      if (currentStatus && currentStatus.includes('pending')) {
+        this.pesquisaTickets.isNotAssignedUser = true
+        this.pesquisaTickets.showAll = false
+        this.pesquisaTickets.withUnreadMessages = false
+        this.pesquisaTickets.queuesIds = []
       }
     }
 

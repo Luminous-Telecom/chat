@@ -29,3 +29,10 @@ export function DeletarFila (data) {
     method: 'delete'
   })
 }
+
+export function ContarTicketsNaoLidosPorFila () {
+  return request({
+    url: '/queue/unread-count',
+    method: 'get'
+  })
+}

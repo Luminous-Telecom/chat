@@ -6,6 +6,7 @@ import CreateQueueService from "../services/QueueServices/CreateQueueService";
 import ListQueueService from "../services/QueueServices/ListQueueService";
 import DeleteQueueService from "../services/QueueServices/DeleteQueueService";
 import UpdateQueueService from "../services/QueueServices/UpdateQueueService";
+import CountUnreadTicketsByQueueService from "../services/QueueServices/CountUnreadTicketsByQueueService";
 
 interface QueueData {
   queue: string;
@@ -89,4 +90,18 @@ export const remove = async (
 
   await DeleteQueueService({ id: queueId, tenantId });
   return res.status(200).json({ message: "Queue deleted" });
+};
+
+export const countUnreadTicketsByQueue = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { tenantId, id: userId } = req.user;
+  
+  const queueCounts = await CountUnreadTicketsByQueueService({
+    userId: userId.toString(),
+    tenantId
+  });
+  
+  return res.status(200).json(queueCounts);
 };
