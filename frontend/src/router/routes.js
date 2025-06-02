@@ -66,33 +66,31 @@ const routes = [
   },
   {
     path: '/atendimento',
-    name: 'atendimento',
-    // redirect: { name: 'chat-empty' },
-    component: () => import('pages/atendimento/Index.vue'),
+    component: () => import('layouts/MainLayout.vue'),
     children: [
       {
-        path: '/chats/',
-        name: 'chat-empty',
-        component: () => import('pages/atendimento/Chat.vue')
-      },
-      {
-        path: ':ticketId',
-        name: 'chat',
-        component: () => import('pages/atendimento/Chat.vue')
-        // beforeEnter (to, from, next) {
-        //   if (!from.params.ticketId) {
-        //     next({ name: 'chat-empty' })
-        //   }
-        //   next()
-        // }
-      },
-      {
-        path: 'contatos',
-        name: 'chat-contatos',
-        component: () => import('pages/contatos/Index.vue'),
-        props: { isChatContact: true }
+        path: '',
+        name: 'atendimento',
+        component: () => import('pages/atendimento/Index.vue'),
+        children: [
+          {
+            path: '/chats/',
+            name: 'chat-empty',
+            component: () => import('pages/atendimento/Chat.vue')
+          },
+          {
+            path: ':ticketId',
+            name: 'chat',
+            component: () => import('pages/atendimento/Chat.vue')
+          },
+          {
+            path: 'contatos',
+            name: 'chat-contatos',
+            component: () => import('pages/contatos/Index.vue'),
+            props: { isChatContact: true }
+          }
+        ]
       }
-
     ]
   },
 

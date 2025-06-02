@@ -135,7 +135,12 @@ export default {
         this.$emit('chatFlow:editado', data)
       } else {
         // setar id = null para rotina de duplicação de fluxo
-        const flow = { ...getDefaultFlow(), ...this.chatFlow, id: null }
+        const defaultFlow = getDefaultFlow()
+        // Extrair defaultQueueId das configurações do fluxo
+        const configNode = defaultFlow.flow.nodeList.find(node => node.type === 'configurations')
+        const defaultQueueId = configNode?.configurations?.defaultQueueId || null
+
+        const flow = { ...defaultFlow, ...this.chatFlow, id: null, defaultQueueId }
         const { data } = await CriarChatFlow(flow)
         this.$notificarSucesso('Novo fluxo criado.')
         this.$emit('chatFlow:criada', data)

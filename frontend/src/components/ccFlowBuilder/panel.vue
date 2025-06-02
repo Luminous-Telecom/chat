@@ -200,9 +200,13 @@ export default {
       this.clickNode(from)
     },
     saveFlow () {
+      // Extrair defaultQueueId das configurações do fluxo
+      const configNode = this.data.nodeList.find(node => node.type === 'configurations')
+      const defaultQueueId = configNode?.configurations?.defaultQueueId || null
       const data = {
         ...this.cDataFlow.flow,
-        flow: this.data
+        flow: this.data,
+        defaultQueueId
       }
       UpdateChatFlow(data)
         .then(res => {

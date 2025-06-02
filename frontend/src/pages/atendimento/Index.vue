@@ -19,245 +19,69 @@
         :width="$q.screen.lt.md ? $q.screen.width : 380"
         content-class="hide-scrollbar full-width"
       >
-        <q-toolbar
-          class="q-gutter-xs full-width"
-          style="height: 64px"
-        >
-          <q-btn-dropdown
-            no-caps
-            color="black"
-            class="text-bold btn-rounded"
-            ripple
-          >
-            <template v-slot:label>
-              <div
-                :style="{ maxWidth: $q.screen.lt.sm ? '120px' : '' }"
-                class="ellipsis"
-              >
-                {{ username }}
-              </div>
-            </template>
-            <q-list style="min-width: 100px">
-              <!-- <q-item
-                clickable
-                v-close-popup
-              >
-                <q-item-section>
-                  <q-toggle
-                    color="blue"
-                    :value="$q.dark.isActive"
-                    label="Modo escuro"
-                    @input="$setConfigsUsuario({isDark: !$q.dark.isActive})"
-                  />
-                </q-item-section>
-              </q-item> -->
-              <q-item
-                clickable
-                v-close-popup
-                @click="abrirModalUsuario"
-              >
-                <q-item-section>Perfil</q-item-section>
-              </q-item>
-              <q-item
-                clickable
-                v-close-popup
-                @click="efetuarLogout"
-              >
-                <q-item-section>Sair</q-item-section>
-              </q-item>
-              <q-separator />
-
-            </q-list>
-          </q-btn-dropdown>
-          <q-space />
-          <q-btn
-            color="black"
-            class="btn-rounded"
-            icon="mdi-home"
-            @click="() => $router.push({ name: 'home-dashboard' })"
-          >
-            <q-tooltip content-class="bg-padrao text-grey-9 text-bold">
-              Retornar ao menu
-            </q-tooltip>
-          </q-btn>
-        </q-toolbar>
         <StatusWhatsapp
           v-if="false"
           class="q-mx-sm full-width"
         />
-        <q-toolbar
-          v-show="toolbarSearch"
-          class="row q-gutter-sm q-py-sm items-center"
-        >
-          <q-separator class="absolute-top" />
-          <q-btn
-            :icon="!cFiltroSelecionado ? 'mdi-filter-outline' : 'mdi-filter-plus'"
-            class="btn-rounded "
-            :color="cFiltroSelecionado ? 'deep-orange-9' : 'primary'"
-          >
-            <q-menu
-              content-class="shadow-10 no-scroll"
-              square
+        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md">
+          <div class="col custom-search-wrapper">
+            <input
+              v-model="searchTickets"
+              placeholder="Buscar..."
+              class="custom-search-input"
+              type="text"
+            />
+            <q-icon name="search" class="search-icon" />
+          </div>
+          <div class="q-ml-md">
+            <q-btn
+              flat
+              round
+              dense
+              class="contacts-btn"
+              icon="mdi-account-multiple"
+              @click="$q.screen.lt.md ? modalNovoTicket = true : $router.push({ name: 'chat-contatos' })"
             >
-              <div
-                class="row q-pa-sm"
-                style="min-width: 350px; max-width: 350px"
-              >
-                <div class="q-ma-sm">
-                  <div class="text-h6 q-mb-md">Filtros Avançados</div>
-                  <q-toggle
-                    v-if="profile === 'admin'"
-                    class="q-ml-lg"
-                    v-model="pesquisaTickets.showAll"
-                    label="(Admin) - Visualizar Todos"
-                    :class="{ 'q-mb-lg': pesquisaTickets.showAll }"
-                    @input="debounce(BuscarTicketFiltro(), 700)"
-                  />
-                  <q-separator
-                    class="q-mb-md"
-                    v-if="!pesquisaTickets.showAll"
-                  />
-                  <div v-if="!pesquisaTickets.showAll">
-                    <q-select
-                      :disable="pesquisaTickets.showAll"
-                      rounded
-                      dense
-                      outlined
-                      hide-bottom-space
-                      emit-value
-                      map-options
-                      multiple
-                      options-dense
-                      use-chips
-                      label="Filas"
-                      color="primary"
-                      v-model="pesquisaTickets.queuesIds"
-                      :options="cUserQueues"
-                      :input-debounce="700"
-                      option-value="id"
-                      option-label="queue"
-                      @input="debounce(BuscarTicketFiltro(), 700)"
-                      input-style="width: 300px; max-width: 300px;"
-                    />
+              <q-tooltip content-class="bg-padrao text-grey-9 text-bold">
+                Contatos
+              </q-tooltip>
+            </q-btn>
+          </div>
+          <q-separator class="absolute-bottom" />
+        </q-toolbar>
 
-                    <q-list
-                      dense
-                      class="q-my-md"
-                    >
-                      <q-item
-                        tag="label"
-                        v-ripple
-                      >
-                        <q-item-section avatar>
-                          <q-checkbox
-                            v-model="pesquisaTickets.status"
-                            val="open"
-                            color="primary"
-                            keep-color
-                            @input="debounce(BuscarTicketFiltro(), 700)"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Abertos</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item
-                        tag="label"
-                        v-ripple
-                      >
-                        <q-item-section avatar>
-                          <q-checkbox
-                            v-model="pesquisaTickets.status"
-                            val="pending"
-                            color="negative"
-                            keep-color
-                            @input="debounce(BuscarTicketFiltro(), 700)"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Pendentes</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                      <q-item
-                        tag="label"
-                        v-ripple
-                      >
-                        <q-item-section avatar>
-                          <q-checkbox
-                            v-model="pesquisaTickets.status"
-                            val="closed"
-                            color="positive"
-                            keep-color
-                            @input="debounce(BuscarTicketFiltro(), 700)"
-                          />
-                        </q-item-section>
-                        <q-item-section>
-                          <q-item-label>Resolvidos</q-item-label>
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                    <q-separator class="q-mb-md" />
-                    <q-toggle
-                      v-model="pesquisaTickets.withUnreadMessages"
-                      label="Somente Tickets com mensagens não lidas"
-                      @input="debounce(BuscarTicketFiltro(), 700)"
-                    />
-                    <q-toggle
-                      v-model="pesquisaTickets.isNotAssignedUser"
-                      label="Somente Tickets não atribuidos (sem usuário definido)"
-                      @input="debounce(BuscarTicketFiltro(), 700)"
-                    />
-                  </div>
-                  <q-separator
-                    class="q-my-md"
-                    spaced
-                    v-if="!pesquisaTickets.showAll"
-                  />
-                  <q-btn
-                    class="float-right q-my-md"
-                    color="negative"
-                    label="Fechar"
-                    push
-                    rounded
-                    v-close-popup
-                  />
-                </div>
-              </div>
-            </q-menu>
-            <q-tooltip content-class="bg-padrao text-grey-9 text-bold">
-              Filtro Avançado
-            </q-tooltip>
-          </q-btn>
-          <q-input
-            v-model="pesquisaTickets.searchParam"
-            dense
-            outlined
-            rounded
-            type="search"
-            class="col-grow"
-            :debounce="700"
-            @input="BuscarTicketFiltro()"
-          >
-            <template v-slot:append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
+        <!-- Botões de filtro abaixo da pesquisa -->
+        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md q-pt-sm q-pb-sm justify-center">
           <q-btn
-            color="primary"
-            class="btn-rounded"
-            icon="mdi-book-account-outline"
-            @click="$q.screen.lt.md ? modalNovoTicket = true : $router.push({ name: 'chat-contatos' })"
-          >
-            <q-tooltip content-class="bg-padrao text-grey-9 text-bold">
-              Contatos
-            </q-tooltip>
-          </q-btn>
+            :color="filterMode === 'meus' ? 'positive' : 'grey-6'"
+            class="q-mr-xs filter-btn"
+            size="sm"
+            dense
+            label="Meus atendimentos"
+            @click="setFilterMode('meus')"
+          />
+          <q-btn
+            :color="filterMode === 'fila' ? 'positive' : 'grey-6'"
+            class="q-mr-xs filter-btn"
+            size="sm"
+            dense
+            label="Meus departamentos"
+            @click="setFilterMode('fila')"
+          />
+          <q-btn
+            :color="filterMode === 'todos' ? 'positive' : 'grey-6'"
+            class="filter-btn"
+            size="sm"
+            dense
+            label="Todos"
+            @click="setFilterMode('todos')"
+          />
           <q-separator class="absolute-bottom" />
         </q-toolbar>
 
         <q-scroll-area
           ref="scrollAreaTickets"
-          style="height: calc(100% - 180px)"
+          style="height: calc(100% - 130px)"
           @scroll="onScroll"
         >
           <!-- <q-separator /> -->
@@ -280,57 +104,6 @@
             </div>
           </div>
         </q-scroll-area>
-        <!-- <q-separator /> -->
-        <div
-          class="absolute-bottom row justify-between"
-          style="height: 50px"
-        >
-          <q-toggle
-            size="xl"
-            keep-color
-            dense
-            class="text-bold q-ml-md flex flex-block"
-            :icon-color="$q.dark.isActive ? 'black' : 'white'"
-            :value="$q.dark.isActive"
-            :color="$q.dark.isActive ? 'grey-3' : 'black'"
-            checked-icon="mdi-white-balance-sunny"
-            unchecked-icon="mdi-weather-sunny"
-            @input="$setConfigsUsuario({ isDark: !$q.dark.isActive })"
-          >
-            <q-tooltip content-class="text-body1">
-              {{ $q.dark.isActive ? 'Desativar' : 'Ativar' }} Modo Escuro (Dark Mode)
-            </q-tooltip>
-          </q-toggle>
-          <div class="flex flex-inline q-pt-xs">
-            <q-scroll-area
-              horizontal
-              style="heigth: 40px; width: 300px;"
-            >
-              <template v-for="item in whatsapps">
-                <q-btn
-                  rounded
-                  flat
-                  dense
-                  size="18px"
-                  :key="item.id"
-                  class="q-mx-xs q-pa-none"
-                  :style="`opacity: ${item.status === 'CONNECTED' ? 1 : 0.2}`"
-                  :icon="`img:${item.type}-logo.png`"
-                >
-                  <!-- :color="item.status === 'CONNECTED' ? 'positive' : 'negative'"
-                  :icon-right="item.status === 'CONNECTED' ? 'mdi-check-all' : 'mdi-alert-circle-outline'" -->
-                  <q-tooltip
-                    max-height="300px"
-                    content-class="bg-blue-1 text-body1 text-grey-9 hide-scrollbar"
-                  >
-                    <ItemStatusChannel :item="item" />
-                  </q-tooltip>
-                </q-btn>
-              </template>
-            </q-scroll-area>
-
-          </div>
-        </div>
       </q-drawer>
 
       <q-page-container>
@@ -739,7 +512,6 @@
 </template>
 
 <script>
-import ItemStatusChannel from 'src/pages/sessaoWhatsapp/ItemStatusChannel.vue'
 import ContatoModal from 'src/pages/contatos/ContatoModal'
 import ItemTicket from './ItemTicket'
 import { ConsultarLogsTicket, ConsultarTickets, DeletarMensagem } from 'src/service/tickets'
@@ -768,6 +540,7 @@ import MensagemChat from './MensagemChat.vue'
 import { messagesLog } from '../../utils/constants'
 export default {
   name: 'IndexAtendimento',
+
   mixins: [mixinSockets, socketInitial],
   components: {
     ItemTicket,
@@ -775,10 +548,11 @@ export default {
     StatusWhatsapp,
     ContatoModal,
     ModalUsuario,
-    MensagemChat,
-    ItemStatusChannel
+    MensagemChat
   },
   data () {
+    const query = this.$route.query
+    const initialStatus = query.status ? [query.status] : ['open']
     return {
       messagesLog,
       configuracoes: [],
@@ -800,10 +574,12 @@ export default {
       showDialog: false,
       atendimentos: [],
       countTickets: 0,
+      searchTickets: '',
+      filterMode: 'meus',
       pesquisaTickets: {
         searchParam: '',
         pageNumber: 1,
-        status: ['open', 'pending'],
+        status: initialStatus,
         showAll: false,
         count: null,
         queuesIds: [],
@@ -821,14 +597,34 @@ export default {
     }
   },
   watch: {
-    // pesquisaTickets: {
-    //   handler (v) {
-    //     this.$store.commit('SET_FILTER_PARAMS', extend(true, {}, this.pesquisaTickets))
-    //     localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
-    //   },
-    //   deep: true
-    //   // immediate: true
-    // }
+    searchTickets: {
+      handler (val) {
+        this.debounce(this.BuscarTicketFiltro(), 500)
+      }
+    },
+    tickets: {
+      handler (tickets) {
+        this.scrollToBottom()
+      },
+      deep: true
+    },
+    $route: {
+      handler (newRoute) {
+        const newStatus = newRoute.query.status
+
+        // Só atualiza o status se estivermos na rota de atendimento
+        if (newRoute.name === 'atendimento') {
+          if (newStatus) {
+            this.pesquisaTickets.status = [newStatus]
+          } else {
+            // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
+            this.pesquisaTickets.status = ['open']
+          }
+          this.BuscarTicketFiltro()
+        }
+      },
+      immediate: true
+    }
   },
   computed: {
     ...mapGetters([
@@ -873,6 +669,41 @@ export default {
     }
   },
   methods: {
+
+    toggleStatus (status) {
+      // Substitui o array atual por um novo array contendo apenas o status selecionado
+      this.pesquisaTickets.status = [status]
+      this.debounce(this.BuscarTicketFiltro(), 700)
+    },
+
+    setFilterMode (mode) {
+      this.filterMode = mode
+
+      // Reset dos filtros
+      this.pesquisaTickets.showAll = false
+      this.pesquisaTickets.withUnreadMessages = false
+      this.pesquisaTickets.isNotAssignedUser = false
+      this.pesquisaTickets.queuesIds = []
+
+      // Aplicar filtro baseado no modo selecionado
+      switch (mode) {
+        case 'meus':
+          // Meus atendimentos - tickets atribuídos ao usuário atual
+          // Não precisa configurar nada especial, é o comportamento padrão
+          break
+        case 'fila':
+          // Minha fila - tickets da fila do usuário
+          this.pesquisaTickets.queuesIds = this.cUserQueues.map(q => q.id) || []
+          break
+        case 'todos':
+          // Todos os tickets
+          this.pesquisaTickets.showAll = true
+          break
+      }
+
+      this.debounce(this.BuscarTicketFiltro(), 700)
+    },
+
     handlerNotifications (data) {
       const options = {
         body: `${data.body} - ${format(new Date(), 'HH:mm')}`,
@@ -981,7 +812,6 @@ export default {
       this.modalUsuario = true
     },
     async efetuarLogout () {
-      console.log('logout - index atendimento')
       try {
         await RealizarLogout(usuario)
         localStorage.removeItem('token')
@@ -1004,7 +834,6 @@ export default {
       navigator.clipboard.writeText(content)
         .then(() => {
           // Copiado com sucesso
-          console.log('Conteúdo copiado: ', content)
         })
         .catch((error) => {
           // Ocorreu um erro ao copiar
@@ -1083,7 +912,17 @@ export default {
     this.$root.$on('infor-cabecalo-chat:acao-menu', this.setValueMenu)
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
-    this.pesquisaTickets = JSON.parse(localStorage.getItem('filtrosAtendimento'))
+
+    // Carregar filtros do localStorage, mas manter status da query se existir
+    const filtrosLocalStorage = JSON.parse(localStorage.getItem('filtrosAtendimento'))
+    if (filtrosLocalStorage) {
+      this.pesquisaTickets = {
+        ...filtrosLocalStorage,
+        // Manter o status da query da rota se existir
+        status: this.$route.query.status ? [this.$route.query.status] : filtrosLocalStorage.status
+      }
+    }
+
     this.$root.$on('handlerNotifications', this.handlerNotifications)
     await this.listarWhatsapps()
     await this.consultarTickets()
@@ -1107,13 +946,11 @@ export default {
         if (this.$q.screen.lt.md && ticket.status !== 'pending') {
           this.$root.$emit('infor-cabecalo-chat:acao-menu')
         }
-        console.log('before - AbrirChatMensagens', ticket)
         this.$store.commit('SET_HAS_MORE', true)
         this.$store.dispatch('AbrirChatMensagens', ticket)
       }
-    } else {
-      console.log('chat-empty')
-      this.$router.push({ name: 'chat-empty' })
+    } else if (this.$route.name !== 'chat-empty' && this.$route.name !== 'atendimento') {
+      this.$router.push({ name: 'chat-empty', replace: true })
     }
   },
   destroyed () {
@@ -1126,59 +963,174 @@ export default {
 }
 </script>
 
-<style lang="sass">
-.upload-btn-wrapper
-  position: relative
-  overflow: hidden
-  display: inline-block
+<style lang="scss" scoped>
+.WAL {
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(145deg, #f5f5f5 0%, #e0e0e0 100%);
 
-  & input[type="file"]
-    font-size: 100px
-    position: absolute
-    left: 0
-    top: 0
-    opacity: 0
+  &__layout {
+    width: 100%;
+    height: 100%;
+  }
+}
 
-.WAL
-  width: 100%
-  height: 100%
+.q-drawer {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 0 16px 16px 0;
 
-  &:before
-    content: ''
-    height: 127px
-    position: fixed
-    top: 0
-    width: 100%
+  .q-toolbar {
+    background: transparent;
+  }
 
-  &__layout
-    margin: 0 auto
-    z-index: 4000
-    height: 100%
-    width: 100%
+  .q-btn {
+    border-radius: 8px;
+    transition: all 0.3s ease;
 
-  &__field.q-field--outlined .q-field__control:before
-    border: none
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+  }
+}
 
-  .q-drawer--standard
-    .WAL__drawer-close
-      display: none
+.q-scroll-area {
+  background: transparent;
 
-@media (max-width: 850px)
-  .WAL
-    padding: 0
-    &__layout
-      width: 100%
-      border-radius: 0
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
 
-@media (min-width: 691px)
-  .WAL
-    &__drawer-open
-      display: none
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.conversation__summary
-  margin-top: 4px
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+  }
+}
 
-.conversation__more
-  margin-top: 0!important
-  font-size: 1.4rem
+.btn-rounded {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark-mode {
+  .WAL {
+    background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+  }
+
+  .q-drawer {
+    background: rgba(33, 33, 33, 0.95);
+  }
+}
+
+.filter-btn {
+  border-radius: 4px !important;
+}
+
+.custom-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  padding-right: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  background-color: #ffffff;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.custom-search-input:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.custom-search-input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.custom-search-input::placeholder {
+  color: #6c757d;
+  font-weight: 400;
+}
+
+.search-icon {
+  position: absolute;
+  right: 12px;
+  color: #6c757d;
+  pointer-events: none;
+}
+
+/* Modo escuro */
+.body--dark .custom-search-input {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+.body--dark .custom-search-input:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.body--dark .custom-search-input:focus {
+  border-color: #90caf9;
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(144, 202, 249, 0.3);
+}
+
+.body--dark .custom-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.body--dark .search-icon {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Botão de contatos */
+.contacts-btn {
+  background-color: #f5f5f5;
+  color: #1976d2;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+  transition: all 0.3s ease;
+  width: 40px;
+  height: 40px;
+}
+
+.contacts-btn:hover {
+  background-color: #1976d2;
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+}
+
+.contacts-btn:active {
+  transform: scale(0.95);
+}
+
+/* Modo escuro para o botão de contatos */
+.body--dark .contacts-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #90caf9;
+  border-color: rgba(144, 202, 249, 0.3);
+}
+
+.body--dark .contacts-btn:hover {
+  background-color: #90caf9;
+  color: #121212;
+}
 </style>
