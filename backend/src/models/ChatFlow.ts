@@ -61,6 +61,10 @@ class ChatFlow extends Model<ChatFlow> {
   @Column(DataType.TEXT)
   celularTeste: string;
 
+  @Default(null)
+  @Column
+  defaultQueueId: number;
+
   @ForeignKey(() => User)
   @Column
   userId: number;

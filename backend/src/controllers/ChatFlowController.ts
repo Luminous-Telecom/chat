@@ -60,6 +60,7 @@ interface ChatFlowData {
   isActive: boolean;
   celularTeste?: string;
   tenantId: number | string;
+  defaultQueueId?: number;
 }
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
@@ -73,7 +74,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     name: req.body.name,
     isActive: true,
     userId: +req.user.id,
-    tenantId
+    tenantId,
+    defaultQueueId: req.body.defaultQueueId
   };
 
   // const schema = Yup.object().shape({
@@ -114,7 +116,8 @@ export const update = async (
     name: req.body.name,
     isActive: req.body.isReactive,
     userId: +req.user.id,
-    tenantId
+    tenantId,
+    defaultQueueId: req.body.defaultQueueId
   };
 
   // const schema = Yup.object().shape({

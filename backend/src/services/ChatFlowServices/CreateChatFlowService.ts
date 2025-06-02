@@ -15,6 +15,7 @@ interface Request {
   isActive: boolean;
   userId: number;
   tenantId: number | string;
+  defaultQueueId?: number;
 }
 
 const CreateChatFlowService = async ({
@@ -22,7 +23,8 @@ const CreateChatFlowService = async ({
   userId,
   tenantId,
   name,
-  isActive
+  isActive,
+  defaultQueueId
 }: Request): Promise<ChatFlow> => {
   for await (const node of flow.nodeList) {
     if (node.type === "node") {
@@ -48,7 +50,8 @@ const CreateChatFlowService = async ({
     userId,
     tenantId,
     name,
-    isActive
+    isActive,
+    defaultQueueId
   });
 
   return chatFlow;

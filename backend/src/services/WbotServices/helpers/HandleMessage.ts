@@ -78,7 +78,7 @@ const HandleMessage = async (
           groupContact = await VerifyContact(msgGroupContact, tenantId);
         }
 
-        const unreadMessages = msg.fromMe ? 0 : chat.unreadCount;
+        const unreadMessages = msg.fromMe ? 0 : 1;
 
         // const profilePicUrl = await msgContact.getProfilePicUrl();
         const contact = await VerifyContact(msgContact, tenantId);

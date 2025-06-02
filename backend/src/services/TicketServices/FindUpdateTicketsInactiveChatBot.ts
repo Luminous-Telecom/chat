@@ -2,6 +2,7 @@
 import { QueryTypes } from "sequelize";
 
 import Ticket from "../../models/Ticket";
+import ChatFlow from "../../models/ChatFlow";
 import socketEmit from "../../helpers/socketEmit";
 
 const FindUpdateTicketsInactiveChatBot = async (): Promise<void> => {
@@ -47,6 +48,13 @@ const FindUpdateTicketsInactiveChatBot = async (): Promise<void> => {
         }
         if (item.type_action == 2) {
           values.userId = item.destiny;
+        }
+        // se não há destino específico, aplicar fila padrão do fluxo
+        if (!item.destiny) {
+          const chatFlow = await ChatFlow.findByPk(ticket.chatFlowId);
+          if (chatFlow?.defaultQueueId) {
+            values.queueId = chatFlow.defaultQueueId;
+          }
         }
         await ticket.update(values);
         socketEmit({

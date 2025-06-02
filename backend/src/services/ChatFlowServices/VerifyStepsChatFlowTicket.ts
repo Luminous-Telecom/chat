@@ -2,6 +2,7 @@
 import { Message as WbotMessage } from "whatsapp-web.js";
 import socketEmit from "../../helpers/socketEmit";
 import Ticket from "../../models/Ticket";
+import ChatFlow from "../../models/ChatFlow";
 import CreateMessageSystemService from "../MessageServices/CreateMessageSystemService";
 import CreateLogTicketService from "../TicketServices/CreateLogTicketService";
 import BuildSendMessageService from "./BuildSendMessageService";
@@ -29,7 +30,32 @@ const isNextSteps = async (
       (n: any) => n.id === stepCondition.nextStepId
     );
 
-    if (!nextStep) return;
+    if (!nextStep) {
+      // Se não há próximo passo, aplicar fila padrão do fluxo se configurada
+      const chatFlow = await ChatFlow.findByPk(ticket.chatFlowId);
+      if (chatFlow?.defaultQueueId) {
+        await ticket.update({
+          queueId: chatFlow.defaultQueueId,
+          chatFlowId: null,
+          stepChatFlow: null,
+          botRetries: 0,
+          lastInteractionBot: new Date()
+        });
+
+        await CreateLogTicketService({
+          ticketId: ticket.id,
+          type: "queue",
+          queueId: chatFlow.defaultQueueId
+        });
+
+        socketEmit({
+          tenantId: ticket.tenantId,
+          type: "ticket:update",
+          payload: ticket
+        });
+      }
+      return;
+    }
 
     for (const interaction of nextStep.interactions) {
       await BuildSendMessageService({
@@ -114,6 +140,41 @@ const isUserDefine = async (
   }
 };
 
+const isFinishFlow = async (
+  ticket: Ticket,
+  stepCondition: any
+): Promise<void> => {
+  // action = 3: finalizar fluxo e aplicar fila padrão se configurada
+  if (stepCondition.action === 3) {
+    const chatFlow = await ChatFlow.findByPk(ticket.chatFlowId);
+    const updatedValues: any = {
+      chatFlowId: null,
+      stepChatFlow: null,
+      botRetries: 0,
+      lastInteractionBot: new Date()
+    };
+
+    // Aplicar fila padrão do fluxo se configurada
+    if (chatFlow?.defaultQueueId) {
+      updatedValues.queueId = chatFlow.defaultQueueId;
+      
+      await CreateLogTicketService({
+        ticketId: ticket.id,
+        type: "queue",
+        queueId: chatFlow.defaultQueueId
+      });
+    }
+
+    await ticket.update(updatedValues);
+
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "ticket:update",
+      payload: ticket
+    });
+  }
+};
+
 // enviar mensagem de boas vindas à fila ou usuário
 const sendWelcomeMessage = async (
   ticket: Ticket,
@@ -170,6 +231,15 @@ const isRetriesLimit = async (
     if (destinyType === 2 && destiny) {
       updatedValues.userId = destiny;
       logsRetry.userId = destiny;
+    }
+    // se não há destino específico, aplicar fila padrão do fluxo
+    if (!destiny) {
+      const chatFlow = await ChatFlow.findByPk(ticket.chatFlowId);
+      if (chatFlow?.defaultQueueId) {
+        updatedValues.queueId = chatFlow.defaultQueueId;
+        logsRetry.queueId = chatFlow.defaultQueueId;
+        logsRetry.type = "retriesLimitDefaultQueue";
+      }
     }
 
     ticket.update(updatedValues);
@@ -250,7 +320,9 @@ const VerifyStepsChatFlowTicket = async (
     !ticket.answered
   ) {
     if (ticket.chatFlowId) {
-      const chatFlow = await ticket.getChatFlow();
+      const chatFlow = await ChatFlow.findByPk(ticket.chatFlowId);
+      if (!chatFlow) return;
+      
       if (chatFlow.celularTeste) {
         celularTeste = chatFlow.celularTeste.replace(/\s/g, ""); // retirar espaços
       }
@@ -300,13 +372,16 @@ const VerifyStepsChatFlowTicket = async (
         // action = 2: enviar para determinado usuário
         await isUserDefine(ticket, step, stepCondition);
 
+        // action = 3: finalizar fluxo
+        await isFinishFlow(ticket, stepCondition);
+
         socketEmit({
           tenantId: ticket.tenantId,
           type: "ticket:update",
           payload: ticket
         });
 
-        if (stepCondition.action === 1 || stepCondition.action === 2) {
+        if (stepCondition.action === 1 || stepCondition.action === 2 || stepCondition.action === 3) {
           await sendWelcomeMessage(ticket, flowConfig);
         }
       } else {
@@ -320,10 +395,34 @@ const VerifyStepsChatFlowTicket = async (
         )
           return;
 
+        // Verificar se há fila padrão configurada para transferir imediatamente
+        if (chatFlow?.defaultQueueId) {
+          await ticket.update({
+            queueId: chatFlow.defaultQueueId,
+            chatFlowId: null,
+            stepChatFlow: null,
+            botRetries: 0,
+            lastInteractionBot: new Date(),
+            unreadMessages: ticket.unreadMessages || 1
+          });
+          
+          await CreateLogTicketService({
+             ticketId: ticket.id,
+             type: "queue",
+             queueId: chatFlow.defaultQueueId
+           });
+          
+          socketEmit({
+            tenantId: ticket.tenantId,
+            type: "ticket:update",
+            payload: ticket
+          });
+          
+          return;
+        }
+
         // se ticket tiver sido criado, ingnorar na primeria passagem
         if (!ticket.isCreated) {
-          if (await isRetriesLimit(ticket, flowConfig)) return;
-
           const messageData = {
             body:
               flowConfig.configurations.notOptionsSelectMessage.message ||
