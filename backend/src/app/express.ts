@@ -7,7 +7,16 @@ import helmet from "helmet";
 import { logger } from "../utils/logger";
 
 export default async function express(app: Application): Promise<void> {
-  const origin = [process.env.FRONTEND_URL || "https://app.izing.io"];
+  // Parse FRONTEND_URLS from environment variable
+  const frontendUrls = process.env.FRONTEND_URLS 
+    ? process.env.FRONTEND_URLS.split(',')
+    : [process.env.FRONTEND_URL || "http://localhost:3003"];
+  
+  const origin = [
+    ...frontendUrls,
+    "http://localhost:3000", // React frontend local
+    "http://localhost:8080", // Vue frontend local
+  ];
   app.use(
     cors({
       origin,

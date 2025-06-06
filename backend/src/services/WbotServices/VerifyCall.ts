@@ -1,5 +1,6 @@
 import { Contact as WbotContact, Call, Client } from "whatsapp-web.js";
 import { logger } from "../../utils/logger";
+import { isSessionClosedError } from "../../helpers/HandleSessionError";
 import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketService";
 import Setting from "../../models/Setting";
 import Whatsapp from "../../models/Whatsapp";
@@ -52,9 +53,16 @@ const VerifyCall = async (call: Call, wbot: Session): Promise<void> => {
 
         if (!call.from) return;
 
-        const callContact: WbotContact | any = await wbot.getChatById(
-          call.from
-        );
+        let callContact: WbotContact | any;
+        try {
+          callContact = await wbot.getChatById(call.from);
+        } catch (error) {
+          if (isSessionClosedError(error)) {
+            logger.warn('Session closed during getChatById in VerifyCall, ignoring');
+            return;
+          }
+          throw error;
+        }
 
         // const profilePicUrl = await msgContact.getProfilePicUrl();
         const contact = await VerifyContact(callContact, tenantId);

@@ -12,10 +12,14 @@ let io: SocketIO;
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
-      origin: "*"
+      origin: "*",
+      methods: ["GET", "POST"]
     },
-    pingTimeout: 180000,
-    pingInterval: 60000
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    upgradeTimeout: 30000,
+    allowEIO3: true,
+    transports: ['websocket', 'polling']
   });
 
   const connRedis = {
@@ -32,7 +36,14 @@ export const initIO = (httpServer: Server): SocketIO => {
   io.use(async (socket, next) => {
     try {
       const token = socket?.handshake?.auth?.token;
+      
+      if (!token) {
+        logger.warn('Socket connection attempt without token');
+        return next(new Error("No token provided"));
+      }
+
       const verify = decodeTokenSocket(token);
+      
       if (verify.isValid) {
         const auth = socket?.handshake?.auth;
         socket.handshake.auth = {
@@ -42,26 +53,40 @@ export const initIO = (httpServer: Server): SocketIO => {
           tenantId: String(verify.data.tenantId)
         };
 
-        const user = await User.findByPk(verify.data.id, {
-          attributes: [
-            "id",
-            "tenantId",
-            "name",
-            "email",
-            "profile",
-            "status",
-            "lastLogin",
-            "lastOnline"
-          ]
-        });
-        socket.handshake.auth.user = user;
-        next();
+        try {
+          const user = await User.findByPk(verify.data.id, {
+            attributes: [
+              "id",
+              "tenantId",
+              "name",
+              "email",
+              "profile",
+              "status",
+              "lastLogin",
+              "lastOnline"
+            ]
+          });
+          
+          if (!user) {
+            logger.warn(`User not found for ID: ${verify.data.id}`);
+            return next(new Error("User not found"));
+          }
+          
+          socket.handshake.auth.user = user;
+          logger.info(`Socket authenticated for user: ${user.id}`);
+          next();
+        } catch (dbError) {
+          logger.error('Database error during socket authentication:', dbError);
+          return next(new Error("Database error"));
+        }
+      } else {
+        logger.warn('Invalid token provided for socket connection');
+        next(new Error("Invalid token"));
       }
-      next(new Error("authentication error"));
     } catch (error) {
-      logger.warn(`tokenInvalid: ${socket}`);
+      logger.error('Socket authentication error:', error);
       socket.emit(`tokenInvalid:${socket.id}`);
-      next(new Error("authentication error"));
+      next(new Error("Authentication failed"));
     }
   });
 

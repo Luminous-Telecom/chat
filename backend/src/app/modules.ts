@@ -42,6 +42,12 @@ export default async function modules(app): Promise<void> {
   // error handle
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use(async (err: Error, req: Request, res: Response, _: NextFunction) => {
+    // Verificar se os headers já foram enviados
+    if (res.headersSent) {
+      logger.warn('Headers already sent, cannot send error response');
+      return;
+    }
+
     if (err instanceof AppError) {
       if (err.statusCode === 403) {
         logger.warn(err);
