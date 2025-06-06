@@ -25,6 +25,7 @@
     "lodash": "^4.17.20",
     "mic-recorder-to-mp3": "^2.2.2",
     "printd": "^1.4.2",
+    "qrcode": "^1.5.4",
     "qrcode.vue": "^1.7.0",
     "quasar": "^1.22.2",
     "socket.io-client": "^3.0.5",
