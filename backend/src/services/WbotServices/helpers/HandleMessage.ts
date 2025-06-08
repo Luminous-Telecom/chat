@@ -100,10 +100,19 @@ const HandleMessage = async (
         8000,
         'getChat'
       );
+      
     } catch (error: any) {
       if (isRecoverableError(error)) {
+        if (error.message && (
+          error.message.includes('participants') || 
+          error.message.includes('Cannot read properties of undefined') ||
+          error.message.includes('Evaluation failed')
+        )) {
+          //logger.debug(`Expected message processing error (skipping): ${error.message}`);
+          return;
+        }
         logger.warn(`Recoverable error getting chat for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-        return; // Skip message but don't crash
+        return;
       }
       logger.error(`Critical error getting chat for message ${msg.id?.id || 'unknown'}: ${error.message}`);
       throw error;

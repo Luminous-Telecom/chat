@@ -27,7 +27,7 @@ const events: any = {};
 const JoinChatServer = (socket: Socket) => {
   const { user } = socket.handshake.auth;
 
-  logger.info(`joinChatServer USER ${user.name}`);
+  //logger.info(`joinChatServer USER ${user.name}`);
   const { tenantId } = user;
   const socketDataTenant = `socketData_${tenantId}`;
   let dataTenant: any;
@@ -430,7 +430,7 @@ const onDisconnect = (socket: Socket) => {
     if (reason === "transport error") {
       reason = "client terminated";
     }
-    logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
+    //logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
   });
 };
 

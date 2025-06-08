@@ -16,6 +16,49 @@ const reconnectionAttempts = new Map<number, number>();
 const MAX_RECONNECTION_ATTEMPTS = 3;
 const RECONNECTION_DELAY = 30000; // 30 segundos
 
+// Função auxiliar para validar e atualizar o objeto whatsapp
+const safeUpdateWhatsapp = async (whatsapp: Whatsapp, updateData: any): Promise<boolean> => {
+  try {
+    // Validações básicas
+    if (!whatsapp) {
+      logger.error(`safeUpdateWhatsapp: whatsapp é null ou undefined`);
+      return false;
+    }
+    
+    if (!whatsapp.id) {
+      logger.error(`safeUpdateWhatsapp: whatsapp.id é inválido`);
+      return false;
+    }
+    
+    if (typeof whatsapp.update !== "function") {
+      logger.error(`safeUpdateWhatsapp: whatsapp.update não é uma função para ID ${whatsapp.id}`);
+      
+      // Tentar recarregar o objeto do banco de dados
+      try {
+        const freshWhatsapp = await Whatsapp.findByPk(whatsapp.id);
+        if (freshWhatsapp && typeof freshWhatsapp.update === "function") {
+          await freshWhatsapp.update(updateData);
+          logger.info(`safeUpdateWhatsapp: Objeto whatsapp recarregado e atualizado com sucesso para ID ${whatsapp.id}`);
+          return true;
+        } else {
+          logger.error(`safeUpdateWhatsapp: Falha ao recarregar objeto whatsapp para ID ${whatsapp.id}`);
+          return false;
+        }
+      } catch (reloadError) {
+        logger.error(`safeUpdateWhatsapp: Erro ao recarregar whatsapp ${whatsapp.id}: ${reloadError}`);
+        return false;
+      }
+    }
+    
+    // Se chegou até aqui, o objeto é válido
+    await whatsapp.update(updateData);
+    return true;
+  } catch (error) {
+    logger.error(`safeUpdateWhatsapp: Erro ao atualizar whatsapp ${whatsapp?.id || 'unknown'}: ${error}`);
+    return false;
+  }
+};
+
 // Função para retry automático
 const scheduleReconnection = async (whatsapp: Whatsapp, delay: number = RECONNECTION_DELAY): Promise<void> => {
   const attempts = reconnectionAttempts.get(whatsapp.id) || 0;
@@ -63,7 +106,9 @@ const isRecoverableError = (error: Error): boolean => {
     'waiting for',
     'session closed',
     'page crashed',
-    'context destroyed'
+    'context destroyed',
+    'err_wapp_not_initialized',
+    'not initialized'
   ];
   
   return recoverablePatterns.some(pattern => message.includes(pattern));
@@ -99,13 +144,27 @@ const shouldRetry = (whatsappId: number, error: Error): boolean => {
   
   // Incrementar contador de tentativas
   reconnectionAttempts.set(whatsappId, attempts + 1);
+  
+  // Log específico para ERR_WAPP_NOT_INITIALIZED
+  if (error.message.toLowerCase().includes('err_wapp_not_initialized')) {
+    logger.info(`Recoverable error ERR_WAPP_NOT_INITIALIZED for WhatsApp ${whatsappId}, will retry (attempt ${attempts + 1}/${maxRetries})`);
+  }
+  
   return true;
 };
 
 // Função para delay com backoff exponencial
 const getRetryDelay = (attempt: number): number => {
   const baseDelay = 2000; // 2 segundos
-  return Math.min(baseDelay * Math.pow(2, attempt), 30000); // Max 30 segundos
+  const maxDelay = 30000; // 30 segundos
+  const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+  
+  // Para ERR_WAPP_NOT_INITIALIZED, usar um delay menor
+  if (attempt === 0) {
+    return 1000; // 1 segundo para primeira tentativa
+  }
+  
+  return delay;
 };
 
 export const StartWhatsAppSession = async (
@@ -118,9 +177,24 @@ export const StartWhatsAppSession = async (
     // Verificar se a sessão já está em um estado válido
     await whatsapp.reload();
     
-    if (!isRetry && (whatsapp.status === "CONNECTED" || whatsapp.status === "READY")) {
-      logger.info(`WhatsApp ${whatsapp.name} already in valid state: ${whatsapp.status}`);
-      return;
+    // Se não for retry, verificar se a sessão já está ativa na memória
+    if (!isRetry) {
+      const existingSession = getWbot(whatsapp.id);
+      const isSessionHealthy = existingSession && 
+                             existingSession.info && 
+                             !existingSession.pupPage?.isClosed() &&
+                             existingSession.pupPage?.target()?.type() === 'page';
+      
+      if (isSessionHealthy && (whatsapp.status === "CONNECTED" || whatsapp.status === "READY")) {
+        logger.info(`WhatsApp ${whatsapp.name} already in valid state: ${whatsapp.status}`);
+        return;
+      }
+      
+      // Se a sessão não está saudável na memória, remover e reconectar
+      if (existingSession) {
+        logger.warn(`WhatsApp ${whatsapp.name} found in memory but not healthy, removing and reconnecting`);
+        removeWbot(whatsapp.id);
+      }
     }
     
     // Log detalhado do estado atual
@@ -128,7 +202,7 @@ export const StartWhatsAppSession = async (
 
     // Atualizar estado inicial apenas se necessário
     if (whatsapp.status !== "OPENING") {
-      await whatsapp.update({ 
+      await safeUpdateWhatsapp(whatsapp, { 
         status: "OPENING",
         qrcode: "",
         qrData: "",
@@ -159,7 +233,7 @@ export const StartWhatsAppSession = async (
         logger.error(`Error starting WhatsApp session ${whatsapp.id}: ${error.message}`);
         
         // Atualizar status para erro
-        await whatsapp.update({ 
+        await safeUpdateWhatsapp(whatsapp, { 
           status: "DISCONNECTED",
           qrcode: ""
         });
@@ -226,7 +300,7 @@ export const StartWhatsAppSession = async (
       
       // Atualizar status para indicar tentativa de reconexão
       try {
-        await whatsapp.update({
+        await safeUpdateWhatsapp(whatsapp, {
           status: "OPENING",
           retries: attempts
         });
@@ -257,7 +331,7 @@ export const StartWhatsAppSession = async (
     try {
       const attempts = reconnectionAttempts.get(whatsapp.id) || 0;
       
-      await whatsapp.update({
+      await safeUpdateWhatsapp(whatsapp, {
         status: "DISCONNECTED",
         qrcode: "",
         qrData: "",

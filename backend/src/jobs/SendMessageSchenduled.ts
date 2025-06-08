@@ -16,9 +16,9 @@ export default {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async handle() {
     try {
-      logger.info("SendMessageSchenduled Initiated");
+      //logger.info("SendMessageSchenduled Initiated");
       await SendMessagesSchenduleWbot();
-      logger.info("Finalized SendMessageSchenduled");
+      //logger.info("Finalized SendMessageSchenduled");
     } catch (error) {
       logger.error({ message: "Error send messages", error });
       throw new Error(error);

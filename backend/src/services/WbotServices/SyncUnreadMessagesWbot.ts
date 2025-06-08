@@ -192,13 +192,20 @@ const SyncUnreadMessagesWbot = async (
         }
         
       } catch (error: any) {
-        logger.warn(`Error getting chats (attempt ${chatAttempts}): ${error.message}`);
-        
-        // Tratar erros específicos
+        // Mudando de warn para debug para erros esperados de participantes
         if (error.message && (
           error.message.includes('participants') || 
           error.message.includes('Cannot read properties of undefined') ||
-          error.message.includes('Evaluation failed') ||
+          error.message.includes('Evaluation failed')
+        )) {
+          logger.debug(`Expected sync error (skipping): ${error.message}`);
+          return;
+        }
+        
+        // Mantendo warn para outros tipos de erro
+        logger.warn(`Error getting chats (attempt ${chatAttempts}): ${error.message}`);
+        
+        if (error.message && (
           error.message.includes('Protocol error') ||
           error.message.includes('Target closed')
         )) {

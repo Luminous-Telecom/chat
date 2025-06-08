@@ -19,7 +19,8 @@ import {
   FormControl,
   InputLabel,
   Divider,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,6 +37,7 @@ import { channelService } from '../services/channelService';
 import { chatFlowService } from '../services/chatFlowService';
 import ChannelStatus from '../components/ChannelStatus';
 import QRCode from 'qrcode'; // Adicionar esta importação
+import { socketConnection } from '../services/socket';
 
 const Channels = () => {
   const [channels, setChannels] = useState([]);
@@ -51,6 +53,13 @@ const Channels = () => {
     instagramUser: '',
     instagramKey: '',
     isDefault: false
+  });
+
+  // Adicionar estado para controle do QR code
+  const [qrCodeState, setQrCodeState] = useState({
+    lastUpdate: null,
+    isExpired: false,
+    reconnectAttempts: 0
   });
 
   const channelTypes = [
@@ -120,6 +129,73 @@ const Channels = () => {
       return () => clearInterval(interval);
     }
   }, [qrModalOpen, selectedChannel]);
+
+  // Adicionar useEffect para WebSocket
+  useEffect(() => {
+    if (!selectedChannel || !qrModalOpen) return;
+
+    const socket = socketConnection;
+    const channelId = selectedChannel.id;
+    const tenantId = localStorage.getItem('tenantId');
+
+    // Handler para atualizações de QR code
+    const handleQrCodeUpdate = (data) => {
+      if (data.session.id === channelId) {
+        const now = Date.now();
+        
+        // Atualizar estado do QR code
+        setQrCodeState(prev => ({
+          ...prev,
+          lastUpdate: now,
+          isExpired: data.session.status === 'EXPIRED'
+        }));
+
+        // Atualizar canal selecionado
+        setSelectedChannel(prev => ({
+          ...prev,
+          ...data.session
+        }));
+
+        // Se QR code expirou, tentar reconectar
+        if (data.session.status === 'EXPIRED') {
+          handleRequestNewQrCode(channelId);
+        }
+      }
+    };
+
+    // Handler para heartbeat
+    const handleHeartbeat = (data) => {
+      if (data.session.id === channelId) {
+        setQrCodeState(prev => ({
+          ...prev,
+          lastUpdate: Date.now()
+        }));
+      }
+    };
+
+    // Inscrever nos eventos WebSocket
+    socket.on(`${tenantId}:whatsappSession`, handleQrCodeUpdate);
+    socket.on(`${tenantId}:whatsappSession:heartbeat`, handleHeartbeat);
+
+    // Verificar expiração do QR code
+    const expiryCheck = setInterval(() => {
+      const now = Date.now();
+      if (qrCodeState.lastUpdate && (now - qrCodeState.lastUpdate) > 60000) {
+        setQrCodeState(prev => ({
+          ...prev,
+          isExpired: true
+        }));
+        handleRequestNewQrCode(channelId);
+      }
+    }, 5000);
+
+    // Cleanup
+    return () => {
+      socket.off(`${tenantId}:whatsappSession`, handleQrCodeUpdate);
+      socket.off(`${tenantId}:whatsappSession:heartbeat`, handleHeartbeat);
+      clearInterval(expiryCheck);
+    };
+  }, [selectedChannel, qrModalOpen]);
 
   const loadChannels = async () => {
     try {
@@ -336,6 +412,36 @@ const Channels = () => {
     return channelType ? channelType.icon : <WhatsAppIcon />;
   };
 
+  // Função para solicitar novo QR code
+  const handleRequestNewQrCode = async (channelId) => {
+    try {
+      setQrCodeState(prev => ({
+        ...prev,
+        reconnectAttempts: prev.reconnectAttempts + 1
+      }));
+
+      await channelService.requestNewQrCode(channelId);
+      
+      // Resetar estado após solicitar novo QR code
+      setQrCodeState(prev => ({
+        ...prev,
+        isExpired: false,
+        lastUpdate: Date.now()
+      }));
+    } catch (error) {
+      console.error('Erro ao solicitar novo QR code:', error);
+      // Se falhar após 3 tentativas, fechar modal
+      if (qrCodeState.reconnectAttempts >= 3) {
+        setQrModalOpen(false);
+        setQrCodeState({
+          lastUpdate: null,
+          isExpired: false,
+          reconnectAttempts: 0
+        });
+      }
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -539,32 +645,72 @@ const Channels = () => {
       </Dialog>
 
       {/* Modal QR Code */}
-      <Dialog open={qrModalOpen} onClose={() => setQrModalOpen(false)}>
-        <DialogTitle>QR Code - {selectedChannel?.name}</DialogTitle>
+      <Dialog 
+        open={qrModalOpen} 
+        onClose={() => {
+          setQrModalOpen(false);
+          setQrCodeState({
+            lastUpdate: null,
+            isExpired: false,
+            reconnectAttempts: 0
+          });
+        }}
+      >
+        <DialogTitle>
+          QR Code - {selectedChannel?.name}
+          {qrCodeState.isExpired && (
+            <Typography variant="caption" color="error" sx={{ ml: 2 }}>
+              QR Code expirado
+            </Typography>
+          )}
+        </DialogTitle>
         <DialogContent>
           {selectedChannel?.qrcode ? (
             <Box sx={{ textAlign: 'center', p: 2 }}>
               <img
                 src={selectedChannel.qrcode}
                 alt="QR Code"
-                style={{ maxWidth: '300px', maxHeight: '300px', width: '100%', height: 'auto' }}
+                style={{ 
+                  maxWidth: '300px', 
+                  maxHeight: '300px', 
+                  width: '100%', 
+                  height: 'auto',
+                  opacity: qrCodeState.isExpired ? 0.5 : 1,
+                  transition: 'opacity 0.3s ease'
+                }}
                 onError={(e) => {
                   console.error('Error loading QR code:', selectedChannel.qrcode);
                   e.target.parentNode.innerHTML = '<div style="padding: 20px; text-align: center; color: #f44336;">Erro ao carregar QR Code. Dados inválidos.</div>';
                 }}
               />
               <Typography variant="body2" sx={{ mt: 2 }}>
-                Escaneie o QR Code com seu WhatsApp
+                {qrCodeState.isExpired 
+                  ? 'QR Code expirado. Tentando gerar um novo...'
+                  : 'Escaneie o QR Code com seu WhatsApp'}
               </Typography>
+              {qrCodeState.isExpired && (
+                <CircularProgress size={20} sx={{ ml: 1 }} />
+              )}
             </Box>
           ) : (
-            <Alert severity="info">
-              QR Code não disponível. Tente reconectar o canal.
-            </Alert>
+            <Box sx={{ textAlign: 'center', p: 2 }}>
+              <CircularProgress />
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                Gerando QR Code...
+              </Typography>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setQrModalOpen(false)}>Fechar</Button>
+          <Button 
+            onClick={() => handleRequestNewQrCode(selectedChannel?.id)}
+            disabled={!qrCodeState.isExpired}
+          >
+            Solicitar Novo QR Code
+          </Button>
+          <Button onClick={() => setQrModalOpen(false)}>
+            Fechar
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -8,7 +8,9 @@ dist
 .cache
 logs/
 WWebJS/
-
+package-lock.json
+backend
+.vscode
 
 yarn.lock
 yarn-error.log

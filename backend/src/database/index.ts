@@ -79,13 +79,13 @@ sequelize.addModels(models);
 // };
 
 sequelize.afterConnect(() => {
-  logger.info("DATABASE CONNECT");
+  //logger.info("DATABASE CONNECT");
   QueueJobs.default.add("VerifyTicketsChatBotInactives", {});
   QueueJobs.default.add("SendMessageSchenduled", {});
 });
 
 sequelize.afterDisconnect(() => {
-  logger.info("DATABASE DISCONNECT");
+  //logger.info("DATABASE DISCONNECT");
 
   // eslint-disable-next-line no-underscore-dangle
   // clearInterval(global._loopDb);

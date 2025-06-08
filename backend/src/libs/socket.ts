@@ -73,7 +73,7 @@ export const initIO = (httpServer: Server): SocketIO => {
           }
           
           socket.handshake.auth.user = user;
-          logger.info(`Socket authenticated for user: ${user.id}`);
+          //logger.info(`Socket authenticated for user: ${user.id}`);
           next();
         } catch (dbError) {
           logger.error('Database error during socket authentication:', dbError);
@@ -93,10 +93,10 @@ export const initIO = (httpServer: Server): SocketIO => {
   io.on("connection", socket => {
     const { tenantId } = socket.handshake.auth;
     if (tenantId) {
-      logger.info({
-        message: "Client connected in tenant",
-        data: socket.handshake.auth
-      });
+      //logger.info({
+        //message: "Client connected in tenant",
+        //data: socket.handshake.auth
+      //});
 
       // create room to tenant
       socket.join(tenantId.toString());
@@ -123,9 +123,9 @@ export const initIO = (httpServer: Server): SocketIO => {
     }
 
     socket.on("disconnect", (reason: any) => {
-      logger.info({
-        message: `SOCKET Client disconnected , ${tenantId}, ${reason}`
-      });
+      //logger.info({
+        //message: `SOCKET Client disconnected , ${tenantId}, ${reason}`
+      //});
     });
   });
   return io;

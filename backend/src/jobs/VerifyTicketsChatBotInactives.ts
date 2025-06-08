@@ -18,7 +18,7 @@ export default {
     try {
       logger.info("FindUpdateTicketsInactiveChatBot Initiated");
       await FindUpdateTicketsInactiveChatBot();
-      logger.info("Finalized FindUpdateTicketsInactiveChatBot");
+      //logger.info("Finalized FindUpdateTicketsInactiveChatBot");
     } catch (error) {
       logger.error({ message: "Error send messages", error });
       throw new Error(error);

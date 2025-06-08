@@ -1,101 +1,121 @@
 /* eslint-disable camelcase */
-import { Client, LocalAuth, NoAuth, DefaultOptions, WAState } from "whatsapp-web.js";
+import { Client, LocalAuth, DefaultOptions, WAState } from "whatsapp-web.js";
 import path from "path";
 import { rm } from "fs/promises";
 import { getIO } from "./socket";
 import Whatsapp from "../models/Whatsapp";
 import { logger } from "../utils/logger";
 import { isSessionClosedError } from "../helpers/HandleSessionError";
-import SyncUnreadMessagesWbot from "../services/WbotServices/SyncUnreadMessagesWbot";
+// import SyncUnreadMessagesWbot from "../services/WbotServices/SyncUnreadMessagesWbot";
 import AppError from "../errors/AppError";
 import QRCode from "qrcode";
 import fs from "fs";
+import { Op } from "sequelize";
+
+// Função auxiliar para validar e atualizar o objeto whatsapp
+const safeUpdateWhatsapp = async (whatsapp: Whatsapp, updateData: any): Promise<boolean> => {
+  try {
+    // Validações básicas
+    if (!whatsapp) {
+      logger.error(`safeUpdateWhatsapp: whatsapp é null ou undefined`);
+      return false;
+    }
+    
+    if (!whatsapp.id) {
+      logger.error(`safeUpdateWhatsapp: whatsapp.id é inválido`);
+      return false;
+    }
+    
+    if (typeof whatsapp.update !== "function") {
+      logger.error(`safeUpdateWhatsapp: whatsapp.update não é uma função para ID ${whatsapp.id}`);
+      
+      // Tentar recarregar o objeto do banco de dados
+      try {
+        const freshWhatsapp = await Whatsapp.findByPk(whatsapp.id);
+        if (freshWhatsapp && typeof freshWhatsapp.update === "function") {
+          await freshWhatsapp.update(updateData);
+          logger.info(`safeUpdateWhatsapp: Objeto whatsapp recarregado e atualizado com sucesso para ID ${whatsapp.id}`);
+          return true;
+        } else {
+          logger.error(`safeUpdateWhatsapp: Falha ao recarregar objeto whatsapp para ID ${whatsapp.id}`);
+          return false;
+        }
+      } catch (reloadError) {
+        logger.error(`safeUpdateWhatsapp: Erro ao recarregar whatsapp ${whatsapp.id}: ${reloadError}`);
+        return false;
+      }
+    }
+    
+    // Se chegou até aqui, o objeto é válido
+    await whatsapp.update(updateData);
+    return true;
+  } catch (error) {
+    logger.error(`safeUpdateWhatsapp: Erro ao atualizar whatsapp ${whatsapp?.id || 'unknown'}: ${error}`);
+    return false;
+  }
+};
 
 interface Session extends Client {
   id: number;
+  tenantId?: number;
+  lastHeartbeat?: number;
 }
 
+// Enhanced session state interface
 interface SessionState {
-  state: WAState | null;
+  isInitializing: boolean;
+  isReady: boolean;
+  lastError?: Error;
+  lastErrorTime?: number;
+  state?: WAState | null;
   data?: any;
+  lastHeartbeat?: number;
+  initStartTime?: number;
 }
 
+interface WhatsappWithRetry extends Whatsapp {
+  isRetry?: boolean;
+}
+
+// Enhanced QR Code cache interface
+interface QrCodeCache {
+  data: string;
+  image: string;
+  timestamp: number;
+  state: string;
+  lastEmit: number;
+  expiresAt: number;
+}
+
+// Enhanced initialization state
+interface InitState {
+  isInitializing: boolean;
+  lastInitAttempt: number;
+  initAttempts: number;
+  error?: Error;
+  initStartTime?: number;
+}
+
+// Global session management
 const sessions: Session[] = [];
-
-// Health check para sessões
+const sessionStates = new Map<number, SessionState>();
 const sessionHealthCheck = new Map<number, NodeJS.Timeout>();
+const qrCodeCache = new Map<number, QrCodeCache>();
+const initTimeouts = new Map<number, NodeJS.Timeout>();
+const initStates = new Map<number, InitState>();
 
-// Função para verificar saúde da sessão
-const checkSessionHealth = async (whatsappId: number): Promise<void> => {
-  try {
-    const session = getWbot(whatsappId);
-    const whatsapp = await Whatsapp.findByPk(whatsappId);
-    
-    if (!whatsapp) return;
-    
-    // Verificar se a sessão ainda está ativa
-    if (!session || !session.info || session.pupPage?.isClosed()) {
-      logger.warn(`Session health check failed for WhatsApp ${whatsappId} (${whatsapp.name}), attempting reconnection`);
-      
-      // Atualizar status no banco
-      await whatsapp.update({ status: "DISCONNECTED" });
-      
-      // Remover sessão inválida
-      removeWbot(whatsappId);
-      
-      // Tentar reconectar usando o sistema de retry
-      const { StartWhatsAppSession, getReconnectionAttempts } = require('../services/WbotServices/StartWhatsAppSession');
-      
-      // Só tentar reconectar se não estiver em muitas tentativas
-      const attempts = getReconnectionAttempts(whatsappId);
-      if (attempts < 3) {
-        logger.info(`Health check triggering reconnection for WhatsApp ${whatsappId} (attempt ${attempts + 1}/3)`);
-        await StartWhatsAppSession(whatsapp, true);
-      } else {
-        logger.warn(`Health check skipping reconnection for WhatsApp ${whatsappId} - too many attempts`);
-      }
-    } else {
-      // Sessão parece saudável, verificar se o status no banco está correto
-      if (whatsapp.status !== "CONNECTED" && whatsapp.status !== "READY") {
-        logger.info(`Health check updating status for WhatsApp ${whatsappId} from ${whatsapp.status} to CONNECTED`);
-        await whatsapp.update({ status: "CONNECTED" });
-      }
-    }
-  } catch (error: any) {
-    if (error.message !== "ERR_WAPP_NOT_INITIALIZED") {
-      logger.error(`Error in session health check for ${whatsappId}: ${error.message}`);
-    }
-  }
-};
+// Constants
+const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+const QR_CODE_EXPIRY = 60000; // 1 minute
+const SESSION_HEALTH_CHECK_INTERVAL = 45000; // 45 seconds
+const MAX_INIT_TIME = 120000; // 2 minutes max initialization time
+const RETRY_DELAY = 5000; // 5 seconds between retries
+const MAX_RETRY_ATTEMPTS = 3;
+const SYNC_INTERVAL = 60000; // 1 minute sync interval
 
-// Iniciar health check para uma sessão
-const startSessionHealthCheck = (whatsappId: number): void => {
-  // Limpar health check anterior se existir
-  const existingCheck = sessionHealthCheck.get(whatsappId);
-  if (existingCheck) {
-    clearInterval(existingCheck);
-  }
-  
-  // Verificar a cada 5 minutos
-  const healthCheckInterval = setInterval(() => {
-    checkSessionHealth(whatsappId);
-  }, 5 * 60 * 1000);
-  
-  sessionHealthCheck.set(whatsappId, healthCheckInterval);
-};
-
-// Parar health check para uma sessão
-const stopSessionHealthCheck = (whatsappId: number): void => {
-  const healthCheck = sessionHealthCheck.get(whatsappId);
-  if (healthCheck) {
-    clearInterval(healthCheck);
-    sessionHealthCheck.delete(whatsappId);
-  }
-};
-
-// Args otimizados para estabilidade (removidos argumentos problemáticos)
+// Optimized Chrome args - always include --no-sandbox for root
 const stable_args = [
-  "--no-sandbox",
+  "--no-sandbox", // Critical for root execution
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--disable-accelerated-2d-canvas",
@@ -103,7 +123,7 @@ const stable_args = [
   "--no-zygote",
   "--disable-gpu",
   "--disable-web-security",
-  "--disable-features=TranslateUI",
+  "--disable-features=TranslateUI,VizDisplayCompositor",
   "--disable-extensions",
   "--disable-default-apps",
   "--mute-audio",
@@ -111,20 +131,108 @@ const stable_args = [
   "--autoplay-policy=user-gesture-required",
   "--disable-background-networking",
   "--disable-sync",
-  "--disable-popup-blocking"
+  "--disable-popup-blocking",
+  "--disable-blink-features=AutomationControlled",
+  "--memory-pressure-off",
+  "--max_old_space_size=4096"
 ];
 
-// Cache do QR Code
-const qrCodeCache = new Map<number, { data: string; image: string; timestamp: number }>();
+const args: string[] = process.env.CHROME_ARGS
+  ? process.env.CHROME_ARGS.split(",")
+  : stable_args;
 
-// Cache para controlar timeout de inicialização
-const initTimeouts = new Map<number, NodeJS.Timeout>();
+args.unshift(`--user-agent=${DefaultOptions.userAgent}`);
 
+// Enhanced session initialization check
+const canInitSession = (whatsappId: number): boolean => {
+  const state = initStates.get(whatsappId);
+  const now = Date.now();
+  
+  if (!state) return true;
+  
+  // Check if already initializing and not stuck
+  if (state.isInitializing) {
+    // If initialization has been running for more than MAX_INIT_TIME, allow retry
+    if (state.initStartTime && (now - state.initStartTime) > MAX_INIT_TIME) {
+      logger.warn(`Session ${whatsappId} initialization stuck for ${now - state.initStartTime}ms, allowing retry`);
+      return true;
+    }
+    return false;
+  }
+  
+  // Rate limiting: wait between attempts
+  if (now - state.lastInitAttempt < RETRY_DELAY) return false;
+  
+  // Progressive backoff: more attempts = longer wait
+  const backoffTime = Math.min(60000, state.initAttempts * 10000); // Max 1 minute
+  if (state.initAttempts >= MAX_RETRY_ATTEMPTS && now - state.lastInitAttempt < backoffTime) {
+    return false;
+  }
+  
+  // Reset counter after successful wait period
+  if (now - state.lastInitAttempt > 120000) { // 2 minutes
+    state.initAttempts = 0;
+    initStates.set(whatsappId, state);
+  }
+  
+  return true;
+};
+
+// Enhanced state update function
+const updateInitState = (whatsappId: number, isInitializing: boolean, error?: Error): void => {
+  const state = initStates.get(whatsappId) || {
+    isInitializing: false,
+    lastInitAttempt: 0,
+    initAttempts: 0
+  };
+  
+  const now = Date.now();
+  
+  if (isInitializing) {
+    state.isInitializing = true;
+    state.lastInitAttempt = now;
+    state.initStartTime = now;
+    state.initAttempts++;
+  } else {
+    state.isInitializing = false;
+    state.initStartTime = undefined;
+    if (error) {
+      state.error = error;
+      // Reset attempts for certain recoverable errors
+      if (error.message.includes('sandbox') || error.message.includes('timeout')) {
+        state.initAttempts = Math.max(0, state.initAttempts - 1);
+      }
+    } else {
+      // Success - reset attempts
+      state.initAttempts = 0;
+      state.error = undefined;
+    }
+  }
+  
+  initStates.set(whatsappId, state);
+};
+
+// Enhanced session state management
+const updateSessionState = (whatsappId: number, updates: Partial<SessionState>): void => {
+  const currentState = sessionStates.get(whatsappId) || {
+    isInitializing: false,
+    isReady: false
+  };
+  
+  const newState = { ...currentState, ...updates, lastHeartbeat: Date.now() };
+  sessionStates.set(whatsappId, newState);
+  
+  logger.debug(`Session ${whatsappId} state updated: ${JSON.stringify(newState)}`);
+};
+
+// Enhanced QR code generation with better caching
 const generateQrCodeImage = async (qrData: string, whatsappId: number): Promise<string> => {
   try {
-    // Verificar cache
+    const now = Date.now();
     const cached = qrCodeCache.get(whatsappId);
-    if (cached && cached.data === qrData && (Date.now() - cached.timestamp) < 15000) {
+    
+    // Check cache validity
+    if (cached && cached.data === qrData && cached.expiresAt > now) {
       return cached.image;
     }
 
@@ -138,20 +246,414 @@ const generateQrCodeImage = async (qrData: string, whatsappId: number): Promise<
       }
     });
 
-    // Armazenar no cache
+    // Store with expiration
     qrCodeCache.set(whatsappId, {
       data: qrData,
       image: qrCodeDataURL,
-      timestamp: Date.now()
+      timestamp: now,
+      state: 'qrcode',
+      lastEmit: now,
+      expiresAt: now + QR_CODE_EXPIRY
     });
 
     return qrCodeDataURL;
   } catch (error: any) {
-    logger.error(`Error generating QR Code image: ${error}`);
+    logger.error(`Error generating QR Code image for ${whatsappId}: ${error}`);
     return qrData;
   }
 };
 
+// Enhanced session cleanup
+export const removeWbot = async (whatsappId: number, reason = 'manual'): Promise<void> => {
+  logger.info(`Removing session ${whatsappId} (reason: ${reason})`);
+  
+  try {
+    // Clear all timeouts and intervals
+    const timeoutId = initTimeouts.get(whatsappId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      initTimeouts.delete(whatsappId);
+    }
+    
+    stopSessionHealthCheck(whatsappId);
+
+    const sessionIndex = sessions.findIndex(s => s.id === whatsappId);
+    if (sessionIndex !== -1) {
+      const session = sessions[sessionIndex];
+      
+      try {
+        // Graceful shutdown with timeout
+        await Promise.race([
+          session.destroy(),
+          new Promise((resolve) => setTimeout(resolve, 5000))
+        ]);
+      } catch (err) {
+        logger.warn(`Error destroying session ${whatsappId}: ${err}`);
+      }
+      
+      sessions.splice(sessionIndex, 1);
+      logger.info(`Session ${whatsappId} removed from memory`);
+    }
+    
+    // Clear all caches
+    qrCodeCache.delete(whatsappId);
+    sessionStates.delete(whatsappId);
+    initStates.delete(whatsappId);
+    
+  } catch (err: any) {
+    if (!isSessionClosedError(err)) {
+      logger.error(`removeWbot error for ${whatsappId}: ${err}`);
+    }
+  }
+};
+
+// Enhanced session health checking
+const isSessionHealthy = async (wbot: Session): Promise<boolean> => {
+  try {
+    if (!wbot || !wbot.pupPage) {
+      logger.debug(`Session ${wbot?.id} unhealthy: no page`);
+      return false;
+    }
+    
+    // Check if page is closed
+    if (wbot.pupPage.isClosed()) {
+      logger.debug(`Session ${wbot.id} unhealthy: page closed`);
+      return false;
+    }
+    
+    // Check page target
+    const target = wbot.pupPage.target();
+    if (!target || target.type() !== 'page') {
+      logger.debug(`Session ${wbot.id} unhealthy: invalid target`);
+      return false;
+    }
+    
+    // Test WhatsApp state with timeout
+    try {
+      const statePromise = wbot.getState();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('State check timeout')), 10000)
+      );
+      
+      const state = await Promise.race([statePromise, timeoutPromise]);
+      const isHealthy = state !== null && state !== 'UNPAIRED';
+      
+      if (!isHealthy) {
+        logger.debug(`Session ${wbot.id} unhealthy: state ${state}`);
+      }
+      
+      return isHealthy;
+    } catch (error) {
+      logger.debug(`Session ${wbot.id} unhealthy: state check failed - ${error}`);
+      return false;
+    }
+  } catch (error) {
+    logger.error(`Error checking session health for ${wbot?.id}: ${error}`);
+    return false;
+  }
+};
+
+// Start session health monitoring
+const startSessionHealthCheck = (whatsappId: number): void => {
+  // Clear existing health check
+  stopSessionHealthCheck(whatsappId);
+  
+  const healthCheck = setInterval(async () => {
+    try {
+      const session = sessions.find(s => s.id === whatsappId);
+      if (!session) {
+        stopSessionHealthCheck(whatsappId);
+        return;
+      }
+      
+      const isHealthy = await isSessionHealthy(session);
+      updateSessionState(whatsappId, { isReady: isHealthy });
+      
+      if (!isHealthy) {
+        logger.warn(`Session ${whatsappId} failed health check, removing`);
+        await removeWbot(whatsappId, 'health-check-failure');
+        
+        // Attempt auto-recovery
+        try {
+          const whatsapp = await Whatsapp.findByPk(whatsappId);
+          if (whatsapp && whatsapp.status !== 'DISCONNECTED') {
+            logger.info(`Attempting auto-recovery for session ${whatsappId}`);
+            await StartWhatsAppSession({ ...whatsapp, isRetry: true } as WhatsappWithRetry);
+          }
+        } catch (recoveryError) {
+          logger.error(`Auto-recovery failed for session ${whatsappId}: ${recoveryError}`);
+        }
+      }
+    } catch (error) {
+      logger.error(`Health check error for session ${whatsappId}: ${error}`);
+    }
+  }, SESSION_HEALTH_CHECK_INTERVAL);
+  
+  sessionHealthCheck.set(whatsappId, healthCheck);
+};
+
+// Stop session health monitoring
+const stopSessionHealthCheck = (whatsappId: number): void => {
+  const healthCheck = sessionHealthCheck.get(whatsappId);
+  if (healthCheck) {
+    clearInterval(healthCheck);
+    sessionHealthCheck.delete(whatsappId);
+    logger.debug(`Health check stopped for session ${whatsappId}`);
+  }
+};
+
+// Enhanced session initialization
+export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
+  return new Promise<Session>(async (resolve, reject) => {
+    let initTimeout: NodeJS.Timeout | null = null;
+    
+    try {
+      const io = getIO();
+      
+      // Verify initialization eligibility
+      if (!canInitSession(whatsapp.id)) {
+        const state = initStates.get(whatsapp.id);
+        const waitTime = state?.lastInitAttempt ? 
+          Math.ceil((RETRY_DELAY - (Date.now() - state.lastInitAttempt)) / 1000) : 0;
+        throw new Error(`Session ${whatsapp.id} initialization blocked. Wait ${waitTime}s`);
+      }
+      
+      // Update initialization state
+      updateInitState(whatsapp.id, true);
+      updateSessionState(whatsapp.id, { isInitializing: true, isReady: false });
+      
+      // Clean up existing session
+      await removeWbot(whatsapp.id, 'reinit');
+      
+      logger.info(`Initializing WhatsApp session ${whatsapp.id} (${whatsapp.name})`);
+      
+      // Create new client with enhanced configuration
+      const wbot = new Client({
+        puppeteer: {
+          args: stable_args,
+          headless: true,
+          executablePath: process.env.CHROME_BIN || undefined,
+          ignoreDefaultArgs: ['--disable-extensions'],
+          handleSIGINT: false,
+          handleSIGTERM: false,
+          handleSIGHUP: false
+        },
+        authStrategy: new LocalAuth({ 
+          clientId: `wbot-${whatsapp.id}`,
+          dataPath: path.resolve(__dirname, "..", "..", ".wwebjs_auth")
+        }),
+        qrMaxRetries: 3,
+        authTimeoutMs: 90000, // Increased timeout
+        takeoverOnConflict: true,
+        takeoverTimeoutMs: 10000, // Increased takeover timeout
+        restartOnAuthFail: true
+      }) as Session;
+
+      // Set session properties
+      wbot.id = whatsapp.id;
+      wbot.tenantId = whatsapp.tenantId;
+      wbot.lastHeartbeat = Date.now();
+
+      // Set initialization timeout
+      initTimeout = setTimeout(() => {
+        updateInitState(whatsapp.id, false, new Error('Initialization timeout'));
+        updateSessionState(whatsapp.id, { isInitializing: false });
+        reject(new Error(`Session ${whatsapp.id} initialization timeout`));
+      }, MAX_INIT_TIME);
+
+      // Enhanced event handlers
+      wbot.on("qr", async (qr) => {
+        try {
+          logger.info(`QR code generated for session ${whatsapp.id}`);
+          const qrCode = await generateQrCodeImage(qr, whatsapp.id);
+          await emitQrCodeUpdate(whatsapp, qrCode, "qrcode");
+          updateSessionState(whatsapp.id, { isInitializing: true, isReady: false });
+        } catch (error) {
+          logger.error(`QR code handling error for ${whatsapp.id}: ${error}`);
+        }
+      });
+
+      wbot.on("authenticated", async () => {
+        try {
+          logger.info(`Session ${whatsapp.id} authenticated`);
+          
+          await safeUpdateWhatsapp(whatsapp, { 
+            status: "AUTHENTICATED",
+            qrcode: "",
+            retries: 0
+          });
+          
+          updateSessionState(whatsapp.id, { isInitializing: true, isReady: false });
+          
+          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+            action: "update",
+            session: {
+              id: whatsapp.id,
+              name: whatsapp.name,
+              status: "AUTHENTICATED",
+              qrcode: "",
+              number: whatsapp.number
+            }
+          });
+        } catch (error) {
+          logger.error(`Authentication event error for ${whatsapp.id}: ${error}`);
+        }
+      });
+
+      wbot.on("ready", async () => {
+        try {
+          if (initTimeout) {
+            clearTimeout(initTimeout);
+            initTimeout = null;
+          }
+          
+          updateInitState(whatsapp.id, false); // Success
+          updateSessionState(whatsapp.id, { isInitializing: false, isReady: true });
+          
+          // Add to sessions array
+          sessions.push(wbot);
+          logger.info(`Session ${whatsapp.id} added to sessions array. Total sessions: ${sessions.length}`);
+          
+          // Start health monitoring
+          startSessionHealthCheck(whatsapp.id);
+          
+          // Update database
+          await safeUpdateWhatsapp(whatsapp, {
+            status: "CONNECTED",
+            qrcode: "",
+            retries: 0,
+            number: wbot?.info?.wid?.user || whatsapp.number
+          });
+
+          // Emit success event
+          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+            action: "update",
+            session: {
+              id: whatsapp.id,
+              name: whatsapp.name,
+              status: "CONNECTED",
+              qrcode: "",
+              number: wbot?.info?.wid?.user || whatsapp.number
+            }
+          });
+
+          logger.info(`Session ${whatsapp.id} ready and connected successfully`);
+          resolve(wbot);
+        } catch (error) {
+          logger.error(`Ready event error for ${whatsapp.id}: ${error}`);
+          reject(error);
+        }
+      });
+
+      wbot.on("auth_failure", async (error: Error) => {
+        try {
+          if (initTimeout) {
+            clearTimeout(initTimeout);
+            initTimeout = null;
+          }
+          
+          updateInitState(whatsapp.id, false, error);
+          updateSessionState(whatsapp.id, { isInitializing: false, isReady: false, lastError: error });
+          
+          logger.error(`Authentication failed for ${whatsapp.id}: ${error.message}`);
+          
+          await safeUpdateWhatsapp(whatsapp, { 
+            status: "DISCONNECTED",
+            qrcode: "",
+            retries: (whatsapp.retries || 0) + 1
+          });
+          
+          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+            action: "update",
+            session: {
+              id: whatsapp.id,
+              name: whatsapp.name,
+              status: "DISCONNECTED",
+              qrcode: "",
+              number: whatsapp.number
+            }
+          });
+          
+          reject(error);
+        } catch (updateError) {
+          logger.error(`Auth failure handling error for ${whatsapp.id}: ${updateError}`);
+          reject(updateError instanceof Error ? updateError : new Error(String(updateError)));
+        }
+      });
+
+      wbot.on("disconnected", async (reason) => {
+        logger.warn(`Session ${whatsapp.id} disconnected: ${reason}`);
+        updateSessionState(whatsapp.id, { isReady: false });
+        stopSessionHealthCheck(whatsapp.id);
+        
+        // Remove from sessions array
+        const sessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
+        if (sessionIndex !== -1) {
+          sessions.splice(sessionIndex, 1);
+        }
+        
+        // Update database status
+        try {
+          await safeUpdateWhatsapp(whatsapp, { status: "DISCONNECTED" });
+        } catch (error) {
+          logger.error(`Error updating disconnected status: ${error}`);
+        }
+      });
+
+      // Initialize the client
+      await wbot.initialize();
+
+    } catch (error) {
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+      
+      const err = error instanceof Error ? error : new Error(String(error));
+      updateInitState(whatsapp.id, false, err);
+      updateSessionState(whatsapp.id, { isInitializing: false, lastError: err });
+      
+      logger.error(`Session ${whatsapp.id} initialization error: ${err.message}`);
+      
+      // Handle specific error types
+      if (err.message.includes('sandbox') || err.message.includes('Chrome')) {
+        logger.info(`Chrome/sandbox error for session ${whatsapp.id}, will retry with delay`);
+        setTimeout(() => {
+          initWbot(whatsapp).catch(retryError => {
+            logger.error(`Retry failed for session ${whatsapp.id}: ${retryError}`);
+          });
+        }, RETRY_DELAY);
+      }
+      
+      reject(err);
+    }
+  });
+};
+
+// Enhanced session retrieval with better error handling
+export const getWbot = (whatsappId: number): Session => {
+  const session = sessions.find(s => s.id === whatsappId);
+  
+  if (!session) {
+    logger.warn(`Session ${whatsappId} not found. Available: [${sessions.map(s => s.id).join(', ')}]`);
+    logger.warn(`Session states: ${JSON.stringify(Array.from(sessionStates.entries()).map(([id, state]) => ({ id, isReady: state.isReady, isInitializing: state.isInitializing })))}`);
+    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+  }
+  
+  // Check session state
+  const sessionState = sessionStates.get(whatsappId);
+  if (!sessionState?.isReady) {
+    logger.warn(`Session ${whatsappId} not ready (state: ${JSON.stringify(sessionState)})`);
+    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+  }
+  
+  // Update heartbeat
+  session.lastHeartbeat = Date.now();
+  updateSessionState(whatsappId, { lastHeartbeat: Date.now() });
+  
+  return session;
+};
+
+// Enhanced session folder cleanup
 export const apagarPastaSessao = async (id: number | string): Promise<void> => {
   const pathRoot = path.resolve(__dirname, "..", "..", ".wwebjs_auth");
   const pathSession = `${pathRoot}/session-wbot-${id}`;
@@ -164,872 +666,393 @@ export const apagarPastaSessao = async (id: number | string): Promise<void> => {
   }
 };
 
-export const removeWbot = (whatsappId: number): void => {
+// Session state query functions
+export const isSessionReady = (whatsappId: number): boolean => {
+  const sessionState = sessionStates.get(whatsappId);
+  return sessionState?.isReady || false;
+};
+
+export const isSessionInitializing = (whatsappId: number): boolean => {
+  const sessionState = sessionStates.get(whatsappId);
+  return sessionState?.isInitializing || false;
+};
+
+export const getSessionLastError = (whatsappId: number): Error | undefined => {
+  const sessionState = sessionStates.get(whatsappId);
+  return sessionState?.lastError;
+};
+
+export const clearSessionState = (whatsappId: number): void => {
+  sessionStates.delete(whatsappId);
+  initStates.delete(whatsappId);
+  qrCodeCache.delete(whatsappId);
+};
+
+// Enhanced session restoration
+export const restoreSession = async (whatsapp: Whatsapp): Promise<Session | null> => {
   try {
-    // Limpar timeout se existir
-    const timeoutId = initTimeouts.get(whatsappId);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      initTimeouts.delete(whatsappId);
-    }
+    logger.info(`Attempting to restore session ${whatsapp.id} (${whatsapp.name})`);
     
-    // Parar health check
-    stopSessionHealthCheck(whatsappId);
-
-    const sessionIndex = sessions.findIndex(s => s.id === whatsappId);
-    if (sessionIndex !== -1) {
-      const session = sessions[sessionIndex];
-      
-      // Destroy com timeout para evitar travamento
-      const destroyPromise = new Promise<void>((resolve) => {
-        try {
-          session.destroy();
-          resolve();
-        } catch (err) {
-          logger.warn(`Error destroying session ${whatsappId}: ${err}`);
-          resolve();
-        }
-      });
-      
-      const timeoutPromise = new Promise<void>((resolve) => {
-        setTimeout(() => {
-          logger.warn(`Timeout destroying session ${whatsappId}`);
-          resolve();
-        }, 5000);
-      });
-      
-      Promise.race([destroyPromise, timeoutPromise]).finally(() => {
-        sessions.splice(sessionIndex, 1);
-        logger.info(`Session ${whatsappId} removed from sessions array`);
-      });
-    }
+    // Clear previous state
+    clearSessionState(whatsapp.id);
     
-    qrCodeCache.delete(whatsappId);
-  } catch (err: any) {
-    if (!isSessionClosedError(err)) {
-      logger.error(`removeWbot | Error: ${err}`);
-    } else {
-      logger.warn(`removeWbot | Session already closed for whatsapp ${whatsappId}`);
-    }
-  }
-};
-
-// Função para verificar se deve usar timeout baseado no estado
-const shouldUseTimeout = (whatsapp: Whatsapp): boolean => {
-  const validStates = ["CONNECTED", "AUTHENTICATED", "READY", "qrcode"];
-  return !validStates.includes(whatsapp.status);
-};
-
-const args: string[] = process.env.CHROME_ARGS
-  ? process.env.CHROME_ARGS.split(",")
-  : stable_args;
-
-args.unshift(`--user-agent=${DefaultOptions.userAgent}`);
-
-export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
-  return new Promise<Session>(async (resolve, reject) => {
-    try {
-      const io = getIO();
-      const sessionName = whatsapp.name;
-      const { tenantId } = whatsapp;
-      let authStrategy: LocalAuth | NoAuth;
-
-      // Limpar timeout anterior se existir
-      const existingTimeout = initTimeouts.get(whatsapp.id);
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-        initTimeouts.delete(whatsapp.id);
-      }
-
-      // Estratégia de autenticação
-      const sessionPath = path.resolve(__dirname, "..", "..", ".wwebjs_auth", `session-wbot-${whatsapp.id}`);
-      const dataPath = path.resolve(__dirname, "..", "..", ".wwebjs_auth");
-      
-      // Garantir que o diretório existe
-      if (!fs.existsSync(dataPath)) {
-        fs.mkdirSync(dataPath, { recursive: true, mode: 0o775 });
-      }
-      
-      // Verificar se existe sessão salva
-      const hasLocalSession = fs.existsSync(sessionPath);
-      const hasDbSession = whatsapp?.session && 
-        (typeof whatsapp.session === 'string' ? whatsapp.session.trim() !== "" : 
-         typeof whatsapp.session === 'object' && whatsapp.session !== null);
-      
-      if (hasLocalSession || hasDbSession) {
-        try {
-          authStrategy = new LocalAuth({ 
-            clientId: `session-wbot-${whatsapp.id}`,
-            dataPath: dataPath
-          });
-          logger.info(`Using existing session for whatsapp ${whatsapp.id} (Local: ${hasLocalSession}, DB: ${hasDbSession})`);
-        } catch (error: any) {
-          logger.warn(`Error setting up LocalAuth for whatsapp ${whatsapp.id}, falling back to NoAuth: ${error.message}`);
-          authStrategy = new NoAuth();
-        }
-      } else {
-        logger.info(`No existing session found for whatsapp ${whatsapp.id}, using NoAuth`);
-        authStrategy = new NoAuth();
-      }
-
-      // Configuração do cliente com timeouts mais generosos
-      const wbot = new Client({
-        authStrategy: authStrategy,
-        puppeteer: {
-          headless: true,
-          executablePath: process.env.CHROME_BIN || undefined,
-          args,
-          timeout: 60000,
-          defaultViewport: null,
-          devtools: false,
-          handleSIGINT: false,
-          handleSIGTERM: false,
-          handleSIGHUP: false
-        },
-        webVersion: process.env.WEB_VERSION || "2.2409.2",
-        webVersionCache: {
-          type: "remote",
-          remotePath: "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html"
-        },
-        qrMaxRetries: 0,
-        takeoverOnConflict: true,
-        takeoverTimeoutMs: 5000
-      }) as Session;
-
-      wbot.id = whatsapp.id;
-
-      // Flag para controlar se já foi resolvido
-      let sessionResolved = false;
-
-      // Função segura para resolver apenas uma vez
-      const resolveSession = (value: Session) => {
-        if (!sessionResolved) {
-          sessionResolved = true;
-          const timeoutId = initTimeouts.get(whatsapp.id);
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-            initTimeouts.delete(whatsapp.id);
-          }
-          resolve(value);
-        }
-      };
-
-      const rejectSession = (error: Error) => {
-        if (!sessionResolved) {
-          sessionResolved = true;
-          const timeoutId = initTimeouts.get(whatsapp.id);
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-            initTimeouts.delete(whatsapp.id);
-          }
-          reject(error);
-        }
-      };
-
-      // Timeout de segurança mais inteligente
-      if (shouldUseTimeout(whatsapp)) {
-        const timeoutId = setTimeout(async () => {
-          try {
-            await whatsapp.reload();
-            
-            logger.warn(`Initialization timeout check for whatsapp ${whatsapp.id} after 300 seconds - Current status: ${whatsapp.status}`);
-            
-            const validStates = ["qrcode", "CONNECTED", "AUTHENTICATED", "READY"];
-            if (validStates.includes(whatsapp.status)) {
-              logger.info(`WhatsApp ${whatsapp.id} is in valid state (${whatsapp.status}), not timing out`);
-              return;
-            }
-            
-            if (wbot && wbot.pupPage && !wbot.pupPage.isClosed()) {
-              try {
-                const pageResponsive = await Promise.race([
-                  wbot.pupPage.evaluate(() => document.readyState),
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-                ]);
-                
-                if (pageResponsive) {
-                  logger.info(`WhatsApp ${whatsapp.id} browser session is responsive, not timing out`);
-                  return;
-                }
-              } catch (testError) {
-                logger.warn(`WhatsApp ${whatsapp.id} responsiveness test failed: ${testError}`);
-              }
-            }
-            
-            if (wbot && wbot.info && wbot.info.wid) {
-              logger.info(`WhatsApp ${whatsapp.id} has valid session info, not timing out`);
-              return;
-            }
-            
-            logger.warn(`WhatsApp ${whatsapp.id} initialization timeout - rejecting`);
-            rejectSession(new Error("Initialization timeout"));
-          } catch (error: any) {
-            logger.error(`Error in timeout check for WhatsApp ${whatsapp.id}: ${error}`);
-          }
-        }, 300000);
-
-        initTimeouts.set(whatsapp.id, timeoutId);
-      }
-
-      // Inicializar com retry em caso de erro
+    // Remove existing session if present
+    const existingSessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
+    if (existingSessionIndex !== -1) {
       try {
-        wbot.initialize();
-      } catch (initError: any) {
-        logger.error(`Error initializing wbot for ${whatsapp.id}: ${initError.message}`);
-        rejectSession(new Error(`Initialization failed: ${initError.message}`));
-        return;
+        const oldSession = sessions[existingSessionIndex];
+        await oldSession.destroy().catch(err => {
+          logger.warn(`Error destroying old session: ${err}`);
+        });
+      } catch (err) {
+        logger.warn(`Error handling old session: ${err}`);
       }
-      
-      // Evento QR Code
-      wbot.on("qr", async (qr: string) => {
-        if (whatsapp.status === "CONNECTED" || whatsapp.status === "AUTHENTICATED") {
-          logger.info(`Ignoring QR for ${sessionName}-ID: ${whatsapp.id} - already connected`);
-          return;
-        }
-        
-        logger.info(`QR CODE generated for ${sessionName}-ID: ${whatsapp.id}`);
-        
-        try {
-          const qrCodeImage = await generateQrCodeImage(qr, whatsapp.id);
-          
-          await whatsapp.update({ 
-            qrcode: qrCodeImage,
-            status: "qrcode", 
-            retries: 0 
-          });
-
-          const sessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
-          if (sessionIndex === -1) {
-            wbot.id = whatsapp.id;
-            sessions.push(wbot);
-          }
-          
-          // Iniciar health check para esta sessão
-          startSessionHealthCheck(whatsapp.id);
-
-          io.emit(`${tenantId}:whatsappSession`, {
-            action: "update",
-            session: {
-              id: whatsapp.id,
-              name: whatsapp.name,
-              status: "qrcode",
-              qrcode: qrCodeImage,
-              number: whatsapp.number
-            }
-          });
-
-          logger.info(`QR Code processed for whatsapp ${whatsapp.id}`);
-        } catch (error: any) {
-          logger.error(`Error processing QR code: ${error}`);
-          try {
-            await whatsapp.update({ 
-              qrcode: qr,
-              status: "qrcode", 
-              retries: 0 
-            });
-          } catch (updateError: any) {
-            logger.error(`Error updating QR fallback: ${updateError}`);
-          }
-        }
-      });
-
-      // Eventos de debug
-      wbot.on("change_state", async (state: string) => {
-        logger.debug(`WhatsApp ${whatsapp.id} state changed to: ${state}`);
-        
-        try {
-          // Tentar obter o estado atual da sessão
-          let sessionState: SessionState = { state: null };
-          
-          // Tentar diferentes métodos para obter o estado
-          try {
-            // Método 1: Usar o estado do cliente
-            const clientState = await wbot.getState();
-            if (clientState) {
-              sessionState = { state: clientState, data: clientState };
-            }
-          } catch (stateError) {
-            logger.debug(`Could not get state from client: ${stateError.message}`);
-            
-            try {
-              // Método 2: Usar o estado do puppeteer
-              if (wbot.pupPage && !wbot.pupPage.isClosed()) {
-                const pupState = await wbot.pupPage.evaluate(() => {
-                  return (window as any).Store?.State?.default?.state || null;
-                });
-                if (pupState) {
-                  sessionState = { state: pupState as WAState, data: pupState };
-                }
-              }
-            } catch (pupError) {
-              logger.debug(`Could not get state from puppeteer: ${pupError.message}`);
-            }
-          }
-          
-          // Se conseguimos obter o estado, salvar
-          if (sessionState.state) {
-            logger.info(`Saving session state for ${whatsapp.id} (state: ${state})`);
-            await whatsapp.update({
-              session: sessionState.data,
-              status: state
-            });
-          }
-          
-          // Atualizar status no banco
-          await whatsapp.update({ status: state });
-          
-          // Emitir atualização via socket
-          io.emit(`${tenantId}:whatsappSession`, {
-            action: "update",
-            session: {
-              id: whatsapp.id,
-              name: whatsapp.name,
-              status: state,
-              qrcode: "",
-              number: whatsapp.number
-            }
-          });
-        } catch (error: any) {
-          logger.error(`Error handling state change: ${error.message}`);
-        }
-      });
-
-      // Evento authenticated
-      wbot.on("authenticated", async (session: any) => {
-        logger.info(`Session: ${sessionName} AUTHENTICATED`);
-        
-        try {
-          // Adicionar sessão na memória imediatamente
-          const sessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
-          if (sessionIndex === -1) {
-            wbot.id = whatsapp.id;
-            sessions.push(wbot);
-            logger.info(`Session ${whatsapp.id} added to memory during authentication`);
-          } else {
-            // Se já existe, atualizar
-            sessions[sessionIndex] = wbot;
-            logger.info(`Session ${whatsapp.id} updated in memory during authentication`);
-          }
-
-          // Criar diretório da sessão se não existir
-          const sessionPath = path.resolve(__dirname, "..", "..", ".wwebjs_auth", `session-wbot-${whatsapp.id}`);
-          if (!fs.existsSync(sessionPath)) {
-            fs.mkdirSync(sessionPath, { recursive: true, mode: 0o775 });
-            logger.info(`Created session directory for whatsapp ${whatsapp.id}`);
-          }
-          
-          // Se temos uma sessão válida, salvar imediatamente
-          if (session) {
-            logger.info(`Saving initial session data for ${whatsapp.id}`);
-            try {
-              await whatsapp.update({ 
-                session: session,
-                status: "AUTHENTICATED"
-              });
-              logger.info(`Initial session data saved successfully for ${whatsapp.id}`);
-            } catch (error: any) {
-              logger.error(`Failed to save initial session data: ${error.message}`);
-            }
-          } else {
-            logger.info(`No initial session data for ${whatsapp.id}, will wait for ready event`);
-          }
-          
-          // Atualizar status e emitir evento
-          await whatsapp.update({ status: "AUTHENTICATED" });
-          io.emit(`${tenantId}:whatsappSession`, {
-            action: "update",
-            session: {
-              id: whatsapp.id,
-              name: whatsapp.name,
-              status: "AUTHENTICATED",
-              qrcode: "",
-              number: whatsapp.number
-            }
-          });
-
-          // Iniciar health check para esta sessão
-          startSessionHealthCheck(whatsapp.id);
-          
-        } catch (error: any) {
-          logger.error(`Error in authenticated event: ${error.message}`);
-        }
-      });
-
-      // Evento auth_failure
-      wbot.on("auth_failure", async (msg: string) => {
-        logger.error(`Authentication failure for ${sessionName}: ${msg}`);
-        
-        try {
-          const currentRetries = whatsapp.retries || 0;
-          
-          await whatsapp.update({
-            status: "DISCONNECTED",
-            session: "",
-            qrcode: "",
-            retries: currentRetries + 1
-          });
-
-          if (currentRetries >= 2) {
-            logger.info(`Clearing session for ${whatsapp.id} after ${currentRetries + 1} auth failures`);
-            await apagarPastaSessao(whatsapp.id);
-            await whatsapp.update({ retries: 0 });
-          }
-
-          io.emit(`${tenantId}:whatsappSession`, {
-            action: "update",
-            session: {
-              id: whatsapp.id,
-              name: whatsapp.name,
-              status: "DISCONNECTED",
-              qrcode: "",
-              number: whatsapp.number
-            }
-          });
-        } catch (error: any) {
-          logger.error(`Error handling auth failure: ${error}`);
-        }
-        
-        rejectSession(new Error(`Authentication failed: ${msg}`));
-      });
-
-      // Função para verificar se a sessão está saudável
-      const isSessionHealthy = async (wbot: Session): Promise<boolean> => {
-        try {
-          if (!wbot || !wbot.pupPage || wbot.pupPage.isClosed()) {
-            logger.warn(`Session health check failed: wbot or page invalid`);
-            return false;
-          }
-
-          if (!wbot.info || !wbot.info.wid) {
-            logger.warn(`Session health check failed: no valid session info`);
-            return false;
-          }
-
-          // Verificar se a página está responsiva
-          try {
-            const isResponsive = await Promise.race([
-              wbot.pupPage.evaluate(() => {
-                return document.readyState === 'complete' && 
-                       (document.querySelector('[data-testid="app"]') !== null ||
-                        document.querySelector('#app') !== null ||
-                        document.querySelector('.app') !== null ||
-                        typeof (window as any).Store !== 'undefined');
-              }),
-              new Promise<boolean>((_, reject) => 
-                setTimeout(() => reject(new Error('Page not responsive')), 5000)
-              )
-            ]);
-            
-            if (!isResponsive) {
-              logger.warn(`Session health check failed: page not responsive`);
-              return false;
-            }
-            
-            return true;
-          } catch (error) {
-            logger.warn(`Session health check failed: ${error.message}`);
-            return false;
-          }
-        } catch (error) {
-          logger.warn(`Session health check failed: ${error.message}`);
-          return false;
-        }
-      };
-
-      // Evento ready
-      wbot.on("ready", async () => {
-        logger.info(`Session: ${sessionName} READY`);
-
-        try {
-          // Verificar saúde da sessão antes de prosseguir
-          const isHealthy = await isSessionHealthy(wbot);
-          if (!isHealthy) {
-            logger.warn(`Session ${whatsapp.id} not healthy in ready event, waiting for recovery`);
-            return;
-          }
-
-          // Verificar se a sessão já está na memória
-          const sessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
-          if (sessionIndex === -1) {
-            // Se por algum motivo a sessão não estiver na memória, adicionar
-            wbot.id = whatsapp.id;
-            sessions.push(wbot);
-            logger.info(`Session ${whatsapp.id} added to memory during ready event (was missing)`);
-          } else {
-            // Atualizar a sessão existente
-            sessions[sessionIndex] = wbot;
-            logger.info(`Session ${whatsapp.id} updated in memory during ready event`);
-          }
-
-          // Tentar obter e salvar o estado atual da sessão com retry
-          let retryCount = 0;
-          const maxRetries = 3;
-          let sessionState: SessionState = { state: null };
-
-          while (retryCount < maxRetries && !sessionState.state) {
-            try {
-              // Tentar obter o estado do cliente
-              const clientState = await wbot.getState();
-              if (clientState) {
-                sessionState = { state: clientState, data: clientState };
-                logger.info(`Successfully got session state for ${whatsapp.id} (attempt ${retryCount + 1})`);
-                break;
-              }
-            } catch (stateError: any) {
-              logger.warn(`Failed to get session state (attempt ${retryCount + 1}): ${stateError.message}`);
-            }
-
-            // Se não conseguiu, tentar via puppeteer
-            if (!sessionState.state && wbot.pupPage && !wbot.pupPage.isClosed()) {
-              try {
-                const pupState = await wbot.pupPage.evaluate(() => {
-                  return (window as any).Store?.State?.default?.state || null;
-                });
-                if (pupState) {
-                  sessionState = { state: pupState as WAState, data: pupState };
-                  logger.info(`Got session state via puppeteer for ${whatsapp.id}`);
-                  break;
-                }
-              } catch (pupError: any) {
-                logger.warn(`Failed to get state via puppeteer (attempt ${retryCount + 1}): ${pupError.message}`);
-              }
-            }
-
-            retryCount++;
-            if (retryCount < maxRetries) {
-              logger.info(`Retrying to get session state for ${whatsapp.id} (${retryCount + 1}/${maxRetries})`);
-              await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar 2 segundos entre tentativas
-            }
-          }
-
-          // Se conseguimos obter o estado, salvar
-          if (sessionState.state) {
-            logger.info(`Saving final session state for ${whatsapp.id}`);
-            await whatsapp.update({
-              session: sessionState.data,
-              status: "CONNECTED",
-              qrcode: "",
-              retries: 0,
-              number: wbot?.info?.wid?.user
-            });
-            logger.info(`Session state saved successfully for ${whatsapp.id}`);
-          } else {
-            logger.error(`Failed to get session state after ${maxRetries} attempts for ${whatsapp.id}`);
-          }
-
-          try {
-            wbot.sendPresenceAvailable();
-          } catch (presenceError: any) {
-            logger.warn(`Error sending presence for ${whatsapp.id}: ${presenceError.message}`);
-          }
-          
-          // Processar informações adicionais em background
-          setImmediate(async () => {
-            try {
-              const info: any = wbot?.info;
-              let wbotVersion: string = "";
-              let wbotBrowser: string = "";
-              
-              try {
-                wbotVersion = await Promise.race([
-                  wbot.getWWebVersion(),
-                  new Promise<string>((_, reject) => 
-                    setTimeout(() => reject(new Error('timeout')), 10000)
-                  )
-                ]).catch(() => "unknown");
-                
-                wbotBrowser = await Promise.race([
-                  wbot.pupBrowser?.version() || Promise.resolve(""),
-                  new Promise<string>((_, reject) => 
-                    setTimeout(() => reject(new Error('timeout')), 5000)
-                  )
-                ]).catch(() => "unknown");
-              } catch (error: any) {
-                logger.warn(`Error getting version info: ${error.message}`);
-              }
-              
-              await whatsapp.update({
-                phone: {
-                  ...(info || {}),
-                  wbotVersion,
-                  wbotBrowser
-                }
-              });
-
-              io.emit(`${tenantId}:whatsappSession`, {
-                action: "readySession",
-                session: {
-                  id: whatsapp.id,
-                  name: whatsapp.name,
-                  status: "CONNECTED",
-                  number: wbot?.info?.wid?.user,
-                  phone: whatsapp.phone
-                }
-              });
-
-              // Sincronizar mensagens com delay maior
-              setTimeout(async () => {
-                try {
-                  if (wbot && wbot.pupPage && !wbot.pupPage.isClosed() && wbot.info) {
-                    await SyncUnreadMessagesWbot(wbot, tenantId);
-                  } else {
-                    logger.warn(`Skipping message sync for ${whatsapp.id} - session not ready`);
-                  }
-                } catch (error: any) {
-                  const errorMessage = error.message || '';
-                  
-                  if (errorMessage.includes('participants') || errorMessage.includes('Cannot read properties of undefined')) {
-                    logger.error(`WhatsApp participants/undefined property error for ${whatsapp.id} - session may be unstable`);
-                  } else if (errorMessage.includes('Evaluation failed')) {
-                    logger.error(`Puppeteer evaluation failed for ${whatsapp.id} - WhatsApp Web interface issue`);
-                  } else if (errorMessage.includes('Execution context was destroyed')) {
-                    logger.error(`Execution context destroyed for ${whatsapp.id} - browser page was closed`);
-                  } else if (errorMessage.includes('Protocol error')) {
-                    logger.error(`Protocol error for ${whatsapp.id} - connection issue`);
-                  } else {
-                    logger.warn(`Error syncing messages for ${whatsapp.id}: ${errorMessage}`);
-                  }
-                }
-              }, 10000);
-            } catch (error: any) {
-              logger.error(`Error updating additional info: ${error}`);
-            }
-          });
-          
-          resolveSession(wbot);
-        } catch (error: any) {
-          logger.error(`Error in ready event: ${error}`);
-          rejectSession(error);
-        }
-      });
-
-      // Evento disconnected
-      wbot.on("disconnected", async (reason: string) => {
-        logger.info(`Session: ${sessionName} DISCONNECTED: ${reason}`);
-        
-        try {
-          // Verificar se a sessão ainda está válida antes de desconectar
-          const isHealthy = await isSessionHealthy(wbot);
-          if (isHealthy) {
-            logger.info(`Session ${whatsapp.id} still healthy despite disconnect event, attempting recovery`);
-            return;
-          }
-          
-          // Tentar salvar o estado atual antes de desconectar
-          try {
-            const currentState = await wbot.getState();
-            if (currentState) {
-              await whatsapp.update({
-                session: currentState,
-                status: "DISCONNECTED",
-                qrcode: ""
-              });
-              logger.info(`Saved session state before disconnect for ${whatsapp.id}`);
-            }
-          } catch (stateError: any) {
-            logger.warn(`Could not save state before disconnect: ${stateError.message}`);
-          }
-
-          // Não remover a sessão imediatamente, dar chance de recuperação
-          setTimeout(async () => {
-            const stillHealthy = await isSessionHealthy(wbot);
-            if (!stillHealthy) {
-              logger.info(`Session ${whatsapp.id} not recovered, removing from memory`);
-              removeWbot(whatsapp.id);
-              
-              // Tentar reconectar usando o sistema de retry
-              const { StartWhatsAppSession, getReconnectionAttempts } = require('../services/WbotServices/StartWhatsAppSession');
-              const attempts = getReconnectionAttempts(whatsapp.id);
-              if (attempts < 3) {
-                logger.info(`Attempting to reconnect session ${whatsapp.id} (attempt ${attempts + 1}/3)`);
-                await StartWhatsAppSession(whatsapp, true);
-              }
-            }
-          }, 10000); // Aguardar 10 segundos antes de tentar reconectar
-
-          io.emit(`${tenantId}:whatsappSession`, {
-            action: "update",
-            session: {
-              id: whatsapp.id,
-              name: whatsapp.name,
-              status: "DISCONNECTED",
-              qrcode: "",
-              number: whatsapp.number
-            }
-          });
-        } catch (error: any) {
-          logger.error(`Error handling disconnection: ${error}`);
-        }
-      });
-
-      // Eventos de debug
-      wbot.on("change_state", (state: string) => {
-        logger.debug(`WhatsApp ${whatsapp.id} state changed to: ${state}`);
-      });
-
-      wbot.on("error", (error: Error) => {
-        logger.error(`WhatsApp ${whatsapp.id} client error: ${error.message}`);
-        
-        if (error.message.includes('Protocol error') || 
-            error.message.includes('Target closed') ||
-            error.message.includes('Session closed')) {
-          logger.warn(`Non-critical error for ${whatsapp.id}, not rejecting initialization`);
-        }
-      });
-
-    } catch (err: any) {
-      logger.error(`initWbot error: ${err}`);
-      reject(err);
-    }
-  });
-};
-
-export const getWbot = (whatsappId: number): Session => {
-  const sessionIndex = sessions.findIndex(s => s.id === whatsappId);
-  if (sessionIndex === -1) {
-    logger.warn(`Session ${whatsappId} not found in memory. Sessions in memory: ${sessions.length}`);
-    logger.warn(`Available session IDs: ${sessions.map(s => s.id).join(', ')}`);
-    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
-  }
-  return sessions[sessionIndex];
-};
-
-// Função para restaurar sessão na memória
-const restoreSessionInMemory = async (whatsapp: Whatsapp): Promise<boolean> => {
-  try {
-    // Verificar se já existe na memória
-    const existingSession = sessions.find(s => s.id === whatsapp.id);
-    if (existingSession) {
-      logger.info(`Session ${whatsapp.id} already in memory`);
-      return true;
+      sessions.splice(existingSessionIndex, 1);
+      logger.info(`Removed existing session ${whatsapp.id} before restore`);
     }
 
-    // Verificar se temos dados de sessão válidos
-    if (!whatsapp.session) {
-      logger.warn(`No session data available for ${whatsapp.id}`);
-      return false;
+    // Check for existing session data
+    const sessionPath = path.resolve(__dirname, "..", "..", ".wwebjs_auth", `session-wbot-${whatsapp.id}`);
+    const hasLocalSession = fs.existsSync(sessionPath);
+    const hasDbSession = whatsapp?.session && 
+      (typeof whatsapp.session === 'string' ? whatsapp.session.trim() !== "" : 
+       typeof whatsapp.session === 'object' && whatsapp.session !== null);
+    
+    if (!hasLocalSession && !hasDbSession) {
+      logger.info(`No existing session data for ${whatsapp.id}, cannot restore`);
+      return null;
     }
 
-    // Tentar inicializar a sessão
+    // Try to initialize with existing session data
     try {
       const wbot = await initWbot(whatsapp);
+      
+      // Verify session health
+      const isHealthy = await isSessionHealthy(wbot);
+      if (!isHealthy) {
+        logger.warn(`Restored session ${whatsapp.id} is not healthy`);
+        try {
+          await wbot.destroy();
+        } catch (err) {
+          logger.warn(`Error destroying unhealthy restored session: ${err}`);
+        }
+        return null;
+      }
+
+      logger.info(`Successfully restored session ${whatsapp.id}`);
+      return wbot;
+    } catch (error: any) {
+      logger.error(`Error restoring session ${whatsapp.id}: ${error.message}`);
+      return null;
+    }
+  } catch (error) {
+    logger.error(`Error in restoreSession for ${whatsapp.id}: ${error}`);
+    return null;
+  }
+};
+
+// Enhanced WebSocket emission with better error handling
+const emitQrCodeUpdate = async (whatsapp: Whatsapp, qrCode: string, state: string) => {
+  try {
+    // Validação mais robusta do objeto whatsapp
+    if (!whatsapp) {
+      logger.error(`emitQrCodeUpdate: whatsapp é null ou undefined`);
+      return;
+    }
+    
+    if (typeof whatsapp !== 'object') {
+      logger.error(`emitQrCodeUpdate: whatsapp não é um objeto válido. Tipo: ${typeof whatsapp}`);
+      return;
+    }
+    
+    if (!whatsapp.id) {
+      logger.error(`emitQrCodeUpdate: whatsapp.id é inválido. whatsapp: ${JSON.stringify(whatsapp)}`);
+      return;
+    }
+    
+    if (typeof whatsapp.update !== "function") {
+      logger.error(`emitQrCodeUpdate: whatsapp.update não é uma função. whatsapp.id: ${whatsapp.id}, tipo do update: ${typeof whatsapp.update}`);
+      
+      // Tentar recarregar o objeto whatsapp do banco de dados
+      try {
+        const freshWhatsapp = await Whatsapp.findByPk(whatsapp.id);
+        if (freshWhatsapp && typeof freshWhatsapp.update === "function") {
+          logger.info(`emitQrCodeUpdate: Objeto whatsapp recarregado com sucesso para ID ${whatsapp.id}`);
+          whatsapp = freshWhatsapp;
+        } else {
+          logger.error(`emitQrCodeUpdate: Falha ao recarregar objeto whatsapp para ID ${whatsapp.id}`);
+          return;
+        }
+      } catch (reloadError) {
+        logger.error(`emitQrCodeUpdate: Erro ao recarregar whatsapp ${whatsapp.id}: ${reloadError}`);
+        return;
+      }
+    }
+    
+    const io = getIO();
+    const now = Date.now();
+    
+    // Check cache to prevent spam
+    const cached = qrCodeCache.get(whatsapp.id);
+    const shouldEmit = !cached || 
+                      cached.state !== state || 
+                      cached.data !== qrCode || 
+                      (now - cached.lastEmit) > 5000;
+    
+    if (shouldEmit) {
+      // Update cache
+      qrCodeCache.set(whatsapp.id, {
+        data: qrCode,
+        image: qrCode,
+        timestamp: now,
+        state,
+        lastEmit: now,
+        expiresAt: now + QR_CODE_EXPIRY
+      });
+
+      // Emit via WebSocket
+      io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+        action: "update",
+        session: {
+          id: whatsapp.id,
+          name: whatsapp.name,
+          status: state,
+          qrcode: qrCode,
+          number: whatsapp.number,
+          timestamp: now
+        }
+      });
+
+      // Update database with additional error handling
+      try {
+        await safeUpdateWhatsapp(whatsapp, {
+          qrcode: qrCode,
+          status: state,
+          retries: 0
+        });
+        logger.debug(`QR Code update emitted for ${whatsapp.id} (${state})`);
+      } catch (updateError) {
+        logger.error(`Error updating whatsapp ${whatsapp.id} in database: ${updateError}`);
+        // Continue execution even if database update fails
+      }
+    }
+  } catch (error) {
+    logger.error(`Error emitting QR code update for ${whatsapp?.id || 'unknown'}: ${error}`);
+  }
+};
+
+// Enhanced session startup
+export const StartWhatsAppSession = async (whatsapp: WhatsappWithRetry): Promise<void> => {
+  try {
+    logger.info(`[StartWhatsAppSession] Starting session ${whatsapp.id} (${whatsapp.name}) - Status: ${whatsapp.status}, isRetry: ${whatsapp.isRetry || false}`);
+
+    // Clear previous state
+    clearSessionState(whatsapp.id);
+    
+    // Remove existing session
+    const existingSessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
+    if (existingSessionIndex !== -1) {
+      try {
+        const oldSession = sessions[existingSessionIndex];
+        await oldSession.destroy().catch(err => {
+          logger.warn(`Error destroying old session: ${err}`);
+        });
+      } catch (err) {
+        logger.warn(`Error handling old session: ${err}`);
+      }
+      sessions.splice(existingSessionIndex, 1);
+      logger.info(`Removed existing session ${whatsapp.id} before start`);
+    }
+
+    if (whatsapp.isRetry) {
+      logger.info(`[StartWhatsAppSession] Retrying WhatsApp session for ${whatsapp.name} (ID: ${whatsapp.id})`);
+    }
+
+    // Try to restore existing session first
+    const restored = await restoreSession(whatsapp);
+    if (restored) {
+      logger.info(`[StartWhatsAppSession] Successfully restored session ${whatsapp.id}`);
+      return;
+    }
+
+    // If restoration failed, initialize new session
+    try {
+      logger.info(`[StartWhatsAppSession] Attempting to initialize new session for ${whatsapp.id}`);
+      const wbot = await initWbot(whatsapp);
       if (wbot) {
-        logger.info(`Successfully restored session ${whatsapp.id} in memory`);
-        return true;
+        logger.info(`[StartWhatsAppSession] Successfully initialized new session for ${whatsapp.id}`);
+        return;
       }
     } catch (error: any) {
-      logger.error(`Failed to restore session ${whatsapp.id}: ${error.message}`);
+      logger.error(`[StartWhatsAppSession] Failed to initialize new session for ${whatsapp.id}: ${error.message}`);
+      throw error;
     }
-
-    return false;
   } catch (error: any) {
-    logger.error(`Error restoring session ${whatsapp.id}: ${error.message}`);
-    return false;
+    logger.error(`[StartWhatsAppSession] Error for ${whatsapp.name}: ${error.message}`);
+    throw error;
   }
 };
 
-// Função para iniciar todas as sessões
+// Enhanced session startup for all WhatsApp connections
 export const StartAllWhatsAppsSessions = async (): Promise<void> => {
   try {
-    const whatsapps = await Whatsapp.findAll();
-    logger.info(`[StartAllWhatsAppsSessions] Iniciando ${whatsapps.length} sessões do WhatsApp`);
-    
-    // Array para armazenar as sessões que precisam ser sincronizadas
-    const sessionsToSync: Whatsapp[] = [];
-    
-    for (const whatsapp of whatsapps) {
-      logger.info(`[StartAllWhatsAppsSessions] Iniciando sessão: ${whatsapp.name} (ID: ${whatsapp.id}, Status: ${whatsapp.status})`);
-      
-      // Verificar se já está em um estado válido
-      if (["CONNECTED", "AUTHENTICATED", "READY"].includes(whatsapp.status)) {
-        logger.info(`WhatsApp ${whatsapp.name} already in valid state: ${whatsapp.status}`);
-        
-        // Tentar restaurar a sessão na memória
-        const restored = await restoreSessionInMemory(whatsapp);
-        if (restored) {
-          logger.info(`Successfully restored session ${whatsapp.id} in memory`);
-          // Sincronizar imediatamente após restaurar
-          await syncSessionStatus();
-          continue;
-        }
-        
-        // Se não conseguiu restaurar, tentar reconectar
-        logger.info(`Failed to restore session ${whatsapp.id}, attempting reconnection`);
-        const { StartWhatsAppSession } = require('../services/WbotServices/StartWhatsAppSession');
-        await StartWhatsAppSession(whatsapp, true);
-        // Sincronizar imediatamente após reconectar
-        await syncSessionStatus();
-      } else {
-        // Iniciar nova sessão
-        const { StartWhatsAppSession } = require('../services/WbotServices/StartWhatsAppSession');
-        await StartWhatsAppSession(whatsapp, false);
-        // Sincronizar imediatamente após iniciar
-        await syncSessionStatus();
+    const whatsapps = await Whatsapp.findAll({
+      where: { 
+        status: { 
+          [Op.notIn]: ["DISCONNECTED"] 
+        } 
       }
+    });
+
+    if (whatsapps.length === 0) {
+      logger.info(`[StartAllWhatsAppsSessions] No WhatsApp sessions to start`);
+      return;
     }
 
-    // Iniciar o sync periódico após um curto delay
-    setTimeout(() => {
-      logger.info("Starting periodic session sync");
-      syncSessionStatus();
-    }, 5 * 60 * 1000); // 5 minutos de delay para o próximo sync
+    logger.info(`[StartAllWhatsAppsSessions] Starting ${whatsapps.length} WhatsApp sessions`);
 
-  } catch (error: any) {
-    logger.error(`Error starting WhatsApp sessions: ${error.message}`);
+    // Start sessions with controlled concurrency
+    const maxConcurrent = 3; // Limit concurrent initializations
+    for (let i = 0; i < whatsapps.length; i += maxConcurrent) {
+      const batch = whatsapps.slice(i, i + maxConcurrent);
+      
+      // Use Promise.all with individual error handling instead of Promise.allSettled
+      await Promise.all(
+        batch.map(async (whatsapp) => {
+          try {
+            logger.info(`[StartAllWhatsAppsSessions] Starting session: ${whatsapp.name} (ID: ${whatsapp.id}, Status: ${whatsapp.status})`);
+            await StartWhatsAppSession(whatsapp);
+          } catch (err) {
+            logger.error(`[StartAllWhatsAppsSessions] Error starting session for ${whatsapp.name}: ${err}`);
+            // Continue with other sessions even if one fails
+          }
+        })
+      );
+      
+      // Small delay between batches
+      if (i + maxConcurrent < whatsapps.length) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    
+    logger.info(`[StartAllWhatsAppsSessions] Completed starting sessions. Active sessions: ${sessions.length}`);
+  } catch (err) {
+    logger.error(`[StartAllWhatsAppsSessions] Error: ${err}`);
   }
 };
 
-// Função para verificar e sincronizar estado das sessões
+// Enhanced session synchronization
 export const syncSessionStatus = async (): Promise<void> => {
   try {
+    // Get all active sessions from database
     const whatsapps = await Whatsapp.findAll({
       where: {
-        status: ["CONNECTED", "READY", "AUTHENTICATED"]
+        status: {
+          [Op.in]: ["CONNECTED", "READY", "AUTHENTICATED", "OPENING"]
+        }
       }
     });
     
-    logger.info(`Periodic sync: ${whatsapps.length} sessions in DB, ${sessions.length} in memory`);
+    logger.info(`Session sync: ${whatsapps.length} sessions in DB, ${sessions.length} in memory`);
     
+    // Check sessions in memory
+    for (const session of [...sessions]) { // Create copy to avoid modification during iteration
+      const whatsapp = whatsapps.find(w => w.id === session.id);
+      
+      if (!whatsapp || whatsapp.status !== "CONNECTED") {
+        logger.warn(`Session ${session.id} in memory but not active in DB (DB status: ${whatsapp?.status || 'not found'})`);
+        
+        // Remove from memory
+        await removeWbot(session.id, 'sync-cleanup');
+        
+        // Update database if session exists
+        if (whatsapp) {
+          await safeUpdateWhatsapp(whatsapp, { 
+            status: "DISCONNECTED",
+            session: "",
+            qrcode: null
+          });
+          
+          // Emit update
+          const io = getIO();
+          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+            action: "update",
+            session: whatsapp
+          });
+        }
+      }
+    }
+    
+    // Check sessions in database
     for (const whatsapp of whatsapps) {
       const sessionInMemory = sessions.find(s => s.id === whatsapp.id);
       
       if (!sessionInMemory) {
-        logger.warn(`Session ${whatsapp.id} (${whatsapp.name}) not in memory during periodic sync`);
+        logger.warn(`Session ${whatsapp.id} (${whatsapp.name}) not in memory during sync`);
         
-        // Tentar restaurar a sessão na memória primeiro
-        const restored = await restoreSessionInMemory(whatsapp);
-        if (restored) {
-          logger.info(`Successfully restored session ${whatsapp.id} during periodic sync`);
-          continue;
-        }
-        
-        // Se não conseguiu restaurar, atualizar status no banco e tentar reconectar
-        await whatsapp.update({ status: "DISCONNECTED" });
-        
-        // Tentar reconectar automaticamente
-        const { StartWhatsAppSession } = require('../services/WbotServices/StartWhatsAppSession');
-        logger.info(`Attempting to reconnect session ${whatsapp.id} during periodic sync`);
-        
-        try {
-          await StartWhatsAppSession(whatsapp, true);
-        } catch (error: any) {
-          logger.error(`Failed to reconnect session ${whatsapp.id}: ${error.message}`);
+        if (whatsapp.status === "CONNECTED") {
+          logger.info(`Updating status for session ${whatsapp.id} from CONNECTED to DISCONNECTED (not in memory)`);
+          await safeUpdateWhatsapp(whatsapp, { 
+            status: "DISCONNECTED",
+            session: "",
+            qrcode: null
+          });
+          
+          // Emit update
+          const io = getIO();
+          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+            action: "update",
+            session: whatsapp
+          });
+          
+          // Attempt reconnection
+          try {
+            logger.info(`Attempting reconnection for session ${whatsapp.id} during sync`);
+            await StartWhatsAppSession({ ...whatsapp, isRetry: true } as WhatsappWithRetry);
+          } catch (error: any) {
+            logger.error(`Failed to reconnect session ${whatsapp.id}: ${error.message}`);
+          }
         }
       } else {
-        // Verificar se a sessão em memória está realmente ativa
-        if (!sessionInMemory.info || sessionInMemory.pupPage?.isClosed()) {
-          logger.warn(`Session ${whatsapp.id} in memory but not active during periodic sync`);
-          await whatsapp.update({ status: "DISCONNECTED" });
-          removeWbot(whatsapp.id);
+        // Verify session health
+        const isHealthy = await isSessionHealthy(sessionInMemory);
+        
+        if (!isHealthy) {
+          logger.warn(`Session ${whatsapp.id} in memory but unhealthy during sync`);
+          
+          // Remove from memory
+          await removeWbot(whatsapp.id, 'sync-health-check');
+          
+          // Update database
+          await safeUpdateWhatsapp(whatsapp, { 
+            status: "DISCONNECTED",
+            session: "",
+            qrcode: null
+          });
+          
+          // Emit update
+          const io = getIO();
+          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+            action: "update",
+            session: whatsapp
+          });
+          
+          // Attempt reconnection
+          try {
+            logger.info(`Attempting reconnection for session ${whatsapp.id} after health check failure`);
+            await StartWhatsAppSession({ ...whatsapp, isRetry: true } as WhatsappWithRetry);
+          } catch (error: any) {
+            logger.error(`Failed to reconnect session ${whatsapp.id}: ${error.message}`);
+          }
         }
       }
     }
   } catch (error: any) {
-    logger.error(`Error in periodic session sync: ${error.message}`);
+    logger.error(`Error in session sync: ${error.message}`);
   }
 };
 
-// Função para obter informações de debug das sessões
+// Debug information getter
 export const getSessionsDebugInfo = (): any => {
   return {
     sessionsInMemory: sessions.length,
@@ -1037,21 +1060,173 @@ export const getSessionsDebugInfo = (): any => {
       id: s.id,
       hasInfo: !!s.info,
       isPageClosed: s.pupPage?.isClosed() || false,
-      state: s.info?.wid || 'no-info'
-    }))
+      state: s.info?.wid || 'no-info',
+      lastHeartbeat: s.lastHeartbeat || 0
+    })),
+    sessionStates: Array.from(sessionStates.entries()).map(([id, state]) => ({
+      id,
+      ...state
+    })),
+    initStates: Array.from(initStates.entries()).map(([id, state]) => ({
+      id,
+      ...state
+    })),
+    cacheInfo: {
+      qrCodeCache: qrCodeCache.size,
+      healthChecks: sessionHealthCheck.size,
+      initTimeouts: initTimeouts.size
+    }
   };
 };
 
-// Função para limpeza periódica de cache
-export const cleanupInitCache = (): void => {
+// Global cleanup function
+const cleanupExpiredCaches = (): void => {
   const now = Date.now();
-  const maxAge = 10 * 60 * 1000; // 10 minutos
+  let cleaned = 0;
   
-  for (const [whatsappId, cache] of qrCodeCache.entries()) {
-    if (now - cache.timestamp > maxAge) {
+  // Clean QR code cache
+  for (const [whatsappId, cached] of qrCodeCache.entries()) {
+    if (cached.expiresAt < now) {
       qrCodeCache.delete(whatsappId);
+      cleaned++;
     }
   }
   
-  logger.debug('Init cache cleanup completed');
+  // Clean old init states
+  for (const [whatsappId, state] of initStates.entries()) {
+    if (!state.isInitializing && (now - state.lastInitAttempt) > 300000) { // 5 minutes
+      initStates.delete(whatsappId);
+      cleaned++;
+    }
+  }
+  
+  // Clean orphaned session states
+  for (const [whatsappId, state] of sessionStates.entries()) {
+    const hasSession = sessions.some(s => s.id === whatsappId);
+    if (!hasSession && !state.isInitializing && (now - (state.lastHeartbeat || 0)) > 300000) {
+      sessionStates.delete(whatsappId);
+      cleaned++;
+    }
+  }
+  
+  if (cleaned > 0) {
+    logger.debug(`Cleaned ${cleaned} expired cache entries`);
+  }
 };
+
+// Enhanced cache cleanup
+export const cleanupInitCache = (): void => {
+  cleanupExpiredCaches();
+};
+
+// Graceful shutdown handler
+export const gracefulShutdown = async (): Promise<void> => {
+  logger.info('Starting graceful shutdown of WhatsApp sessions...');
+  
+  try {
+    // Stop all health checks
+    for (const [whatsappId] of sessionHealthCheck.entries()) {
+      stopSessionHealthCheck(whatsappId);
+    }
+    
+    // Clear all timeouts
+    for (const [whatsappId, timeout] of initTimeouts.entries()) {
+      clearTimeout(timeout);
+      initTimeouts.delete(whatsappId);
+    }
+    
+    // Destroy all sessions with timeout
+    const destroyPromises = sessions.map(async (session) => {
+      try {
+        await Promise.race([
+          session.destroy(),
+          new Promise((resolve) => setTimeout(resolve, 10000)) // 10 second timeout
+        ]);
+        logger.info(`Session ${session.id} destroyed successfully`);
+      } catch (error) {
+        logger.warn(`Error destroying session ${session.id}: ${error}`);
+      }
+    });
+    
+    // Use Promise.all with individual error handling instead of Promise.allSettled
+    await Promise.all(destroyPromises.map(p => p.catch(err => {
+      logger.warn(`Promise rejection during shutdown: ${err}`);
+    })));
+    
+    // Clear all caches
+    sessions.length = 0;
+    sessionStates.clear();
+    initStates.clear();
+    qrCodeCache.clear();
+    sessionHealthCheck.clear();
+    initTimeouts.clear();
+    
+    logger.info('Graceful shutdown completed');
+  } catch (error) {
+    logger.error(`Error during graceful shutdown: ${error}`);
+  }
+};
+
+// Global cleanup intervals
+setInterval(() => {
+  cleanupExpiredCaches();
+}, 60000); // Run every minute
+
+// Periodic session sync
+setInterval(() => {
+  syncSessionStatus().catch(error => {
+    logger.error(`Periodic sync error: ${error}`);
+  });
+}, SYNC_INTERVAL);
+
+// Global heartbeat for WebSocket connections
+setInterval(() => {
+  const io = getIO();
+  const now = Date.now();
+  
+  // Check and clean expired QR codes
+  for (const [whatsappId, cached] of qrCodeCache.entries()) {
+    if (cached.expiresAt < now) {
+      qrCodeCache.delete(whatsappId);
+      continue;
+    }
+    
+    // Send heartbeat for active QR codes
+    const whatsapp = sessions.find(s => s.id === whatsappId);
+    if (whatsapp && cached.state === "qrcode") {
+      io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+        action: "heartbeat",
+        session: {
+          id: whatsappId,
+          timestamp: now
+        }
+      });
+    }
+  }
+  
+  // Update session heartbeats
+  for (const session of sessions) {
+    if (session.lastHeartbeat && (now - session.lastHeartbeat) > HEARTBEAT_INTERVAL * 2) {
+      logger.warn(`Session ${session.id} missed heartbeat, last seen ${new Date(session.lastHeartbeat).toISOString()}`);
+    }
+  }
+}, HEARTBEAT_INTERVAL);
+
+// Process event handlers for graceful shutdown
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGQUIT', gracefulShutdown);
+
+// Unhandled promise rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  // Don't exit immediately, try to cleanup first
+  gracefulShutdown().finally(() => {
+    process.exit(1);
+  });
+});

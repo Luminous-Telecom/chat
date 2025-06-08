@@ -1,8 +1,8 @@
 module.exports = [
   {
     script: "npm",
-    args: "run dev",
-    name: "izing-frontend-vue-dev",
+    args: "start",
+    name: "izing-frontend-react-dev",
     exec_mode: "fork",
     instances: 1,
     watch: false,
@@ -11,7 +11,6 @@ module.exports = [
       "node_modules",
       "dist",
       "build",
-      ".quasar",
       "*.log",
       ".git",
       "coverage",
@@ -19,7 +18,7 @@ module.exports = [
       "public"
     ],
     env: {
-      NODE_ENV: "production"
+      NODE_ENV: "development"
     },
     env_development: {
       NODE_ENV: "development"
