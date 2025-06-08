@@ -35,7 +35,11 @@ const useSocket = () => {
     }
 
     connectingInProgress = true;
-    const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3000';
+    const socketUrl = process.env.REACT_APP_BACKEND_URL;
+
+    if (!socketUrl) {
+      throw new Error('REACT_APP_BACKEND_URL não está configurada');
+    }
 
     globalSocketPromise = new Promise((resolve, reject) => {
       // Limpa socket anterior se existir

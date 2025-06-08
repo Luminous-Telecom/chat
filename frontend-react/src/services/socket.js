@@ -1,6 +1,10 @@
 import io from 'socket.io-client';
 
-const SOCKET_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8080';
+const SOCKET_URL = process.env.REACT_APP_BACKEND_URL;
+
+if (!SOCKET_URL) {
+  throw new Error('REACT_APP_BACKEND_URL não está configurada');
+}
 
 export const socketConnection = io(SOCKET_URL, {
   transports: ['websocket'],

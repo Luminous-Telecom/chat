@@ -14,9 +14,9 @@ export default async function express(app: Application): Promise<void> {
   
   const origin = [
     ...frontendUrls,
-    "http://localhost:3000", // React frontend local
-    "http://localhost:8080", // Vue frontend local
-  ];
+    process.env.FRONTEND_URL_REACT || '', // React frontend
+    process.env.FRONTEND_URL_VUE || '',   // Vue frontend
+  ].filter((url): url is string => Boolean(url)); // Remove valores vazios e garante que é string[]
   app.use(
     cors({
       origin,
@@ -55,7 +55,7 @@ export default async function express(app: Application): Promise<void> {
     app.use(
       helmet({
         crossOriginResourcePolicy: { policy: "cross-origin" },
-        crossOriginEmbedderPolicy: { policy: "credentialless" }
+        crossOriginEmbedderPolicy: true
       } as any)
     );
   }
