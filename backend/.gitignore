@@ -29,9 +29,6 @@ yarn-error.log
 WWebJS/
 .wwebjs_auth/
 
-backend/newrelic_agent.log
-newrelic_agent.log
-
 .data/
 reports/report.json
 reports/report.html
