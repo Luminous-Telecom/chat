@@ -29,6 +29,20 @@ export default async function application() {
 
     // needs to start after socket is available
     await StartAllWhatsAppsSessions();
+    
+    // Iniciar sincronização periódica de sessões
+    const { syncSessionStatus } = require('../libs/wbot');
+    
+    // Executar sincronização imediatamente após iniciar as sessões
+    console.info('Starting initial session sync...');
+    await syncSessionStatus();
+    
+    // Executar sincronização a cada 5 minutos
+    setInterval(async () => {
+      console.info('Running periodic session sync...');
+      await syncSessionStatus();
+    }, 5 * 60 * 1000);
+    
     GracefulShutdown(app.server);
   }
 

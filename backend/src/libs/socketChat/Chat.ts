@@ -262,8 +262,8 @@ const onChatMessage = (socket: Socket) => {
     if (dataTenant) {
       const { to } = data;
       const { from } = data;
-      console.log("TO", to);
-      console.log("FROM", from);
+      // console.log("TO", to);
+      // console.log("FROM", from);
       const od = data.type;
       if (data.type === "s") {
         data.type = "r";
@@ -456,6 +456,24 @@ events.getOpenChatWindows = (socket: Socket) => {
   });
 };
 
+events.onMessageSend = (socket: Socket) => {
+  socket.on("message:send", (data) => {
+    // Reemitir para todos os usuários do tenant
+    const { user } = socket.handshake.auth;
+    const { tenantId } = user;
+    socket.to(tenantId.toString()).emit("message:new", data);
+  });
+};
+
+events.onMessageTyping = (socket: Socket) => {
+  socket.on("message:typing", (data) => {
+    // Reemitir para todos os usuários do tenant
+    const { user } = socket.handshake.auth;
+    const { tenantId } = user;
+    socket.to(tenantId.toString()).emit("message:typing", data);
+  });
+};
+
 function register(socket: Socket): void {
   if (!socket.handshake?.auth?.tenantId) {
     return;
@@ -471,6 +489,8 @@ function register(socket: Socket): void {
   events.onChatMessage(socket);
   events.onChatTyping(socket);
   events.onChatStopTyping(socket);
+  events.onMessageSend(socket);
+  events.onMessageTyping(socket);
   events.saveChatWindow(socket);
   events.onDisconnect(socket);
 

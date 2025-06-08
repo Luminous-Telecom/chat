@@ -23,7 +23,7 @@ const sessions: Session[] = [];
 export const initInstaBot = async (connection: Whatsapp): Promise<Session> => {
   try {
     // const io = getIO();
-    let sessionCfg;
+    let sessionCfg: any;
     let loggedUser;
     // const { tenantId } = connection;
     const username = `@${connection.instagramUser}`;
@@ -34,7 +34,9 @@ export const initInstaBot = async (connection: Whatsapp): Promise<Session> => {
     }
 
     if (connection && connection.session) {
-      sessionCfg = JSON.parse(connection.session);
+      sessionCfg = typeof connection.session === 'string' ? 
+        JSON.parse(connection.session) : 
+        connection.session;
     }
 
     // se não funcionar, necessário adequar o "as"
@@ -43,9 +45,13 @@ export const initInstaBot = async (connection: Whatsapp): Promise<Session> => {
 
     ig.state.generateDevice(username);
 
-    if (connection.session) {
+    if (connection && connection.session) {
       const { accountLogin } = ig;
-      await ig.importState(JSON.parse(connection.session));
+      await ig.importState(
+        typeof connection.session === 'string' ? 
+          JSON.parse(connection.session) : 
+          connection.session
+      );
       ig.accountLogin = accountLogin;
     } else {
       // await ig.simulate.preLoginFlow();

@@ -44,8 +44,8 @@ class Whatsapp extends Model<Whatsapp> {
   @Column(DataType.TEXT)
   name: string;
 
-  @Column(DataType.TEXT)
-  session: string;
+  @Column(DataType.JSONB)
+  session: string | object | null;
 
   @Column(DataType.TEXT)
   qrcode: string;

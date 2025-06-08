@@ -22,6 +22,7 @@ import tenantRoutes from "./tenantRoutes";
 import WebHooksRoutes from "./WebHooksRoutes";
 import adminRoutes from "./adminRoutes";
 import facebookRoutes from "./facebookRoutes";
+import sessionDebugRoutes from "./sessionDebugRoutes";
 
 const routes = Router();
 
@@ -48,5 +49,6 @@ routes.use(tenantRoutes);
 routes.use(WebHooksRoutes);
 routes.use(adminRoutes);
 routes.use(facebookRoutes);
+routes.use(sessionDebugRoutes);
 
 export default routes;

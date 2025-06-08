@@ -80,7 +80,7 @@ const ListMessagesService = async ({
   const hasMore = count > offset + messages.length;
 
   return {
-    messages: messages.reverse(),
+    messages: messages,
     messagesOffLine,
     ticket,
     count,

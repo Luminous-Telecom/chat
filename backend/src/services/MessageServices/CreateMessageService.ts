@@ -55,7 +55,7 @@ const CreateMessageService = async ({
 
   socketEmit({
     tenantId,
-    type: "chat:create",
+    type: "message:new",
     payload: message
   });
 

@@ -27,8 +27,8 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
             type: "whatsapp"
           },
           status: {
-            [Op.notIn]: ["DISCONNECTED", "qrcode"]
-            // "DISCONNECTED"
+            [Op.notIn]: ["DISCONNECTED"]
+            // Incluindo sessões com qrcode para tentar reconectar automaticamente
           }
         }
       ],
@@ -44,9 +44,13 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
   const messengerSessions = whatsapps.filter(w => w.type === "messenger");
 
   if (whatsappSessions.length > 0) {
+    console.log(`[StartAllWhatsAppsSessions] Iniciando ${whatsappSessions.length} sessões do WhatsApp`);
     whatsappSessions.forEach(whatsapp => {
+      console.log(`[StartAllWhatsAppsSessions] Iniciando sessão: ${whatsapp.name} (ID: ${whatsapp.id}, Status: ${whatsapp.status})`);
       StartWhatsAppSession(whatsapp);
     });
+  } else {
+    console.log(`[StartAllWhatsAppsSessions] Nenhuma sessão do WhatsApp para iniciar`);
   }
 
   if (telegramSessions.length > 0) {

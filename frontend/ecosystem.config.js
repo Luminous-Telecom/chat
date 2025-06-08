@@ -5,7 +5,7 @@ module.exports = [
     name: "izing-frontend",
     exec_mode: "fork",
     instances: 1,
-    watch: true,
+    watch: false,
     watch_delay: 1000,
     ignore_watch: [
       "node_modules",

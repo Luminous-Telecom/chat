@@ -173,15 +173,24 @@ const CreateMessageSystemService = async ({
     }
 
     if (medias) {
+      logger.info(`Processing ${medias.length} media files`);
       await Promise.all(
         medias.map(async (media: Express.Multer.File | any) => {
           try {
+            logger.info(`Processing media: ${JSON.stringify({
+              originalname: media.originalname,
+              filename: media.filename,
+              mimetype: media.mimetype,
+              path: media.path,
+              size: media.size
+            })}`);
+            
             if (!media.filename) {
               const ext = media.mimetype.split("/")[1].split(";")[0];
               media.filename = `${new Date().getTime()}.${ext}`;
             }
           } catch (err) {
-            logger.error(err);
+            logger.error(`Error processing media filename: ${err}`);
           }
 
           messageData.mediaType = media.mimetype.split("/")[0];
@@ -192,15 +201,31 @@ const CreateMessageSystemService = async ({
 
           if (!messageData.scheduleDate) {
             /// enviar mensagem > run time
-            message = await SendMessageSystemProxy({
-              ticket,
-              messageData,
-              media,
-              userId
-            });
+            logger.info(`Sending message via proxy for ticket ${ticket.id}`);
+            try {
+              message = await SendMessageSystemProxy({
+                ticket,
+                messageData,
+                media,
+                userId
+              });
+              logger.info(`Message sent successfully: ${JSON.stringify(message)}`);
+            } catch (proxyError) {
+              logger.error(`Error in SendMessageSystemProxy: ${proxyError}`);
+              throw proxyError;
+            }
             ///
           }
 
+          logger.info(`Creating message in database with data: ${JSON.stringify({
+            ...messageData,
+            userId,
+            messageId: message.id?.id || message.messageId || null,
+            body: media.originalname,
+            mediaUrl: media.filename,
+            mediaType: media.mediaType || media.mimetype.substr(0, media.mimetype.indexOf("/"))
+          })}`);
+          
           const msgCreated = await Message.create({
             ...messageData,
             ...message,
@@ -212,6 +237,8 @@ const CreateMessageSystemService = async ({
               media.mediaType ||
               media.mimetype.substr(0, media.mimetype.indexOf("/"))
           });
+          
+          logger.info(`Message created successfully with ID: ${msgCreated.id}`);
 
           const messageCreated = await Message.findByPk(msgCreated.id, {
             include: [
@@ -259,12 +286,26 @@ const CreateMessageSystemService = async ({
         ///
       }
 
+      // Extract messageId properly - ensure it's a string
+      let extractedMessageId = null;
+      if (message.id) {
+        if (typeof message.id === 'string') {
+          extractedMessageId = message.id;
+        } else if (message.id.id && typeof message.id.id === 'string') {
+          extractedMessageId = message.id.id;
+        } else if (message.id._serialized && typeof message.id._serialized === 'string') {
+          extractedMessageId = message.id._serialized;
+        }
+      } else if (message.messageId && typeof message.messageId === 'string') {
+        extractedMessageId = message.messageId;
+      }
+
       const msgCreated = await Message.create({
         ...messageData,
         ...message,
         id: messageData.id,
         userId,
-        messageId: message.id?.id || message.messageId || null,
+        messageId: extractedMessageId,
         mediaType: "chat"
       });
 

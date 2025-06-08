@@ -9,7 +9,10 @@ type Events =
   | "ticket:create"
   | "contact:update"
   | "contact:delete"
-  | "notification:new";
+  | "notification:new"
+  | "message:new"
+  | "message:update"
+  | "message:typing";
 
 interface ObjEvent {
   tenantId: number | string;
@@ -24,6 +27,12 @@ const emitEvent = ({ tenantId, type, payload }: ObjEvent): void => {
 
   if (type.indexOf("contact:") !== -1) {
     eventChannel = `${tenantId}:contactList`;
+  }
+
+  // Emitir eventos de mensagem diretamente
+  if (type.indexOf("message:") !== -1) {
+    io.to(tenantId.toString()).emit(type, payload);
+    return;
   }
 
   io.to(tenantId.toString()).emit(eventChannel, {

@@ -3,6 +3,7 @@ import { MessageMedia } from "whatsapp-web.js";
 import Message from "../../models/Message";
 import { logger } from "../../utils/logger";
 import { getWbot } from "../../libs/wbot";
+import socketEmit from "../../helpers/socketEmit";
 
 const SendMessage = async (message: Message): Promise<void> => {
   logger.info(`SendMessage: ${message.id}`);
@@ -45,6 +46,13 @@ const SendMessage = async (message: Message): Promise<void> => {
   };
 
   await Message.update({ ...messageToUpdate }, { where: { id: message.id } });
+
+  // Emitir evento de atualização da mensagem
+  socketEmit({
+    tenantId: message.ticket.tenantId,
+    type: "message:update",
+    payload: { ...message.toJSON(), ...messageToUpdate }
+  });
 
   logger.info("rabbit::sendedMessage", sendedMessage.id.id);
 };
