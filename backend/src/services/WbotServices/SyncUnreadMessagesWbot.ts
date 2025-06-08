@@ -48,87 +48,57 @@ const SyncUnreadMessagesWbot = async (
     // Aguardar um pouco antes de buscar chats
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Buscar chats com múltiplas tentativas
+    // Buscar chats (tentativa única)
     let chats: any[] = [];
-    let attempts = 0;
-    const maxAttempts = 3;
 
-    while (attempts < maxAttempts && chats.length === 0) {
-      try {
-        attempts++;
-        logger.info(`Attempting to get chats (attempt ${attempts}/${maxAttempts})`);
-        
-        // Aguardar um pouco mais antes de tentar buscar chats
-        if (attempts > 1) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-        }
-        
-        const chatsPromise = wbot.getChats();
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout getting chats')), 15000);
+    try {
+      logger.info('Attempting to get chats');
+      
+      const chatsPromise = wbot.getChats();
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout getting chats')), 15000);
+      });
+
+      chats = await Promise.race([chatsPromise, timeoutPromise]) as any[];
+      
+      // Validar se os chats retornados são válidos
+      if (chats && Array.isArray(chats)) {
+        // Filtrar chats inválidos que podem causar o erro de participants
+        chats = chats.filter(chat => {
+          try {
+            // Verificar se o chat tem as propriedades básicas necessárias
+            return chat && 
+                   typeof chat === 'object' &&
+                   chat.id &&
+                   chat.id._serialized &&
+                   typeof chat.unreadCount !== 'undefined' &&
+                   typeof chat.isGroup !== 'undefined';
+          } catch (filterError: any) {
+            logger.warn(`Invalid chat object detected and filtered: ${filterError.message}`);
+            return false;
+          }
         });
-
-        chats = await Promise.race([chatsPromise, timeoutPromise]) as any[];
         
-        // Validar se os chats retornados são válidos
-        if (chats && Array.isArray(chats)) {
-          // Filtrar chats inválidos que podem causar o erro de participants
-          chats = chats.filter(chat => {
-            try {
-              // Verificar se o chat tem as propriedades básicas necessárias
-              return chat && 
-                     typeof chat === 'object' &&
-                     chat.id &&
-                     chat.id._serialized &&
-                     typeof chat.unreadCount !== 'undefined' &&
-                     typeof chat.isGroup !== 'undefined';
-            } catch (filterError: any) {
-              logger.warn(`Invalid chat object detected and filtered: ${filterError.message}`);
-              return false;
-            }
-          });
-          
-          if (chats.length > 0) {
-            logger.info(`Successfully retrieved ${chats.length} valid chats`);
-            break;
-          }
-        }
-        
-        // Aguardar antes da próxima tentativa
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
-        }
-        
-      } catch (error: any) {
-        logger.warn(`Error getting chats (attempt ${attempts}): ${error.message}`);
-        
-        // Se o erro contém 'participants', é o erro específico que estamos tentando resolver
-        if (error.message && error.message.includes('participants')) {
-          logger.error('Detected participants error - WhatsApp session may be unstable');
-          
-          // Aguardar mais tempo antes de tentar novamente
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 10000));
-          }
-        } else {
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-          }
-        }
-        
-        if (attempts === maxAttempts) {
-          // Se for erro de participants, não fazer throw para evitar crash
-          if (error.message && error.message.includes('participants')) {
-            logger.error('Max attempts reached with participants error - skipping chat sync to prevent crash');
-            return;
-          }
-          throw error;
+        if (chats.length > 0) {
+          logger.info(`Successfully retrieved ${chats.length} valid chats`);
         }
       }
+      
+    } catch (error: any) {
+      logger.warn(`Error getting chats: ${error.message}`);
+      
+      // Se o erro contém 'participants', é o erro específico que estamos tentando resolver
+      if (error.message && error.message.includes('participants')) {
+        logger.error('Detected participants error - WhatsApp session may be unstable - skipping chat sync');
+        return;
+      }
+      
+      // Para outros tipos de erro, fazer throw
+      throw error;
     }
     
     if (!chats || chats.length === 0) {
-      logger.info(`No chats found for WhatsApp ${wbot.id} after ${maxAttempts} attempts`);
+      logger.info(`No chats found for WhatsApp ${wbot.id}`);
       return;
     }
 
