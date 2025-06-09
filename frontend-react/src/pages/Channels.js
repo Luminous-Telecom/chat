@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import {
   Box,
   Card,
@@ -38,8 +39,12 @@ import { chatFlowService } from '../services/chatFlowService';
 import ChannelStatus from '../components/ChannelStatus';
 import QRCode from 'qrcode'; // Adicionar esta importação
 import useSocket from '../hooks/useSocket';
+import { useNotification } from '../components/common/Notifications/NotificationProvider';
+import { addDisconnectedChannel, removeDisconnectedChannel } from '../store/notificationSlice';
 
 const Channels = () => {
+  const dispatch = useDispatch();
+  const { showNotification } = useNotification();
   const [channels, setChannels] = useState([]);
   const [chatFlows, setChatFlows] = useState([]);
   const [, setLoading] = useState(false);
@@ -82,6 +87,26 @@ const Channels = () => {
       if (data && (data.action === 'update' || data.action === 'session')) {
         loadChannels();
         
+        // Verificar se o canal foi desconectado
+        if (data.session && (data.session.status === 'DISCONNECTED' || !data.session.status)) {
+          dispatch(addDisconnectedChannel(data.session.id));
+          showNotification({
+            type: 'error',
+            title: 'Canal Desconectado',
+            message: `O canal ${data.session.name} foi desconectado.`,
+            persistent: true,
+            actions: [
+              {
+                label: 'Reconectar',
+                onClick: () => handleStartSession(data.session.id)
+              }
+            ]
+          });
+        } else if (data.session && (data.session.status === 'CONNECTED' || data.session.status === 'OPEN')) {
+          // Remover notificação quando o canal reconectar
+          dispatch(removeDisconnectedChannel(data.session.id));
+        }
+        
         // Se o modal QR está aberto e o canal foi conectado, fechar o modal
         if (qrModalOpen && selectedChannel && data.session) {
           const updatedChannel = data.session;
@@ -100,7 +125,7 @@ const Channels = () => {
     return () => {
       window.removeEventListener('whatsappSessionUpdate', handleWhatsappSessionUpdate);
     };
-  }, [qrModalOpen, selectedChannel]);
+  }, [qrModalOpen, selectedChannel, dispatch, showNotification]);
 
   // UseEffect para monitorar mudanças no selectedChannel e fechar modal quando conectado
   useEffect(() => {
