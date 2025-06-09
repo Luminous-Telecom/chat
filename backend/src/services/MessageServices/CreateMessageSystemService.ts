@@ -299,7 +299,6 @@ const CreateMessageSystemService = async ({
 
       const msgCreated = await Message.create({
         ...messageData,
-        ...message,
         userId,
         messageId: extractedMessageId,
         mediaType: "chat"
