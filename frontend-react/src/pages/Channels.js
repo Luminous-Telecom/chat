@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import {
   Box,
@@ -20,8 +20,9 @@ import {
   FormControl,
   InputLabel,
   Divider,
-  Alert,
-  CircularProgress
+  CircularProgress,
+  Tooltip,
+  Chip
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -45,9 +46,10 @@ import { addDisconnectedChannel, removeDisconnectedChannel } from '../store/noti
 const Channels = () => {
   const dispatch = useDispatch();
   const { showNotification } = useNotification();
+  const socket = useSocket();
   const [channels, setChannels] = useState([]);
   const [chatFlows, setChatFlows] = useState([]);
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -67,27 +69,87 @@ const Channels = () => {
     reconnectAttempts: 0
   });
 
-  const socket = useSocket();
-
   const channelTypes = [
     { label: 'WhatsApp', value: 'whatsapp', icon: <WhatsAppIcon /> },
     { label: 'Telegram', value: 'telegram', icon: <TelegramIcon /> },
     { label: 'Instagram', value: 'instagram', icon: <InstagramIcon /> }
   ];
 
+  // Definir loadChannels primeiro
+  const loadChannels = useCallback(async () => {
+    try {
+      const response = await channelService.list();
+      setChannels(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar canais:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erro ao Carregar Canais',
+        message: error.message || 'Não foi possível carregar a lista de canais.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [showNotification]);
+
+  const loadChatFlows = useCallback(async () => {
+    try {
+      const response = await chatFlowService.list();
+      setChatFlows(response.data.chatFlow || []);
+    } catch (error) {
+      console.error('Erro ao carregar fluxos:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erro ao Carregar Fluxos',
+        message: error.message || 'Não foi possível carregar a lista de fluxos.'
+      });
+    }
+  }, [showNotification]);
+
+  // Agora podemos usar loadChannels nos outros useCallbacks
+  const handleStartSession = useCallback(async (channelId) => {
+    try {
+      await channelService.startSession(channelId);
+      loadChannels();
+    } catch (error) {
+      console.error('Erro ao iniciar sessão:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erro ao Iniciar Sessão',
+        message: error.message || 'Não foi possível iniciar a sessão.'
+      });
+    }
+  }, [loadChannels, showNotification]);
+
+  const handleRequestNewQrCode = useCallback(async (channelId) => {
+    try {
+      await channelService.requestNewQrCode(channelId);
+      setQrCodeState(prev => ({
+        ...prev,
+        isExpired: false,
+        lastUpdate: Date.now()
+      }));
+    } catch (error) {
+      console.error('Erro ao solicitar novo QR code:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erro ao Solicitar QR Code',
+        message: error.message || 'Não foi possível solicitar um novo QR code.'
+      });
+    }
+  }, [showNotification]);
+
+  // Primeiro useEffect com handleStartSession na dependência
   useEffect(() => {
     loadChannels();
     loadChatFlows();
 
-    // Listener para atualizações de sessão WhatsApp via socket
     const handleWhatsappSessionUpdate = (event) => {
       const data = event.detail;
       
-      // Recarrega a lista de canais quando há mudança de status
       if (data && (data.action === 'update' || data.action === 'session')) {
         loadChannels();
         
-        // Verificar se o canal foi desconectado
         if (data.session && (data.session.status === 'DISCONNECTED' || !data.session.status)) {
           dispatch(addDisconnectedChannel(data.session.id));
           showNotification({
@@ -103,11 +165,9 @@ const Channels = () => {
             ]
           });
         } else if (data.session && (data.session.status === 'CONNECTED' || data.session.status === 'OPEN')) {
-          // Remover notificação quando o canal reconectar
           dispatch(removeDisconnectedChannel(data.session.id));
         }
         
-        // Se o modal QR está aberto e o canal foi conectado, fechar o modal
         if (qrModalOpen && selectedChannel && data.session) {
           const updatedChannel = data.session;
           if (updatedChannel.id === selectedChannel.id && 
@@ -121,75 +181,39 @@ const Channels = () => {
 
     window.addEventListener('whatsappSessionUpdate', handleWhatsappSessionUpdate);
 
-    // Cleanup
     return () => {
       window.removeEventListener('whatsappSessionUpdate', handleWhatsappSessionUpdate);
     };
-  }, [qrModalOpen, selectedChannel, dispatch, showNotification]);
+  }, [loadChannels, loadChatFlows, qrModalOpen, selectedChannel, dispatch, handleStartSession, showNotification]);
 
-  // UseEffect para monitorar mudanças no selectedChannel e fechar modal quando conectado
+  // Segundo useEffect com todas as dependências necessárias
   useEffect(() => {
-    if (qrModalOpen && selectedChannel) {
-      // Verificar periodicamente o status do canal
-      const checkChannelStatus = async () => {
-        try {
-          const response = await channelService.getSession(selectedChannel.id);
-          const currentStatus = response.data?.status;
-          
-          if (currentStatus === 'CONNECTED' || currentStatus === 'OPEN' || currentStatus === 'AUTHENTICATED') {
-            setQrModalOpen(false);
-            setSelectedChannel(null);
-            // Recarregar a lista de canais para atualizar o status
-            loadChannels();
-          }
-        } catch (error) {
-          console.error('Erro ao verificar status do canal:', error);
-        }
-      };
-
-      // Verificar imediatamente
-      checkChannelStatus();
-      
-      // Verificar a cada 3 segundos enquanto o modal estiver aberto
-      const interval = setInterval(checkChannelStatus, 3000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [qrModalOpen, selectedChannel]);
-
-  // Adicionar useEffect para WebSocket
-  useEffect(() => {
-    if (!selectedChannel || !qrModalOpen) return;
+    if (!selectedChannel || !qrModalOpen || !socket?.connected) return;
 
     const channelId = selectedChannel.id;
     const tenantId = localStorage.getItem('tenantId');
+    let expiryCheckInterval;
 
-    // Handler para atualizações de QR code
     const handleQrCodeUpdate = (data) => {
       if (data.session.id === channelId) {
         const now = Date.now();
-        
-        // Atualizar estado do QR code
         setQrCodeState(prev => ({
           ...prev,
           lastUpdate: now,
           isExpired: data.session.status === 'EXPIRED'
         }));
 
-        // Atualizar canal selecionado
         setSelectedChannel(prev => ({
           ...prev,
           ...data.session
         }));
 
-        // Se QR code expirou, tentar reconectar
         if (data.session.status === 'EXPIRED') {
           handleRequestNewQrCode(channelId);
         }
       }
     };
 
-    // Handler para heartbeat
     const handleHeartbeat = (data) => {
       if (data.session.id === channelId) {
         setQrCodeState(prev => ({
@@ -199,51 +223,46 @@ const Channels = () => {
       }
     };
 
-    // Inscrever nos eventos WebSocket
-    socket.on(`${tenantId}:whatsappSession`, handleQrCodeUpdate);
-    socket.on(`${tenantId}:whatsappSession:heartbeat`, handleHeartbeat);
-
-    // Verificar expiração do QR code
-    const expiryCheck = setInterval(() => {
-      const now = Date.now();
-      if (qrCodeState.lastUpdate && (now - qrCodeState.lastUpdate) > 60000) {
-        setQrCodeState(prev => ({
-          ...prev,
-          isExpired: true
-        }));
-        handleRequestNewQrCode(channelId);
-      }
-    }, 5000);
-
-    // Cleanup
-    return () => {
-      socket.off(`${tenantId}:whatsappSession`, handleQrCodeUpdate);
-      socket.off(`${tenantId}:whatsappSession:heartbeat`, handleHeartbeat);
-      clearInterval(expiryCheck);
-    };
-  }, [selectedChannel, qrModalOpen]);
-
-  const loadChannels = async () => {
     try {
-      setLoading(true);
-      const response = await channelService.list();
-      setChannels(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar canais:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      socket.on(`${tenantId}:whatsappSession`, handleQrCodeUpdate);
+      socket.on(`${tenantId}:whatsappSession:heartbeat`, handleHeartbeat);
 
-  const loadChatFlows = async () => {
-    try {
-      const response = await chatFlowService.list();
-      setChatFlows(response.data || []);
+      expiryCheckInterval = setInterval(() => {
+        const now = Date.now();
+        if (qrCodeState.lastUpdate && (now - qrCodeState.lastUpdate) > 60000) {
+          setQrCodeState(prev => ({
+            ...prev,
+            isExpired: true
+          }));
+          handleRequestNewQrCode(channelId);
+        }
+      }, 5000);
+
+      return () => {
+        if (socket?.connected) {
+          socket.off(`${tenantId}:whatsappSession`, handleQrCodeUpdate);
+          socket.off(`${tenantId}:whatsappSession:heartbeat`, handleHeartbeat);
+        }
+        if (expiryCheckInterval) {
+          clearInterval(expiryCheckInterval);
+        }
+      };
     } catch (error) {
-      console.error('Erro ao carregar chat flows:', error);
-      setChatFlows([]);
+      console.error('Erro ao configurar WebSocket:', error);
+      return () => {
+        if (expiryCheckInterval) {
+          clearInterval(expiryCheckInterval);
+        }
+      };
     }
-  };
+  }, [
+    selectedChannel,
+    qrModalOpen,
+    socket?.connected,
+    handleRequestNewQrCode,
+    qrCodeState.lastUpdate,
+    socket
+  ]);
 
   const handleOpenModal = (channel = null) => {
     if (channel) {
@@ -287,15 +306,6 @@ const Channels = () => {
       loadChannels();
     } catch (error) {
       console.error('Erro ao salvar canal:', error);
-    }
-  };
-
-  const handleStartSession = async (channelId) => {
-    try {
-      await channelService.startSession(channelId);
-      loadChannels();
-    } catch (error) {
-      console.error('Erro ao iniciar sessão:', error);
     }
   };
 
@@ -438,33 +448,24 @@ const Channels = () => {
     return channelType ? channelType.icon : <WhatsAppIcon />;
   };
 
-  // Função para solicitar novo QR code
-  const handleRequestNewQrCode = async (channelId) => {
+  // Função para limpar cache da sessão
+  const handleClearSessionCache = async (channelId) => {
     try {
-      setQrCodeState(prev => ({
-        ...prev,
-        reconnectAttempts: prev.reconnectAttempts + 1
-      }));
-
-      await channelService.requestNewQrCode(channelId);
-      
-      // Resetar estado após solicitar novo QR code
-      setQrCodeState(prev => ({
-        ...prev,
-        isExpired: false,
-        lastUpdate: Date.now()
-      }));
+      await channelService.clearSessionCache(channelId);
+      showNotification({
+        type: 'success',
+        title: 'Cache Limpo',
+        message: 'O cache da sessão foi limpo com sucesso.'
+      });
+      // Recarregar a lista de canais
+      loadChannels();
     } catch (error) {
-      console.error('Erro ao solicitar novo QR code:', error);
-      // Se falhar após 3 tentativas, fechar modal
-      if (qrCodeState.reconnectAttempts >= 3) {
-        setQrModalOpen(false);
-        setQrCodeState({
-          lastUpdate: null,
-          isExpired: false,
-          reconnectAttempts: 0
-        });
-      }
+      console.error('Erro ao limpar cache da sessão:', error);
+      showNotification({
+        type: 'error',
+        title: 'Erro',
+        message: 'Não foi possível limpar o cache da sessão.'
+      });
     }
   };
 
@@ -580,6 +581,15 @@ const Channels = () => {
                         Desconectar
                       </Button>
                     )}
+
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      onClick={() => handleClearSessionCache(channel.id)}
+                    >
+                      Limpar Cache
+                    </Button>
                   </>
                 )}
 

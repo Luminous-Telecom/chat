@@ -10,13 +10,14 @@ export default async function express(app: Application): Promise<void> {
   // Parse FRONTEND_URLS from environment variable
   const frontendUrls = process.env.FRONTEND_URLS 
     ? process.env.FRONTEND_URLS.split(',')
-    : [process.env.FRONTEND_URL || "http://localhost:3003"];
+    : [];
   
   const origin = [
     ...frontendUrls,
-    process.env.FRONTEND_URL_REACT || '', // React frontend
-    process.env.FRONTEND_URL_VUE || '',   // Vue frontend
+    process.env.FRONTEND_URL_REACT,
+    process.env.FRONTEND_URL_VUE
   ].filter((url): url is string => Boolean(url)); // Remove valores vazios e garante que é string[]
+
   app.use(
     cors({
       origin,

@@ -45,9 +45,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     });
 
   try {
-    SetTicketMessagesAsRead(ticket);
+    await SetTicketMessagesAsRead(ticket);
   } catch (error) {
-    console.log("SetTicketMessagesAsRead", error);
   }
 
   return res.json({ count, messages, messagesOffLine, ticket, hasMore });
@@ -61,9 +60,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const ticket = await ShowTicketService({ id: ticketId, tenantId });
 
   try {
-    SetTicketMessagesAsRead(ticket);
+    await SetTicketMessagesAsRead(ticket);
   } catch (error) {
-    console.log("SetTicketMessagesAsRead", error);
   }
 
   await CreateMessageSystemService({

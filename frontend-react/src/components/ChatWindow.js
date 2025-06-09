@@ -50,8 +50,11 @@ import { ptBR } from 'date-fns/locale';
 import EmojiPicker from 'emoji-picker-react';
 import useMessageSocket from '../hooks/useMessageSocket';
 import { debounce } from '../utils';
+import { useDispatch } from 'react-redux';
+import { clearTicketUnreadCount, incrementTicketUnreadCount } from '../store/notificationSlice';
 
 const ChatWindow = ({ ticket }) => {
+  const dispatch = useDispatch();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState('');
@@ -64,33 +67,70 @@ const ChatWindow = ({ ticket }) => {
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [fileInputRef] = useState(React.createRef());
   const messagesEndRef = useRef(null);
-  const audioRef = useRef({});
-  const waveformRefs = useRef({});
+  const isMountedRef = useRef(true);
+  const markMessageAsReadRef = useRef(null);
+  const scrollToBottomRef = useRef(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
+
+  // Cleanup quando componente desmonta
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Função de scroll para o final
+  const scrollToBottom = useCallback((smooth = true) => {
+    if (messagesEndRef.current && autoScroll) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: smooth ? 'smooth' : 'auto' 
+      });
+    }
+  }, [autoScroll]);
+
+  // Atualizar a ref quando scrollToBottom mudar
+  useEffect(() => {
+    scrollToBottomRef.current = scrollToBottom;
+  }, [scrollToBottom]);
+
   // Callbacks para eventos de mensagem
   const handleNewMessage = useCallback((message) => {
+    if (!isMountedRef.current) return;
+
+    console.log('ChatWindow: Nova mensagem recebida:', message);
+
     setMessages(prevMessages => {
       // Verificar se a mensagem já existe para evitar duplicatas
       const messageExists = prevMessages.some(msg => msg.id === message.id);
-      if (messageExists) return prevMessages;
+      if (messageExists) {
+        console.log('ChatWindow: Mensagem já existe, ignorando');
+        return prevMessages;
+      }
       
       const updatedMessages = [...prevMessages, message];
       
-      // Marcar como lida se não for do usuário
-      if (!message.fromMe && markMessageAsRead) {
-        markMessageAsRead(message.id, ticket.id);
+      // Incrementar contador se a mensagem não for do usuário e não estiver lida
+      if (!message.fromMe && !message.read) {
+        console.log('ChatWindow: Incrementando contador para ticket:', message.ticketId);
+        dispatch(incrementTicketUnreadCount(message.ticketId));
       }
       
       return updatedMessages;
     });
     
     // Auto scroll para nova mensagem
-    setTimeout(() => scrollToBottom(), 100);
-  }, [ticket?.id]);
+    setTimeout(() => {
+      if (scrollToBottomRef.current) {
+        scrollToBottomRef.current(true);
+      }
+    }, 100);
+  }, [ticket?.id, dispatch]);
 
   const handleMessageUpdate = useCallback((updatedMessage) => {
+    if (!isMountedRef.current) return;
+
     setMessages(prevMessages => 
       prevMessages.map(msg => 
         msg.id === updatedMessage.id ? { ...msg, ...updatedMessage } : msg
@@ -99,33 +139,100 @@ const ChatWindow = ({ ticket }) => {
   }, []);
 
   const handleTypingIndicator = useCallback((data) => {
-    if (!data.fromMe) {
-      setIsTyping(data.isTyping);
-    }
+    if (!isMountedRef.current) return;
+    setIsTyping(data.isTyping);
   }, []);
 
   // Hook para gerenciar mensagens via socket
   const { 
     sendTypingIndicator, 
     markMessageAsRead, 
-    sendMessage: sendMessageSocket,
-    isConnected 
+    sendMessage: sendMessageSocket
   } = useMessageSocket(ticket, handleNewMessage, handleMessageUpdate, handleTypingIndicator);
 
-  const scrollToBottom = (smooth = true) => {
-    if (messagesEndRef.current && autoScroll) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: smooth ? 'smooth' : 'auto' 
-      });
-    }
-  };
+  // Atualizar a referência quando markMessageAsRead mudar
+  useEffect(() => {
+    markMessageAsReadRef.current = markMessageAsRead;
+  }, [markMessageAsRead]);
 
   // Detectar se o usuário scrollou para cima
-  const handleScroll = (e) => {
+  const handleScroll = useCallback((e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     const isAtBottom = scrollHeight - scrollTop <= clientHeight + 50;
     setAutoScroll(isAtBottom);
-  };
+  }, []);
+
+  // Effect para scroll automático
+  useEffect(() => {
+    if (messages.length > 0) {
+      // Na primeira carga, vai direto para a última mensagem sem animação
+      if (isFirstLoad.current) {
+        scrollToBottom(false);
+        isFirstLoad.current = false;
+      } else {
+        // Para novas mensagens, usa scroll suave
+        scrollToBottom(true);
+      }
+    }
+  }, [messages, scrollToBottom]);
+
+  // Otimização: Debounce para carregamento de mensagens
+  const debouncedLoadMessages = useCallback(
+    debounce(async () => {
+      if (!ticket?.id || !isMountedRef.current) return;
+      
+      setLoading(true);
+      try {
+        const response = await ticketService.getMessages(ticket.id, {
+          pageNumber: 1,
+          pageSize: 50
+        });
+        
+        if (!isMountedRef.current) return;
+
+        const newMessages = response.messages || [];
+        // Ordenar mensagens por data de criação (mais antigas primeiro)
+        const sortedMessages = newMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        setMessages(sortedMessages);
+      } catch (error) {
+        console.error('Erro ao carregar mensagens:', error);
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    }, 300),
+    [ticket?.id]
+  );
+
+  // Substituir loadMessages original
+  const loadMessages = useCallback(() => {
+    debouncedLoadMessages();
+  }, [debouncedLoadMessages]);
+
+  // Effect para carregar mensagens quando o ticket muda
+  useEffect(() => {
+    if (ticket?.id && ticket.id !== ticketIdRef.current) {
+      ticketIdRef.current = ticket.id;
+      isFirstLoad.current = true;
+      setMessages([]);
+      loadMessages();
+    } else if (!ticket?.id) {
+      // Limpar mensagens quando não há ticket selecionado
+      setMessages([]);
+      ticketIdRef.current = null;
+      isFirstLoad.current = true;
+    }
+  }, [ticket, loadMessages]);
+
+  // Cleanup para evitar memory leaks
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Indicador de digitação
   const handleTyping = () => {
@@ -149,139 +256,6 @@ const ChatWindow = ({ ticket }) => {
   // Prevenir recarregamento desnecessário das mensagens
   const ticketIdRef = useRef(null);
   const isFirstLoad = useRef(true);
-  
-  useEffect(() => {
-    if (ticket?.id && ticket.id !== ticketIdRef.current) {
-      ticketIdRef.current = ticket.id;
-      isFirstLoad.current = true;
-      setMessages([]);
-      loadMessages();
-    } else if (!ticket?.id) {
-      // Limpar mensagens quando não há ticket selecionado
-      setMessages([]);
-      ticketIdRef.current = null;
-      isFirstLoad.current = true;
-    }
-  }, [ticket]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      // Na primeira carga, vai direto para a última mensagem sem animação
-      if (isFirstLoad.current) {
-        scrollToBottom(false);
-        isFirstLoad.current = false;
-      } else {
-        // Para novas mensagens, usa scroll suave
-        scrollToBottom(true);
-      }
-    }
-  }, [messages]);
-
-  // Cleanup para evitar memory leaks
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Otimização: Debounce para carregamento de mensagens
-  const debouncedLoadMessages = useCallback(
-    debounce(async () => {
-      if (!ticket?.id) return;
-      
-      setLoading(true);
-      try {
-        const response = await ticketService.getMessages(ticket.id, {
-          pageNumber: 1,
-          pageSize: 50
-        });
-        
-        const newMessages = response.messages || [];
-        // Ordenar mensagens por data de criação (mais antigas primeiro)
-        const sortedMessages = newMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        setMessages(sortedMessages);
-      } catch (error) {
-        console.error('Erro ao carregar mensagens:', error);
-        // Fallback com mensagens simuladas apenas em desenvolvimento
-        if (process.env.NODE_ENV === 'development') {
-          const simulatedMessages = [
-            {
-              id: 1,
-              body: ticket.body || 'Olá, preciso de ajuda!',
-              fromMe: false,
-              createdAt: new Date().toISOString(),
-              contact: ticket.contact
-            },
-            {
-              id: 2,
-              body: 'Olá! Como posso ajudá-lo hoje?',
-              fromMe: true,
-              createdAt: new Date().toISOString(),
-              user: { name: 'Atendente' }
-            }
-          ];
-          setMessages(simulatedMessages);
-        }
-      } finally {
-        setLoading(false);
-      }
-    }, 300),
-    [ticket?.id]
-  );
-
-  // Substituir loadMessages original
-  const loadMessages = debouncedLoadMessages;
-
-
-
-  // Melhorar handleSendMessage com retry automático
-  const handleSendMessage = async (retryCount = 0) => {
-    if (!newMessage.trim() || !ticket?.id || sending) return;
-
-    // Se não for uma tentativa de retry, setar sending como true
-    if (retryCount === 0) {
-      setSending(true);
-    }
-
-    try {
-      const response = await ticketService.sendMessage(ticket.id, {
-        body: newMessage.trim()
-      });
-      
-      // Emitir evento de nova mensagem via socket
-      if (sendMessageSocket && response.data) {
-        sendMessageSocket(ticket.id, response.data);
-      }
-      
-      setNewMessage('');
-      
-      // Parar indicador de digitação
-      if (sendTypingIndicator) {
-        sendTypingIndicator(ticket.id, false);
-      }
-
-      // Resetar sending apenas se não for uma tentativa de retry
-      if (retryCount === 0) {
-        setSending(false);
-      }
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      
-      // Retry automático até 2 tentativas
-      if (retryCount < 2) {
-        setTimeout(() => {
-          handleSendMessage(retryCount + 1);
-        }, 1000 * (retryCount + 1));
-      } else {
-        // Mostrar erro ao usuário após tentativas falharem
-        alert('Erro ao enviar mensagem. Verifique sua conexão e tente novamente.');
-        // Resetar sending apenas na última tentativa
-        setSending(false);
-      }
-    }
-  };
 
   const handleScheduleMessage = async () => {
     if (!scheduledMessage.trim() || !scheduleDate || !ticket?.id) {
@@ -326,8 +300,6 @@ const ChatWindow = ({ ticket }) => {
       handleSendMessage();
     }
   };
-
-
 
   const formatMessageTime = (dateString) => {
     try {
@@ -469,6 +441,102 @@ const ChatWindow = ({ ticket }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [emojiPickerOpen]);
+
+  // Melhorar handleSendMessage com retry automático
+  const handleSendMessage = useCallback(async (retryCount = 0) => {
+    if (!newMessage.trim() || !ticket?.id || sending || !isMountedRef.current) return;
+
+    // Se não for uma tentativa de retry, setar sending como true
+    if (retryCount === 0) {
+      setSending(true);
+    }
+    
+    try {
+      const response = await ticketService.sendMessage(ticket.id, {
+        body: newMessage.trim()
+      });
+      
+      if (!isMountedRef.current) return;
+      
+      // Emitir evento de nova mensagem via socket
+      if (sendMessageSocket && response.data) {
+        sendMessageSocket(ticket.id, response.data);
+      }
+      
+      setNewMessage('');
+      
+      // Parar indicador de digitação
+      if (sendTypingIndicator && ticket?.id) {
+        sendTypingIndicator(ticket.id, false);
+      }
+
+      // Resetar sending apenas se não for uma tentativa de retry
+      if (retryCount === 0) {
+        setSending(false);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      
+      if (!isMountedRef.current) return;
+      
+      // Retry automático até 2 tentativas
+      if (retryCount < 2) {
+        setTimeout(() => {
+          handleSendMessage(retryCount + 1);
+        }, 1000 * (retryCount + 1));
+      } else {
+        // Mostrar erro ao usuário após tentativas falharem
+        alert('Erro ao enviar mensagem. Verifique sua conexão e tente novamente.');
+        // Resetar sending apenas na última tentativa
+        setSending(false);
+      }
+    }
+  }, [newMessage, ticket?.id, sending, sendMessageSocket, sendTypingIndicator]);
+
+  // Effect para limpar contador quando o ticket é aberto
+  useEffect(() => {
+    if (ticket?.id) {
+      dispatch(clearTicketUnreadCount(ticket.id));
+      
+      messages.forEach(message => {
+        if (!message.fromMe && !message.read && markMessageAsReadRef.current) {
+          markMessageAsReadRef.current(message.id, ticket.id);
+        }
+      });
+    }
+  }, [ticket?.id, dispatch, messages]);
+
+  // Effect para marcar mensagens como lidas quando o usuário rola até elas
+  useEffect(() => {
+    if (!ticket?.id || !markMessageAsReadRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const message = entry.target.__message;
+            if (message && !message.fromMe && !message.read) {
+              markMessageAsReadRef.current(message.id, ticket.id);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    // Observar todas as mensagens não lidas
+    messages.forEach(message => {
+      if (!message.fromMe && !message.read) {
+        const element = document.getElementById(`message-${message.id}`);
+        if (element) {
+          element.__message = message;
+          observer.observe(element);
+        }
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [ticket?.id, messages]);
 
   if (!ticket) {
     return (

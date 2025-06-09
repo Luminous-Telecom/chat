@@ -4,7 +4,7 @@ import { logout } from '../store/authSlice';
 
 // Base API configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: process.env.REACT_APP_BACKEND_URL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',

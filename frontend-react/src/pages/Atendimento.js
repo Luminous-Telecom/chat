@@ -58,6 +58,8 @@ import {
   DoneAll as DoneAllIcon,
 } from '@mui/icons-material';
 import { ticketService } from '../services/api';
+import { useSelector, useDispatch } from 'react-redux';
+import { setTicketUnreadCount } from '../store/notificationSlice';
 
 // Constantes para larguras
 const SIDEBAR_WIDTH = 350;
@@ -153,6 +155,7 @@ const Atendimento = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const theme = useTheme();
+  const dispatch = useDispatch();
   
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -163,6 +166,47 @@ const Atendimento = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [ticketLogs, setTicketLogs] = useState([]);
+  const { unreadTicketMessages } = useSelector((state) => state.notifications);
+
+  // Effect para carregar o estado inicial das mensagens não lidas
+  useEffect(() => {
+    const loadInitialUnreadState = () => {
+      tickets.forEach(ticket => {
+        if (ticket.unreadMessages > 0) {
+          dispatch(setTicketUnreadCount({ ticketId: ticket.id, count: ticket.unreadMessages }));
+        }
+      });
+    };
+
+    if (tickets.length > 0) {
+      loadInitialUnreadState();
+    }
+  }, [tickets, dispatch]);
+
+  // Effect para escutar atualizações de ticket
+  useEffect(() => {
+    const handleTicketUpdate = (event) => {
+      const { ticketId, lastMessage, lastMessageAt, lastMessageFromMe, lastMessageStatus } = event.detail;
+      
+      setTickets(prevTickets => 
+        prevTickets.map(ticket => 
+          ticket.id === ticketId 
+            ? { 
+                ...ticket, 
+                lastMessage, 
+                lastMessageAt, 
+                lastMessageFromMe, 
+                lastMessageStatus,
+                updatedAt: lastMessageAt // Atualiza também o updatedAt para ordenação
+              }
+            : ticket
+        )
+      );
+    };
+
+    window.addEventListener('ticketUpdate', handleTicketUpdate);
+    return () => window.removeEventListener('ticketUpdate', handleTicketUpdate);
+  }, []);
 
   const loadTickets = useCallback(async () => {
     try {
@@ -352,22 +396,37 @@ const Atendimento = () => {
     <ListItem
       onClick={() => handleTicketClick(ticket)}
       sx={{
-        borderLeft: `6px solid ${getStatusColor(ticket.status)}`,
-        borderRadius: '10px',
-        marginBottom: '8px',
-        backgroundColor: selectedTicket?.id === ticket.id ? '#e3f2fd' : 'transparent',
+        borderBottom: '1px solid #f0f0f0',
         '&:hover': {
-          backgroundColor: '#e3f2fd',
-          transition: 'all 0.2s',
-        },
-        cursor: 'pointer',
-        maxWidth: '370px',
-        padding: '8px',
+          backgroundColor: '#f5f5f5'
+        }
       }}
     >
-      <ListItemAvatar sx={{ minWidth: '60px' }}>
+      <ListItemAvatar>
         <Box sx={{ position: 'relative' }}>
-          <Avatar 
+          {unreadTicketMessages[ticket.id] > 0 && (
+            <Badge
+              badgeContent={unreadTicketMessages[ticket.id]}
+              color="primary"
+              sx={{
+                position: 'absolute',
+                top: -8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1,
+                '& .MuiBadge-badge': {
+                  backgroundColor: '#2196f3',
+                  color: 'white',
+                  borderRadius: '10px',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  minWidth: '18px',
+                  height: '18px',
+                },
+              }}
+            />
+          )}
+          <Avatar
             src={ticket.profilePicUrl || ticket.contact?.profilePicUrl}
             onClick={ticket.status === 'pending' ? (e) => {
               e.stopPropagation();
@@ -388,25 +447,6 @@ const Atendimento = () => {
               ((ticket.name || ticket.contact?.name || '?').charAt(0).toUpperCase())
             }
           </Avatar>
-
-          {ticket.unreadMessages > 0 && (
-            <Badge
-              badgeContent={ticket.unreadMessages}
-              color="primary"
-              sx={{
-                position: 'absolute',
-                top: -5,
-                right: -5,
-                '& .MuiBadge-badge': {
-                  backgroundColor: '#2196f3',
-                  color: 'black',
-                  borderRadius: '10px',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                },
-              }}
-            />
-          )}
         </Box>
       </ListItemAvatar>
       <ListItemText

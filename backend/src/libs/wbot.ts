@@ -105,14 +105,14 @@ const initTimeouts = new Map<number, NodeJS.Timeout>();
 const initStates = new Map<number, InitState>();
 
 // Constants
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds
-const QR_CODE_EXPIRY = 60000; // 1 minute
-const SESSION_HEALTH_CHECK_INTERVAL = 60000; // 1 minute (alinhado com SYNC_INTERVAL)
-const MAX_INIT_TIME = 120000; // 2 minutes max initialization time
-const RETRY_DELAY = 5000; // 5 seconds between retries
-const MAX_RETRY_ATTEMPTS = 3;
-const SYNC_INTERVAL = 60000; // 1 minute sync interval
-const SESSION_RESTORE_TIMEOUT = 30000; // 30 seconds timeout for session restore
+const HEARTBEAT_INTERVAL = 15000; // Reduzir para 15 segundos
+const QR_CODE_EXPIRY = 30000; // Reduzir para 30 segundos
+const SESSION_HEALTH_CHECK_INTERVAL = 15000; // Reduzir para 15 segundos
+const MAX_INIT_TIME = 180000; // Manter 3 minutos
+const RETRY_DELAY = 5000; // Manter 5 segundos
+const MAX_RETRY_ATTEMPTS = 5; // Manter 5 tentativas
+const SYNC_INTERVAL = 30000; // Reduzir para 30 segundos
+const SESSION_RESTORE_TIMEOUT = 120000; // Manter 2 minutos
 
 // Optimized Chrome args - always include --no-sandbox for root
 const stable_args = [
@@ -165,13 +165,13 @@ const canInitSession = (whatsappId: number): boolean => {
   if (now - state.lastInitAttempt < RETRY_DELAY) return false;
   
   // Progressive backoff: more attempts = longer wait
-  const backoffTime = Math.min(60000, state.initAttempts * 10000); // Max 1 minute
+  const backoffTime = Math.min(120000, state.initAttempts * 15000); // Max 2 minutes, incremento de 15 segundos
   if (state.initAttempts >= MAX_RETRY_ATTEMPTS && now - state.lastInitAttempt < backoffTime) {
     return false;
   }
   
   // Reset counter after successful wait period
-  if (now - state.lastInitAttempt > 120000) { // 2 minutes
+  if (now - state.lastInitAttempt > 300000) { // 5 minutos
     state.initAttempts = 0;
     initStates.set(whatsappId, state);
   }
@@ -407,7 +407,7 @@ const stopSessionHealthCheck = (whatsappId: number): void => {
 export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
   return new Promise<Session>(async (resolve, reject) => {
     let initTimeout: NodeJS.Timeout | null = null;
-    let currentWhatsapp: Whatsapp | null = whatsapp; // Keep reference to current whatsapp object
+    let currentWhatsapp: Whatsapp | null = whatsapp;
     
     // Helper function to reload whatsapp object
     const reloadWhatsapp = async (): Promise<Whatsapp> => {
@@ -446,10 +446,19 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
       
       logger.info(`Initializing WhatsApp session ${whatsapp.id} (${whatsapp.name})`);
       
-      // Create new client with enhanced configuration
+      // Create new client with optimized configuration
       const wbot = new Client({
         puppeteer: {
-          args: stable_args,
+          args: [
+            ...stable_args,
+            '--disable-gpu',
+            '--disable-dev-shm-usage',
+            '--disable-setuid-sandbox',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-extensions'
+          ],
           headless: true,
           executablePath: process.env.CHROME_BIN || undefined,
           ignoreDefaultArgs: ['--disable-extensions'],
@@ -461,10 +470,10 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
           clientId: `wbot-${whatsapp.id}`,
           dataPath: path.resolve(__dirname, "..", "..", ".wwebjs_auth")
         }),
-        qrMaxRetries: 3,
-        authTimeoutMs: 90000, // Increased timeout
+        qrMaxRetries: 5,
+        authTimeoutMs: 120000, // Reduzir para 2 minutos
         takeoverOnConflict: true,
-        takeoverTimeoutMs: 10000, // Increased takeover timeout
+        takeoverTimeoutMs: 15000, // Reduzir para 15 segundos
         restartOnAuthFail: true
       }) as Session;
 
@@ -496,30 +505,34 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
 
       wbot.on("authenticated", async () => {
         try {
-          // Ensure we have a valid whatsapp object
           const whatsappObj = await ensureWhatsapp();
           logger.info(`Session ${whatsappObj.id} authenticated`);
           
-          await safeUpdateWhatsapp(whatsappObj, { 
-            status: "AUTHENTICATED",
-            qrcode: "",
-            retries: 0
+          // Atualizar estado imediatamente
+          updateSessionState(whatsappObj.id, { 
+            isInitializing: true, 
+            isReady: false,
+            lastHeartbeat: Date.now()
           });
-          
-          updateSessionState(whatsappObj.id, { isInitializing: true, isReady: false });
-          
+
+          // Emitir evento de autenticação
           io.emit(`${whatsappObj.tenantId}:whatsappSession`, {
             action: "update",
             session: {
               id: whatsappObj.id,
               name: whatsappObj.name,
               status: "AUTHENTICATED",
-              qrcode: "",
-              number: whatsappObj.number
+              qrcode: ""
             }
           });
+
+          // Atualizar banco de dados
+          await safeUpdateWhatsapp(whatsappObj, {
+            status: "AUTHENTICATED",
+            qrcode: ""
+          });
         } catch (error) {
-          logger.error(`Authentication event error for ${whatsapp.id}: ${error}`);
+          logger.error(`Error handling authentication for ${whatsapp.id}: ${error}`);
         }
       });
 
@@ -530,20 +543,24 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
             initTimeout = null;
           }
           
-          // Ensure we have a valid whatsapp object
           const whatsappObj = await ensureWhatsapp();
           
-          updateInitState(whatsappObj.id, false); // Success
-          updateSessionState(whatsappObj.id, { isInitializing: false, isReady: true });
+          // Atualizar estados
+          updateInitState(whatsappObj.id, false);
+          updateSessionState(whatsappObj.id, { 
+            isInitializing: false, 
+            isReady: true,
+            lastHeartbeat: Date.now()
+          });
           
-          // Add to sessions array
+          // Adicionar à lista de sessões
           sessions.push(wbot);
           logger.info(`Session ${whatsappObj.id} added to sessions array. Total sessions: ${sessions.length}`);
           
-          // Start health monitoring
+          // Iniciar monitoramento
           startSessionHealthCheck(whatsappObj.id);
           
-          // Update database
+          // Atualizar banco de dados
           await safeUpdateWhatsapp(whatsappObj, {
             status: "CONNECTED",
             qrcode: "",
@@ -551,7 +568,7 @@ export const initWbot = async (whatsapp: Whatsapp): Promise<Session> => {
             number: wbot?.info?.wid?.user || whatsappObj.number
           });
 
-          // Emit success event
+          // Emitir evento de conexão
           io.emit(`${whatsappObj.tenantId}:whatsappSession`, {
             action: "update",
             session: {

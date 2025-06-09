@@ -1,12 +1,19 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
-import { setQueueTicketCounts, updateQueueCount, addNotification } from '../store/notificationSlice';
+import { 
+  setQueueTicketCounts, 
+  updateQueueCount, 
+  addNotification,
+  incrementTicketUnreadCount,
+  clearTicketUnreadCount
+} from '../store/notificationSlice';
 
 // SINGLETON para prevenir múltiplas conexões
 let globalSocket = null;
 let globalSocketPromise = null;
 let connectingInProgress = false;
+let socketListeners = new Map(); // Novo: Mapa para controlar listeners registrados
 
 const useSocket = () => {
   const dispatch = useDispatch();
@@ -44,7 +51,12 @@ const useSocket = () => {
     globalSocketPromise = new Promise((resolve, reject) => {
       // Limpa socket anterior se existir
       if (globalSocket) {
-        globalSocket.removeAllListeners();
+        // Remover todos os listeners antes de desconectar
+        socketListeners.forEach((handler, event) => {
+          globalSocket.off(event, handler);
+        });
+        socketListeners.clear();
+        
         globalSocket.disconnect();
         globalSocket = null;
       }
@@ -52,14 +64,13 @@ const useSocket = () => {
       try {
         globalSocket = io(socketUrl, {
           auth: { token: socketToken },
-          transports: ['polling', 'websocket'],
+          transports: ['websocket'], // Forçar apenas websocket
           reconnection: true,
           reconnectionDelay: 2000,
           reconnectionDelayMax: 10000,
           reconnectionAttempts: 5,
           timeout: 15000,
-          upgrade: true,
-          rememberUpgrade: true,
+          upgrade: false, // Desabilitar upgrade
           autoConnect: true
         });
 
@@ -101,6 +112,9 @@ const useSocket = () => {
     
     hasSetupListeners.current = true;
 
+    // Cache para evitar processamento duplicado de mensagens
+    const processedMessages = new Set();
+
     // Event listeners locais (não conflitam com outros componentes)
     const handleTicketCount = (data) => {
       if (!isMountedRef.current) return;
@@ -134,36 +148,98 @@ const useSocket = () => {
 
     const handleWhatsappSession = (data) => {
       if (!isMountedRef.current) return;
-      // Emite evento customizado para componentes que precisam escutar mudanças de sessão
       window.dispatchEvent(new CustomEvent('whatsappSessionUpdate', { detail: data }));
     };
 
-    // Adiciona listeners
-    socket.on('ticket:count', handleTicketCount);
-    socket.on('ticket:update', handleTicketUpdate);
-    socket.on('notification', handleNotification);
-    socket.on('ticket:new', handleTicketNew);
-    
-    // Listener para eventos de sessão WhatsApp específicos do tenant
+    const handleNewMessage = (message) => {
+      if (!isMountedRef.current) return;
+      
+      // Verificar se a mensagem já foi processada
+      if (processedMessages.has(message.id)) {
+        return;
+      }
+      
+      // Adicionar mensagem ao cache
+      processedMessages.add(message.id);
+      
+      // Limpar cache após 5 segundos
+      setTimeout(() => {
+        processedMessages.delete(message.id);
+      }, 5000);
+      
+      // Emitir evento customizado para atualizar o ticket
+      window.dispatchEvent(new CustomEvent('ticketUpdate', { 
+        detail: { 
+          ticketId: message.ticketId,
+          lastMessage: message.body,
+          lastMessageAt: message.createdAt,
+          lastMessageFromMe: message.fromMe,
+          lastMessageStatus: message.status
+        }
+      }));
+
+      // Incrementar contador se a mensagem não for do usuário e não estiver lida
+      if (!message.fromMe && !message.read) {
+        dispatch(incrementTicketUnreadCount(message.ticketId));
+      }
+    };
+
+    const handleMessageRead = (data) => {
+      if (!isMountedRef.current) return;
+      
+      if (data.ticketId && data.allRead) {
+        dispatch(clearTicketUnreadCount(data.ticketId));
+      }
+    };
+
+    // Registrar listeners no mapa global
+    const listeners = {
+      'ticket:count': handleTicketCount,
+      'ticket:update': handleTicketUpdate,
+      'notification': handleNotification,
+      'ticket:new': handleTicketNew,
+      'message:new': handleNewMessage,
+      'message:read': handleMessageRead
+    };
+
+    // Adicionar listeners apenas se não existirem
+    Object.entries(listeners).forEach(([event, handler]) => {
+      if (!socketListeners.has(event)) {
+        socket.on(event, handler);
+        socketListeners.set(event, handler);
+      }
+    });
+
+    // Listener específico do tenant
     if (user?.tenantId) {
-      socket.on(`${user.tenantId}:whatsappSession`, handleWhatsappSession);
+      const tenantEvent = `${user.tenantId}:whatsappSession`;
+      if (!socketListeners.has(tenantEvent)) {
+        socket.on(tenantEvent, handleWhatsappSession);
+        socketListeners.set(tenantEvent, handleWhatsappSession);
+      }
     }
 
     // Cleanup quando componente desmonta
     return () => {
       if (socket) {
-        socket.off('ticket:count', handleTicketCount);
-        socket.off('ticket:update', handleTicketUpdate);
-        socket.off('notification', handleNotification);
-        socket.off('ticket:new', handleTicketNew);
-        
-        // Remove listener específico do tenant
+        // Remover apenas os listeners registrados por este componente
+        Object.entries(listeners).forEach(([event, handler]) => {
+          if (socketListeners.get(event) === handler) {
+            socket.off(event, handler);
+            socketListeners.delete(event);
+          }
+        });
+
         if (user?.tenantId) {
-          socket.off(`${user.tenantId}:whatsappSession`, handleWhatsappSession);
+          const tenantEvent = `${user.tenantId}:whatsappSession`;
+          if (socketListeners.get(tenantEvent) === handleWhatsappSession) {
+            socket.off(tenantEvent, handleWhatsappSession);
+            socketListeners.delete(tenantEvent);
+          }
         }
       }
     };
-  }, [dispatch]);
+  }, [dispatch, user?.tenantId]);
 
   // Effect principal
   useEffect(() => {

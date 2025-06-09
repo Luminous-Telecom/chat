@@ -407,6 +407,85 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
   }
 };
 
+const clearCache = async (req: Request, res: Response): Promise<Response> => {
+  const { whatsappId } = req.params;
+  const { tenantId } = req.user;
+  
+  const lockKey = `clear-cache-${whatsappId}`;
+  
+  // Verificar se já há uma operação em andamento
+  if (isOperationInProgress(lockKey)) {
+    logger.info(`Clear cache operation already in progress for WhatsApp ${whatsappId}`);
+    return res.status(200).json({ message: "Cache clearing already in progress." });
+  }
+
+  try {
+    lockOperation(lockKey);
+    
+    const channel = await ShowWhatsAppService({ id: whatsappId, tenantId });
+    const io = getIO();
+
+    logger.info(`Clearing cache for channel ${channel.id} (${channel.type})`);
+
+    if (channel.type === "whatsapp") {
+      try {
+        // 1. Limpar cache de retry
+        await setValue(`${channel.id}-retryQrCode`, 0);
+        
+        // 2. Remover sessão da memória
+        try {
+          const wbot = getWbot(channel.id);
+          if (wbot) {
+            logger.info(`Destroying active WhatsApp session ${channel.id}`);
+            await wbot.destroy().catch(err => {
+              logger.warn(`Error destroying session: ${err}`);
+            });
+          }
+        } catch (err) {
+          logger.debug(`No active session to destroy for WhatsApp ${channel.id}`);
+        }
+        
+        // 3. Remover da lista de sessões
+        removeWbot(channel.id);
+        
+        // 4. Limpar pasta de sessão
+        await apagarPastaSessao(channel.id);
+        
+        // 5. Limpar cache da sessão
+        const { clearSessionState } = require('../libs/wbot');
+        clearSessionState(channel.id);
+        
+        // 6. Atualizar status no banco
+        await channel.update({
+          status: "DISCONNECTED",
+          qrcode: null,
+          session: "",
+          retries: 0
+        });
+
+        // 7. Emitir atualização via socket
+        io.emit(`${channel.tenantId}:whatsappSession`, {
+          action: "update",
+          session: channel
+        });
+
+        logger.info(`Cache cleared for WhatsApp session ${channel.id}`);
+        return res.status(200).json({ message: "Cache cleared successfully" });
+      } catch (error) {
+        logger.error(`Error clearing cache for WhatsApp session ${channel.id}: ${error}`);
+        throw error;
+      }
+    }
+
+    return res.status(400).json({ message: "Invalid channel type" });
+  } catch (error) {
+    logger.error(`Error in clearCache: ${error}`);
+    return res.status(500).json({ error: "Internal server error" });
+  } finally {
+    unlockOperation(lockKey);
+  }
+};
+
 // Função para limpeza periódica do cache de operações
 const cleanupOperationLocks = (): void => {
   // Limpar locks que podem ter ficado "presos" (executar periodicamente)
@@ -421,4 +500,4 @@ const cleanupOperationLocks = (): void => {
 // Executar limpeza a cada 10 minutos
 setInterval(cleanupOperationLocks, 10 * 60 * 1000);
 
-export default { store, remove, update };
+export default { store, remove, update, clearCache };

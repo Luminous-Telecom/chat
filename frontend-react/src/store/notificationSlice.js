@@ -5,7 +5,8 @@ const initialState = {
   totalUnreadCount: 0,
   notifications: [],
   pendingNotifications: [],
-  disconnectedChannels: [] // Array ao invés de Set
+  disconnectedChannels: [], // Array ao invés de Set
+  unreadTicketMessages: {} // Objeto para armazenar contagem de mensagens não lidas por ticket
 };
 
 const notificationSlice = createSlice({
@@ -58,6 +59,22 @@ const notificationSlice = createSlice({
     clearDisconnectedChannels: (state) => {
       state.disconnectedChannels = [];
     },
+    // Novas actions para gerenciar mensagens não lidas dos tickets
+    setTicketUnreadCount: (state, action) => {
+      const { ticketId, count } = action.payload;
+      state.unreadTicketMessages[ticketId] = count;
+    },
+    incrementTicketUnreadCount: (state, action) => {
+      const ticketId = action.payload;
+      state.unreadTicketMessages[ticketId] = (state.unreadTicketMessages[ticketId] || 0) + 1;
+    },
+    clearTicketUnreadCount: (state, action) => {
+      const ticketId = action.payload;
+      delete state.unreadTicketMessages[ticketId];
+    },
+    clearAllTicketUnreadCounts: (state) => {
+      state.unreadTicketMessages = {};
+    }
   },
 });
 
@@ -70,6 +87,10 @@ export const {
   addDisconnectedChannel,
   removeDisconnectedChannel,
   clearDisconnectedChannels,
+  setTicketUnreadCount,
+  incrementTicketUnreadCount,
+  clearTicketUnreadCount,
+  clearAllTicketUnreadCounts
 } = notificationSlice.actions;
 
 export default notificationSlice.reducer;

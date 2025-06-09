@@ -56,6 +56,11 @@ export const channelService = {
     return api.put(`/whatsappsession/${id}`);
   },
 
+  // Limpar cache da sessão
+  clearSessionCache(id) {
+    return api.post(`/whatsappsession/${id}/clear-cache`);
+  },
+
   // Listar canais administrativos
   listAdminChannels() {
     return api.get('/admin/channels');
