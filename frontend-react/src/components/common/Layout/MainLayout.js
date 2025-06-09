@@ -353,17 +353,21 @@ const MainLayout = ({ children }) => {
                   fontSize: '1.2rem'
                 }
               }}>
-                <Badge 
-                  badgeContent={totalUnreadCount + disconnectedChannels.length} 
-                  color="error"
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      backgroundColor: disconnectedChannels.length > 0 ? '#f44336' : '#1976d2'
-                    }
-                  }}
-                >
+                {(totalUnreadCount > 0 || disconnectedChannels.length > 0) ? (
+                  <Badge 
+                    badgeContent={totalUnreadCount + disconnectedChannels.length} 
+                    color="error"
+                    sx={{
+                      '& .MuiBadge-badge': {
+                        backgroundColor: disconnectedChannels.length > 0 ? '#f44336' : '#1976d2'
+                      }
+                    }}
+                  >
+                    <NotificationsIcon />
+                  </Badge>
+                ) : (
                   <NotificationsIcon />
-                </Badge>
+                )}
               </ListItemIcon>
               {!miniState && (
                 <ListItemText 
