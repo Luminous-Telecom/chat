@@ -220,7 +220,7 @@ const CreateMessageSystemService = async ({
           logger.info(`Creating message in database with data: ${JSON.stringify({
             ...messageData,
             userId,
-            messageId: message.id?.id || message.messageId || null,
+            messageId: message.id?._serialized || message.messageId || null,
             body: media.originalname,
             mediaUrl: media.filename,
             mediaType: media.mediaType || media.mimetype.substr(0, media.mimetype.indexOf("/"))
@@ -228,14 +228,11 @@ const CreateMessageSystemService = async ({
           
           const msgCreated = await Message.create({
             ...messageData,
-            ...message,
             userId,
-            messageId: message.id?.id || message.messageId || null,
+            messageId: message.id?._serialized || message.messageId || null,
             body: media.originalname,
             mediaUrl: media.filename,
-            mediaType:
-              media.mediaType ||
-              media.mimetype.substr(0, media.mimetype.indexOf("/"))
+            mediaType: media.mediaType || media.mimetype.substr(0, media.mimetype.indexOf("/"))
           });
           
           logger.info(`Message created successfully with ID: ${msgCreated.id}`);
@@ -303,7 +300,6 @@ const CreateMessageSystemService = async ({
       const msgCreated = await Message.create({
         ...messageData,
         ...message,
-        id: messageData.id,
         userId,
         messageId: extractedMessageId,
         mediaType: "chat"
