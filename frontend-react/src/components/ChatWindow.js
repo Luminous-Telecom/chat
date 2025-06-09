@@ -240,7 +240,11 @@ const ChatWindow = ({ ticket }) => {
   const handleSendMessage = async (retryCount = 0) => {
     if (!newMessage.trim() || !ticket?.id || sending) return;
 
-    setSending(true);
+    // Se não for uma tentativa de retry, setar sending como true
+    if (retryCount === 0) {
+      setSending(true);
+    }
+
     try {
       const response = await ticketService.sendMessage(ticket.id, {
         body: newMessage.trim()
@@ -257,8 +261,11 @@ const ChatWindow = ({ ticket }) => {
       if (sendTypingIndicator) {
         sendTypingIndicator(ticket.id, false);
       }
-      
-      // Removido o recarregamento de mensagens - agora usa apenas socket
+
+      // Resetar sending apenas se não for uma tentativa de retry
+      if (retryCount === 0) {
+        setSending(false);
+      }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       
@@ -270,9 +277,9 @@ const ChatWindow = ({ ticket }) => {
       } else {
         // Mostrar erro ao usuário após tentativas falharem
         alert('Erro ao enviar mensagem. Verifique sua conexão e tente novamente.');
+        // Resetar sending apenas na última tentativa
+        setSending(false);
       }
-    } finally {
-      setSending(false);
     }
   };
 
