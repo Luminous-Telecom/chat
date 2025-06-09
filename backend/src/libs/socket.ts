@@ -12,8 +12,12 @@ let io: SocketIO;
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
+      origin: [
+        process.env.FRONTEND_URL_REACT || '',
+        process.env.FRONTEND_URL_VUE || ''
+      ].filter((url): url is string => Boolean(url)),
+      methods: ["GET", "POST"],
+      credentials: true
     },
     pingTimeout: 60000,
     pingInterval: 25000,
