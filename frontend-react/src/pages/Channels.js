@@ -37,7 +37,7 @@ import { channelService } from '../services/channelService';
 import { chatFlowService } from '../services/chatFlowService';
 import ChannelStatus from '../components/ChannelStatus';
 import QRCode from 'qrcode'; // Adicionar esta importação
-import { socketConnection } from '../services/socket';
+import useSocket from '../hooks/useSocket';
 
 const Channels = () => {
   const [channels, setChannels] = useState([]);
@@ -61,6 +61,8 @@ const Channels = () => {
     isExpired: false,
     reconnectAttempts: 0
   });
+
+  const socket = useSocket();
 
   const channelTypes = [
     { label: 'WhatsApp', value: 'whatsapp', icon: <WhatsAppIcon /> },
@@ -134,7 +136,6 @@ const Channels = () => {
   useEffect(() => {
     if (!selectedChannel || !qrModalOpen) return;
 
-    const socket = socketConnection;
     const channelId = selectedChannel.id;
     const tenantId = localStorage.getItem('tenantId');
 
