@@ -10,6 +10,7 @@ import GracefulShutdown from "http-graceful-shutdown";
 import bootstrap from "./boot";
 import { initIO } from "../libs/socket";
 import { StartAllWhatsAppsSessions } from "../services/WbotServices/StartAllWhatsAppsSessions";
+import { addInitialJobs } from "../database";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default async function application() {
@@ -21,27 +22,38 @@ export default async function application() {
 
   async function start() {
     const host = app.get("host") || "0.0.0.0";
+    
+    // Inicializar Socket.IO antes de iniciar o servidor
+    const io = initIO(httpServer);
+    
+    // Iniciar servidor HTTP
     app.server = httpServer.listen(port, host, async () => {
       console.info(`Web server listening at: http://${host}:${port}/`);
+      
+      try {
+        // Iniciar sessões do WhatsApp após o servidor estar rodando
+        await StartAllWhatsAppsSessions();
+        
+        // Adicionar jobs após o Socket.IO estar inicializado
+        addInitialJobs();
+        
+        // Iniciar sincronização periódica de sessões
+        const { syncSessionStatus } = require('../libs/wbot');
+        
+        // Executar sincronização imediatamente após iniciar as sessões
+        console.info('Starting initial session sync...');
+        await syncSessionStatus();
+        
+        // Executar sincronização a cada 5 minutos
+        setInterval(async () => {
+          console.info('Running periodic session sync...');
+          await syncSessionStatus();
+        }, 5 * 60 * 1000);
+      } catch (error) {
+        console.error('Error starting WhatsApp sessions:', error);
+        process.exit(1);
+      }
     });
-
-    initIO(app.server);
-
-    // needs to start after socket is available
-    await StartAllWhatsAppsSessions();
-    
-    // Iniciar sincronização periódica de sessões
-    const { syncSessionStatus } = require('../libs/wbot');
-    
-    // Executar sincronização imediatamente após iniciar as sessões
-    console.info('Starting initial session sync...');
-    await syncSessionStatus();
-    
-    // Executar sincronização a cada 5 minutos
-    setInterval(async () => {
-      console.info('Running periodic session sync...');
-      await syncSessionStatus();
-    }, 5 * 60 * 1000);
     
     GracefulShutdown(app.server);
   }

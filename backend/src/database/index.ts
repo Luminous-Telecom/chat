@@ -80,8 +80,7 @@ sequelize.addModels(models);
 
 sequelize.afterConnect(() => {
   //logger.info("DATABASE CONNECT");
-  QueueJobs.default.add("VerifyTicketsChatBotInactives", {});
-  QueueJobs.default.add("SendMessageSchenduled", {});
+  // Removendo a adição dos jobs daqui
 });
 
 sequelize.afterDisconnect(() => {
@@ -90,5 +89,11 @@ sequelize.afterDisconnect(() => {
   // eslint-disable-next-line no-underscore-dangle
   // clearInterval(global._loopDb);
 });
+
+// Exportando uma função para adicionar os jobs
+export const addInitialJobs = () => {
+  QueueJobs.default.add("VerifyTicketsChatBotInactives", {});
+  QueueJobs.default.add("SendMessageSchenduled", {});
+};
 
 export default sequelize;
