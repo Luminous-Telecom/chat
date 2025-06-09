@@ -4,6 +4,8 @@ const initialState = {
   queueTicketCounts: {},
   totalUnreadCount: 0,
   notifications: [],
+  pendingNotifications: [],
+  disconnectedChannels: [] // Array ao invés de Set
 };
 
 const notificationSlice = createSlice({
@@ -42,6 +44,20 @@ const notificationSlice = createSlice({
     clearNotifications: (state) => {
       state.notifications = [];
     },
+    // Novas actions para gerenciar canais desconectados
+    addDisconnectedChannel: (state, action) => {
+      const channelId = action.payload;
+      if (!state.disconnectedChannels.includes(channelId)) {
+        state.disconnectedChannels.push(channelId);
+      }
+    },
+    removeDisconnectedChannel: (state, action) => {
+      const channelId = action.payload;
+      state.disconnectedChannels = state.disconnectedChannels.filter(id => id !== channelId);
+    },
+    clearDisconnectedChannels: (state) => {
+      state.disconnectedChannels = [];
+    },
   },
 });
 
@@ -51,6 +67,9 @@ export const {
   addNotification,
   removeNotification,
   clearNotifications,
+  addDisconnectedChannel,
+  removeDisconnectedChannel,
+  clearDisconnectedChannels,
 } = notificationSlice.actions;
 
 export default notificationSlice.reducer;

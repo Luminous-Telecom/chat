@@ -66,6 +66,7 @@ const MainLayout = ({ children }) => {
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
   const { totalUnreadCount } = useSelector((state) => state.notifications);
+  const { disconnectedChannels } = useSelector((state) => state.notifications);
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -75,13 +76,13 @@ const MainLayout = ({ children }) => {
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  // Removed atendimentoDrawerOpen state as it's no longer needed
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [queueTicketCounts] = useState({});
   const [notifications] = useState({ count: 0, tickets: [] });
   const [notificationsPending] = useState({ count: 0 });
   
-  // Inicializa socket
-  useSocket();
+  const socket = useSocket();
+  const tenantId = localStorage.getItem('tenantId');
 
   // Menu items principais
   const menuItems = [
@@ -301,8 +302,6 @@ const MainLayout = ({ children }) => {
     return location.pathname === item.path;
   };
 
-
-
   const handleAdminModalOpen = () => {
     setAdminModalOpen(true);
   };
@@ -354,17 +353,47 @@ const MainLayout = ({ children }) => {
                   fontSize: '1.2rem'
                 }
               }}>
-                <Badge badgeContent={totalUnreadCount} color="error">
+                <Badge 
+                  badgeContent={totalUnreadCount + disconnectedChannels.length} 
+                  color="error"
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      backgroundColor: disconnectedChannels.length > 0 ? '#f44336' : '#1976d2'
+                    }
+                  }}
+                >
                   <NotificationsIcon />
                 </Badge>
               </ListItemIcon>
               {!miniState && (
                 <ListItemText 
-                  primary="Notificações"
-                  primaryTypographyProps={{
-                    fontSize: '0.75rem',
-                    fontWeight: 500
-                  }}
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography
+                        sx={{
+                          fontSize: '0.75rem',
+                          fontWeight: 500
+                        }}
+                      >
+                        Notificações
+                      </Typography>
+                      {disconnectedChannels.length > 0 && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: 'error.main',
+                            color: 'white',
+                            px: 0.5,
+                            py: 0.25,
+                            borderRadius: 1,
+                            fontSize: '0.65rem'
+                          }}
+                        >
+                          {disconnectedChannels.length} desconectado{disconnectedChannels.length > 1 ? 's' : ''}
+                        </Typography>
+                      )}
+                    </Box>
+                  }
                 />
               )}
             </ListItemButton>
@@ -570,8 +599,6 @@ const MainLayout = ({ children }) => {
           <MenuIcon />
         </IconButton>
       )}
-
-
 
       {/* Modal de Administração */}
       <Dialog
