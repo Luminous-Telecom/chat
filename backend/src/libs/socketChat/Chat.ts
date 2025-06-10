@@ -65,6 +65,10 @@ const UpdateUsers = (socket: Socket) => {
   const socketDataTenant = `socketData_${user.tenantId}`;
   const dataTenant = shared[socketDataTenant];
 
+  if (!dataTenant || !dataTenant.usersOnline) {
+    return;
+  }
+
   const sortedUserList = sortByKeys(dataTenant.usersOnline);
   forEach(sortedUserList, v => {
     const userValue = v.user;
@@ -146,6 +150,11 @@ const UpdateOnlineBubbles = (socket: Socket) => {
 
   const socketDataTenant = `socketData_${user.tenantId}`;
   const dataTenant = shared[socketDataTenant];
+
+  if (!dataTenant || !dataTenant.usersOnline || !dataTenant.idleUsers) {
+    return;
+  }
+
   const sortedUserList = fromPairs(
     sortBy(toPairs(dataTenant.usersOnline), o => {
       return o[0];
@@ -234,15 +243,13 @@ const onSetUserActive = (socket: Socket) => {
         idleUsers: {}
       };
       dataTenant = shared[socketDataTenant];
-      dataTenant.usersOnline.push(socket.id);
     }
 
-    if (dataTenant?.usersOnline) {
-      dataTenant.usersOnline[user.id] = {
-        sockets: [socket.id],
-        user
-      };
-    }
+    // Sempre atualiza o usersOnline com o usuário atual
+    dataTenant.usersOnline[user.id] = {
+      sockets: [socket.id],
+      user
+    };
 
     UpdateOnlineBubbles(socket);
   });
