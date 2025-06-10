@@ -1,6 +1,6 @@
 // import { subHours } from "date-fns";
 import { Op } from "sequelize";
-import { Message } from "whatsapp-web.js";
+import { proto } from "@whiskeysockets/baileys";
 import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
 import User from "../../models/User";
@@ -19,9 +19,13 @@ interface Data {
   unreadMessages: number;
   tenantId: number | string;
   groupContact?: Contact;
-  msg?: Message | any;
+  msg?: proto.IWebMessageInfo | any;
   isSync?: boolean;
   channel: string;
+  callInfo?: {
+    type: 'audio' | 'video';
+    status: string;
+  };
 }
 
 const FindOrCreateTicketService = async ({
@@ -32,14 +36,15 @@ const FindOrCreateTicketService = async ({
   groupContact,
   msg,
   isSync,
-  channel
+  channel,
+  callInfo
 }: Data): Promise<Ticket | any> => {
   // se for uma mensagem de campanha, não abrir tícket
-  if (msg && msg.fromMe) {
+  if (msg && msg.key.fromMe) {
     const msgCampaign = await CampaignContacts.findOne({
       where: {
         contactId: contact.id,
-        messageId: msg.id?.id || msg.message_id || msg.item_id
+        messageId: msg.key.id
       }
     });
     if (msgCampaign?.id) {
@@ -47,15 +52,15 @@ const FindOrCreateTicketService = async ({
     }
   }
 
-  if (msg && msg.fromMe) {
+  if (msg && msg.key.fromMe) {
     const farewellMessage = await MessageModel.findOne({
-      where: { messageId: msg.id?.id || msg.message_id || msg.item_id },
+      where: { messageId: msg.key.id },
       include: ["ticket"]
     });
 
     if (
       farewellMessage?.ticket?.status === "closed" &&
-      farewellMessage?.ticket.lastMessage === msg.body
+      farewellMessage?.ticket.lastMessage === (msg.message?.conversation || msg.message?.extendedTextMessage?.text || "")
     ) {
       const ticket = farewellMessage.ticket as any;
       ticket.isFarewellMessage = true;
@@ -248,7 +253,7 @@ const FindOrCreateTicketService = async ({
     type: "create"
   });
 
-  if ((msg && !msg.fromMe) || !ticketCreated.userId || isSync) {
+  if ((msg && !msg.key.fromMe) || !ticketCreated.userId || isSync) {
     await CheckChatBotFlowWelcome(ticketCreated);
   }
 

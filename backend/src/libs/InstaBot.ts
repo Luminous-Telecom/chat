@@ -8,8 +8,8 @@ import {
 import { IgApiClientMQTT, withFbnsAndRealtime } from "instagram_mqtt";
 import AppError from "../errors/AppError";
 import Whatsapp from "../models/Whatsapp";
-// import { getIO } from "./socket";
 import { logger } from "../utils/logger";
+import { getIO } from "./socket";
 
 interface Session extends IgApiClientMQTT {
   id: number;
@@ -30,7 +30,7 @@ export const initInstaBot = async (connection: Whatsapp): Promise<Session> => {
     const password = connection.instagramKey;
     // const password = "";
     if (!username || !password) {
-      throw new Error("Not credentials");
+      throw new AppError("Not credentials", 400);
     }
 
     if (connection && connection.session) {

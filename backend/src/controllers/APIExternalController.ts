@@ -1,11 +1,12 @@
 import * as Yup from "yup";
 import { Request, Response } from "express";
 
+import { logger } from "../utils/logger";
 import AppError from "../errors/AppError";
 import ApiConfig from "../models/ApiConfig";
 import Queue from "../libs/Queue";
 import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService";
-import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
+import StartWhatsAppSession from "../services/WbotServices/StartWhatsAppSession";
 import { getWbot } from "../libs/wbot";
 
 interface MessageDataRequest {
@@ -108,9 +109,9 @@ export const startSession = async (
   });
   try {
     const wbot = getWbot(APIConfig.sessionId);
-    const isConnectStatus = (await wbot.getState()) === "CONNECTED";
+    const isConnectStatus = wbot.user?.id ? true : false;
     if (!isConnectStatus) {
-      throw new Error("Necessário iniciar sessão");
+      throw new AppError("Necessário iniciar sessão", 400);
     }
   } catch (error) {
     StartWhatsAppSession(whatsapp);

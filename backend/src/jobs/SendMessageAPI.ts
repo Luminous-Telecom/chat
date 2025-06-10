@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MessageMedia, Message as WbotMessage } from "whatsapp-web.js";
+import { proto } from '@whiskeysockets/baileys';
 import fs from "fs";
 import { v4 as uuid } from "uuid";
 import axios from "axios";
@@ -11,7 +11,7 @@ import UpsertMessageAPIService from "../services/ApiMessageService/UpsertMessage
 import Queue from "../libs/Queue";
 import CheckIsValidContact from "../services/WbotServices/CheckIsValidContact";
 import AppError from "../errors/AppError";
-import VerifyContact from "../services/WbotServices/helpers/VerifyContact";
+import CreateOrUpdateContactService from "../services/ContactServices/CreateOrUpdateContactService";
 import FindOrCreateTicketService from "../services/TicketServices/FindOrCreateTicketService";
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
 
@@ -31,10 +31,15 @@ export default {
   async handle({ data }: any) {
     try {
       const wbot = getWbot(data.sessionId);
-      const message: any = {} as WbotMessage;
+      const message: any = {} as proto.IWebMessageInfo;
       try {
-        const idNumber = await wbot.getNumberId(data.number);
-        if (!idNumber) {
+        // Format number to WhatsApp format
+        const formattedNumber = `${data.number}@s.whatsapp.net`;
+        
+        // Check if number exists by trying to fetch its status
+        try {
+          await wbot.fetchStatus(formattedNumber);
+        } catch (error) {
           const payload = {
             ack: -1,
             body: data.body,
@@ -61,9 +66,19 @@ export default {
           return payload;
         }
 
-        // '559891191708@c.us'
-        const msgContact = await wbot.getContactById(idNumber._serialized);
-        const contact = await VerifyContact(msgContact, data.tenantId);
+        // Create contact using Baileys approach
+        const contactData = {
+          name: data.number,
+          number: data.number,
+          tenantId: data.tenantId,
+          isGroup: false,
+          pushname: data.number,
+          isUser: false,
+          isWAContact: true
+        };
+
+        const contact = await CreateOrUpdateContactService(contactData);
+
         const ticket = await FindOrCreateTicketService({
           contact,
           whatsappId: wbot.id!,
@@ -107,7 +122,10 @@ export default {
             payload
           });
         }
-        throw new Error(error);
+        if (error instanceof AppError) {
+          throw error;
+        }
+        throw new AppError(`Send message API job failed: ${error.message || error}`, 500);
       }
 
       // const apiMessage = await UpsertMessageAPIService({
@@ -126,7 +144,10 @@ export default {
       // });
     } catch (error) {
       logger.error({ message: "Error send message api", error });
-      throw new Error(error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(`Send message API job failed: ${error.message || error}`, 500);
     }
   }
 };

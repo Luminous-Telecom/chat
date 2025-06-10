@@ -1,5 +1,5 @@
 /* eslint-disable no-return-assign */
-import { Message as WbotMessage } from "whatsapp-web.js";
+import { proto } from "@whiskeysockets/baileys";
 import socketEmit from "../../helpers/socketEmit";
 import Ticket from "../../models/Ticket";
 import ChatFlow from "../../models/ChatFlow";
@@ -8,6 +8,7 @@ import CreateLogTicketService from "../TicketServices/CreateLogTicketService";
 import BuildSendMessageService from "./BuildSendMessageService";
 import DefinedUserBotService from "./DefinedUserBotService";
 import IsContactTest from "./IsContactTest";
+import Message from "../../models/Message";
 
 const isNextSteps = async (
   ticket: Ticket,
@@ -58,11 +59,22 @@ const isNextSteps = async (
     }
 
     for (const interaction of nextStep.interactions) {
-      await BuildSendMessageService({
-        msg: interaction,
-        tenantId: ticket.tenantId,
-        ticket
+      const messageData = await Message.create({
+        body: interaction,
+        mediaType: "chat",
+        fromMe: true,
+        read: true,
+        status: "PENDING",
+        ticketId: ticket.id,
+        contactId: ticket.contactId,
+        tenantId: ticket.tenantId
       });
+
+      await BuildSendMessageService(
+        messageData,
+        ticket,
+        ticket.userId
+      );
     }
     // await SetTicketMessagesAsRead(ticket);
   }
@@ -307,7 +319,7 @@ const isAnswerCloseTicket = async (
 };
 
 const VerifyStepsChatFlowTicket = async (
-  msg: WbotMessage | any,
+  msg: proto.IWebMessageInfo | any,
   ticket: Ticket | any
 ): Promise<void> => {
   let celularTeste; // ticket.chatFlow?.celularTeste;
@@ -315,7 +327,7 @@ const VerifyStepsChatFlowTicket = async (
   if (
     ticket.chatFlowId &&
     ticket.status === "pending" &&
-    !msg.fromMe &&
+    !msg.key.fromMe &&
     !ticket.isGroup &&
     !ticket.answered
   ) {
@@ -341,13 +353,13 @@ const VerifyStepsChatFlowTicket = async (
         const newConditions = conditions.condition.map((c: any) =>
           String(c).toLowerCase().trim()
         );
-        const message = String(msg.body).toLowerCase().trim();
+        const message = String(msg.message?.conversation || msg.message?.extendedTextMessage?.text || "").toLowerCase().trim();
         return newConditions.includes(message);
       });
 
       if (
         !ticket.isCreated &&
-        (await isAnswerCloseTicket(flowConfig, ticket, msg.body))
+        (await isAnswerCloseTicket(flowConfig, ticket, msg.message?.conversation || msg.message?.extendedTextMessage?.text || ""))
       )
         return;
 
@@ -446,11 +458,22 @@ const VerifyStepsChatFlowTicket = async (
           });
         }
         for (const interaction of step.interactions) {
-          await BuildSendMessageService({
-            msg: interaction,
-            tenantId: ticket.tenantId,
-            ticket
+          const messageData = await Message.create({
+            body: interaction,
+            mediaType: "chat",
+            fromMe: true,
+            read: true,
+            status: "PENDING",
+            ticketId: ticket.id,
+            contactId: ticket.contactId,
+            tenantId: ticket.tenantId
           });
+
+          await BuildSendMessageService(
+            messageData,
+            ticket,
+            ticket.userId
+          );
         }
       }
       // await SetTicketMessagesAsRead(ticket);

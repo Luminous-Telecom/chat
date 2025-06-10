@@ -6,6 +6,7 @@ import VerifyMediaMessage from "./TelegramVerifyMediaMessage";
 import VerifyMessage from "./TelegramVerifyMessage";
 import verifyBusinessHours from "../WbotServices/helpers/VerifyBusinessHours";
 import VerifyStepsChatFlowTicket from "../ChatFlowServices/VerifyStepsChatFlowTicket";
+import { proto } from "@whiskeysockets/baileys";
 
 interface Session extends Telegraf {
   id: number;
@@ -40,9 +41,20 @@ const HandleMessage = async (ctx: Context, tbot: Session): Promise<void> => {
     whatsappId: tbot.id!,
     unreadMessages: fromMe ? 0 : 1,
     tenantId: channel.tenantId,
-    msg: { ...messageData, fromMe },
+    msg: {
+      key: {
+        id: message.message_id.toString(),
+        remoteJid: chat.id.toString(),
+        fromMe
+      },
+      message: {
+        conversation: message.text
+      },
+      messageTimestamp: messageData.timestamp / 1000
+    } as proto.IWebMessageInfo,
     channel: "telegram"
   });
+
   if (ticket?.isFarewellMessage) {
     return;
   }
@@ -55,17 +67,31 @@ const HandleMessage = async (ctx: Context, tbot: Session): Promise<void> => {
 
   await VerifyStepsChatFlowTicket(
     {
-      fromMe,
-      body: message.text || ""
-    },
+      key: {
+        id: message.message_id.toString(),
+        remoteJid: chat.id.toString(),
+        fromMe
+      },
+      message: {
+        conversation: message.text || ""
+      },
+      messageTimestamp: messageData.timestamp / 1000
+    } as proto.IWebMessageInfo,
     ticket
   );
 
   await verifyBusinessHours(
     {
-      fromMe,
-      timestamp: messageData.timestamp
-    },
+      key: {
+        id: message.message_id.toString(),
+        remoteJid: chat.id.toString(),
+        fromMe
+      },
+      message: {
+        conversation: message.text || ""
+      },
+      messageTimestamp: messageData.timestamp / 1000
+    } as proto.IWebMessageInfo,
     ticket
   );
 

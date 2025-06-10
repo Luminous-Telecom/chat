@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
 
 interface Data {
   url: string;
@@ -83,7 +84,10 @@ export default {
       if (error?.response?.status === 404) {
         return { message: "url configurar no webhook não existe." };
       }
-      throw new Error(error);
+      if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(`WebHooks API job failed: ${error.message || error}`, 500);
     }
   }
 };

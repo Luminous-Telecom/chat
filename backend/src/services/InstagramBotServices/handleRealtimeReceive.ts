@@ -11,6 +11,7 @@ import ShowWhatsAppService from "../WhatsappService/ShowWhatsAppService";
 import InstagramVerifyContact from "./InstagramVerifyContact";
 import VerifyMediaMessage from "./InstagramVerifyMediaMessage";
 import VerifyMessage from "./InstagramVerifyMessage";
+import { proto } from "@whiskeysockets/baileys";
 
 interface Session extends IgApiClientMQTT {
   id: number;
@@ -42,7 +43,17 @@ const handleRealtimeReceive = async (
     whatsappId: instaBot.id!,
     unreadMessages: fromMe ? 0 : 1,
     tenantId: channel.tenantId,
-    msg: { ...ctx.message, fromMe },
+    msg: {
+      key: {
+        id: ctx.message.item_id,
+        remoteJid: ctx.message.thread_id,
+        fromMe
+      },
+      message: {
+        conversation: ctx.message.text
+      },
+      messageTimestamp: ctx.message.timestamp / 1000
+    } as proto.IWebMessageInfo,
     channel: "instagram"
   });
 
@@ -62,17 +73,31 @@ const handleRealtimeReceive = async (
 
   await VerifyStepsChatFlowTicket(
     {
-      fromMe,
-      body: ctx.message?.text || ""
-    },
+      key: {
+        id: ctx.message.item_id,
+        remoteJid: ctx.message.thread_id,
+        fromMe
+      },
+      message: {
+        conversation: ctx.message.text
+      },
+      messageTimestamp: ctx.message.timestamp / 1000
+    } as proto.IWebMessageInfo,
     ticket
   );
 
   await verifyBusinessHours(
     {
-      fromMe,
-      timestamp: ctx.message.timestamp / 1000 // adequar horário node
-    },
+      key: {
+        id: ctx.message.item_id,
+        remoteJid: ctx.message.thread_id,
+        fromMe
+      },
+      message: {
+        conversation: ctx.message.text
+      },
+      messageTimestamp: ctx.message.timestamp / 1000
+    } as proto.IWebMessageInfo,
     ticket
   );
 };

@@ -14,6 +14,7 @@ import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
 import socketEmit from "../../helpers/socketEmit";
 import Message from "../../models/Message";
 import { logger } from "../../utils/logger";
+import AppError from "../../errors/AppError";
 import { sleepRandomTime } from "../../utils/sleepRandomTime";
 
 interface Session extends IgApiClientMQTT {
@@ -72,7 +73,7 @@ const InstagramSendMessagesSystem = async (
     }
 
     if (!sendedMessage?.item_id) {
-      throw new Error("Formato não suportado");
+      throw new AppError("Formato não suportado", 400);
     }
     // enviar old_id para substituir no front a mensagem corretamente
     const messageToUpdate = {

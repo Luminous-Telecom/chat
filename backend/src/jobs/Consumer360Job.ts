@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FindUpdateTicketsInactiveChatBot from "../services/TicketServices/FindUpdateTicketsInactiveChatBot";
 import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
 
 export default {
   key: "VerifyTicketsChatBotInactives",
@@ -21,7 +22,10 @@ export default {
       //logger.info("Finalized FindUpdateTicketsInactiveChatBot");
     } catch (error) {
       logger.error({ message: "Error send messages", error });
-      throw new Error(error);
+      if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(`Consumer 360 job failed: ${error.message || error}`, 500);
     }
   }
 };

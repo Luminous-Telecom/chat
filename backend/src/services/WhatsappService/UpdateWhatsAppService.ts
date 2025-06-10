@@ -18,18 +18,26 @@ interface WhatsappData {
   tokenAPI?: string;
   fbPageId?: string;
   farewellMessage?: string;
-  chatFlowId?: number;
+  chatFlowId?: number | null;
 }
 
 interface Request {
   whatsappData: WhatsappData;
-  whatsappId: string;
-  tenantId: string | number;
+  whatsappId: number;
+  tenantId: number;
 }
 
 interface Response {
   whatsapp: Whatsapp;
   oldDefaultWhatsapp: Whatsapp | null;
+}
+
+interface ValidatedData {
+  name?: string;
+  status?: string;
+  isDefault?: boolean;
+  type?: "waba" | "instagram" | "telegram" | "whatsapp" | "messenger";
+  chatFlowId: number | null;
 }
 
 const UpdateWhatsAppService = async ({
@@ -39,7 +47,13 @@ const UpdateWhatsAppService = async ({
 }: Request): Promise<Response> => {
   const schema = Yup.object().shape({
     name: Yup.string().min(2),
-    isDefault: Yup.boolean()
+    isDefault: Yup.boolean(),
+    type: Yup.string().oneOf(["waba", "instagram", "telegram", "whatsapp", "messenger"]),
+    chatFlowId: Yup.mixed().transform((value) => {
+      if (value === null || value === undefined || value === "") return null;
+      const num = Number(value);
+      return isNaN(num) ? null : num;
+    }).nullable()
   });
 
   const {
@@ -60,7 +74,13 @@ const UpdateWhatsAppService = async ({
   } = whatsappData;
 
   try {
-    await schema.validate({ name, status, isDefault });
+    const validatedData = await schema.validate({ 
+      name, 
+      status, 
+      isDefault, 
+      type, 
+      chatFlowId 
+    }) as ValidatedData;
 
     let oldDefaultWhatsapp: Whatsapp | null = null;
 
@@ -82,19 +102,19 @@ const UpdateWhatsAppService = async ({
     }
 
     const data: WhatsappData = {
-      name,
+      name: validatedData.name,
       status,
       session,
-      isDefault,
+      isDefault: validatedData.isDefault,
       tokenTelegram,
       instagramUser,
       isActive,
-      type,
+      type: validatedData.type,
       wabaBSP,
       tokenAPI,
       fbPageId,
       farewellMessage,
-      chatFlowId
+      chatFlowId: validatedData.chatFlowId
     };
 
     if (instagramKey) {
@@ -105,6 +125,9 @@ const UpdateWhatsAppService = async ({
 
     return { whatsapp, oldDefaultWhatsapp };
   } catch (err: any) {
+    if (err instanceof Yup.ValidationError) {
+      throw new AppError(err.message, 400);
+    }
     throw new AppError(err.message);
   }
 };

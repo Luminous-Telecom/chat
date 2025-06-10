@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
 import { getWbot } from "../libs/wbot";
 
 export default {
@@ -17,11 +18,8 @@ export default {
     try {
       const wbot = getWbot(data.ticket.whatsappId);
       const message = await wbot.sendMessage(
-        `${data.ticket.contact.number}@c.us`,
-        data.tenant.messageBusinessHours,
-        {
-          linkPreview: false
-        }
+        `${data.ticket.contact.number}@${data.ticket.isGroup ? "g" : "s"}.whatsapp.net`,
+        { text: data.tenant.messageBusinessHours }
       );
 
       const result = {
@@ -33,7 +31,10 @@ export default {
       return result;
     } catch (error) {
       logger.error(`Error enviar message business hours: ${error}`);
-      throw new Error(error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(`Send WhatsApp business hours message job failed: ${error.message || error}`, 500);
     }
   }
 };

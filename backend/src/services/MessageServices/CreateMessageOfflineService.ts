@@ -2,6 +2,9 @@ import { writeFile } from "fs";
 import { promisify } from "util";
 import { join } from "path";
 import { logger } from "../../utils/logger";
+import socketEmit from "../../helpers/socketEmit";
+import AppError from "../../errors/AppError";
+import { MessageErrors } from "../../utils/errorHandler";
 import MessageOffLine from "../../models/MessageOffLine";
 import { getIO } from "../../libs/socket";
 import Ticket from "../../models/Ticket";
@@ -105,7 +108,7 @@ const CreateMessageOffilineService = async ({
           });
 
           if (!messageCreated) {
-            throw new Error("ERR_CREATING_MESSAGE");
+            throw MessageErrors.creationFailed("Failed to create offline message");
           }
 
           io.to(`${tenantId}-${messageCreated.ticketId.toString()}`)
@@ -148,8 +151,7 @@ const CreateMessageOffilineService = async ({
       });
 
       if (!messageCreated) {
-        // throw new AppError("ERR_CREATING_MESSAGE", 501);
-        throw new Error("ERR_CREATING_MESSAGE");
+        throw MessageErrors.creationFailed(`Offline message creation failed for ticket ${ticket.id}`);
       }
 
       await ticket.update({
@@ -169,6 +171,10 @@ const CreateMessageOffilineService = async ({
     }
   } catch (error) {
     logger.error("CreateMessageOffLineService", error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(`Offline message service failed: ${error.message || error}`, 500);
   }
 };
 

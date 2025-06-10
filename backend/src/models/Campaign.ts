@@ -11,12 +11,14 @@ import {
   UpdatedAt,
   HasMany,
   Default,
-  AfterFind
+  AfterFind,
+  BelongsToMany
 } from "sequelize-typescript";
 import CampaignContacts from "./CampaignContacts";
 import Tenant from "./Tenant";
 import User from "./User";
 import Whatsapp from "./Whatsapp";
+import Contact from "./Contact";
 
 @Table
 class Campaign extends Model<Campaign> {
@@ -59,6 +61,9 @@ class Campaign extends Model<Campaign> {
   @Column
   mediaType: string;
 
+  @Column
+  mediaName: string;
+
   @ForeignKey(() => User)
   @Column
   userId: number;
@@ -82,6 +87,9 @@ class Campaign extends Model<Campaign> {
 
   @HasMany(() => CampaignContacts)
   campaignContacts: CampaignContacts[];
+
+  @BelongsToMany(() => Contact, () => CampaignContacts)
+  contacts: Contact[];
 
   @CreatedAt
   createdAt: Date;

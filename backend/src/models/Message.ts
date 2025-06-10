@@ -114,7 +114,10 @@ class Message extends Model<Message> {
   @ForeignKey(() => User)
   @Default(null)
   @AllowNull
-  @Column
+  @Column({
+    type: DataType.BIGINT,
+    field: 'userId'
+  })
   userId: number;
 
   @BelongsTo(() => User)

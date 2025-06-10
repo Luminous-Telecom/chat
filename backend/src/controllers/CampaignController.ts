@@ -4,6 +4,7 @@ import AppError from "../errors/AppError";
 
 import CreateCampaignService from "../services/CampaignServices/CreateCampaignService";
 import ListCampaignService from "../services/CampaignServices/ListCampaignService";
+import ShowCampaignService from "../services/CampaignServices/ShowCampaignService";
 import DeleteCampaignService from "../services/CampaignServices/DeleteCampaignService";
 import UpdateCampaignService from "../services/CampaignServices/UpdateCampaignService";
 import StartCampaignService from "../services/CampaignServices/StartCampaignService";
@@ -165,4 +166,16 @@ export const cancelCampaign = async (
   });
 
   return res.status(200).json({ message: "Campaign canceled" });
+};
+
+export const show = async (req: Request, res: Response): Promise<Response> => {
+  const { campaignId } = req.params;
+  const { tenantId } = req.user;
+
+  const campaign = await ShowCampaignService({
+    campaignId,
+    tenantId
+  });
+
+  return res.status(200).json(campaign);
 };

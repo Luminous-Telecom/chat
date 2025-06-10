@@ -1,4 +1,8 @@
 import ApiMessage from "../../models/ApiMessage";
+import { logger } from "../../utils/logger";
+import socketEmit from "../../helpers/socketEmit";
+import AppError from "../../errors/AppError";
+import { MessageErrors } from "../../utils/errorHandler";
 
 interface MessageData {
   sessionId: number;
@@ -71,8 +75,7 @@ const UpsertMessageAPIService = async ({
   }
 
   if (!message) {
-    // throw new AppError("ERR_CREATING_MESSAGE", 501);
-    throw new Error("ERR_CREATING_MESSAGE");
+    throw MessageErrors.creationFailed(`API message creation failed for session ${sessionId}`);
   }
 
   return message;

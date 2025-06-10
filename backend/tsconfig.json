@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "es2019",
     "module": "commonjs",
     "outDir": "./dist",
     "strict": true,
@@ -14,8 +14,19 @@
     "sourceMap": true,
     "rootDir": "./src",
     "resolveJsonModule": true,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/*", "node_modules/*"]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/@types"
+    ]
   },
+  "include": [
+    "src/**/*"
+  ],
   "exclude": [
     "dist",
     "public"

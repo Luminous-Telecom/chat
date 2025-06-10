@@ -1,5 +1,8 @@
 import { Op } from "sequelize";
+import { logger } from "../../utils/logger";
 import socketEmit from "../../helpers/socketEmit";
+import AppError from "../../errors/AppError";
+import { MessageErrors } from "../../utils/errorHandler";
 import Contact from "../../models/Contact";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
@@ -89,8 +92,7 @@ const CreateForwardMessageService = async ({
   });
 
   if (!messageCreated) {
-    // throw new AppError("ERR_CREATING_MESSAGE", 501);
-    throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
+    throw MessageErrors.systemCreationFailed(`Forward message creation failed for ticket ${ticket.id}`);
   }
 
   await ticket.update({

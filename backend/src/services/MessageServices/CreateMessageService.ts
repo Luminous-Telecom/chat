@@ -1,6 +1,8 @@
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import socketEmit from "../../helpers/socketEmit";
+import AppError from "../../errors/AppError";
+import { MessageErrors } from "../../utils/errorHandler";
 
 interface MessageData {
   id?: string;
@@ -49,8 +51,7 @@ const CreateMessageService = async ({
   });
 
   if (!message) {
-    // throw new AppError("ERR_CREATING_MESSAGE", 501);
-    throw new Error("ERR_CREATING_MESSAGE");
+    throw MessageErrors.creationFailed(`Message with ID ${messageData.messageId}`);
   }
 
   socketEmit({

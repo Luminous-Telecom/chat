@@ -5,51 +5,120 @@ import isAuth from "../middleware/isAuth";
 import * as ContactController from "../controllers/ContactController";
 import * as ImportPhoneContactsController from "../controllers/ImportPhoneContactsController";
 import uploadConfig from "../config/upload";
+import { getBaileys } from "../libs/baileys";
+import AppError from "../errors/AppError";
+import Contact from "../models/Contact";
+import Whatsapp from "../models/Whatsapp";
 
 const upload = multer(uploadConfig);
 
 const contactRoutes = express.Router();
 
 contactRoutes.post(
-  "/contacts/import",
+  "/import",
   isAuth,
   ImportPhoneContactsController.store
 );
 
 contactRoutes.post(
-  "/contacts/upload",
+  "/upload",
   isAuth,
   upload.array("file"),
   ContactController.upload
 );
 
 contactRoutes.post(
-  "/contacts/export",
+  "/export",
   isAuth,
   ContactController.exportContacts
 );
 
-contactRoutes.get("/contacts", isAuth, ContactController.index);
+contactRoutes.get("/", isAuth, ContactController.index);
 
-contactRoutes.get("/contacts/:contactId", isAuth, ContactController.show);
+contactRoutes.get("/:contactId", isAuth, ContactController.show);
 
-contactRoutes.post("/contacts", isAuth, ContactController.store);
+contactRoutes.post("/", isAuth, ContactController.store);
 
-contactRoutes.post("/contacts/sync", isAuth, ContactController.syncContacts);
+contactRoutes.post("/sync", isAuth, ContactController.syncContacts);
 
-contactRoutes.put("/contacts/:contactId", isAuth, ContactController.update);
+contactRoutes.put("/:contactId", isAuth, ContactController.update);
 
-contactRoutes.delete("/contacts/:contactId", isAuth, ContactController.remove);
+contactRoutes.delete("/:contactId", isAuth, ContactController.remove);
 
 contactRoutes.put(
-  "/contact-tags/:contactId",
+  "/tags/:contactId",
   isAuth,
   ContactController.updateContactTags
 );
+
 contactRoutes.put(
-  "/contact-wallet/:contactId",
+  "/wallet/:contactId",
   isAuth,
   ContactController.updateContactWallet
 );
+
+contactRoutes.post("/:contactId/block", isAuth, async (req, res) => {
+  try {
+    const { contactId } = req.params;
+    const { whatsappId } = req.body;
+
+    const contact = await Contact.findByPk(contactId);
+    if (!contact) {
+      throw new AppError("ERR_NO_CONTACT_FOUND");
+    }
+
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (!whatsapp) {
+      throw new AppError("ERR_NO_WHATSAPP_FOUND");
+    }
+
+    const wbot = getBaileys(whatsappId);
+    if (!wbot) {
+      throw new AppError("ERR_NO_WHATSAPP_SESSION");
+    }
+
+    // Bloquear contato no WhatsApp
+    await wbot.updateBlockStatus(contact.number + '@s.whatsapp.net', 'block');
+
+    // Atualizar contato
+    await contact.update({ isBlocked: true });
+
+    return res.json(contact);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+contactRoutes.post("/:contactId/unblock", isAuth, async (req, res) => {
+  try {
+    const { contactId } = req.params;
+    const { whatsappId } = req.body;
+
+    const contact = await Contact.findByPk(contactId);
+    if (!contact) {
+      throw new AppError("ERR_NO_CONTACT_FOUND");
+    }
+
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (!whatsapp) {
+      throw new AppError("ERR_NO_WHATSAPP_FOUND");
+    }
+
+    const wbot = getBaileys(whatsappId);
+    if (!wbot) {
+      throw new AppError("ERR_NO_WHATSAPP_SESSION");
+    }
+
+    // Desbloquear contato no WhatsApp
+    await wbot.updateBlockStatus(contact.number + '@s.whatsapp.net', 'unblock');
+
+    // Atualizar contato
+    await contact.update({ isBlocked: false });
+
+    return res.json(contact);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 export default contactRoutes;

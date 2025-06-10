@@ -15,8 +15,16 @@ const query = `
     sum(qtd_total_atendimentos) qtd_total_atendimentos,
     sum(qtd_demanda_ativa) qtd_demanda_ativa,
     sum(qtd_demanda_receptiva) qtd_demanda_receptiva,
-    coalesce(concat(ROUND(AVG(tma)::decimal,0), 0), 'minutes')::interval TMA,
-    coalesce(concat(ROUND(AVG(tme)::decimal,0), 0), 'minutes')::interval TME,
+    CASE 
+      WHEN AVG(tma) IS NOT NULL THEN 
+        concat(ROUND(AVG(tma)::decimal,0), ' minutes')::interval 
+      ELSE '0 minutes'::interval 
+    END as TMA,
+    CASE 
+      WHEN AVG(tme) IS NOT NULL THEN 
+        concat(ROUND(AVG(tme)::decimal,0), ' minutes')::interval 
+      ELSE '0 minutes'::interval 
+    END as TME,
     (select count(distinct(c."id"))
       from "Contacts" c
       INNER JOIN "Tickets" tc ON tc."contactId" = c."id"
@@ -35,10 +43,26 @@ const query = `
       case when t."isActiveDemand" is true then 1 else 0 end qtd_demanda_ativa,
       case when t."isActiveDemand" is not true then 1 else 0 end qtd_demanda_receptiva,
       t."createdAt",
-      to_timestamp(t."closedAt"/1000) closedAt,
-      to_timestamp(t."startedAttendanceAt"/1000) startedAttendanceAt,
-      extract(epoch from AGE(to_timestamp(t."closedAt"/1000), t."createdAt")::interval)/60 tma,
-      extract(epoch from AGE(to_timestamp(t."startedAttendanceAt"/1000), t."createdAt"::timestamp)::interval)/60 tme,
+      CASE 
+        WHEN t."closedAt" IS NOT NULL AND t."closedAt" > 0 THEN 
+          to_timestamp(t."closedAt"/1000) 
+        ELSE NULL 
+      END as closedAt,
+      CASE 
+        WHEN t."startedAttendanceAt" IS NOT NULL AND t."startedAttendanceAt" > 0 THEN 
+          to_timestamp(t."startedAttendanceAt"/1000) 
+        ELSE NULL 
+      END as startedAttendanceAt,
+      CASE 
+        WHEN t."closedAt" IS NOT NULL AND t."closedAt" > 0 AND t."createdAt" IS NOT NULL THEN 
+          extract(epoch from AGE(to_timestamp(t."closedAt"/1000), t."createdAt")::interval)/60 
+        ELSE NULL 
+      END as tma,
+      CASE 
+        WHEN t."startedAttendanceAt" IS NOT NULL AND t."startedAttendanceAt" > 0 AND t."createdAt" IS NOT NULL THEN 
+          extract(epoch from AGE(to_timestamp(t."startedAttendanceAt"/1000), t."createdAt"::timestamp)::interval)/60 
+        ELSE NULL 
+      END as tme,
       t."tenantId"
     from "Tickets" t
     INNER JOIN "LogTickets" lt ON lt."ticketId" = t."id"
@@ -58,8 +82,16 @@ const queryAdmin = `
     sum(qtd_total_atendimentos) qtd_total_atendimentos,
     sum(qtd_demanda_ativa) qtd_demanda_ativa,
     sum(qtd_demanda_receptiva) qtd_demanda_receptiva,
-    coalesce(concat(ROUND(AVG(tma)::decimal,0), 0), 'minutes')::interval TMA,
-    coalesce(concat(ROUND(AVG(tme)::decimal,0), 0), 'minutes')::interval TME,
+    CASE 
+      WHEN AVG(tma) IS NOT NULL THEN 
+        concat(ROUND(AVG(tma)::decimal,0), ' minutes')::interval 
+      ELSE '0 minutes'::interval 
+    END as TMA,
+    CASE 
+      WHEN AVG(tme) IS NOT NULL THEN 
+        concat(ROUND(AVG(tme)::decimal,0), ' minutes')::interval 
+      ELSE '0 minutes'::interval 
+    END as TME,
     (select count(1)
       from "Contacts" c
       where
@@ -75,10 +107,26 @@ const queryAdmin = `
       case when t."isActiveDemand" is true then 1 else 0 end qtd_demanda_ativa,
       case when t."isActiveDemand" is not true then 1 else 0 end qtd_demanda_receptiva,
       t."createdAt",
-      to_timestamp(t."closedAt"/1000) closedAt,
-      to_timestamp(t."startedAttendanceAt"/1000) startedAttendanceAt,
-      extract(epoch from AGE(to_timestamp(t."closedAt"/1000), t."createdAt")::interval)/60 tma,
-      extract(epoch from AGE(to_timestamp(t."startedAttendanceAt"/1000), t."createdAt"::timestamp)::interval)/60 tme,
+      CASE 
+        WHEN t."closedAt" IS NOT NULL AND t."closedAt" > 0 THEN 
+          to_timestamp(t."closedAt"/1000) 
+        ELSE NULL 
+      END as closedAt,
+      CASE 
+        WHEN t."startedAttendanceAt" IS NOT NULL AND t."startedAttendanceAt" > 0 THEN 
+          to_timestamp(t."startedAttendanceAt"/1000) 
+        ELSE NULL 
+      END as startedAttendanceAt,
+      CASE 
+        WHEN t."closedAt" IS NOT NULL AND t."closedAt" > 0 AND t."createdAt" IS NOT NULL THEN 
+          extract(epoch from AGE(to_timestamp(t."closedAt"/1000), t."createdAt")::interval)/60 
+        ELSE NULL 
+      END as tma,
+      CASE 
+        WHEN t."startedAttendanceAt" IS NOT NULL AND t."startedAttendanceAt" > 0 AND t."createdAt" IS NOT NULL THEN 
+          extract(epoch from AGE(to_timestamp(t."startedAttendanceAt"/1000), t."createdAt"::timestamp)::interval)/60 
+        ELSE NULL 
+      END as tme,
       t."tenantId"
     from "Tickets" t
     INNER JOIN "LogTickets" lt ON lt."ticketId" = t."id"

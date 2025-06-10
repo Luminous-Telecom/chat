@@ -3,6 +3,8 @@
 import { getWbot } from "../libs/wbot";
 import SendMessagesSystemWbot from "../services/WbotServices/SendMessagesSystemWbot";
 import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
+import { Session } from "../libs/wbot";
 
 const sending: any = {};
 
@@ -21,7 +23,7 @@ export default {
     try {
       logger.info(`Sending Tenant Initiated: ${data.tenantId}`);
       if (sending[data.tenantId]) return;
-      const wbot = getWbot(data.sessionId);
+      const wbot = getWbot(data.sessionId) as Session;
       sending[data.tenantId] = true;
       await SendMessagesSystemWbot(wbot, data.tenantId);
       sending[data.tenantId] = false;
@@ -29,7 +31,10 @@ export default {
     } catch (error) {
       logger.error({ message: "Error send messages", error });
       sending[data.tenantId] = false;
-      throw new Error(error);
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(`Send messages job failed: ${error.message || error}`, 500);
     }
   }
 };

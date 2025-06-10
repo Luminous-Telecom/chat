@@ -3,6 +3,7 @@
 import Queue from "bull";
 import QueueListeners from "./QueueListeners";
 import * as jobs from "../jobs/Index";
+import AppError from "../errors/AppError";
 
 const queues = Object.values(jobs).map((job: any) => ({
   bull: new Queue(job.key, {
@@ -23,7 +24,7 @@ export default {
   async add(name: string, data: any | any[]) {
     const queue = this.queues.find((q: any) => q.name === name);
     if (!queue) {
-      throw new Error(`Queue ${name} not exists`);
+      throw new AppError(`Queue ${name} not exists`, 404);
     }
     if (Array.isArray(data)) {
       const parsedJobs = data.map((jobData: any) => {

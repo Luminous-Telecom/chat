@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import SendMessagesSchenduleWbot from "../services/WbotServices/SendMessagesSchenduleWbot";
 import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
 
 export default {
   key: "SendMessageSchenduled",
@@ -21,7 +22,10 @@ export default {
       //logger.info("Finalized SendMessageSchenduled");
     } catch (error) {
       logger.error({ message: "Error send messages", error });
-      throw new Error(error);
+      if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(`Send scheduled message job failed: ${error.message || error}`, 500);
     }
   }
 };

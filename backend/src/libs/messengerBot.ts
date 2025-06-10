@@ -22,7 +22,7 @@ export const initMessengerBot = async (
     // const appSecret = "3266b8c98ac59f3e957a5efeaaa13500";
     // const password = "";
     if (!accessToken) {
-      throw new Error("Not token configured");
+      throw new AppError("Not token configured", 400);
     }
 
     // if (connection && connection.session) {

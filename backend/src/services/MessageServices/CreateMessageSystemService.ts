@@ -7,6 +7,8 @@ import mime from "mime";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
 // import MessageOffLine from "../../models/MessageOffLine";
+import AppError from "../../errors/AppError";
+import { MessageErrors } from "../../utils/errorHandler";
 import Ticket from "../../models/Ticket";
 import Message from "../../models/Message";
 import socketEmit from "../../helpers/socketEmit";
@@ -89,9 +91,9 @@ const downloadMedia = async (msg: any): Promise<any> => {
           resolve(mediaData);
         })
         .on("error", (error: any) => {
-          console.error("ERROR DONWLOAD", error);
+          logger.error("Error downloading media", error);
           fs.rmdirSync(mediaPath, { recursive: true });
-          reject(new Error(error));
+          reject(new AppError(`Download failed: ${error.message || error}`, 500));
         });
     });
     return mediaData;
@@ -116,7 +118,7 @@ const downloadMedia = async (msg: any): Promise<any> => {
       }
       return {};
     }
-    throw new Error(error);
+    throw new AppError(`Media download error: ${error.message || error}`, 500);
   }
 };
 
@@ -131,36 +133,16 @@ const CreateMessageSystemService = async ({
   status,
   idFront
 }: Request): Promise<void> => {
-  const messageData: MessageData = {
-    ticketId: ticket.id,
-    body: Array.isArray(msg.body) ? undefined : msg.body,
-    contactId: ticket.contactId,
-    fromMe: sendType === "API" ? true : msg?.fromMe,
-    read: true,
-    mediaType: "chat",
-    mediaUrl: undefined,
-    mediaName: undefined,
-    originalName: undefined,
-    timestamp: new Date().getTime(),
-    quotedMsgId: msg?.quotedMsg?.id,
-    quotedMsg: msg?.quotedMsg,
-    userId,
-    scheduleDate,
-    sendType,
-    status,
-    tenantId,
-    idFront
-  };
-
   try {
     // Alter template message
-    if (msg.body && !Array.isArray(msg.body)) {
-      messageData.body = pupa(msg.body || "", {
-        // greeting: será considerado conforme data/hora da mensagem internamente na função pupa
+    let messageBody = Array.isArray(msg.body) ? undefined : msg.body;
+    if (messageBody && !Array.isArray(messageBody)) {
+      messageBody = pupa(messageBody || "", {
         protocol: ticket.protocol,
         name: ticket.contact.name
       });
     }
+
     if (sendType === "API" && msg.mediaUrl) {
       medias = [];
       const mediaData = await downloadMedia(msg);
@@ -193,20 +175,37 @@ const CreateMessageSystemService = async ({
             logger.error(`Error processing media filename: ${err}`);
           }
 
-          messageData.mediaType = media.mimetype.split("/")[0];
-          messageData.mediaName = media.filename;
-          messageData.originalName = media.originalname;
+          const mediaType = media.mimetype.split("/")[0];
+          const mediaName = media.filename;
+          const originalName = media.originalname;
 
           let message: any = {};
 
-          if (!messageData.scheduleDate) {
-            /// enviar mensagem > run time
+          if (!scheduleDate) {
             logger.info(`Sending message via proxy for ticket ${ticket.id}`);
             try {
+              const messageToSend = await Message.create({
+                ticketId: ticket.id,
+                body: originalName,
+                contactId: ticket.contactId,
+                fromMe: sendType === "API" ? true : msg?.fromMe,
+                read: true,
+                mediaType,
+                mediaUrl: mediaName,
+                mediaName: originalName,
+                timestamp: new Date().getTime(),
+                quotedMsgId: msg?.quotedMsg?.id,
+                userId,
+                scheduleDate,
+                sendType,
+                status,
+                tenantId,
+                idFront
+              });
+
               message = await SendMessageSystemProxy({
                 ticket,
-                messageData,
-                media,
+                messageData: messageToSend,
                 userId
               });
               logger.info(`Message sent successfully: ${JSON.stringify(message)}`);
@@ -214,30 +213,9 @@ const CreateMessageSystemService = async ({
               logger.error(`Error in SendMessageSystemProxy: ${proxyError}`);
               throw proxyError;
             }
-            ///
           }
 
-          logger.info(`Creating message in database with data: ${JSON.stringify({
-            ...messageData,
-            userId,
-            messageId: message.id?._serialized || message.messageId || null,
-            body: media.originalname,
-            mediaUrl: media.filename,
-            mediaType: media.mediaType || media.mimetype.substr(0, media.mimetype.indexOf("/"))
-          })}`);
-          
-          const msgCreated = await Message.create({
-            ...messageData,
-            userId,
-            messageId: message.id?._serialized || message.messageId || null,
-            body: media.originalname,
-            mediaUrl: media.filename,
-            mediaType: media.mediaType || media.mimetype.substr(0, media.mimetype.indexOf("/"))
-          });
-          
-          logger.info(`Message created successfully with ID: ${msgCreated.id}`);
-
-          const messageCreated = await Message.findByPk(msgCreated.id, {
+          const messageCreated = await Message.findByPk(message.id, {
             include: [
               {
                 model: Ticket,
@@ -254,7 +232,7 @@ const CreateMessageSystemService = async ({
           });
 
           if (!messageCreated) {
-            throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
+            throw MessageErrors.systemCreationFailed("Failed to send message via proxy");
           }
 
           await ticket.update({
@@ -272,39 +250,32 @@ const CreateMessageSystemService = async ({
     } else {
       let message: any = {};
 
-      if (!messageData.scheduleDate) {
-        /// enviar mensagem > run time
+      if (!scheduleDate) {
+        const messageToSend = await Message.create({
+          ticketId: ticket.id,
+          body: messageBody,
+          contactId: ticket.contactId,
+          fromMe: sendType === "API" ? true : msg?.fromMe,
+          read: true,
+          mediaType: "chat",
+          timestamp: new Date().getTime(),
+          quotedMsgId: msg?.quotedMsg?.id,
+          userId,
+          scheduleDate,
+          sendType,
+          status,
+          tenantId,
+          idFront
+        });
+
         message = await SendMessageSystemProxy({
           ticket,
-          messageData,
-          media: null,
+          messageData: messageToSend,
           userId
         });
-        ///
       }
 
-      // Extract messageId properly - ensure it's a string
-      let extractedMessageId = null;
-      if (message.id) {
-        if (typeof message.id === 'string') {
-          extractedMessageId = message.id;
-        } else if (message.id.id && typeof message.id.id === 'string') {
-          extractedMessageId = message.id.id;
-        } else if (message.id._serialized && typeof message.id._serialized === 'string') {
-          extractedMessageId = message.id._serialized;
-        }
-      } else if (message.messageId && typeof message.messageId === 'string') {
-        extractedMessageId = message.messageId;
-      }
-
-      const msgCreated = await Message.create({
-        ...messageData,
-        userId,
-        messageId: extractedMessageId,
-        mediaType: "chat"
-      });
-
-      const messageCreated = await Message.findByPk(msgCreated.id, {
+      const messageCreated = await Message.findByPk(message.id, {
         include: [
           {
             model: Ticket,
@@ -321,8 +292,7 @@ const CreateMessageSystemService = async ({
       });
 
       if (!messageCreated) {
-        // throw new AppError("ERR_CREATING_MESSAGE", 501);
-        throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
+        throw MessageErrors.systemCreationFailed(`Message creation failed for ticket ${ticket.id}`);
       }
 
       await ticket.update({
@@ -339,7 +309,10 @@ const CreateMessageSystemService = async ({
     }
   } catch (error) {
     logger.error("CreateMessageSystemService", error);
-    throw error;
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(`System message creation failed: ${error.message || error}`, 500);
   }
 };
 

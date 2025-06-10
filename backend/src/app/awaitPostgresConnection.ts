@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { Sequelize } from "sequelize";
 import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
 
 const execAsync = promisify(exec);
 
@@ -27,7 +28,7 @@ const waitForPostgresConnection = async function () {
         logger.info(`Saída do comando: ${stdout}`);
         if (stderr) {
           logger.error(`Erro ao executar o comando: ${stderr}`);
-          throw new Error(`Erro ao executar o comando: ${stderr}`);
+          throw new AppError(`Erro ao executar o comando: ${stderr}`, 500);
         }
         logger.info("Migrations executadas com sucesso!");
       }

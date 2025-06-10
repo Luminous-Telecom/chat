@@ -52,10 +52,20 @@ export const update = async (
   const whatsappData = req.body;
   const { tenantId } = req.user;
 
+  const whatsappIdNum = Number(whatsappId);
+  if (isNaN(whatsappIdNum)) {
+    throw new AppError("ERR_INVALID_WHATSAPP_ID", 400);
+  }
+
+  const tenantIdNum = Number(tenantId);
+  if (isNaN(tenantIdNum)) {
+    throw new AppError("ERR_INVALID_TENANT_ID", 400);
+  }
+
   const { whatsapp } = await UpdateWhatsAppService({
     whatsappData,
-    whatsappId,
-    tenantId
+    whatsappId: whatsappIdNum,
+    tenantId: tenantIdNum
   });
 
   return res.status(200).json(whatsapp);

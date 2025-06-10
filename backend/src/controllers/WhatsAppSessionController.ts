@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { apagarPastaSessao, getWbot, removeWbot } from "../libs/wbot";
+import { getWbot, removeWbot } from "../libs/wbot";
 import { isSessionClosedError } from "../helpers/HandleSessionError";
 import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService";
-import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
+import StartWhatsAppSession from "../services/WbotServices/StartWhatsAppSession";
 import UpdateWhatsAppService from "../services/WhatsappService/UpdateWhatsAppService";
 import { setValue } from "../libs/redisClient";
 import { logger } from "../utils/logger";
@@ -10,6 +10,8 @@ import { getTbot, removeTbot } from "../libs/tbot";
 import { getInstaBot, removeInstaBot } from "../libs/InstaBot";
 import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
+import { join } from "path";
+import { rm } from "fs/promises";
 
 // Cache para controlar operações simultâneas
 const operationLocks = new Map<string, boolean>();
@@ -40,11 +42,32 @@ const waitWithTimeout = (ms: number): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
+// Função para limpar pasta de sessão
+const clearSessionFolder = async (whatsappId: number): Promise<void> => {
+  try {
+    const sessionPath = join(__dirname, "..", "..", ".baileys_auth", `session-${whatsappId}`);
+    await rm(sessionPath, { recursive: true, force: true });
+  } catch (err) {
+    logger.warn(`Error clearing session folder for ${whatsappId}: ${err}`);
+  }
+};
+
 const store = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { tenantId } = req.user;
   
-  const lockKey = `start-${whatsappId}`;
+  const whatsappIdNum = Number(whatsappId);
+  const tenantIdNum = Number(tenantId);
+
+  // Validar conversão dos IDs
+  if (isNaN(whatsappIdNum)) {
+    throw new AppError("ERR_INVALID_WHATSAPP_ID", 400);
+  }
+  if (isNaN(tenantIdNum)) {
+    throw new AppError("ERR_INVALID_TENANT_ID", 400);
+  }
+  
+  const lockKey = `start-${whatsappIdNum}`;
   
   // Verificar se já há uma operação em andamento
   if (isOperationInProgress(lockKey)) {
@@ -56,8 +79,8 @@ const store = async (req: Request, res: Response): Promise<Response> => {
     lockOperation(lockKey);
     
     const whatsapp = await ShowWhatsAppService({
-      id: whatsappId,
-      tenantId,
+      id: whatsappIdNum,
+      tenantId: tenantIdNum,
       isInternal: true
     });
 
@@ -73,7 +96,7 @@ const store = async (req: Request, res: Response): Promise<Response> => {
     // Verificar se já existe uma sessão ativa na memória
     try {
       const existingWbot = getWbot(whatsapp.id);
-      if (existingWbot && existingWbot.info && existingWbot.info.wid) {
+      if (existingWbot) {
         logger.info(`WhatsApp ${whatsappId} session already exists in memory`);
         return res.status(200).json({ 
           message: "Session already exists.", 
@@ -103,8 +126,19 @@ const update = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { isQrcode, forceNewSession } = req.body;
   const { tenantId } = req.user;
+  
+  const whatsappIdNum = Number(whatsappId);
+  const tenantIdNum = Number(tenantId);
 
-  const lockKey = `update-${whatsappId}`;
+  // Validar conversão dos IDs
+  if (isNaN(whatsappIdNum)) {
+    throw new AppError("ERR_INVALID_WHATSAPP_ID", 400);
+  }
+  if (isNaN(tenantIdNum)) {
+    throw new AppError("ERR_INVALID_TENANT_ID", 400);
+  }
+
+  const lockKey = `update-${whatsappIdNum}`;
   
   // Verificar se já há uma operação em andamento
   if (isOperationInProgress(lockKey)) {
@@ -116,7 +150,10 @@ const update = async (req: Request, res: Response): Promise<Response> => {
     lockOperation(lockKey);
 
     // Buscar dados atuais do WhatsApp
-    const currentWhatsapp = await ShowWhatsAppService({ id: whatsappId, tenantId });
+    const currentWhatsapp = await ShowWhatsAppService({ 
+      id: whatsappIdNum, 
+      tenantId: tenantIdNum 
+    });
 
     logger.info(`Update request for WhatsApp ${whatsappId}: forceNewSession=${forceNewSession}, isQrcode=${isQrcode}, currentStatus=${currentWhatsapp.status}`);
 
@@ -135,12 +172,12 @@ const update = async (req: Request, res: Response): Promise<Response> => {
           logger.info(`Destroying existing session for WhatsApp ${whatsappId}`);
           
           // Tentar destruir com timeout
-          const destroyPromise = new Promise<void>((resolve) => {
+          const logoutPromise = new Promise<void>((resolve) => {
             try {
-              existingWbot.destroy();
+              existingWbot.logout();
               resolve();
-            } catch (destroyError: any) {
-              logger.warn(`Error destroying existing session: ${destroyError.message}`);
+            } catch (logoutError: any) {
+              logger.warn(`Error destroying existing session: ${logoutError.message}`);
               resolve();
             }
           });
@@ -152,7 +189,7 @@ const update = async (req: Request, res: Response): Promise<Response> => {
             }, 5000);
           });
           
-          await Promise.race([destroyPromise, timeoutPromise]);
+          await Promise.race([logoutPromise, timeoutPromise]);
           await waitWithTimeout(1000); // Aguardar limpeza
         }
       } catch (getWbotError) {
@@ -163,16 +200,21 @@ const update = async (req: Request, res: Response): Promise<Response> => {
       removeWbot(currentWhatsapp.id);
       
       // Limpar pasta de sessão
-      await apagarPastaSessao(whatsappId);
+      const sessionPath = join(__dirname, "..", "..", ".baileys_auth", `session-${currentWhatsapp.id}`);
+      try {
+        await rm(sessionPath, { recursive: true, force: true });
+      } catch (err) {
+        logger.warn(`Error clearing session folder: ${err}`);
+      }
       
       // Atualizar banco de dados
       const { whatsapp } = await UpdateWhatsAppService({
-        whatsappId,
+        whatsappId: whatsappIdNum,
         whatsappData: { 
           session: "",
           status: "OPENING"
         },
-        tenantId
+        tenantId: tenantIdNum
       });
       
       // Aguardar um pouco antes de iniciar nova sessão
@@ -210,7 +252,18 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { tenantId } = req.user;
   
-  const lockKey = `remove-${whatsappId}`;
+  const whatsappIdNum = Number(whatsappId);
+  const tenantIdNum = Number(tenantId);
+
+  // Validar conversão dos IDs
+  if (isNaN(whatsappIdNum)) {
+    throw new AppError("ERR_INVALID_WHATSAPP_ID", 400);
+  }
+  if (isNaN(tenantIdNum)) {
+    throw new AppError("ERR_INVALID_TENANT_ID", 400);
+  }
+  
+  const lockKey = `remove-${whatsappIdNum}`;
   
   // Verificar se já há uma operação em andamento
   if (isOperationInProgress(lockKey)) {
@@ -221,7 +274,10 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
   try {
     lockOperation(lockKey);
     
-    const channel = await ShowWhatsAppService({ id: whatsappId, tenantId });
+    const channel = await ShowWhatsAppService({ 
+      id: whatsappIdNum, 
+      tenantId: tenantIdNum 
+    });
     const io = getIO();
 
     logger.info(`Removing session for channel ${channel.id} (${channel.type})`);
@@ -234,44 +290,39 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
         const wbot = getWbot(channel.id);
         
         // Verificar se a sessão está realmente ativa
-        if (wbot && wbot.pupPage && !wbot.pupPage.isClosed()) {
+        if (wbot) {
           logger.info(`Destroying active WhatsApp session ${channel.id}`);
           
           // Aguardar operações pendentes com timeout reduzido
           await waitWithTimeout(500);
           
-          // Verificar novamente se ainda está ativo
-          if (wbot.info && wbot.info.wid) {
-            // Usar destroy() com timeout para garantir que não trave
-            const destroyPromise = new Promise<void>((resolve, reject) => {
-              try {
-                wbot.destroy();
-                logger.info(`WhatsApp session ${channel.id} destroyed successfully`);
+          // Usar logout() com timeout para garantir que não trave
+          const logoutPromise = new Promise<void>((resolve, reject) => {
+            try {
+              wbot.logout();
+              logger.info(`WhatsApp session ${channel.id} destroyed successfully`);
+              resolve();
+            } catch (logoutError: any) {
+              if (isSessionClosedError(logoutError)) {
+                logger.info(`WhatsApp session ${channel.id} was already closed`);
                 resolve();
-              } catch (destroyError: any) {
-                if (isSessionClosedError(destroyError)) {
-                  logger.info(`WhatsApp session ${channel.id} was already closed`);
-                  resolve();
-                } else {
-                  logger.error(`Error destroying WhatsApp session ${channel.id}: ${destroyError.message}`);
-                  reject(destroyError);
-                }
+              } else {
+                logger.error(`Error destroying WhatsApp session ${channel.id}: ${logoutError.message}`);
+                reject(logoutError);
               }
-            });
+            }
+          });
 
-            const timeoutPromise = new Promise<void>((resolve) => {
-              setTimeout(() => {
-                logger.warn(`Timeout destroying WhatsApp session ${channel.id}`);
-                resolve();
-              }, 8000); // Timeout de 8 segundos
-            });
+          const timeoutPromise = new Promise<void>((resolve) => {
+            setTimeout(() => {
+              logger.warn(`Timeout destroying WhatsApp session ${channel.id}`);
+              resolve();
+            }, 8000); // Timeout de 8 segundos
+          });
 
-            await Promise.race([destroyPromise, timeoutPromise]);
-          } else {
-            logger.info(`WhatsApp session ${channel.id} info not available, skipping destroy`);
-          }
+          await Promise.race([logoutPromise, timeoutPromise]);
         } else {
-          logger.info(`WhatsApp session ${channel.id} already disconnected or page closed`);
+          logger.info(`WhatsApp session ${channel.id} already disconnected`);
         }
       } catch (getWbotError: any) {
         if (getWbotError.message && getWbotError.message.includes("ERR_WAPP_NOT_INITIALIZED")) {
@@ -376,22 +427,22 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
     
     try {
       // Tentar atualizar status mesmo em caso de erro
-      const channel = await ShowWhatsAppService({ id: whatsappId, tenantId });
+      const updatedChannel = await ShowWhatsAppService({ id: whatsappIdNum, tenantId });
       const io = getIO();
       
-      await channel.update({
+      await updatedChannel.update({
         status: "DISCONNECTED",
         session: ""
       });
 
-      io.emit(`${channel.tenantId}:whatsappSession`, {
+      io.emit(`${updatedChannel.tenantId}:whatsappSession`, {
         action: "update",
         session: {
-          id: channel.id,
-          name: channel.name,
+          id: updatedChannel.id,
+          name: updatedChannel.name,
           status: "DISCONNECTED",
           qrcode: "",
-          number: channel.number
+          number: updatedChannel.number
         }
       });
     } catch (updateError: any) {
@@ -411,7 +462,18 @@ const clearCache = async (req: Request, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { tenantId } = req.user;
   
-  const lockKey = `clear-cache-${whatsappId}`;
+  const whatsappIdNum = Number(whatsappId);
+  const tenantIdNum = Number(tenantId);
+
+  // Validar conversão dos IDs
+  if (isNaN(whatsappIdNum)) {
+    throw new AppError("ERR_INVALID_WHATSAPP_ID", 400);
+  }
+  if (isNaN(tenantIdNum)) {
+    throw new AppError("ERR_INVALID_TENANT_ID", 400);
+  }
+  
+  const lockKey = `clear-cache-${whatsappIdNum}`;
   
   // Verificar se já há uma operação em andamento
   if (isOperationInProgress(lockKey)) {
@@ -422,7 +484,10 @@ const clearCache = async (req: Request, res: Response): Promise<Response> => {
   try {
     lockOperation(lockKey);
     
-    const channel = await ShowWhatsAppService({ id: whatsappId, tenantId });
+    const channel = await ShowWhatsAppService({ 
+      id: whatsappIdNum, 
+      tenantId: tenantIdNum 
+    });
     const io = getIO();
 
     logger.info(`Clearing cache for channel ${channel.id} (${channel.type})`);
@@ -437,7 +502,7 @@ const clearCache = async (req: Request, res: Response): Promise<Response> => {
           const wbot = getWbot(channel.id);
           if (wbot) {
             logger.info(`Destroying active WhatsApp session ${channel.id}`);
-            await wbot.destroy().catch(err => {
+            await wbot.logout().catch(err => {
               logger.warn(`Error destroying session: ${err}`);
             });
           }
@@ -449,7 +514,12 @@ const clearCache = async (req: Request, res: Response): Promise<Response> => {
         removeWbot(channel.id);
         
         // 4. Limpar pasta de sessão
-        await apagarPastaSessao(channel.id);
+        const sessionPath = join(__dirname, "..", "..", ".baileys_auth", `session-${channel.id}`);
+        try {
+          await rm(sessionPath, { recursive: true, force: true });
+        } catch (err) {
+          logger.warn(`Error clearing session folder: ${err}`);
+        }
         
         // 5. Limpar cache da sessão
         const { clearSessionState } = require('../libs/wbot');

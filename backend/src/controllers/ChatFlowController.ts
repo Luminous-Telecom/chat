@@ -1,9 +1,11 @@
 // import * as Yup from "yup";
 import { Request, Response } from "express";
+import { logger } from "../utils/logger";
+import AppError from "../errors/AppError";
 
 import CreateChatFlowService from "../services/ChatFlowServices/CreateChatFlowService";
 import ListChatFlowService from "../services/ChatFlowServices/ListChatFlowService";
-import AppError from "../errors/AppError";
+import ShowChatFlowService from "../services/ChatFlowServices/ShowChatFlowService";
 import UpdateChatFlowService from "../services/ChatFlowServices/UpdateChatFlowService";
 import DeleteChatFlowService from "../services/ChatFlowServices/DeleteChatFlowService";
 // import UpdateAutoReplyService from "../services/AutoReplyServices/UpdateAutoReplyService";
@@ -15,22 +17,14 @@ interface Line {
   paintStyle: string | any;
   to: string;
 }
+
 interface Configuration {
-  maxRetryBotMessage: {
-    destiny: string;
-    number: number;
-    type: number;
-  };
-  notOptionsSelectMessage: {
-    message: string;
-    stepReturn: string;
-  };
-  notResponseMessage: {
-    destiny: string;
-    time: number;
-    type: number;
-  };
+  id: string;
+  name: string;
+  type: string;
+  value: string;
 }
+
 interface NodeList {
   ico?: string;
   id: string;
@@ -64,93 +58,143 @@ interface ChatFlowData {
 }
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
-  const { tenantId } = req.user;
-  if (req.user.profile !== "admin") {
-    throw new AppError("ERR_NO_PERMISSION", 403);
+  try {
+    const { tenantId } = req.user;
+    if (!tenantId) {
+      logger.error("No tenantId provided in request");
+      throw new AppError("Tenant ID is required", 400);
+    }
+
+    if (req.user.profile !== "admin") {
+      throw new AppError("ERR_NO_PERMISSION", 403);
+    }
+
+    const newFlow: ChatFlowData = {
+      flow: { ...req.body },
+      name: req.body.name,
+      isActive: true,
+      userId: +req.user.id,
+      tenantId,
+      defaultQueueId: req.body.defaultQueueId
+    };
+
+    logger.info(`Creating new ChatFlow for tenant ${tenantId}`);
+    const chatFlow = await CreateChatFlowService(newFlow);
+    return res.status(200).json(chatFlow);
+  } catch (err) {
+    logger.error(`Error in ChatFlowController.store: ${err.message}`);
+    throw err;
   }
-
-  const newFlow: ChatFlowData = {
-    flow: { ...req.body },
-    name: req.body.name,
-    isActive: true,
-    userId: +req.user.id,
-    tenantId,
-    defaultQueueId: req.body.defaultQueueId
-  };
-
-  // const schema = Yup.object().shape({
-  //   name: Yup.string().required(),
-  //   action: Yup.number().required(),
-  //   tenantId: Yup.number().required(),
-  //   userId: Yup.number().required()
-  // });
-
-  // try {
-  //   await schema.validate(newAutoReply);
-  // } catch (error) {
-  //   throw new AppError(error.message);
-  // }
-
-  const chatFlow = await CreateChatFlowService(newFlow);
-
-  return res.status(200).json(chatFlow);
 };
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
-  const { tenantId } = req.user;
-  const chatFlow = await ListChatFlowService({ tenantId });
-  return res.status(200).json(chatFlow);
-};
+  try {
+    const { tenantId } = req.user;
+    if (!tenantId) {
+      logger.error("No tenantId provided in request");
+      throw new AppError("Tenant ID is required", 400);
+    }
 
-export const update = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  if (req.user.profile !== "admin") {
-    throw new AppError("ERR_NO_PERMISSION", 403);
+    logger.info(`Listing ChatFlows for tenant ${tenantId}`);
+    const chatFlow = await ListChatFlowService({ tenantId });
+    return res.status(200).json(chatFlow);
+  } catch (err) {
+    logger.error(`Error in ChatFlowController.index: ${err.message}`);
+    throw err;
   }
-  const { tenantId } = req.user;
-
-  const newFlow: ChatFlowData = {
-    flow: { ...req.body },
-    name: req.body.name,
-    isActive: req.body.isReactive,
-    userId: +req.user.id,
-    tenantId,
-    defaultQueueId: req.body.defaultQueueId
-  };
-
-  // const schema = Yup.object().shape({
-  //   name: Yup.string().required(),
-  //   action: Yup.number().required(),
-  //   userId: Yup.number().required()
-  // });
-
-  // try {
-  //   await schema.validate(autoReplyData);
-  // } catch (error) {
-  //   throw new AppError(error.message);
-  // }
-
-  const { chatFlowId } = req.params;
-  const chatFlow = await UpdateChatFlowService({
-    chatFlowData: newFlow,
-    chatFlowId,
-    tenantId
-  });
-
-  return res.status(200).json(chatFlow);
 };
-export const remove = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const { chatFlowId } = req.params;
-  const { tenantId } = req.user;
 
-  await DeleteChatFlowService({ id: chatFlowId, tenantId });
+export const update = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    if (req.user.profile !== "admin") {
+      throw new AppError("ERR_NO_PERMISSION", 403);
+    }
 
-  return res.status(200).json({ message: "Flow deleted" });
+    const { tenantId } = req.user;
+    if (!tenantId) {
+      logger.error("No tenantId provided in request");
+      throw new AppError("Tenant ID is required", 400);
+    }
+
+    const { chatFlowId } = req.params;
+    if (!chatFlowId) {
+      logger.error("No chatFlowId provided in request");
+      throw new AppError("ChatFlow ID is required", 400);
+    }
+
+    const newFlow: ChatFlowData = {
+      flow: { ...req.body },
+      name: req.body.name,
+      isActive: req.body.isReactive,
+      userId: +req.user.id,
+      tenantId,
+      defaultQueueId: req.body.defaultQueueId
+    };
+
+    logger.info(`Updating ChatFlow ${chatFlowId} for tenant ${tenantId}`);
+    const chatFlow = await UpdateChatFlowService({
+      chatFlowData: newFlow,
+      chatFlowId,
+      tenantId
+    });
+
+    return res.status(200).json(chatFlow);
+  } catch (err) {
+    logger.error(`Error in ChatFlowController.update: ${err.message}`);
+    throw err;
+  }
+};
+
+export const remove = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { chatFlowId } = req.params;
+    const { tenantId } = req.user;
+
+    if (!tenantId) {
+      logger.error("No tenantId provided in request");
+      throw new AppError("Tenant ID is required", 400);
+    }
+
+    if (!chatFlowId) {
+      logger.error("No chatFlowId provided in request");
+      throw new AppError("ChatFlow ID is required", 400);
+    }
+
+    logger.info(`Removing ChatFlow ${chatFlowId} for tenant ${tenantId}`);
+    await DeleteChatFlowService({ id: chatFlowId, tenantId });
+    return res.status(200).json({ message: "Flow deleted" });
+  } catch (err) {
+    logger.error(`Error in ChatFlowController.remove: ${err.message}`);
+    throw err;
+  }
+};
+
+export const show = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { chatFlowId } = req.params;
+    const { tenantId } = req.user;
+
+    if (!tenantId) {
+      logger.error("No tenantId provided in request");
+      throw new AppError("Tenant ID is required", 400);
+    }
+
+    if (!chatFlowId) {
+      logger.error("No chatFlowId provided in request");
+      throw new AppError("ChatFlow ID is required", 400);
+    }
+
+    logger.info(`Fetching ChatFlow ${chatFlowId} for tenant ${tenantId}`);
+    const chatFlow = await ShowChatFlowService({
+      chatFlowId,
+      tenantId
+    });
+
+    return res.status(200).json(chatFlow);
+  } catch (err) {
+    logger.error(`Error in ChatFlowController.show: ${err.message}`);
+    throw err;
+  }
 };
 
 // export const remove = async (
