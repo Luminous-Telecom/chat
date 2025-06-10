@@ -1,13 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-await-in-loop */
 import { join } from "path";
-import {
-  Message as WbotMessage,
-  Buttons,
-  Client,
-  List,
-  MessageMedia
-} from "whatsapp-web.js";
 import { Op } from "sequelize";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
@@ -15,11 +8,8 @@ import { logger } from "../../utils/logger";
 import { sleepRandomTime } from "../../utils/sleepRandomTime";
 import Contact from "../../models/Contact";
 import GetWbotMessage from "../../helpers/GetWbotMessage";
+import fs from "fs";
 // import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
-
-interface Session extends Client {
-  id: number;
-}
 
 const SendMessagesSystemWbot = async (
   wbot: Session,
@@ -106,12 +96,10 @@ const SendMessagesSystemWbot = async (
       if (message.mediaType !== "chat" && message.mediaName) {
         const customPath = join(__dirname, "..", "..", "..", "public");
         const mediaPath = join(customPath, message.mediaName);
-        const newMedia = MessageMedia.fromFilePath(mediaPath);
-        sendedMessage = await wbot.sendMessage(chatId, newMedia, {
-          quotedMessageId: quotedMsgSerializedId,
-          linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
-          sendAudioAsVoice: true
-        });
+        const buffer = await fs.promises.readFile(mediaPath);
+        const mimetype = message.mediaType;
+        const caption = message.body;
+        sendedMessage = await (wbot as any).sendMessage(chatId, { image: buffer, mimetype, caption });
         logger.info("sendMessage media");
       } else {
         sendedMessage = await wbot.sendMessage(chatId, message.body, {

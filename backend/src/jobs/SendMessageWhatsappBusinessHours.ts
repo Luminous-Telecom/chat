@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { logger } from "../utils/logger";
-import { getWbot } from "../libs/wbot";
+import { getBaileysSession } from "../libs/baileys";
 
 export default {
   key: "SendMessageWhatsappBusinessHours",
@@ -15,12 +15,19 @@ export default {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async handle({ data }: any) {
     try {
-      const wbot = getWbot(data.ticket.whatsappId);
+      const wbot = getBaileysSession(data.ticket.whatsappId);
+      
+      if (!wbot) {
+        throw new Error(`WhatsApp session not found for ID: ${data.ticket.whatsappId}`);
+      }
+      
       const message = await wbot.sendMessage(
         `${data.ticket.contact.number}@c.us`,
         data.tenant.messageBusinessHours,
         {
-          linkPreview: false
+          quotedMessageId: undefined,
+          linkPreview: false,
+          sendAudioAsVoice: false
         }
       );
 

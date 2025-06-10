@@ -92,22 +92,12 @@ export default {
               withUnreadMessages: true,
               isNotAssignedUser: false,
               includeNotQueueDefined: true
-              // date: new Date(),
             }
-            console.log('Definiu parametros')
             try {
-              console.log('try')
               const { data } = await ConsultarTickets(params)
-              console.log('try 1')
               this.countTickets = data.count // count total de tickets no status
-              console.log('try 2')
-              // this.ticketsList = data.tickets
               this.$store.commit('UPDATE_NOTIFICATIONS', data)
-              console.log('try 3')
-              // this.$store.commit('SET_HAS_MORE', data.hasMore)
-              // console.log(this.notifications)
             } catch (err) {
-              console.log('error try')
               this.$notificarErro('Algum problema', err)
               console.error(err)
             }

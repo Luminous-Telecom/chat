@@ -101,7 +101,6 @@ export default {
     'ticketFocado.id': {
       handler () {
         if (this.socket && this.ticketFocado?.id) {
-          console.log('ticketFocado.id', this.ticketFocado.id)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
         }
       },
@@ -110,7 +109,6 @@ export default {
     socket: {
       handler () {
         if (this.socket && this.ticketFocado?.id) {
-          console.log('socket ticketFocado.id', this.ticketFocado.id)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
         }
       },
@@ -205,12 +203,10 @@ export default {
         }
 
         if (data.action === 'update' && shouldUpdateTicket(data.ticket)) {
-          console.log('ticketList > UPDATE_TICKET', data)
           this.$store.commit('UPDATE_TICKET', { type: this.status, ticket: data.ticket })
         }
 
         if (data.action === 'update' && notBelongsToUserQueues(data.ticket)) {
-          console.log('ticketList > DELETE_TICKET', data)
           this.$store.commit('DELETE_TICKET', { type: this.status, ticketId: data.ticket.id })
         }
 
@@ -221,7 +217,6 @@ export default {
 
       this.socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
         if (data.action === 'create' && shouldUpdateTicket(data.ticket)) {
-          console.log('ticketList > UPDATE_TICKET_UNREAD_MESSAGES', data)
           if (this.ticketFocado.id !== data.ticket.id && this.status !== 'closed' && !data.message.fromMe && !data.ticket.chatFlowId) {
             this.$root.$emit('handlerNotifications', data.message)
           }
@@ -241,7 +236,6 @@ export default {
     registerPropWatchers (propNames) {
       propNames.forEach(propName => {
         this.$watch(propName, (newVal, oldVal) => {
-          console.log('handle obsevablePropsSocket', propName)
           if (propName != 'searchParam') {
             if (this.socket) {
               this.socket.disconnect()

@@ -1,4 +1,4 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
+// Não precisa importar WbotMessage, pois é global
 
 const isValidMsg = (msg: WbotMessage): boolean => {
   if (msg.from === "status@broadcast") return false;

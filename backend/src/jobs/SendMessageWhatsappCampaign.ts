@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { join } from "path";
-import { MessageMedia, Message as WbotMessage } from "whatsapp-web.js";
+import { readFileSync } from "fs";
 import { logger } from "../utils/logger";
-import { getWbot } from "../libs/wbot";
+import { getBaileysSession } from "../libs/baileys";
 import CampaignContacts from "../models/CampaignContacts";
 
 export default {
@@ -21,19 +21,42 @@ export default {
   async handle({ data }: any) {
     try {
       /// feito por está apresentando problema com o tipo
-      const wbot = getWbot(data.whatsappId);
-      let message = {} as WbotMessage;
+      const wbot = getBaileysSession(data.whatsappId);
+      
+      if (!wbot) {
+        throw new Error(`WhatsApp session not found for ID: ${data.whatsappId}`);
+      }
+      
+      let message = {} as any;
       if (data.mediaUrl) {
         const customPath = join(__dirname, "..", "..", "public");
         const mediaPath = join(customPath, data.mediaName);
-        const newMedia = MessageMedia.fromFilePath(mediaPath);
-        message = await wbot.sendMessage(`${data.number}@c.us`, newMedia, {
-          sendAudioAsVoice: true,
-          caption: data.message
-        });
+        const mediaBuffer = readFileSync(mediaPath);
+        
+        // Determine media type based on file extension
+        const fileExtension = data.mediaName.split('.').pop()?.toLowerCase();
+        let mediaType = 'document';
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '')) {
+          mediaType = 'image';
+        } else if (['mp4', 'avi', 'mov', 'mkv'].includes(fileExtension || '')) {
+          mediaType = 'video';
+        } else if (['mp3', 'wav', 'ogg', 'm4a'].includes(fileExtension || '')) {
+          mediaType = 'audio';
+        }
+        
+        const mediaMessage = {
+          [mediaType]: mediaBuffer,
+          caption: data.message,
+          fileName: data.mediaName,
+          mimetype: `${mediaType}/*`
+        };
+        
+        message = await wbot.sendMessage(`${data.number}@c.us`, mediaMessage);
       } else {
         message = await wbot.sendMessage(`${data.number}@c.us`, data.message, {
-          linkPreview: false
+          quotedMessageId: undefined,
+          linkPreview: false,
+          sendAudioAsVoice: false
         });
       }
 

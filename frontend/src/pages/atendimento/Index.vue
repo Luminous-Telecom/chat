@@ -1107,12 +1107,10 @@ export default {
         if (this.$q.screen.lt.md && ticket.status !== 'pending') {
           this.$root.$emit('infor-cabecalo-chat:acao-menu')
         }
-        console.log('before - AbrirChatMensagens', ticket)
         this.$store.commit('SET_HAS_MORE', true)
         this.$store.dispatch('AbrirChatMensagens', ticket)
       }
     } else {
-      console.log('chat-empty')
       this.$router.push({ name: 'chat-empty' })
     }
   },

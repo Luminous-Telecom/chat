@@ -279,7 +279,7 @@ img:after
   width: inherit
   height: inherit
   z-index: 10
-  background: #ebebeb url('http://via.placeholder.com/300?text=PlaceHolder') no-repeat center
+  background: #ebebeb url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgNC44NCAyLjE3IDQuODQgNC44NCAwIDIuNjctMi4xNyA0Ljg0LTQuODQgNC44NC0yLjY3IDAtNC44NC0yLjE3LTQuODQtNC44NCAwLTIuNjcgMi4xNy00Ljg0IDQuODQtNC44NHptMCAxMmM0LjQyIDAgOC4xNy0yLjIyIDkuNTQtNS41NS0yLjY5LTEuNzMtNi4xNC0yLjctOS41NC0yLjctMy40IDAtNi44NS45Ny05LjU0IDIuNyAxLjM3IDMuMzMgNS4xMiA1LjU1IDkuNTQgNS41NXoiLz48L3N2Zz4=') no-repeat center
   color: transparent
 
 .ticket-active-item

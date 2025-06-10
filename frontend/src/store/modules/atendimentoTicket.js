@@ -57,13 +57,11 @@ const checkTicketFilter = (ticket) => {
 
   // Verificar se é admin e se está solicitando para mostrar todos
   if (isAdminShowAll) {
-    console.log('isAdminShowAll', isAdminShowAll)
     return true
   }
 
   // se ticket for um grupo, todos podem verificar.
   if (ticket.isGroup) {
-    console.log('ticket.isGroup', ticket.isGroup)
     return true
   }
 

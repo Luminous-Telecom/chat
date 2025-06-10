@@ -1,5 +1,5 @@
-import { Client as Session } from "whatsapp-web.js";
-import { getWbot } from "../libs/wbot";
+import { BaileysClient as Session } from '../types/baileys';
+import { getBaileysSession } from "../libs/baileys";
 import GetDefaultWhatsApp from "./GetDefaultWhatsApp";
 import Ticket from "../models/Ticket";
 
@@ -10,7 +10,11 @@ const GetTicketWbot = async (ticket: Ticket): Promise<Session> => {
     await ticket.$set("whatsapp", defaultWhatsapp);
   }
 
-  const wbot = getWbot(ticket.whatsappId);
+  const wbot = getBaileysSession(ticket.whatsappId);
+
+  if (!wbot) {
+    throw new Error("ERR_WAPP_NOT_INITIALIZED");
+  }
 
   return wbot;
 };

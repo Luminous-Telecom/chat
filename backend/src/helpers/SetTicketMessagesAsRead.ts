@@ -22,9 +22,49 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
   try {
     if (ticket.channel === "whatsapp") {
       const wbot = await GetTicketWbot(ticket);
-      wbot
-        .sendSeen(`${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`)
-        .catch(e => console.error("não foi possível marcar como lifo", e));
+      
+      // Implementação do Baileys para marcar mensagens como lidas
+      try {
+        const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "s"}.whatsapp.net`;
+        
+        // Buscar mensagens não lidas
+        const unreadMessages = await Message.findAll({
+          where: {
+            ticketId: ticket.id,
+            read: false,
+            fromMe: false
+          },
+          order: [["createdAt", "DESC"]],
+          limit: 100 // Limitar a quantidade para evitar sobrecarga
+        });
+
+        // Marcar cada mensagem como lida
+        for (const message of unreadMessages) {
+          if (message.messageId) {
+            try {
+              await wbot.chatModify(
+                { 
+                  markRead: true, 
+                  lastMessages: [{
+                    key: {
+                      remoteJid: chatId,
+                      id: message.messageId,
+                      fromMe: false
+                    },
+                    messageTimestamp: message.timestamp || Date.now()
+                  }]
+                },
+                chatId
+              );
+              logger.info(`Message ${message.messageId} marked as read`);
+            } catch (err) {
+              logger.warn(`Could not mark message ${message.messageId} as read: ${err}`);
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn(`Error marking messages as read for Baileys: ${err}`);
+      }
     }
     if (ticket.channel === "messenger") {
       const messengerBot = getMessengerBot(ticket.whatsappId);

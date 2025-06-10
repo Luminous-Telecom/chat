@@ -1,4 +1,10 @@
-import { Message as WbotMessage, MessageAck } from "whatsapp-web.js";
+// Não é necessário importar WbotMessage, pois é global
+// Definir o tipo MessageAck localmente
+
+type MessageAck = number; // ou defina conforme necessário para o seu uso
+
+// import { WbotMessage } from '../../../types/baileys';
+// import { MessageAck } from "whatsapp-web.js";
 import Message from "../../../models/Message";
 import Ticket from "../../../models/Ticket";
 import { logger } from "../../../utils/logger";

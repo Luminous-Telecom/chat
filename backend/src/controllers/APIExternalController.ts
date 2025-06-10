@@ -108,12 +108,12 @@ export const startSession = async (
   });
   try {
     const wbot = getWbot(APIConfig.sessionId);
-    const isConnectStatus = (await wbot.getState()) === "CONNECTED";
-    if (!isConnectStatus) {
+    const state = (wbot as any)?.connection;
+    if (state !== "open") {
       throw new Error("Necessário iniciar sessão");
     }
   } catch (error) {
-    StartWhatsAppSession(whatsapp);
+    StartWhatsAppSession(whatsapp, whatsapp.tenantId);
   }
 
   return res.status(200).json(whatsapp);

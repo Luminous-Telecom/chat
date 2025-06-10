@@ -1,10 +1,10 @@
 import fs from "fs";
-import { MessageMedia, Message as WbotMessage } from "whatsapp-web.js";
 import AppError from "../../errors/AppError";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
 import Ticket from "../../models/Ticket";
 import UserMessagesLog from "../../models/UserMessagesLog";
 import { logger } from "../../utils/logger";
+import mime from "mime-types";
 
 interface Request {
   media: Express.Multer.File;
@@ -16,17 +16,26 @@ const SendWhatsAppMedia = async ({
   media,
   ticket,
   userId
-}: Request): Promise<WbotMessage> => {
+}: Request): Promise<any> => {
   try {
     const wbot = await GetTicketWbot(ticket);
+    const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
+    const fileBuffer = fs.readFileSync(media.path);
+    const mimetype = mime.lookup(media.originalname) || undefined;
+    const options: any = { caption: media.originalname };
+    let content: any = {};
 
-    const newMedia = MessageMedia.fromFilePath(media.path);
+    if (mimetype && mimetype.toString().startsWith("image")) {
+      content = { image: fileBuffer, mimetype, caption: media.originalname };
+    } else if (mimetype && mimetype.toString().startsWith("video")) {
+      content = { video: fileBuffer, mimetype, caption: media.originalname };
+    } else if (mimetype && mimetype.toString().startsWith("audio")) {
+      content = { audio: fileBuffer, mimetype };
+    } else {
+      content = { document: fileBuffer, mimetype, fileName: media.originalname };
+    }
 
-    const sendMessage = await wbot.sendMessage(
-      `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`,
-      newMedia,
-      { sendAudioAsVoice: true }
-    );
+    const sendMessage = await (wbot as any).sendMessage(chatId, content, options);
 
     await ticket.update({
       lastMessage: media.filename,
@@ -48,7 +57,6 @@ const SendWhatsAppMedia = async ({
     return sendMessage;
   } catch (err) {
     logger.error(`SendWhatsAppMedia | Error: ${err}`);
-    // StartWhatsAppSessionVerify(ticket.whatsappId, err);
     throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };

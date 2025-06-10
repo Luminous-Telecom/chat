@@ -1,4 +1,5 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
+// Não precisa importar WbotMessage, pois é global
+
 import socketEmit from "../../../helpers/socketEmit";
 // import SetTicketMessagesAsRead from "../../../helpers/SetTicketMessagesAsRead";
 import Ticket from "../../../models/Ticket";

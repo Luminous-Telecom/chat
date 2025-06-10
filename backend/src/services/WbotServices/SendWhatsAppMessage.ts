@@ -1,4 +1,3 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
 import AppError from "../../errors/AppError";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
 import GetWbotMessage from "../../helpers/GetWbotMessage";
@@ -31,23 +30,32 @@ const SendWhatsAppMessage = async ({
   const wbot = await GetTicketWbot(ticket);
 
   try {
+    const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
+    const messageOptions = {
+      quoted: quotedMsgSerializedId ? {
+        key: {
+          remoteJid: chatId,
+          id: quotedMsgSerializedId
+        }
+      } : undefined,
+      linkPreview: false
+    };
+
     const sendMessage = await wbot.sendMessage(
-      `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`,
-      body,
-      {
-        quotedMessageId: quotedMsgSerializedId,
-        linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
-      }
+      chatId,
+      { text: body },
+      messageOptions
     );
 
     await ticket.update({
       lastMessage: body,
       lastMessageAt: new Date().getTime()
     });
+
     try {
       if (userId) {
         await UserMessagesLog.create({
-          messageId: sendMessage.id.id,
+          messageId: sendMessage.key.id,
           userId,
           ticketId: ticket.id
         });
@@ -55,6 +63,7 @@ const SendWhatsAppMessage = async ({
     } catch (error) {
       logger.error(`Error criar log mensagem ${error}`);
     }
+
     return sendMessage;
   } catch (err) {
     logger.error(`SendWhatsAppMessage | Error: ${err}`);

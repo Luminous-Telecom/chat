@@ -1,8 +1,3 @@
-import {
-  Contact as WbotContact,
-  Message as WbotMessage,
-  Client
-} from "whatsapp-web.js";
 import Contact from "../../../models/Contact";
 import { logger } from "../../../utils/logger";
 import FindOrCreateTicketService from "../../TicketServices/FindOrCreateTicketService";
@@ -17,10 +12,6 @@ import VerifyStepsChatFlowTicket from "../../ChatFlowServices/VerifyStepsChatFlo
 import Queue from "../../../libs/Queue";
 // import isMessageExistsService from "../../MessageServices/isMessageExistsService";
 import Setting from "../../../models/Setting";
-
-interface Session extends Client {
-  id: number;
-}
 
 const HandleMessage = async (
   msg: WbotMessage,
@@ -61,7 +52,7 @@ const HandleMessage = async (
           if (!msg.hasMedia && msg.type !== "chat" && msg.type !== "vcard")
             return;
 
-          msgContact = await wbot.getContactById(msg.to);
+          msgContact = (wbot as any).getContactById(msg.to);
         } else {
           msgContact = await msg.getContact();
         }
@@ -70,9 +61,9 @@ const HandleMessage = async (
           let msgGroupContact;
 
           if (msg.fromMe) {
-            msgGroupContact = await wbot.getContactById(msg.to);
+            msgGroupContact = (wbot as any).getContactById(msg.to);
           } else {
-            msgGroupContact = await wbot.getContactById(msg.from);
+            msgGroupContact = (wbot as any).getContactById(msg.from);
           }
 
           groupContact = await VerifyContact(msgGroupContact, tenantId);

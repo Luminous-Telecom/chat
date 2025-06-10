@@ -1,5 +1,4 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
-import Message from "../../models/Message";
+import Message from '../../models/Message';
 
 const isMessageExistsService = async (msg: WbotMessage): Promise<boolean> => {
   const message = await Message.findOne({

@@ -1,4 +1,4 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
+import { BaileysMessage } from '../types/baileys';
 import Ticket from "../models/Ticket";
 import GetTicketWbot from "./GetTicketWbot";
 import AppError from "../errors/AppError";
@@ -8,26 +8,22 @@ export const GetWbotMessage = async (
   ticket: Ticket,
   messageId: string,
   totalMessages = 100
-): Promise<WbotMessage | undefined> => {
+): Promise<BaileysMessage | undefined> => {
   const wbot = await GetTicketWbot(ticket);
 
-  const wbotChat = await wbot.getChatById(
-    `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`
-  );
+  const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
 
-  let limit = 20;
-
-  const fetchWbotMessagesGradually = async (): Promise<void | WbotMessage> => {
-    const chatMessages = await wbotChat.fetchMessages({ limit });
-
-    const msgFound = chatMessages.find(msg => msg.id.id === messageId);
-
-    if (!msgFound && limit < totalMessages) {
-      limit += 20;
-      return fetchWbotMessagesGradually();
+  const fetchWbotMessagesGradually = async (): Promise<BaileysMessage | undefined> => {
+    try {
+      // Para Baileys, precisamos implementar uma busca de mensagem diferente
+      // Por enquanto, retornamos undefined pois o método específico para buscar
+      // mensagens históricas no Baileys requer implementação customizada
+      logger.warn(`GetWbotMessage: Busca de mensagem ${messageId} não implementada para Baileys`);
+      return undefined;
+    } catch (error) {
+      logger.error('Error fetching message:', error);
+      return undefined;
     }
-
-    return msgFound;
   };
 
   try {

@@ -13,7 +13,7 @@ const SyncContactsWhatsappInstanceService = async (
   let contacts;
 
   try {
-    contacts = await wbot.getContacts();
+    contacts = Object.values((wbot as any).store.contacts || {});
   } catch (err) {
     logger.error(
       `Could not get whatsapp contacts from phone. Check connection page. | Error: ${err}`

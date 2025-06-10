@@ -1,5 +1,5 @@
 import { join } from "path";
-import { Client, MessageMedia } from "whatsapp-web.js";
+import { BaileysClient as Client } from '../../types/baileys';
 import Message from "../../models/Message";
 import MessagesOffLine from "../../models/MessageOffLine";
 import Ticket from "../../models/Ticket";
@@ -7,13 +7,10 @@ import { logger } from "../../utils/logger";
 import SendWhatsAppMessage from "./SendWhatsAppMessage";
 import { getIO } from "../../libs/socket";
 import UserMessagesLog from "../../models/UserMessagesLog";
-
-interface Session extends Client {
-  id?: number;
-}
+import fs from "fs";
 
 const SendOffLineMessagesWbot = async (
-  wbot: Session,
+  wbot: Client,
   tenantId: number | string
 ): Promise<void> => {
   const messages = await MessagesOffLine.findAll({
@@ -44,11 +41,13 @@ const SendOffLineMessagesWbot = async (
             process.env.PATH_OFFLINE_MEDIA || customPath,
             message.mediaName
           );
-          const newMedia = MessageMedia.fromFilePath(mediaPath);
+          const buffer = await fs.promises.readFile(mediaPath);
+          const mimetype = message.mediaType === "image" ? "image/jpeg" : "audio/mpeg";
+          const caption = message.mediaType === "image" ? message.body : undefined;
           const { number } = message.ticket.contact;
           const sendMessage = await wbot.sendMessage(
             `${number}@${message.ticket.isGroup ? "g" : "c"}.us`,
-            newMedia,
+            { image: buffer, mimetype, caption },
             { sendAudioAsVoice: true }
           );
           try {

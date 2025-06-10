@@ -1,8 +1,8 @@
 import { join } from "path";
-import { MessageMedia } from "whatsapp-web.js";
 import Message from "../../models/Message";
 import { logger } from "../../utils/logger";
 import { getWbot } from "../../libs/wbot";
+import fs from "fs";
 
 const SendMessage = async (message: Message): Promise<void> => {
   logger.info(`SendMessage: ${message.id}`);
@@ -22,17 +22,22 @@ const SendMessage = async (message: Message): Promise<void> => {
   if (message.mediaType !== "chat" && message.mediaName) {
     const customPath = join(__dirname, "..", "..", "..", "public");
     const mediaPath = join(customPath, message.mediaName);
-    const newMedia = MessageMedia.fromFilePath(mediaPath);
-    sendedMessage = await wbot.sendMessage(chatId, newMedia, {
+    const buffer = await fs.promises.readFile(mediaPath);
+    const mimetype = message.mediaType;
+    const caption = message.body;
+    const options = {
       quotedMessageId: quotedMsgSerializedId,
-      linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
-      sendAudioAsVoice: true
-    });
+      linkPreview: false,
+      sendAudioAsVoice: false
+    };
+    sendedMessage = await wbot.sendMessage(chatId, { image: buffer, mimetype, caption }, options);
   } else {
-    sendedMessage = await wbot.sendMessage(chatId, message.body, {
+    const options = {
       quotedMessageId: quotedMsgSerializedId,
-      linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
-    });
+      linkPreview: false,
+      sendAudioAsVoice: false
+    };
+    sendedMessage = await wbot.sendMessage(chatId, message.body, options);
   }
 
   // enviar old_id para substituir no front a mensagem corretamente

@@ -14,11 +14,11 @@ const CheckIsValidContact = async (
 
   try {
     // const isValidNumber = await wbot.isRegisteredUser(`${number}@c.us`);
-    const idNumber = await wbot.getNumberId(number);
-    if (!idNumber) {
+    const numberId = await (wbot as any).getNumberId(number);
+    if (!numberId) {
       throw new AppError("invalidNumber", 400);
     }
-    return idNumber;
+    return numberId;
   } catch (err: any) {
     logger.error(`CheckIsValidContact | Error: ${err}`);
     // StartWhatsAppSessionVerify(defaultWhatsapp.id, err);

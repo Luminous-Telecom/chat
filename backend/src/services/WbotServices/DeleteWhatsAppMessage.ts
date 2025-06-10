@@ -4,6 +4,7 @@ import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import { StartWhatsAppSessionVerify } from "./StartWhatsAppSessionVerify";
 import { getIO } from "../../libs/socket";
+import GetTicketWbot from "../../helpers/GetTicketWbot";
 
 const DeleteWhatsAppMessage = async (
   id: string,
@@ -61,13 +62,21 @@ const DeleteWhatsAppMessage = async (
 
   const { ticket } = message;
 
+  const session = await GetTicketWbot(ticket);
+  const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
+
   const messageToDelete = await GetWbotMessage(ticket, messageId);
 
   try {
     if (!messageToDelete) {
       throw new AppError("ERROR_NOT_FOUND_MESSAGE");
     }
-    await messageToDelete.delete(true);
+    await (session as any).sendMessage(chatId, {
+      protocolMessage: {
+        type: 0, // 0 = message deletion
+        key: messageToDelete.key
+      }
+    });
   } catch (err) {
     // StartWhatsAppSessionVerify(ticket.whatsappId, err);
     throw new AppError("ERR_DELETE_WAPP_MSG");

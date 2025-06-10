@@ -4,6 +4,7 @@ import Ticket from "../models/Ticket";
 import { getTbot } from "../libs/tbot";
 // import { getInstaBot } from "../libs/InstaBot";
 import GetWbotMessage from "./GetWbotMessage";
+import GetTicketWbot from "./GetTicketWbot";
 import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
 
@@ -45,7 +46,19 @@ const DeleteMessageSystem = async (
     if (!messageToDelete) {
       throw new AppError("ERROR_NOT_FOUND_MESSAGE");
     }
-    await messageToDelete.delete(true);
+    
+    // Para Baileys, não há método delete direto na mensagem
+    // A exclusão de mensagens deve ser implementada através do socket
+    const wbot = await GetTicketWbot(ticket);
+    const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
+    
+    try {
+      // Tentar deletar a mensagem usando o socket do Baileys
+      await wbot.sendMessage(chatId, { delete: messageToDelete.key });
+    } catch (error) {
+      console.warn('Não foi possível deletar a mensagem:', error);
+      throw new AppError("ERROR_DELETE_MESSAGE_FAILED");
+    }
   }
 
   if (ticket.channel === "telegram") {

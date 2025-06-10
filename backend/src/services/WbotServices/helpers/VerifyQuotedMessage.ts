@@ -1,15 +1,14 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
+// import { WbotMessage } from '../../../types/baileys';
 import Message from "../../../models/Message";
 
 const VerifyQuotedMessage = async (
   msg: WbotMessage
 ): Promise<Message | null> => {
-  if (!msg.hasQuotedMsg) return null;
+  if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) return null;
 
-  const wbotQuotedMsg = await msg.getQuotedMessage();
-
+  const quotedId = msg.message.extendedTextMessage.contextInfo.stanzaId;
   const quotedMsg = await Message.findOne({
-    where: { messageId: wbotQuotedMsg.id.id }
+    where: { messageId: quotedId ?? null }
   });
 
   if (!quotedMsg) return null;

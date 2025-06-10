@@ -45,7 +45,7 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
 
   if (whatsappSessions.length > 0) {
     whatsappSessions.forEach(whatsapp => {
-      StartWhatsAppSession(whatsapp);
+      StartWhatsAppSession(whatsapp, whatsapp.tenantId);
     });
   }
 

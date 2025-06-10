@@ -1,4 +1,3 @@
-import { Contact as WbotContact } from "whatsapp-web.js";
 import Contact from "../../../models/Contact";
 import CreateOrUpdateContactService from "../../ContactServices/CreateOrUpdateContactService";
 
@@ -13,17 +12,17 @@ const VerifyContact = async (
     profilePicUrl = undefined;
   }
 
+  const name = msgContact.name || msgContact.pushname || "";
+  const isUser = !msgContact.isGroup;
+  const pushname = msgContact.pushname || "";
+
   const contactData = {
-    name:
-      msgContact.name ||
-      msgContact.pushname ||
-      msgContact.shortName ||
-      msgContact.id.user,
-    number: msgContact.id.user,
+    name,
+    number: msgContact.id.user.replace(/\D/g, ''),
     profilePicUrl,
     tenantId,
-    pushname: msgContact.pushname,
-    isUser: msgContact.isUser,
+    pushname,
+    isUser,
     isWAContact: msgContact.isWAContact,
     isGroup: msgContact.isGroup
   };

@@ -636,32 +636,64 @@ export default {
         this.$notificarErro('Para agendar uma mensagem, informe o campo Data/Hora Agendamento.')
         return
       }
+
+      if (!this.ticketFocado?.id) {
+        this.$notificarErro('Nenhum ticket selecionado para envio da mensagem.')
+        return
+      }
+
+      if (!this.cMostrarEnvioArquivo && !this.textChat?.trim()) {
+        return
+      }
+
       this.loading = true
       const ticketId = this.ticketFocado.id
-      const message = !this.cMostrarEnvioArquivo
-        ? this.prepararMensagemTexto()
-        : this.prepararUploadMedia()
+      let message
+
       try {
-        if (!this.cMostrarEnvioArquivo && !this.textChat) return
+        message = !this.cMostrarEnvioArquivo
+          ? this.prepararMensagemTexto()
+          : this.prepararUploadMedia()
+
         await EnviarMensagemTexto(ticketId, message)
+
+        // Limpa o estado após envio bem sucedido
         this.arquivos = []
         this.textChat = ''
         this.$emit('update:replyingMessage', null)
         this.abrirFilePicker = false
         this.abrirModalPreviewImagem = false
+
+        // Scroll para a última mensagem
         setTimeout(() => {
           this.scrollToBottom()
         }, 300)
       } catch (error) {
+        console.error('Erro ao enviar mensagem:', error)
+
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Ocorreu um erro ao enviar a mensagem.'
+        if (error?.response?.data?.error) {
+          errorMessage = error.response.data.error
+        } else if (error?.message) {
+          errorMessage = `Erro: ${error.message}`
+        }
+
+        this.$notificarErro(errorMessage)
+
+        // Se for erro de conexão, tenta reconectar o socket
+        if (error?.message === 'Network Error' || !error?.response) {
+          this.$root.$emit('socket:reconnect')
+        }
+      } finally {
         this.isRecordingAudio = false
         this.loading = false
-        this.$notificarErro('Ocorreu um erro!', error)
+        setTimeout(() => {
+          if (this.$refs.inputEnvioMensagem) {
+            this.$refs.inputEnvioMensagem.focus()
+          }
+        }, 300)
       }
-      this.isRecordingAudio = false
-      this.loading = false
-      setTimeout(() => {
-        this.$refs.inputEnvioMensagem.focus()
-      }, 300)
     },
     async handlSendLinkVideo () {
       const link = `https://meet.jit.si/${uid()}/${uid()}`

@@ -1,4 +1,4 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
+// import { WbotMessage } from '../../../types/baileys';
 import Contact from "../../../models/Contact";
 import Ticket from "../../../models/Ticket";
 import CreateMessageService from "../../MessageServices/CreateMessageService";

@@ -9,7 +9,7 @@ const GetProfilePicUrl = async (
   try {
     const defaultWhatsapp = await GetDefaultWhatsApp(tenantId);
     const wbot = getWbot(defaultWhatsapp.id);
-    const profilePicUrl = await wbot.getProfilePicUrl(`${number}@c.us`);
+    const profilePicUrl = await (wbot as any).profilePictureUrl(`${number}@c.us`, 'image');
     return profilePicUrl;
   } catch (error) {
     logger.error(`GetProfilePicUrl - ${error}`);

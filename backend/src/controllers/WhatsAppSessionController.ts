@@ -11,38 +11,45 @@ import { getTbot, removeTbot } from "../libs/tbot";
 import { getInstaBot, removeInstaBot } from "../libs/InstaBot";
 import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
+import Whatsapp from "../models/Whatsapp";
 
-const store = async (req: Request, res: Response): Promise<Response> => {
+interface UserRequest extends Request {
+  user: {
+    id: string;
+    profile: string;
+    tenantId: string | number;
+  };
+}
+
+export const store = async (req: UserRequest, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
   const { tenantId } = req.user;
-  const whatsapp = await ShowWhatsAppService({
-    id: whatsappId,
-    tenantId,
-    isInternal: true
+
+  const whatsapp = await Whatsapp.findOne({
+    where: { id: whatsappId, tenantId }
   });
 
-  StartWhatsAppSession(whatsapp);
+  if (!whatsapp) {
+    throw new AppError("No WhatsApp instance found with this ID.");
+  }
 
+  StartWhatsAppSession(whatsapp, Number(tenantId));
   return res.status(200).json({ message: "Starting session." });
 };
 
-const update = async (req: Request, res: Response): Promise<Response> => {
+export const update = async (req: UserRequest, res: Response): Promise<Response> => {
   const { whatsappId } = req.params;
-  const { isQrcode } = req.body;
   const { tenantId } = req.user;
 
-  if (isQrcode) {
-    await apagarPastaSessao(whatsappId);
-  }
-
-  const { whatsapp } = await UpdateWhatsAppService({
-    whatsappId,
-    whatsappData: { session: "" },
-    tenantId
+  const whatsapp = await Whatsapp.findOne({
+    where: { id: whatsappId, tenantId }
   });
 
-  // await apagarPastaSessao(whatsappId);
-  StartWhatsAppSession(whatsapp);
+  if (!whatsapp) {
+    throw new AppError("No WhatsApp instance found with this ID.");
+  }
+
+  StartWhatsAppSession(whatsapp, Number(tenantId));
   return res.status(200).json({ message: "Starting session." });
 };
 
@@ -57,8 +64,7 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
     if (channel.type === "whatsapp") {
       const wbot = getWbot(channel.id);
       await setValue(`${channel.id}-retryQrCode`, 0);
-      await wbot
-        .logout()
+      await (wbot as any).logout()
         .catch(error => logger.error("Erro ao fazer logout da conexão", error)); // --> fecha o client e conserva a sessão para reconexão (criar função desconectar)
       removeWbot(channel.id);
       // await wbot

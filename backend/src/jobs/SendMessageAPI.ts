@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MessageMedia, Message as WbotMessage } from "whatsapp-web.js";
+// import { MessageMedia, Message as WbotMessage } from "whatsapp-web.js";
 import fs from "fs";
 import { v4 as uuid } from "uuid";
 import axios from "axios";
 import mime from "mime-types";
 import { join } from "path";
 import { logger } from "../utils/logger";
-import { getWbot } from "../libs/wbot";
+import { getBaileysSession } from "../libs/baileys";
 import UpsertMessageAPIService from "../services/ApiMessageService/UpsertMessageAPIService";
 import Queue from "../libs/Queue";
 import CheckIsValidContact from "../services/WbotServices/CheckIsValidContact";
@@ -30,8 +30,11 @@ export default {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async handle({ data }: any) {
     try {
-      const wbot = getWbot(data.sessionId);
-      const message: any = {} as WbotMessage;
+      const wbot = getBaileysSession(data.sessionId);
+      if (!wbot) {
+        throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+      }
+      // const message: any = {} as WbotMessage;
       try {
         const idNumber = await wbot.getNumberId(data.number);
         if (!idNumber) {
