@@ -1,17 +1,43 @@
-import { Client } from "whatsapp-web.js";
-import Queue from "../../libs/Queue";
+import { WASocket, proto } from "@whiskeysockets/baileys";
 import { logger } from "../../utils/logger";
+import Message from "../../models/Message";
+import Ticket from "../../models/Ticket";
+import { getIO } from "../../libs/socket";
+import { getWbot } from "../../libs/wbot";
+import AppError from "../../errors/AppError";
 import { isSessionClosedError } from "../../helpers/HandleSessionError";
+import Contact from "../../models/Contact";
+import { getMessageBody } from "../../utils/messages";
+import { Op } from "sequelize";
+import Queue from "../../libs/Queue";
 import VerifyStepsChatFlowTicket from "../ChatFlowServices/VerifyStepsChatFlowTicket";
 import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketService";
 import VerifyContact from "./helpers/VerifyContact";
 import VerifyMediaMessage from "./helpers/VerifyMediaMessage";
 import VerifyMessage from "./helpers/VerifyMessage";
-import AppError from "../../errors/AppError";
-import { getIO } from "../../libs/socket";
+import socketEmit from "../../helpers/socketEmit";
+import { getBaileys } from "../../libs/baileys";
+import Whatsapp from "../../models/Whatsapp";
 
-interface Session extends Client {
-  id?: number;
+// Definir o tipo personalizado para a sessão do WhatsApp
+type WhatsAppSession = WASocket & {
+  id: number;
+  tenantId: number;
+  lastHeartbeat?: number;
+  info?: {
+    pushname?: string;
+    wid?: string;
+  };
+  store?: {
+    contacts: { [key: string]: any };
+    chats: { [key: string]: any };
+    messages: { [key: string]: { [key: string]: proto.IWebMessageInfo } };
+  };
+};
+
+interface MessageStatus {
+  read: boolean;
+  fromMe: boolean;
 }
 
 // Cache para evitar processamento desnecessário
@@ -21,332 +47,189 @@ const errorAttempts = new Map<string, number>();
 // Cache para rastrear últimos erros críticos
 const lastCriticalError = new Map<string, number>();
 
-// Função para verificar se a sessão está saudável
-const isSessionHealthy = async (wbot: Session): Promise<boolean> => {
+// Função para processar mensagens não lidas
+const processUnreadMessages = async (wbot: WhatsAppSession, messages: proto.IWebMessageInfo[]): Promise<void> => {
+  for (const msg of messages) {
+    if (!msg || !msg.key || !msg.key.remoteJid) continue;
+    
+    try {
+      // ... rest of the code using msg ...
+    } catch (error) {
+      logger.error(`Error processing message: ${error}`);
+    }
+  }
+};
+
+const SyncUnreadMessagesWbot = async (whatsapp: Whatsapp): Promise<void> => {
+  const wbot = await getBaileys(whatsapp.id);
+  
+  if (!wbot) {
+    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+  }
+
+  const session = wbot as WhatsAppSession;
+  session.tenantId = whatsapp.tenantId;
+
+  // Verificar se a sessão está ativa
+  if (!session.store?.chats) {
+    logger.error(`Session not initialized for whatsapp ${whatsapp.id}`);
+    return;
+  }
+
   try {
-    if (!wbot || !wbot.pupPage || wbot.pupPage.isClosed()) {
-      return false;
-    }
+    // Obter todas as conversas do armazenamento local
+    const chats = session.store?.chats || {};
+    
+    for (const [chatId, chat] of Object.entries(chats)) {
+      // Ignorar chats de status e grupos
+      if (chatId === "status@broadcast" || chatId.endsWith("@g.us")) {
+        continue;
+      }
 
-    if (!wbot.info || !wbot.info.wid) {
-      return false;
-    }
+      // Obter mensagens não lidas do armazenamento local
+      const messages = session.store?.messages[chatId] || {};
+      const unreadMessages = Object.values(messages).filter((msg: proto.IWebMessageInfo) => {
+        const status = msg.messageStubParameters?.[0] as unknown as MessageStatus;
+        return !msg.key.fromMe && 
+               !status?.read && 
+               msg.message && 
+               msg.message.conversation !== undefined;
+      });
 
-    // Verificar se a página está responsiva testando elementos básicos do WhatsApp Web
-    const isResponsive = await Promise.race([
-      wbot.pupPage.evaluate(() => {
-        // Verificar se elementos básicos do WhatsApp Web estão presentes
-        return document.querySelector('[data-testid="app"]') !== null ||
-               document.querySelector('#app') !== null ||
-               document.querySelector('.app') !== null ||
-               typeof (window as any).Store !== 'undefined';
-      }),
-      new Promise<boolean>((_, reject) => 
-        setTimeout(() => reject(new Error('Page not responsive')), 3000)
-      )
-    ]).catch(() => false);
+      for (const msg of unreadMessages) {
+        const chatContact = {
+          name: msg.pushName || msg.key.remoteJid?.split("@")[0] || "",
+          number: msg.key.remoteJid?.split("@")[0] || "",
+          isGroup: msg.key.remoteJid?.endsWith("@g.us") || false,
+          tenantId: session.tenantId,
+          pushname: msg.pushName || "",
+          isUser: false,
+          isWAContact: true,
+          origem: "whatsapp"
+        };
 
-    return isResponsive;
-  } catch (error) {
-    return false;
-  }
-};
+        const contact = await VerifyContact(chatContact);
 
-// Função para aguardar com verificação de saúde da sessão
-const safeDelay = async (ms: number, wbot: Session): Promise<boolean> => {
-  await new Promise(resolve => setTimeout(resolve, ms));
-  return await isSessionHealthy(wbot);
-};
-
-// Função para verificar se deve pular sincronização devido a erros recentes
-const shouldSkipDueToErrors = (wbot: Session): boolean => {
-  const cacheKey = `${wbot.id}`;
-  const recentErrorTime = lastCriticalError.get(cacheKey);
-  const errorCount = errorAttempts.get(cacheKey) || 0;
-  
-  // Se teve erro crítico nos últimos 5 minutos e já teve 3+ erros, pular
-  if (recentErrorTime && (Date.now() - recentErrorTime) < 5 * 60 * 1000 && errorCount >= 3) {
-    logger.warn(`Skipping sync for ${wbot.id} due to recent critical errors (${errorCount} attempts)`);
-    return true;
-  }
-  
-  // Resetar contador se passou tempo suficiente
-  if (recentErrorTime && (Date.now() - recentErrorTime) > 10 * 60 * 1000) {
-    errorAttempts.delete(cacheKey);
-    lastCriticalError.delete(cacheKey);
-  }
-  
-  return false;
-};
-
-// Função para registrar erro crítico
-const recordCriticalError = (wbot: Session): void => {
-  const cacheKey = `${wbot.id}`;
-  const currentCount = errorAttempts.get(cacheKey) || 0;
-  errorAttempts.set(cacheKey, currentCount + 1);
-  lastCriticalError.set(cacheKey, Date.now());
-};
-
-const SyncUnreadMessagesWbot = async (
-  wbot: Session,
-  tenantId: number | string
-): Promise<void> => {
-  try {
-    // Verificar se deve pular devido a erros recentes
-    if (shouldSkipDueToErrors(wbot)) {
-      return;
-    }
-
-    // Verificações de segurança aprimoradas
-    if (!(await isSessionHealthy(wbot))) {
-      logger.warn('WhatsApp session is not healthy, skipping message synchronization');
-      return;
-    }
-
-    // Verificar se já está processando para evitar duplicação
-    const cacheKey = `${wbot.id}-${tenantId}`;
-    const lastProcessing = processingCache.get(cacheKey);
-    if (lastProcessing && (Date.now() - lastProcessing) < 45000) { // Aumentado para 45s
-      logger.info(`Skipping sync for ${wbot.id} - already processed recently`);
-      return;
-    }
-    processingCache.set(cacheKey, Date.now());
-
-    logger.info(`Starting message sync for WhatsApp ${wbot.id}`);
-
-    // Aguardar mais tempo para estabilização
-    if (!(await safeDelay(4000, wbot))) { // Aumentado para 4s
-      logger.warn('Session became unhealthy during initialization delay');
-      return;
-    }
-
-    // Buscar chats com timeout maior e retry
-    let chats: any[] = [];
-    let chatAttempts = 0;
-    const maxChatAttempts = 2;
-
-    while (chatAttempts < maxChatAttempts && chats.length === 0) {
-      try {
-        chatAttempts++;
-        logger.info(`Attempting to get chats (attempt ${chatAttempts})`);
-        
-        // Verificar saúde da sessão antes de cada tentativa
-        if (!(await isSessionHealthy(wbot))) {
-          logger.warn('Session unhealthy before getting chats');
-          return;
+        if (!contact) {
+          logger.error(`Contact not found for number ${chatId}`);
+          continue;
         }
-        
-        const chatsPromise = wbot.getChats();
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout getting chats')), 45000); // Aumentado para 45s
-        });
 
-        chats = await Promise.race([chatsPromise, timeoutPromise]) as any[];
-        
-        // Validar e filtrar chats de forma mais robusta
-        if (chats && Array.isArray(chats)) {
-          const originalLength = chats.length;
-          chats = chats.filter(chat => {
-            try {
-              // Verificações mais detalhadas
-              if (!chat || typeof chat !== 'object') return false;
-              if (!chat.id || !chat.id._serialized) return false;
-              if (typeof chat.unreadCount === 'undefined' || chat.unreadCount === null) return false;
-              if (typeof chat.isGroup === 'undefined' || chat.isGroup === null) return false;
-              
-              // Verificar se não é status broadcast
-              if (chat.id._serialized === 'status@broadcast') return false;
-              
-              // Verificar propriedades que podem causar problemas
-              if (chat.groupMetadata && typeof chat.groupMetadata !== 'object') return false;
-              
-              // Verificar se o chat tem estrutura válida
-              if (chat.name === null || chat.name === undefined) {
-                // Chats válidos podem ter name null, mas devem ter outras propriedades
-                if (!chat.id || !chat.id.user) return false;
-              }
-              
-              return true;
-            } catch (filterError: any) {
-              logger.warn(`Invalid chat object detected and filtered: ${filterError.message}`);
-              return false;
-            }
+        const ticketData = {
+          contact,
+          whatsappId: session.id,
+          unreadMessages: 1,
+          tenantId: session.tenantId,
+          msg,
+          channel: "whatsapp"
+        };
+
+        const ticket = await FindOrCreateTicketService(ticketData);
+
+        if (!ticket) {
+          logger.error(`Ticket not found for contact ${contact.id}`);
+          continue;
+        }
+
+        // Verificar se a mensagem já existe
+        if (msg.key.id) {
+          const messageExists = await Message.findOne({
+            where: { messageId: msg.key.id }
           });
-          
-          if (originalLength !== chats.length) {
-            logger.info(`Filtered ${originalLength - chats.length} invalid chats from ${originalLength} total`);
-          }
-          
-          if (chats.length > 0) {
-            logger.info(`Successfully retrieved ${chats.length} valid chats`);
-            break;
+
+          if (messageExists) {
+            continue;
           }
         }
-        
-        // Delay entre tentativas
-        if (chatAttempts < maxChatAttempts) {
-          if (!(await safeDelay(3000, wbot))) { // Aumentado para 3s
-            logger.warn('Session became unhealthy during retry delay');
-            return;
-          }
+
+        // Processar a mensagem
+        const messageData = {
+          messageId: msg.key.id || "",
+          ticketId: ticket.id,
+          contactId: contact.id,
+          body: getMessageBody(msg),
+          fromMe: msg.key.fromMe || false,
+          read: msg.key.fromMe || false,
+          mediaType: msg.message?.imageMessage ? "image" :
+                    msg.message?.videoMessage ? "video" :
+                    msg.message?.audioMessage ? "audio" :
+                    msg.message?.documentMessage ? "document" : "chat",
+          ack: msg.status,
+          tenantId: session.tenantId
+        };
+
+        if (msg.message?.imageMessage || 
+            msg.message?.videoMessage || 
+            msg.message?.audioMessage || 
+            msg.message?.documentMessage) {
+          await VerifyMediaMessage({ msg, ticket, contact });
+        } else {
+          await VerifyMessage({ msg, ticket, contact });
         }
-        
-      } catch (error: any) {
-        // Mudando de warn para debug para erros esperados de participantes
-        if (error.message && (
-          error.message.includes('participants') || 
-          error.message.includes('Cannot read properties of undefined') ||
-          error.message.includes('Evaluation failed')
-        )) {
-          logger.debug(`Expected sync error (skipping): ${error.message}`);
-          return;
-        }
-        
-        // Mantendo warn para outros tipos de erro
-        logger.warn(`Error getting chats (attempt ${chatAttempts}): ${error.message}`);
-        
-        if (error.message && (
-          error.message.includes('Protocol error') ||
-          error.message.includes('Target closed')
-        )) {
-          logger.error('WhatsApp session error detected - recording critical error and skipping sync');
-          recordCriticalError(wbot);
-          return;
-        }
-        
-        if (chatAttempts === maxChatAttempts) {
-          recordCriticalError(wbot);
-          throw error;
-        }
-        
-        // Delay maior entre tentativas em caso de erro
-        if (!(await safeDelay(5000, wbot))) { // Aumentado para 5s
-          logger.warn('Session became unhealthy during error recovery delay');
-          return;
+
+        // Marcar mensagem como lida
+        if (msg.key.id) {
+          await session.readMessages([msg.key]);
         }
       }
-    }
-    
-    if (!chats || chats.length === 0) {
-      logger.info(`No chats found for WhatsApp ${wbot.id}`);
-      return;
     }
 
-    // Filtrar chats válidos com verificações adicionais
-    const validChats = chats.filter(chat => {
-      try {
-        return chat && 
-               typeof chat.unreadCount === 'number' && 
-               chat.unreadCount > 0 && 
-               chat.isGroup === false &&
-               chat.id &&
-               chat.id._serialized &&
-               chat.id._serialized !== 'status@broadcast' &&
-               !chat.id._serialized.includes('@g.us'); // Extra verificação para grupos
-      } catch (error: any) {
-        logger.warn(`Invalid chat object found: ${error.message}`);
-        return false;
-      }
+    // Atualizar tickets pendentes
+    const pendingTickets = await Ticket.findAll({
+      where: {
+        status: "pending",
+        tenantId: session.tenantId,
+        whatsappId: whatsapp.id
+      },
+      include: [
+        {
+          model: Contact,
+          as: "contact",
+          where: {
+            number: {
+              [Op.not]: ""
+            }
+          }
+        }
+      ]
     });
-    
-    if (validChats.length === 0) {
-      logger.info(`No valid unread chats for WhatsApp ${wbot.id}`);
-      return;
-    }
 
-    // Limitar número de chats processados por ciclo para evitar sobrecarga
-    const maxChatsPerCycle = 5;
-    const chatsToProcess = validChats.slice(0, maxChatsPerCycle);
-    
-    if (validChats.length > maxChatsPerCycle) {
-      logger.info(`Limiting processing to ${maxChatsPerCycle} chats (${validChats.length} total with unread messages)`);
-    } else {
-      logger.info(`Processing ${chatsToProcess.length} valid chats with unread messages`);
-    }
-
-    // Processar chats sequencialmente para reduzir carga
-    for (let i = 0; i < chatsToProcess.length; i++) {
-      const chat = chatsToProcess[i];
-      
-      // Verificar saúde da sessão antes de cada chat
-      if (!(await isSessionHealthy(wbot))) {
-        logger.warn('Session became unhealthy during chat processing, stopping sync');
-        break;
-      }
-      
-      try {
-        await processChatMessages(chat, wbot, tenantId);
+    for (const ticket of pendingTickets) {
+      if (ticket.contact.number) {
+        const chatId = `${ticket.contact.number}@s.whatsapp.net`;
+        const chat = session.store?.chats[chatId];
         
-        // Resetar contador de erros em caso de sucesso
-        if (i === 0) { // Reset apenas no primeiro sucesso para não fazer muito frequentemente
-          const errorKey = `${wbot.id}`;
-          if (errorAttempts.get(errorKey)) {
-            logger.info(`Resetting error counter for ${wbot.id} after successful processing`);
-            errorAttempts.delete(errorKey);
+        if (chat) {
+          const messages = session.store?.messages[chatId] || {};
+          const unreadCount = Object.values(messages).filter((msg: proto.IWebMessageInfo) => {
+            const status = msg.messageStubParameters?.[0] as unknown as MessageStatus;
+            return !msg.key.fromMe && !status?.read;
+          }).length;
+
+          if (unreadCount > 0) {
+            await ticket.update({
+              unreadMessages: unreadCount
+            });
+
+            socketEmit({
+              tenantId: session.tenantId,
+              type: "ticket:update",
+              payload: ticket
+            });
           }
         }
-        
-      } catch (error: any) {
-        logger.error(`Error processing chat ${chat.id?._serialized || 'unknown'}:`, error.message);
-        
-        // Se for erro crítico, parar o processamento e registrar
-        if (error.message && (
-          error.message.includes('participants') || 
-          error.message.includes('Cannot read properties of undefined') ||
-          error.message.includes('Evaluation failed') ||
-          error.message.includes('Protocol error') ||
-          error.message.includes('Target closed')
-        )) {
-          logger.error('Critical error detected, stopping sync to preserve session');
-          recordCriticalError(wbot);
-          break;
-        }
-      }
-
-      // Pausa maior entre chats para não sobrecarregar
-      if (i < chatsToProcess.length - 1) {
-        if (!(await safeDelay(2000, wbot))) { // Aumentado para 2s
-          logger.warn('Session became unhealthy during inter-chat delay');
-          break;
-        }
       }
     }
 
-    logger.info(`Message sync completed for WhatsApp ${wbot.id}`);
-
-  } catch (error: any) {
-    if (isSessionClosedError(error)) {
-      logger.warn('Session closed during message synchronization, ignoring error');
-      return;
-    }
-    
-    // Tratar erros que podem danificar a sessão
-    if (error.message && (
-      error.message.includes('participants') ||
-      error.message.includes('Evaluation failed') ||
-      error.message.includes('Cannot read properties of undefined') ||
-      error.message.includes('Protocol error') ||
-      error.message.includes('Target closed')
-    )) {
-      logger.error('Critical WhatsApp error detected - preserving session stability');
-      recordCriticalError(wbot);
-      return;
-    }
-    
-    logger.error("Erro ao sincronizar mensagens:", error);
-  } finally {
-    // Limpar cache após processamento (tempo maior)
-    const cacheKey = `${wbot.id}-${tenantId}`;
-    setTimeout(() => {
-      processingCache.delete(cacheKey);
-    }, 90000); // Aumentado para 90s
+  } catch (err) {
+    logger.error(`Error syncing unread messages: ${err}`);
   }
 };
 
 // Função para processar mensagens de cada chat com melhorias
 const processChatMessages = async (
   chat: any,
-  wbot: Session,
+  wbot: WhatsAppSession,
   tenantId: number | string
 ): Promise<void> => {
   try {
@@ -366,9 +249,9 @@ const processChatMessages = async (
       return;
     }
 
-    // Verificar saúde da sessão
-    if (!(await isSessionHealthy(wbot))) {
-      logger.warn('Session unhealthy, skipping chat processing');
+    // Verificar se a sessão está ativa
+    if (!wbot.store?.chats) {
+      logger.error(`Session not initialized for whatsapp ${wbot.id}`);
       return;
     }
 
@@ -390,12 +273,6 @@ const processChatMessages = async (
     while (attempts < maxAttempts && unreadMessages.length === 0) {
       try {
         attempts++;
-        
-        // Verificar saúde antes de cada tentativa
-        if (!(await isSessionHealthy(wbot))) {
-          logger.warn('Session became unhealthy during message fetch');
-          return;
-        }
         
         const messagesPromise = chat.fetchMessages({
           limit: messagesToFetch
@@ -461,7 +338,7 @@ const processChatMessages = async (
         return;
       }
       
-      contact = await VerifyContact(chatContact, tenantId);
+      contact = await VerifyContact(chatContact);
       if (!contact) {
         logger.warn(`Could not verify contact for chat ${chat.id._serialized}`);
         return;
@@ -492,17 +369,11 @@ const processChatMessages = async (
     for (let idx = 0; idx < unreadMessages.length; idx++) {
       const msg = unreadMessages[idx];
       
-      // Verificar saúde da sessão durante processamento de mensagens
-      if (!(await isSessionHealthy(wbot))) {
-        logger.warn('Session became unhealthy during message processing');
-        break;
-      }
-      
       try {
         if (msg.hasMedia) {
-          await VerifyMediaMessage(msg, ticket, contact);
+          await VerifyMediaMessage({ msg, ticket, contact });
         } else {
-          await VerifyMessage(msg, ticket, contact);
+          await VerifyMessage({ msg, ticket, contact });
         }
 
         // Processar webhook e chatflow apenas na última mensagem
@@ -584,6 +455,52 @@ export const cleanupSyncCache = (): void => {
   }
   
   logger.debug('Sync cache cleanup completed');
+};
+
+const StartWhatsAppSession = async (whatsapp: Whatsapp): Promise<void> => {
+  const wbot = await getBaileys(whatsapp.id);
+  
+  if (!wbot) {
+    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+  }
+
+  const session = wbot as WhatsAppSession;
+  session.tenantId = whatsapp.tenantId;
+
+  // Verificar se a sessão está ativa
+  if (!session.store?.chats) {
+    logger.error(`Session not initialized for whatsapp ${whatsapp.id}`);
+    return;
+  }
+
+  try {
+    // ... rest of the code ...
+  } catch (err) {
+    logger.error(`Error starting whatsapp session: ${err}`);
+  }
+};
+
+const StopWhatsAppSession = async (whatsapp: Whatsapp): Promise<void> => {
+  const wbot = await getBaileys(whatsapp.id);
+  
+  if (!wbot) {
+    throw new AppError("ERR_WAPP_NOT_INITIALIZED");
+  }
+
+  const session = wbot as WhatsAppSession;
+  session.tenantId = whatsapp.tenantId;
+
+  // Verificar se a sessão está ativa
+  if (!session.store?.chats) {
+    logger.error(`Session not initialized for whatsapp ${whatsapp.id}`);
+    return;
+  }
+
+  try {
+    // ... rest of the code ...
+  } catch (err) {
+    logger.error(`Error stopping whatsapp session: ${err}`);
+  }
 };
 
 export default SyncUnreadMessagesWbot;

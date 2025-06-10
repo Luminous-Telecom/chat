@@ -1,72 +1,69 @@
-import { join } from "path";
-import { promisify } from "util";
-import { writeFile } from "fs";
-
-import { Message as WbotMessage } from "whatsapp-web.js";
-import Contact from "../../../models/Contact";
-import Ticket from "../../../models/Ticket";
-
+import { proto } from "@whiskeysockets/baileys";
 import Message from "../../../models/Message";
-import VerifyQuotedMessage from "./VerifyQuotedMessage";
+import Ticket from "../../../models/Ticket";
+import Contact from "../../../models/Contact";
 import CreateMessageService from "../../MessageServices/CreateMessageService";
-import { logger } from "../../../utils/logger";
+import { getMessageBody } from "../../../utils/messages";
 
-const writeFileAsync = promisify(writeFile);
+interface Request {
+  msg: proto.IWebMessageInfo;
+  ticket: Ticket;
+  contact: Contact;
+}
 
-const VerifyMediaMessage = async (
-  msg: WbotMessage,
-  ticket: Ticket,
-  contact: Contact
-): Promise<Message | void> => {
-  const quotedMsg = await VerifyQuotedMessage(msg);
+const VerifyMediaMessage = async ({
+  msg,
+  ticket,
+  contact
+}: Request): Promise<Message | null> => {
+  if (!msg.message) return null;
 
-  const media = await msg.downloadMedia();
+  const messageBody = getMessageBody(msg);
+  let messageType: string | null = null;
+  let mediaData: any = null;
 
-  if (!media) {
-    logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: ID: ${msg.id.id}`);
-    return;
+  if (msg.message.imageMessage) {
+    messageType = "image";
+    mediaData = msg.message.imageMessage;
+  } else if (msg.message.videoMessage) {
+    messageType = "video";
+    mediaData = msg.message.videoMessage;
+  } else if (msg.message.audioMessage) {
+    messageType = "audio";
+    mediaData = msg.message.audioMessage;
+  } else if (msg.message.documentMessage) {
+    messageType = "document";
+    mediaData = msg.message.documentMessage;
   }
 
-  if (!media.filename) {
-    const ext = media.mimetype.split("/")[1].split(";")[0];
-    media.filename = `${new Date().getTime()}.${ext}`;
-  }
-
-  try {
-    await writeFileAsync(
-      join(__dirname, "..", "..", "..", "..", "public", media.filename),
-      media.data,
-      "base64"
-    );
-  } catch (err) {
-    logger.error(err);
+  if (!messageType || !mediaData) {
+    return null;
   }
 
   const messageData = {
-    messageId: msg.id.id,
+    messageId: msg.key.id || "",
     ticketId: ticket.id,
-    contactId: msg.fromMe ? undefined : contact.id,
-    body: msg.body || media.filename,
-    fromMe: msg.fromMe,
-    read: msg.fromMe,
-    mediaUrl: media.filename,
-    mediaType: media.mimetype.split("/")[0],
-    quotedMsgId: quotedMsg?.id,
-    timestamp: msg.timestamp,
-    status: msg.fromMe ? "sended" : "received"
+    contactId: contact.id,
+    body: messageBody,
+    fromMe: msg.key.fromMe || false,
+    read: msg.key.fromMe || false,
+    mediaType: messageType,
+    mediaUrl: mediaData.url || "",
+    ack: msg.status,
+    dataJson: JSON.stringify({
+      messageType,
+      mediaKey: mediaData.mediaKey,
+      mimetype: mediaData.mimetype,
+      fileName: mediaData.fileName,
+      caption: mediaData.caption
+    })
   };
 
   await ticket.update({
-    lastMessage: msg.body || media.filename,
-    lastMessageAt: new Date().getTime(),
-    answered: msg.fromMe || false
-  });
-  const newMessage = await CreateMessageService({
-    messageData,
-    tenantId: ticket.tenantId
+    lastMessage: messageBody || messageType
   });
 
-  return newMessage;
+  return CreateMessageService({ messageData, tenantId: ticket.tenantId });
 };
 
 export default VerifyMediaMessage;

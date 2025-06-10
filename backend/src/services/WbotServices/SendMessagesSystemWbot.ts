@@ -1,25 +1,17 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-await-in-loop */
 import { join } from "path";
-import {
-  Message as WbotMessage,
-  Buttons,
-  Client,
-  List,
-  MessageMedia
-} from "whatsapp-web.js";
+import { proto } from "@whiskeysockets/baileys";
 import { Op } from "sequelize";
+import { readFileSync } from "fs";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import { logger } from "../../utils/logger";
 import { sleepRandomTime } from "../../utils/sleepRandomTime";
 import Contact from "../../models/Contact";
 import GetWbotMessage from "../../helpers/GetWbotMessage";
+import { Session } from "../../libs/wbot";
 // import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
-
-interface Session extends Client {
-  id: number;
-}
 
 const SendMessagesSystemWbot = async (
   wbot: Session,
@@ -75,7 +67,7 @@ const SendMessagesSystemWbot = async (
     ],
     order: [["createdAt", "ASC"]]
   });
-  let sendedMessage;
+  let sendedMessage: proto.IWebMessageInfo | undefined;
 
   // logger.info(
   //   `SystemWbot SendMessages | Count: ${messages.length} | Tenant: ${tenantId} `
@@ -85,48 +77,72 @@ const SendMessagesSystemWbot = async (
     let quotedMsgSerializedId: string | undefined;
     const { ticket } = message;
     const contactNumber = ticket.contact.number;
-    const typeGroup = ticket?.isGroup ? "g" : "c";
-    const chatId = `${contactNumber}@${typeGroup}.us`;
+    const typeGroup = ticket?.isGroup ? "g" : "s";
+    const chatId = `${contactNumber}@${typeGroup}.whatsapp.net`;
 
-    if (message.quotedMsg) {
-      const inCache: WbotMessage | undefined = await GetWbotMessage(
-        ticket,
-        message.quotedMsg.messageId,
-        200
-      );
-      if (inCache) {
-        quotedMsgSerializedId = inCache?.id?._serialized || undefined;
-      } else {
-        quotedMsgSerializedId = undefined;
+    if (message.quotedMsg && message.quotedMsgId) {
+      const quotedMsg = await Message.findOne({
+        where: { id: message.quotedMsgId }
+      });
+      if (quotedMsg?.messageId) {
+        quotedMsgSerializedId = quotedMsg.messageId;
       }
-      // eslint-disable-next-line no-underscore-dangle
     }
 
     try {
       if (message.mediaType !== "chat" && message.mediaName) {
         const customPath = join(__dirname, "..", "..", "..", "public");
         const mediaPath = join(customPath, message.mediaName);
-        const newMedia = MessageMedia.fromFilePath(mediaPath);
-        sendedMessage = await wbot.sendMessage(chatId, newMedia, {
-          quotedMessageId: quotedMsgSerializedId,
-          linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
-          sendAudioAsVoice: true
-        });
+        const mediaData = readFileSync(mediaPath);
+        const mimeType = message.mediaName.endsWith('.mp3') ? 'audio/mp3' : 
+                        message.mediaName.endsWith('.mp4') ? 'video/mp4' :
+                        message.mediaName.endsWith('.jpg') || message.mediaName.endsWith('.jpeg') ? 'image/jpeg' :
+                        message.mediaName.endsWith('.png') ? 'image/png' :
+                        'application/octet-stream';
+
+        // Send as audio if it's an audio file, otherwise send as document
+        if (mimeType.startsWith('audio/')) {
+          sendedMessage = await wbot.sendMessage(
+            chatId,
+            { 
+              audio: mediaData,
+              mimetype: mimeType,
+              ptt: true, // send as voice note
+              caption: message.body
+            },
+            { quoted: quotedMsgSerializedId ? { key: { id: quotedMsgSerializedId } } : undefined }
+          );
+        } else {
+          sendedMessage = await wbot.sendMessage(
+            chatId,
+            { 
+              document: mediaData,
+              mimetype: mimeType,
+              fileName: message.mediaName,
+              caption: message.body
+            },
+            { quoted: quotedMsgSerializedId ? { key: { id: quotedMsgSerializedId } } : undefined }
+          );
+        }
         logger.info("sendMessage media");
       } else {
-        sendedMessage = await wbot.sendMessage(chatId, message.body, {
-          quotedMessageId: quotedMsgSerializedId,
-          linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
-        });
+        sendedMessage = await wbot.sendMessage(
+          chatId,
+          { text: message.body },
+          { quoted: quotedMsgSerializedId ? { key: { id: quotedMsgSerializedId } } : undefined }
+        );
         logger.info("sendMessage text");
+      }
+
+      if (!sendedMessage) {
+        throw new Error("Failed to send message");
       }
 
       // enviar old_id para substituir no front a mensagem corretamente
       const messageToUpdate = {
         ...message,
-        ...sendedMessage,
         id: message.id,
-        messageId: sendedMessage.id.id,
+        messageId: sendedMessage.key.id,
         status: "sended"
       };
 
@@ -144,7 +160,7 @@ const SendMessagesSystemWbot = async (
         maxMilliseconds: Number(process.env.MAX_SLEEP_INTERVAL || 2000)
       });
 
-      logger.info("sendMessage", sendedMessage.id.id);
+      logger.info("sendMessage", sendedMessage.key.id);
     } catch (error) {
       const idMessage = message.id;
       const ticketId = message.ticket.id;

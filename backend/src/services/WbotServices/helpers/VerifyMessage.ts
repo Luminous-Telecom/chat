@@ -1,35 +1,42 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
-import Contact from "../../../models/Contact";
+import { proto } from "@whiskeysockets/baileys";
+import Message from "../../../models/Message";
 import Ticket from "../../../models/Ticket";
+import Contact from "../../../models/Contact";
 import CreateMessageService from "../../MessageServices/CreateMessageService";
-import VerifyQuotedMessage from "./VerifyQuotedMessage";
+import { getMessageBody } from "../../../utils/messages";
 
-const VerifyMessage = async (
-  msg: WbotMessage,
-  ticket: Ticket,
-  contact: Contact
-) => {
-  const quotedMsg = await VerifyQuotedMessage(msg);
+interface Request {
+  msg: proto.IWebMessageInfo;
+  ticket: Ticket;
+  contact: Contact;
+}
+
+const VerifyMessage = async ({
+  msg,
+  ticket,
+  contact
+}: Request): Promise<Message | null> => {
+  if (!msg.message) return null;
+
+  const messageBody = getMessageBody(msg);
+  if (!messageBody) return null;
 
   const messageData = {
-    messageId: msg.id.id,
+    messageId: msg.key.id || "",
     ticketId: ticket.id,
-    contactId: msg.fromMe ? undefined : contact.id,
-    body: msg.body,
-    fromMe: msg.fromMe,
-    mediaType: msg.type,
-    read: msg.fromMe,
-    quotedMsgId: quotedMsg?.id,
-    timestamp: msg.timestamp,
-    status: "received"
+    contactId: contact.id,
+    body: messageBody,
+    fromMe: msg.key.fromMe || false,
+    read: msg.key.fromMe || false,
+    mediaType: "chat",
+    ack: msg.status
   };
 
   await ticket.update({
-    lastMessage: msg.body,
-    lastMessageAt: new Date().getTime(),
-    answered: msg.fromMe || false
+    lastMessage: messageBody
   });
-  await CreateMessageService({ messageData, tenantId: ticket.tenantId });
+
+  return CreateMessageService({ messageData, tenantId: ticket.tenantId });
 };
 
 export default VerifyMessage;

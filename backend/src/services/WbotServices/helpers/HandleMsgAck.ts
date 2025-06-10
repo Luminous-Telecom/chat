@@ -1,4 +1,4 @@
-import { Message as WbotMessage, MessageAck } from "whatsapp-web.js";
+import { proto } from "@whiskeysockets/baileys";
 import Message from "../../../models/Message";
 import Ticket from "../../../models/Ticket";
 import { logger } from "../../../utils/logger";
@@ -7,12 +7,17 @@ import ApiMessage from "../../../models/ApiMessage";
 import socketEmit from "../../../helpers/socketEmit";
 import Queue from "../../../libs/Queue";
 
-const HandleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
+const HandleMsgAck = async (msg: proto.IWebMessageInfo, ack: number) => {
   await new Promise(r => setTimeout(r, 500));
 
   try {
+    if (!msg.key.id) {
+      logger.error("Message ID is undefined");
+      return;
+    }
+
     const messageToUpdate = await Message.findOne({
-      where: { messageId: msg.id.id },
+      where: { messageId: msg.key.id },
       include: [
         "contact",
         {
@@ -41,7 +46,7 @@ const HandleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
       if (apiConfig?.externalKey && apiConfig?.urlMessageStatus) {
         const payload = {
           ack,
-          messageId: msg.id.id,
+          messageId: msg.key.id,
           ticketId: ticket.id,
           externalKey: apiConfig?.externalKey,
           authToken: apiConfig?.authToken,
@@ -56,7 +61,7 @@ const HandleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
     }
 
     const messageAPI = await ApiMessage.findOne({
-      where: { messageId: msg.id.id }
+      where: { messageId: msg.key.id }
     });
 
     if (messageAPI) {
@@ -64,14 +69,14 @@ const HandleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
     }
 
     const messageCampaign = await CampaignContacts.findOne({
-      where: { messageId: msg.id.id }
+      where: { messageId: msg.key.id }
     });
 
     if (messageCampaign) {
       await messageCampaign.update({ ack });
     }
   } catch (err) {
-    logger.error(err);
+    logger.error(`Error handling message ack: ${err}`);
   }
 };
 

@@ -1,65 +1,114 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
-import AppError from "../../errors/AppError";
-import GetTicketWbot from "../../helpers/GetTicketWbot";
-import GetWbotMessage from "../../helpers/GetWbotMessage";
-import SerializeWbotMsgId from "../../helpers/SerializeWbotMsgId";
+import { getBaileys } from "../../libs/baileys";
+import { logger } from "../../utils/logger";
+import { WASocket, proto, AnyMessageContent } from "@whiskeysockets/baileys";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
-import UserMessagesLog from "../../models/UserMessagesLog";
-import { logger } from "../../utils/logger";
-// import { StartWhatsAppSessionVerify } from "./StartWhatsAppSessionVerify";
+import socketEmit from "../../helpers/socketEmit";
+import GetMessageBody from "../../helpers/GetMessageBody";
+
+interface Session extends WASocket {
+  id: number;
+  tenantId: number;
+}
 
 interface Request {
-  body: string;
+  messageData?: Message;
   ticket: Ticket;
-  quotedMsg?: Message;
+  body?: string;
   userId?: number | string | undefined;
+  quotedMsg?: Message;
+}
+
+interface MessageSent {
+  key: {
+    id: string;
+    remoteJid: string;
+    fromMe: boolean;
+  };
+  message?: proto.IMessage;
 }
 
 const SendWhatsAppMessage = async ({
-  body,
+  messageData,
   ticket,
-  quotedMsg,
-  userId
-}: Request): Promise<WbotMessage> => {
-  let quotedMsgSerializedId: string | undefined;
-  if (quotedMsg) {
-    await GetWbotMessage(ticket, quotedMsg.id);
-    quotedMsgSerializedId = SerializeWbotMsgId(ticket, quotedMsg);
-  }
-
-  const wbot = await GetTicketWbot(ticket);
-
+  body,
+  userId,
+  quotedMsg
+}: Request): Promise<MessageSent> => {
   try {
-    const sendMessage = await wbot.sendMessage(
-      `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`,
-      body,
-      {
-        quotedMessageId: quotedMsgSerializedId,
-        linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
-      }
-    );
+    const wbot = await getBaileys(ticket.whatsappId);
+
+    if (!wbot) {
+      throw new Error("ERR_NO_WBOT_FOUND");
+    }
+
+    const number = `${ticket.contact.number}@s.whatsapp.net`;
+    const messageBody = body || (messageData ? GetMessageBody(messageData) : "");
+
+    if (!messageBody) {
+      throw new Error("ERR_NO_MESSAGE_BODY");
+    }
+
+    const messageContent: AnyMessageContent = {
+      text: messageBody,
+      ...(quotedMsg?.messageId ? {
+        quoted: {
+          key: {
+            id: quotedMsg.messageId,
+            remoteJid: number,
+            fromMe: true
+          },
+          message: {
+            conversation: quotedMsg.body || ""
+          }
+        }
+      } : {})
+    };
+
+    const messageSent = await wbot.sendMessage(number, messageContent);
+
+    if (!messageSent || !messageSent.key?.id) {
+      throw new Error("ERR_SENDING_WAPP_MSG");
+    }
+
+    const message = await Message.create({
+      ticketId: ticket.id,
+      body: messageBody,
+      contactId: ticket.contactId,
+      fromMe: true,
+      read: true,
+      mediaType: "chat",
+      timestamp: new Date(),
+      messageId: messageSent.key.id,
+      status: "SENT",
+      userId,
+      quotedMsgId: quotedMsg?.id
+    });
 
     await ticket.update({
-      lastMessage: body,
-      lastMessageAt: new Date().getTime()
+      lastMessage: messageBody
     });
-    try {
-      if (userId) {
-        await UserMessagesLog.create({
-          messageId: sendMessage.id.id,
-          userId,
-          ticketId: ticket.id
-        });
+
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "chat:update",
+      payload: {
+        messageId: messageSent.key.id,
+        status: "SENT"
       }
-    } catch (error) {
-      logger.error(`Error criar log mensagem ${error}`);
-    }
-    return sendMessage;
+    });
+
+    return {
+      key: {
+        id: messageSent.key.id,
+        remoteJid: messageSent.key.remoteJid || number,
+        fromMe: true
+      },
+      message: messageSent.message || undefined
+    };
   } catch (err) {
-    logger.error(`SendWhatsAppMessage | Error: ${err}`);
-    // await StartWhatsAppSessionVerify(ticket.whatsappId, err);
-    throw new AppError("ERR_SENDING_WAPP_MSG");
+    logger.error("Error sending WhatsApp message:", err);
+    throw new Error("ERR_SENDING_WAPP_MSG");
   }
 };
 

@@ -1,4 +1,4 @@
-import { Message as WbotMessage } from "whatsapp-web.js";
+import { proto } from "@whiskeysockets/baileys";
 import socketEmit from "../../../helpers/socketEmit";
 // import SetTicketMessagesAsRead from "../../../helpers/SetTicketMessagesAsRead";
 import Ticket from "../../../models/Ticket";
@@ -11,7 +11,7 @@ import CreateLogTicketService from "../../TicketServices/CreateLogTicketService"
 // import SendWhatsAppMessage from "../SendWhatsAppMessage";
 
 const verifyAutoReplyActionTicket = async (
-  msg: WbotMessage | any,
+  msg: proto.IWebMessageInfo,
   ticket: Ticket
 ): Promise<void> => {
   const celularContato = ticket.contact.number;
@@ -20,7 +20,7 @@ const verifyAutoReplyActionTicket = async (
   if (
     ticket.autoReplyId &&
     ticket.status === "pending" &&
-    !msg.fromMe &&
+    !msg.key.fromMe &&
     !ticket.isGroup
   ) {
     if (ticket.autoReplyId) {
@@ -31,13 +31,16 @@ const verifyAutoReplyActionTicket = async (
         undefined,
         ticket.tenantId
       );
+      const messageBody = msg.message?.conversation || 
+        msg.message?.extendedTextMessage?.text || 
+        "";
       const actionAutoReply = await VerifyActionStepAutoReplyService(
         ticket.stepAutoReplyId,
-        msg.body,
+        messageBody,
         ticket.tenantId
       );
       if (actionAutoReply) {
-        await CreateAutoReplyLogsService(stepAutoReplyAtual, ticket, msg.body);
+        await CreateAutoReplyLogsService(stepAutoReplyAtual, ticket, messageBody);
 
         // action = 0: enviar para proximo step: nextStepId
         if (actionAutoReply.action === 0) {

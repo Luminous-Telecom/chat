@@ -5,9 +5,10 @@ import { StartInstaBotSession } from "../InstagramBotServices/StartInstaBotSessi
 import { StartMessengerBot } from "../MessengerChannelServices/StartMessengerBot";
 import { StartTbotSession } from "../TbotServices/StartTbotSession";
 import { StartWaba360 } from "../WABA360/StartWaba360";
-import { StartWhatsAppSession } from "./StartWhatsAppSession";
+import StartWhatsAppSession from "./StartWhatsAppSession";
 // import { StartTbotSession } from "../TbotServices/StartTbotSession";
 import { logger } from "../../utils/logger";
+import { verificarSaudeSessao, sincronizarEstadoSessao } from '../../libs/WhatsAppConnectionManager';
 
 export const StartAllWhatsAppsSessions = async (): Promise<void> => {
   try {
@@ -63,6 +64,16 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
               // Validar objeto WhatsApp
               if (!whatsapp.id || !whatsapp.tenantId) {
                 logger.error(`Invalid WhatsApp object: missing required fields (id: ${whatsapp.id}, tenantId: ${whatsapp.tenantId})`);
+                return;
+              }
+
+              // Sincronizar estado antes de iniciar
+              await sincronizarEstadoSessao(whatsapp);
+
+              // Verificar se a sessão já está saudável
+              const estaSaudavel = await verificarSaudeSessao(whatsapp.id);
+              if (estaSaudavel && whatsapp.status === "CONNECTED") {
+                logger.info(`WhatsApp session ${whatsapp.name} (ID: ${whatsapp.id}) already healthy and connected`);
                 return;
               }
 

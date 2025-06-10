@@ -1,6 +1,6 @@
 import AppError from "../../errors/AppError";
 import GetDefaultWhatsApp from "../../helpers/GetDefaultWhatsApp";
-import { getWbot } from "../../libs/wbot";
+import { getBaileys } from "../../libs/baileys";
 import { logger } from "../../utils/logger";
 // import { StartWhatsAppSessionVerify } from "./StartWhatsAppSessionVerify";
 
@@ -10,15 +10,20 @@ const CheckIsValidContact = async (
 ): Promise<any> => {
   const defaultWhatsapp = await GetDefaultWhatsApp(tenantId);
 
-  const wbot = getWbot(defaultWhatsapp.id);
+  const wbot = getBaileys(defaultWhatsapp.id);
 
   try {
-    // const isValidNumber = await wbot.isRegisteredUser(`${number}@c.us`);
-    const idNumber = await wbot.getNumberId(number);
-    if (!idNumber) {
+    // Format number to WhatsApp format
+    const formattedNumber = number.replace(/\D/g, "");
+    const jid = `${formattedNumber}@s.whatsapp.net`;
+
+    // Check if number exists using fetchStatus
+    const status = await wbot.fetchStatus(jid);
+    if (!status) {
       throw new AppError("invalidNumber", 400);
     }
-    return idNumber;
+
+    return jid;
   } catch (err: any) {
     logger.error(`CheckIsValidContact | Error: ${err}`);
     // StartWhatsAppSessionVerify(defaultWhatsapp.id, err);

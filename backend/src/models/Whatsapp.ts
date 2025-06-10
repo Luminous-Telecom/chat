@@ -102,8 +102,8 @@ class Whatsapp extends Model<Whatsapp> {
   fbObject: object;
 
   @Default("whatsapp")
-  @Column(DataType.ENUM("whatsapp", "telegram", "instagram", "messenger"))
-  type: string;
+  @Column(DataType.ENUM("waba", "instagram", "telegram", "whatsapp", "messenger"))
+  type: "waba" | "instagram" | "telegram" | "whatsapp" | "messenger";
 
   @CreatedAt
   createdAt: Date;
@@ -129,8 +129,8 @@ class Whatsapp extends Model<Whatsapp> {
   tenant: Tenant;
 
   @ForeignKey(() => ChatFlow)
-  @Column
-  chatFlowId: number;
+  @Column(DataType.INTEGER)
+  chatFlowId: number | null;
 
   @BelongsTo(() => ChatFlow)
   chatFlow: ChatFlow;

@@ -1,55 +1,43 @@
-import { getMessengerBot } from "../libs/messengerBot";
-import Message from "../models/Message";
+import { getBaileys } from "../libs/baileys";
 import Ticket from "../models/Ticket";
-import ShowTicketService from "../services/TicketServices/ShowTicketService";
+import { WASocket, proto } from "@whiskeysockets/baileys";
 import { logger } from "../utils/logger";
-import GetTicketWbot from "./GetTicketWbot";
+import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import socketEmit from "./socketEmit";
 
+interface Session extends WASocket {
+  id: number;
+  tenantId: number;
+}
+
 const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
+  const wbot = getBaileys(ticket.whatsappId) as Session;
+
   try {
     // Primeiro atualiza as mensagens no banco
-    await Message.update(
-      { read: true },
-      {
-        where: {
-          ticketId: ticket.id,
-          read: false
-        }
-      }
-    );
-
-    // Atualiza o contador do ticket
     await ticket.update({ unreadMessages: 0 });
 
-    // Tenta marcar como lido no WhatsApp/Messenger
-    try {
-      if (ticket.channel === "whatsapp") {
-        const wbot = await GetTicketWbot(ticket);
-        await wbot.sendSeen(`${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`);
-      } else if (ticket.channel === "messenger") {
-        const messengerBot = getMessengerBot(ticket.whatsappId);
-        await messengerBot.markSeen(ticket.contact.messengerId);
-      }
-    } catch (err) {
-      logger.error(`Could not mark messages as read in ${ticket.channel}: ${err}`);
-    }
+    // Use Baileys' read receipt method with proper message key
+    const messageKey: proto.IMessageKey = {
+      remoteJid: `${ticket.contact.number}@${ticket.isGroup ? "g" : "s"}.us`,
+      fromMe: false
+    };
+    await wbot.readMessages([messageKey]);
 
     // Recarrega o ticket para garantir dados atualizados
-    const ticketReload = await ShowTicketService({
-      id: ticket.id,
-      tenantId: ticket.tenantId
-    });
+    const ticketReloaded = await ShowTicketService({ id: ticket.id, tenantId: ticket.tenantId });
 
-    // Emite evento de atualização
+    if (ticketReloaded?.unreadMessages !== 0) {
+      await ticketReloaded.update({ unreadMessages: 0 });
+    }
+
     socketEmit({
       tenantId: ticket.tenantId,
       type: "ticket:update",
-      payload: ticketReload
+      payload: ticketReloaded
     });
   } catch (err) {
-    logger.error(`Error in SetTicketMessagesAsRead: ${err}`);
-    throw err; // Propaga o erro para ser tratado pelo chamador
+    logger.error(`Error setting messages as read: ${err}`);
   }
 };
 

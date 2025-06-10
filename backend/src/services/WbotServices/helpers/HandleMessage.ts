@@ -1,8 +1,4 @@
-import {
-  Contact as WbotContact,
-  Message as WbotMessage,
-  Client
-} from "whatsapp-web.js";
+import { WASocket, proto } from "@whiskeysockets/baileys";
 import Contact from "../../../models/Contact";
 import { logger } from "../../../utils/logger";
 import FindOrCreateTicketService from "../../TicketServices/FindOrCreateTicketService";
@@ -16,14 +12,36 @@ import VerifyStepsChatFlowTicket from "../../ChatFlowServices/VerifyStepsChatFlo
 import Queue from "../../../libs/Queue";
 import Setting from "../../../models/Setting";
 
-interface Session extends Client {
+interface Session extends WASocket {
   id: number;
+  tenantId: number;
+}
+
+interface InternalMessage {
+  key: {
+    id: string;
+    remoteJid: string;
+    fromMe: boolean;
+    participant?: string;
+  };
+  message?: proto.IMessage;
+  messageTimestamp?: number;
+  pushName?: string;
+  status?: number;
+}
+
+interface IMe {
+  id: {
+    server: string;
+    user: string;
+  };
+  pushname: string;
 }
 
 // Função para verificar se a sessão está saudável
 const isSessionHealthy = (wbot: Session): boolean => {
   try {
-    return !!(wbot && wbot.pupPage && !wbot.pupPage.isClosed() && wbot.info && wbot.info.wid);
+    return !!(wbot && wbot.user && wbot.user.id);
   } catch (error) {
     return false;
   }
@@ -64,256 +82,107 @@ const isRecoverableError = (error: Error): boolean => {
   return recoverablePatterns.some(pattern => message.includes(pattern));
 };
 
-const HandleMessage = async (
-  msg: WbotMessage,
-  wbot: Session
-): Promise<void> => {
+const HandleMessage = async (msg: proto.IWebMessageInfo, wbot: Session): Promise<void> => {
+  if (!IsValidMsg(msg)) return;
+
   try {
-    // Verificar se a mensagem é válida
-    if (!IsValidMsg(msg)) {
-      logger.debug(`Invalid message ${msg.id?.id || 'unknown'}, skipping`);
-      return;
-    }
-
-    // Verificar saúde da sessão antes de processar
-    if (!isSessionHealthy(wbot)) {
-      logger.warn(`Session unhealthy, skipping message ${msg.id?.id || 'unknown'}`);
-      return;
-    }
-
-    // Buscar configuração do WhatsApp
-    let whatsapp;
-    try {
-      whatsapp = await ShowWhatsAppService({ id: wbot.id });
-    } catch (error: any) {
-      logger.error(`Error getting WhatsApp service for session ${wbot.id}: ${error.message}`);
-      return;
-    }
-
-    const { tenantId } = whatsapp;
-    
-    // Obter chat com tratamento de erro robusto
-    let chat: any;
-    try {
-      chat = await executeWithTimeout(
-        () => msg.getChat(),
-        8000,
-        'getChat'
-      );
-      
-    } catch (error: any) {
-      if (isRecoverableError(error)) {
-        if (error.message && (
-          error.message.includes('participants') || 
-          error.message.includes('Cannot read properties of undefined') ||
-          error.message.includes('Evaluation failed')
-        )) {
-          //logger.debug(`Expected message processing error (skipping): ${error.message}`);
-          return;
-        }
-        logger.warn(`Recoverable error getting chat for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-        return;
-      }
-      logger.error(`Critical error getting chat for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-      throw error;
-    }
-
-    // Verificar configuração para ignorar grupos
-    let shouldIgnoreGroups = false;
-    try {
-      const settingDb = await Setting.findOne({
-        where: { key: "ignoreGroupMsg", tenantId }
-      });
-      shouldIgnoreGroups = settingDb?.value === "enabled";
-    } catch (error: any) {
-      logger.warn(`Error checking group settings: ${error.message}`);
-      // Continue processamento mesmo com erro na configuração
-    }
-
-    // Ignorar mensagens de grupo se configurado
-    if (shouldIgnoreGroups && (chat.isGroup || msg.from === "status@broadcast")) {
-      logger.debug(`Ignoring group message ${msg.id?.id || 'unknown'}`);
-      return;
-    }
-
-    // Verificar saúde da sessão novamente antes de operações pesadas
-    if (!isSessionHealthy(wbot)) {
-      logger.warn(`Session became unhealthy during processing of message ${msg.id?.id || 'unknown'}`);
-      return;
-    }
-
-    let msgContact: WbotContact;
+    let msgContact: IMe;
     let groupContact: Contact | undefined;
 
-    try {
-      if (msg.fromMe) {
-        // Verificar se é mídia enviada do celular
-        if (!msg.hasMedia && msg.type !== "chat" && msg.type !== "vcard") {
-          logger.debug(`Skipping media message from phone ${msg.id?.id || 'unknown'}`);
-          return;
-        }
-
-        msgContact = await executeWithTimeout(
-          () => wbot.getContactById(msg.to),
-          8000,
-          'getContactById(msg.to)'
-        );
-      } else {
-        msgContact = await executeWithTimeout(
-          () => msg.getContact(),
-          8000,
-          'msg.getContact'
-        );
-      }
-    } catch (error: any) {
-      if (isRecoverableError(error)) {
-        logger.warn(`Recoverable error getting contact for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-        return;
-      }
-      logger.error(`Critical error getting contact for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-      throw error;
+    if (msg.key.remoteJid === "status@broadcast") {
+      msgContact = {
+        id: {
+          server: "c.us",
+          user: msg.key.participant || msg.key.remoteJid || ""
+        },
+        pushname: msg.pushName || ""
+      };
+    } else {
+      const msgKey = msg.key.remoteJid || msg.key.participant || "";
+      msgContact = {
+        id: {
+          server: msgKey.endsWith("@g.us") ? "g.us" : "c.us",
+          user: msgKey.split("@")[0]
+        },
+        pushname: msg.pushName || ""
+      };
     }
 
-    // Processar contato do grupo se necessário
-    if (chat.isGroup) {
-      try {
-        let msgGroupContact;
-
-        if (msg.fromMe) {
-          msgGroupContact = await executeWithTimeout(
-            () => wbot.getContactById(msg.to),
-            8000,
-            'getContactById(group-msg.to)'
-          );
-        } else {
-          msgGroupContact = await executeWithTimeout(
-            () => wbot.getContactById(msg.from),
-            8000,
-            'getContactById(group-msg.from)'
-          );
-        }
-
-        groupContact = await VerifyContact(msgGroupContact, tenantId);
-      } catch (error: any) {
-        logger.warn(`Error processing group contact for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-        // Continue sem o grupo contact se houver erro
-        groupContact = undefined;
-      }
-    }
-
-    const unreadMessages = msg.fromMe ? 0 : 1;
-
-    // Verificar e criar contato
-    let contact: Contact;
-    try {
-      contact = await VerifyContact(msgContact, tenantId);
-    } catch (error: any) {
-      logger.error(`Error verifying contact for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-      return;
-    }
-
-    // Criar ou encontrar ticket
-    let ticket;
-    try {
-      ticket = await FindOrCreateTicketService({
-        contact,
-        whatsappId: wbot.id!,
-        unreadMessages,
-        tenantId,
-        groupContact,
-        msg,
-        channel: "whatsapp"
+    if (msg.key.remoteJid?.endsWith("@g.us")) {
+      const groupData = await wbot.groupMetadata(msg.key.remoteJid);
+      groupContact = await VerifyContact({
+        name: groupData.subject,
+        number: msg.key.remoteJid,
+        isGroup: true,
+        tenantId: wbot.tenantId,
+        pushname: groupData.subject,
+        isUser: false,
+        isWAContact: true,
+        origem: "whatsapp"
       });
-    } catch (error: any) {
-      logger.error(`Error creating/finding ticket for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-      return;
     }
 
-    // Verificar se é mensagem de campanha ou despedida
-    if (ticket?.isCampaignMessage || ticket?.isFarewellMessage) {
-      logger.debug(`Skipping campaign/farewell message ${msg.id?.id || 'unknown'}`);
-      return;
-    }
+    const contact = await VerifyContact({
+      name: msgContact.pushname || msgContact.id.user,
+      number: msgContact.id.user,
+      isGroup: msgContact.id.server === "g.us",
+      tenantId: wbot.tenantId,
+      pushname: msgContact.pushname,
+      isUser: false,
+      isWAContact: true,
+      origem: "whatsapp"
+    });
 
-    // Processar mensagem com mídia ou texto
-    try {
-      if (msg.hasMedia) {
-        await VerifyMediaMessage(msg, ticket, contact);
-      } else {
-        await VerifyMessage(msg, ticket, contact);
-      }
-    } catch (error: any) {
-      logger.error(`Error processing message content ${msg.id?.id || 'unknown'}: ${error.message}`);
-      // Continue com o fluxo mesmo se houver erro no processamento da mensagem
+    const unreadMessages = msg.key.fromMe ? 0 : 1;
+
+    const ticket = await FindOrCreateTicketService({
+      contact,
+      whatsappId: wbot.id,
+      unreadMessages,
+      tenantId: wbot.tenantId,
+      groupContact,
+      msg,
+      channel: "whatsapp"
+    });
+
+    const hasMedia = Boolean(
+      msg.message?.imageMessage ||
+      msg.message?.videoMessage ||
+      msg.message?.audioMessage ||
+      msg.message?.documentMessage ||
+      msg.message?.stickerMessage
+    );
+
+    if (hasMedia) {
+      await VerifyMediaMessage({ msg, ticket, contact });
+    } else {
+      await VerifyMessage({ msg, ticket, contact });
     }
 
     // Verificar horário comercial
-    let isBusinessHours = true;
-    try {
-      isBusinessHours = await verifyBusinessHours(msg, ticket);
-    } catch (error: any) {
-      logger.warn(`Error checking business hours for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-      // Assume horário comercial em caso de erro
-    }
+    const isBusinessHours = await verifyBusinessHours(msg as any, ticket);
 
-    // Processar chatflow se estiver em horário comercial
-    if (isBusinessHours) {
-      try {
-        await VerifyStepsChatFlowTicket(msg, ticket);
-      } catch (error: any) {
-        logger.error(`Error in chatflow for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-        // Continue mesmo se houver erro no chatflow
+    if (!isBusinessHours && !msg.key.fromMe) {
+      const setting = await Setting.findOne({
+        where: {
+          key: "chatBotType",
+          tenantId: ticket.tenantId
+        }
+      });
+
+      if (setting?.value === "queue") {
+        await ticket.update({ status: "pending" });
+        await ticket.reload();
       }
     }
 
-    // Processar webhook se necessário
-    try {
-      const apiConfig: any = ticket.apiConfig || {};
-      if (
-        !msg.fromMe &&
-        !ticket.isGroup &&
-        !ticket.answered &&
-        apiConfig?.externalKey &&
-        apiConfig?.urlMessageStatus
-      ) {
-        const payload = {
-          timestamp: Date.now(),
-          msg: {
-            id: msg.id,
-            body: msg.body,
-            from: msg.from,
-            timestamp: msg.timestamp,
-            type: msg.type
-          },
-          messageId: msg.id.id,
-          ticketId: ticket.id,
-          externalKey: apiConfig.externalKey,
-          authToken: apiConfig.authToken,
-          type: "hookMessage"
-        };
-
-        // Adicionar à fila de forma assíncrona para não bloquear
-        setImmediate(() => {
-          Queue.add("WebHooksAPI", {
-            url: apiConfig.urlMessageStatus,
-            type: payload.type,
-            payload
-          });
-        });
-      }
-    } catch (error: any) {
-      logger.error(`Error processing webhook for message ${msg.id?.id || 'unknown'}: ${error.message}`);
-      // Não falhar se webhook der erro
+    // Verificar fluxo de chatbot
+    if (!msg.key.fromMe && ticket.status === "pending") {
+      await VerifyStepsChatFlowTicket(msg, ticket);
     }
 
-  } catch (err: any) {
-    // Log do erro sem fazer throw para não quebrar o listener
-    logger.error(`Critical error in HandleMessage for message ${msg.id?.id || 'unknown'}: ${err.message}`);
-    
-    // Só fazer throw se for erro realmente crítico que precisa parar o processamento
-    if (!isRecoverableError(err)) {
-      throw err;
-    }
+  } catch (err) {
+    logger.error("Error handling message:", err);
   }
 };
 

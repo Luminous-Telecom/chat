@@ -6,6 +6,7 @@ import { getTbot } from "../libs/tbot";
 import GetWbotMessage from "./GetWbotMessage";
 import AppError from "../errors/AppError";
 import { getIO } from "../libs/socket";
+import { getBaileys } from "../libs/baileys";
 
 const DeleteMessageSystem = async (
   id: string,
@@ -41,11 +42,24 @@ const DeleteMessageSystem = async (
   const { ticket } = message;
 
   if (ticket.channel === "whatsapp") {
-    const messageToDelete = await GetWbotMessage(ticket, messageId);
-    if (!messageToDelete) {
-      throw new AppError("ERROR_NOT_FOUND_MESSAGE");
+    const wbot = getBaileys(ticket.whatsappId);
+    if (!wbot) {
+      throw new AppError("ERR_NO_WHATSAPP_SESSION");
     }
-    await messageToDelete.delete(true);
+
+    try {
+      await wbot.sendMessage(
+        `${ticket.contact.number}@${ticket.isGroup ? "g" : "s"}.whatsapp.net`,
+        {
+          delete: {
+            id: messageId,
+            fromMe: true
+          }
+        }
+      );
+    } catch (err) {
+      throw new AppError("ERR_DELETE_WAPP_MSG");
+    }
   }
 
   if (ticket.channel === "telegram") {

@@ -1,381 +1,207 @@
-import { getWbot, initWbot, removeWbot } from "../../libs/wbot";
-import GetDefaultWhatsApp from "../../helpers/GetDefaultWhatsApp";
-import { wbotMessageListener } from "../WbotServices/wbotMessageListener";
-import Whatsapp from "../../models/Whatsapp";
-import { logger } from "../../utils/logger";
 import { getIO } from "../../libs/socket";
-import wbotMonitor from "./wbotMonitor";
-import AppError from "../../errors/AppError";
-import { StartInstaBotSession } from "../InstagramBotServices/StartInstaBotSession";
+import { logger } from "../../utils/logger";
+import { getBaileys, initBaileys, removeBaileys } from "../../libs/baileys";
+import Whatsapp from "../../models/Whatsapp";
+import { ensureWhatsappInstance, safeUpdateWhatsapp } from "../../helpers/WhatsappHelper";
+import { WhatsAppErrors } from "../../utils/errorHandler";
 import { StartTbotSession } from "../TbotServices/StartTbotSession";
-import { StartWaba360 } from "../WABA360/StartWaba360";
+import { StartInstaBotSession } from "../InstagramBotServices/StartInstaBotSession";
 import { StartMessengerBot } from "../MessengerChannelServices/StartMessengerBot";
+import { StartWaba360 } from "../WABA360/StartWaba360";
+import { verificarSaudeSessao, sincronizarEstadoSessao } from "../../libs/WhatsAppConnectionManager";
+import wbotMessageListener from "./wbotMessageListener";
+import wbotMonitor from "./wbotMonitor";
+import { WASocket, DisconnectReason, BaileysEventMap } from "@whiskeysockets/baileys";
 
 // Map para controlar tentativas de reconexão
 const reconnectionAttempts = new Map<number, number>();
-const MAX_RECONNECTION_ATTEMPTS = 3;
-const RECONNECTION_DELAY = 30000; // 30 segundos
-
-// Função auxiliar para validar e atualizar o objeto whatsapp
-const safeUpdateWhatsapp = async (whatsapp: Whatsapp, updateData: any): Promise<boolean> => {
-  try {
-    // Validações básicas
-    if (!whatsapp) {
-      logger.error(`safeUpdateWhatsapp: whatsapp é null ou undefined`);
-      return false;
-    }
-    
-    if (!whatsapp.id) {
-      logger.error(`safeUpdateWhatsapp: whatsapp.id é inválido`);
-      return false;
-    }
-    
-    if (typeof whatsapp.update !== "function") {
-      logger.error(`safeUpdateWhatsapp: whatsapp.update não é uma função para ID ${whatsapp.id}`);
-      
-      // Tentar recarregar o objeto do banco de dados
-      try {
-        const freshWhatsapp = await Whatsapp.findByPk(whatsapp.id);
-        if (freshWhatsapp && typeof freshWhatsapp.update === "function") {
-          await freshWhatsapp.update(updateData);
-          logger.info(`safeUpdateWhatsapp: Objeto whatsapp recarregado e atualizado com sucesso para ID ${whatsapp.id}`);
-          return true;
-        } else {
-          logger.error(`safeUpdateWhatsapp: Falha ao recarregar objeto whatsapp para ID ${whatsapp.id}`);
-          return false;
-        }
-      } catch (reloadError) {
-        logger.error(`safeUpdateWhatsapp: Erro ao recarregar whatsapp ${whatsapp.id}: ${reloadError}`);
-        return false;
-      }
-    }
-    
-    // Se chegou até aqui, o objeto é válido
-    await whatsapp.update(updateData);
-    return true;
-  } catch (error) {
-    logger.error(`safeUpdateWhatsapp: Erro ao atualizar whatsapp ${whatsapp?.id || 'unknown'}: ${error}`);
-    return false;
-  }
-};
-
-// Função para retry automático
-const scheduleReconnection = async (whatsapp: Whatsapp, delay: number = RECONNECTION_DELAY): Promise<void> => {
-  const attempts = reconnectionAttempts.get(whatsapp.id) || 0;
-  
-  if (attempts >= MAX_RECONNECTION_ATTEMPTS) {
-    logger.warn(`Max reconnection attempts reached for WhatsApp ${whatsapp.id} (${whatsapp.name})`);
-    reconnectionAttempts.delete(whatsapp.id);
-    return;
-  }
-  
-  reconnectionAttempts.set(whatsapp.id, attempts + 1);
-  
-  logger.info(`Scheduling reconnection attempt ${attempts + 1}/${MAX_RECONNECTION_ATTEMPTS} for WhatsApp ${whatsapp.id} in ${delay/1000}s`);
-  
-  setTimeout(async () => {
-    try {
-      await StartWhatsAppSession(whatsapp, true);
-    } catch (error: any) {
-      logger.error(`Reconnection attempt ${attempts + 1} failed for WhatsApp ${whatsapp.id}: ${error.message}`);
-      // Tentar novamente com delay progressivo
-      await scheduleReconnection(whatsapp, delay * 1.5);
-    }
-  }, delay);
-};
 const lastErrorTime = new Map<number, number>();
 
-// Função para verificar se o erro é recuperável
-const isRecoverableError = (error: Error): boolean => {
-  const message = error.message.toLowerCase();
-  
-  // Erros que podem ser temporários e recuperáveis
-  const recoverablePatterns = [
-    'timeout',
-    'evaluation failed',
-    'minified invariant',
-    'net::',
-    'protocol error',
-    'target closed',
-    'connection',
-    'socket',
-    'fetch',
-    'network',
-    'puppeteer',
-    'navigation',
-    'waiting for',
-    'session closed',
-    'page crashed',
-    'context destroyed',
-    'err_wapp_not_initialized',
-    'not initialized'
-  ];
-  
-  return recoverablePatterns.some(pattern => message.includes(pattern));
-};
+interface Session extends WASocket {
+  id: number;
+  tenantId: number;
+}
 
-// Função para verificar se deve tentar reconectar
-const shouldRetry = (whatsappId: number, error: Error): boolean => {
-  const maxRetries = 3;
-  const retryWindow = 5 * 60 * 1000; // 5 minutos
-  const now = Date.now();
-  
-  // Verificar se o erro é recuperável
-  if (!isRecoverableError(error)) {
-    logger.info(`Non-recoverable error for WhatsApp ${whatsappId}: ${error.message}`);
-    return false;
-  }
-  
-  // Resetar contador se passou muito tempo desde o último erro
-  const lastError = lastErrorTime.get(whatsappId) || 0;
-  if (now - lastError > retryWindow) {
-    reconnectionAttempts.set(whatsappId, 0);
-  }
-  
-  // Atualizar tempo do último erro
-  lastErrorTime.set(whatsappId, now);
-  
-  // Verificar número de tentativas
-  const attempts = reconnectionAttempts.get(whatsappId) || 0;
-  if (attempts >= maxRetries) {
-    logger.warn(`Max retry attempts (${maxRetries}) reached for WhatsApp ${whatsappId}`);
-    return false;
-  }
-  
-  // Incrementar contador de tentativas
-  reconnectionAttempts.set(whatsappId, attempts + 1);
-  
-  // Log específico para ERR_WAPP_NOT_INITIALIZED
-  if (error.message.toLowerCase().includes('err_wapp_not_initialized')) {
-    logger.info(`Recoverable error ERR_WAPP_NOT_INITIALIZED for WhatsApp ${whatsappId}, will retry (attempt ${attempts + 1}/${maxRetries})`);
-  }
-  
-  return true;
-};
-
-// Função para delay com backoff exponencial
-const getRetryDelay = (attempt: number): number => {
-  const baseDelay = 2000; // 2 segundos
-  const maxDelay = 30000; // 30 segundos
-  const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
-  
-  // Para ERR_WAPP_NOT_INITIALIZED, usar um delay menor
-  if (attempt === 0) {
-    return 1000; // 1 segundo para primeira tentativa
-  }
-  
-  return delay;
-};
-
-export const StartWhatsAppSession = async (
+const StartWhatsAppSession = async (
   whatsapp: Whatsapp,
   isRetry: boolean = false
 ): Promise<void> => {
   const io = getIO();
+  let whatsappInstance: Whatsapp | null = null;
 
   try {
-    // Validar objeto WhatsApp
-    if (!whatsapp || !whatsapp.id) {
-      throw new Error("Invalid WhatsApp object: missing ID");
-    }
-
-    // Recarregar objeto WhatsApp do banco de dados para garantir dados atualizados
-    const reloadedWhatsapp = await Whatsapp.findByPk(whatsapp.id);
-    if (!reloadedWhatsapp) {
-      throw new Error(`WhatsApp session ${whatsapp.id} not found in database`);
-    }
-
-    // Usar objeto recarregado
-    whatsapp = reloadedWhatsapp;
+    // Garantir que temos uma instância válida do WhatsApp
+    whatsappInstance = await ensureWhatsappInstance(whatsapp);
     
+    if (!whatsappInstance) {
+      throw new Error("Failed to get valid WhatsApp instance");
+    }
+
     // Se não for retry, verificar se a sessão já está ativa na memória
     if (!isRetry) {
       try {
-        const existingSession = getWbot(whatsapp.id);
+        const existingSession = getBaileys(whatsappInstance.id) as Session;
         const isSessionHealthy = existingSession && 
-                               existingSession.info && 
-                               !existingSession.pupPage?.isClosed() &&
-                               existingSession.pupPage?.target()?.type() === 'page';
-        
-        if (isSessionHealthy && (whatsapp.status === "CONNECTED" || whatsapp.status === "READY")) {
-          logger.info(`WhatsApp ${whatsapp.name} (ID: ${whatsapp.id}) already in valid state: ${whatsapp.status}`);
-          return;
-        }
-        
-        // Se a sessão não está saudável na memória, remover e reconectar
-        if (existingSession) {
-          logger.warn(`WhatsApp ${whatsapp.name} (ID: ${whatsapp.id}) found in memory but not healthy, removing and reconnecting`);
-          await removeWbot(whatsapp.id);
+                                existingSession.user && 
+                                existingSession.user.id;
+
+        if (isSessionHealthy) {
+          // Verificar saúde da sessão
+          const estaSaudavel = await verificarSaudeSessao(whatsappInstance.id);
+          if (estaSaudavel && (whatsappInstance.status === "CONNECTED" || whatsappInstance.status === "READY")) {
+            logger.info(`WhatsApp ${whatsappInstance.name} (ID: ${whatsappInstance.id}) already in valid state: ${whatsappInstance.status}`);
+            return;
+          }
+          
+          // Se a sessão não está saudável, remover e reconectar
+          logger.warn(`WhatsApp ${whatsappInstance.name} (ID: ${whatsappInstance.id}) found in memory but not healthy, removing and reconnecting`);
+          await removeBaileys(whatsappInstance.id);
         }
       } catch (error) {
         // Ignora erro se sessão não existir na memória
-        logger.debug(`No existing session found for WhatsApp ${whatsapp.id}`);
+        logger.debug(`No existing session found for WhatsApp ${whatsappInstance.id}`);
       }
     }
     
+    // Sincronizar estado antes de iniciar nova sessão
+    await sincronizarEstadoSessao(whatsappInstance);
+    
     // Log detalhado do estado atual
-    logger.info(`[StartWhatsAppSession] Iniciando sessão ${whatsapp.name} (ID: ${whatsapp.id}) - Status atual: ${whatsapp.status}, isRetry: ${isRetry}`);
+    logger.info(`[StartBaileysSession] Starting session ${whatsappInstance.name} (ID: ${whatsappInstance.id}) - Status: ${whatsappInstance.status}, isRetry: ${isRetry}`);
 
-    // Atualizar estado inicial apenas se necessário
-    if (whatsapp.status !== "OPENING") {
-      await safeUpdateWhatsapp(whatsapp, { 
-        status: "OPENING",
-        qrcode: "",
-        qrData: "",
-        retries: (whatsapp.retries || 0) + (isRetry ? 1 : 0)
-      });
+    // Atualizar estado inicial
+    await safeUpdateWhatsapp(whatsappInstance, { 
+      status: "OPENING",
+      qrcode: "",
+      retries: (whatsappInstance.retries || 0) + (isRetry ? 1 : 0)
+    });
 
-      // Emitir atualização inicial
-      io.emit(`${whatsapp.tenantId}:whatsappSession`, {
-        action: "update",
-        session: whatsapp
-      });
-    }
+    // Emitir atualização inicial
+    io.emit(`${whatsappInstance.tenantId}:whatsappSession`, {
+      action: "update",
+      session: whatsappInstance
+    });
 
-    if (whatsapp.type === "whatsapp") {
-      logger.info(`${isRetry ? 'Retrying' : 'Starting'} WhatsApp session for ${whatsapp.name} (ID: ${whatsapp.id})`);
+    if (whatsappInstance.type === "whatsapp") {
+      logger.info(`[StartBaileysSession] Initializing new session for ${whatsappInstance.id}`);
       
       try {
         // Garantir que o objeto WhatsApp está válido antes de iniciar
-        if (!whatsapp.id || !whatsapp.tenantId) {
-          throw new Error(`Invalid WhatsApp object: missing required fields (id: ${whatsapp.id}, tenantId: ${whatsapp.tenantId})`);
+        if (!whatsappInstance.id || !whatsappInstance.tenantId) {
+          throw WhatsAppErrors.invalidObject(`Invalid WhatsApp object: missing required fields (id: ${whatsappInstance.id}, tenantId: ${whatsappInstance.tenantId})`);
         }
 
-        const wbot = await initWbot(whatsapp);
+        // Inicializar sessão Baileys
+        const wbot = await initBaileys(whatsappInstance) as Session;
         if (!wbot) {
-          throw new Error("Failed to initialize WhatsApp client");
+          throw WhatsAppErrors.initializationFailed("Failed to initialize WhatsApp client");
         }
 
+        // Aguardar a sessão estar pronta
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error("Session initialization timeout"));
+          }, 30000); // 30 segundos de timeout
+
+          const unprocess = wbot.ev.process((events: Partial<BaileysEventMap>) => {
+            const update = events["connection.update"];
+            if (update) {
+              if (update.connection === "open") {
+                clearTimeout(timeout);
+                unprocess();
+                resolve();
+              } else if (update.connection === "close") {
+                clearTimeout(timeout);
+                unprocess();
+                reject(new Error(`Connection closed during initialization: ${update.lastDisconnect?.error}`));
+              }
+            }
+          });
+        });
+
+        // Configurar listeners após a sessão estar pronta
         wbotMessageListener(wbot);
-        wbotMonitor(wbot, whatsapp);
+        wbotMonitor(wbot, whatsappInstance);
         
-        // Resetar contador de tentativas em caso de sucesso
-        reconnectionAttempts.delete(whatsapp.id);
-        lastErrorTime.delete(whatsapp.id);
+        // Resetar contadores de tentativas em caso de sucesso
+        reconnectionAttempts.delete(whatsappInstance.id);
+        lastErrorTime.delete(whatsappInstance.id);
         
-        logger.info(`WhatsApp session started successfully for ${whatsapp.name} (ID: ${whatsapp.id})`);
-      } catch (error: any) {
-        logger.error(`Error starting WhatsApp session ${whatsapp.id}: ${error.message}`);
+        logger.info(`[StartBaileysSession] Successfully initialized session for ${whatsappInstance.id}`);
         
-        // Atualizar status para erro
-        await safeUpdateWhatsapp(whatsapp, { 
-          status: "DISCONNECTED",
+        // Atualizar estado para CONNECTED
+        await safeUpdateWhatsapp(whatsappInstance, {
+          status: "CONNECTED",
           qrcode: ""
         });
+
+        io.emit(`${whatsappInstance.tenantId}:whatsappSession`, {
+          action: "update",
+          session: whatsappInstance
+        });
+
+      } catch (err) {
+        logger.error(`Error starting WhatsApp session for ${whatsappInstance.name}: ${err.message}`);
         
-        // Agendar tentativa de reconexão automática se não for um retry
-        if (!isRetry) {
-          await scheduleReconnection(whatsapp);
-        }
+        // Atualizar estado de erro
+        await safeUpdateWhatsapp(whatsappInstance, {
+          status: "DISCONNECTED",
+          qrcode: "",
+          retries: (whatsappInstance.retries || 0) + 1
+        });
+
+        io.emit(`${whatsappInstance.tenantId}:whatsappSession`, {
+          action: "update",
+          session: whatsappInstance
+        });
         
-        throw new AppError(`Erro ao inicializar WhatsApp: ${error.message}`);
+        throw err;
       }
-    }
-
-    if (whatsapp.type === "telegram") {
-      logger.info(`Starting Telegram session for ${whatsapp.name}`);
-      StartTbotSession(whatsapp);
-    }
-
-    if (whatsapp.type === "instagram") {
-      logger.info(`Starting Instagram session for ${whatsapp.name}`);
-      StartInstaBotSession(whatsapp);
-    }
-
-    if (whatsapp.type === "messenger") {
-      logger.info(`Starting Messenger session for ${whatsapp.name}`);
-      StartMessengerBot(whatsapp);
-    }
-
-    if (whatsapp.type === "waba") {
-      if (whatsapp.wabaBSP === "360") {
-        logger.info(`Starting WABA 360 session for ${whatsapp.name}`);
-        StartWaba360(whatsapp);
-      }
+    } else if (whatsappInstance.type === "telegram") {
+      await StartTbotSession(whatsappInstance);
+    } else if (whatsappInstance.type === "instagram") {
+      await StartInstaBotSession(whatsappInstance);
+    } else if (whatsappInstance.type === "messenger") {
+      await StartMessengerBot(whatsappInstance);
+    } else if (whatsappInstance.type === "waba") {
+      await StartWaba360(whatsappInstance);
     }
   } catch (err: any) {
-    logger.error(`StartWhatsAppSession | Error for ${whatsapp?.name || 'unknown'}: ${err.message}`);
+    logger.error(`StartWhatsAppSession | Error for ${whatsappInstance?.name || 'unknown'}: ${err.message}`);
     
     // Recarregar status atual do WhatsApp se possível
-    if (whatsapp?.id) {
+    if (whatsappInstance?.id) {
       try {
-        await whatsapp.reload();
+        await whatsappInstance.reload();
+        // Sincronizar estado após erro
+        await sincronizarEstadoSessao(whatsappInstance);
+        
+        // Atualizar estado usando safeUpdateWhatsapp
+        await safeUpdateWhatsapp(whatsappInstance, {
+          status: "DISCONNECTED",
+          qrcode: "",
+          retries: (whatsappInstance.retries || 0) + 1
+        });
       } catch (reloadErr) {
-        logger.warn(`Could not reload WhatsApp ${whatsapp.name} status: ${reloadErr}`);
+        logger.warn(`Could not reload WhatsApp ${whatsappInstance.name} status: ${reloadErr}`);
       }
       
       // Verificar se a sessão está em estado válido apesar do erro
       const validStates = ["CONNECTED", "READY", "AUTHENTICATED"];
-      if (validStates.includes(whatsapp.status)) {
-        logger.info(`WhatsApp ${whatsapp.name} is in valid state (${whatsapp.status}) despite error - keeping session active`);
+      if (validStates.includes(whatsappInstance.status)) {
+        logger.info(`WhatsApp ${whatsappInstance.name} is in valid state (${whatsappInstance.status}) despite error - keeping session active`);
         return;
       }
       
       // Verificar se é estado de QR code válido
-      if (whatsapp.status === "qrcode" && whatsapp.qrcode) {
-        logger.info(`WhatsApp ${whatsapp.name} in QR code state - keeping session active for user authentication`);
+      if (whatsappInstance.status === "qrcode" && whatsappInstance.qrcode) {
+        logger.info(`WhatsApp ${whatsappInstance.name} in QR code state - keeping session active for user authentication`);
         return;
-      }
-      
-      // Verificar se deve tentar reconectar
-      if (shouldRetry(whatsapp.id, err)) {
-        const attempts = reconnectionAttempts.get(whatsapp.id) || 1;
-        const delay = getRetryDelay(attempts - 1);
-        
-        logger.info(`Scheduling retry ${attempts} for WhatsApp ${whatsapp.name} (ID: ${whatsapp.id}) in ${delay}ms`);
-        
-        // Atualizar status para indicar tentativa de reconexão
-        try {
-          await safeUpdateWhatsapp(whatsapp, {
-            status: "OPENING",
-            retries: attempts
-          });
-
-          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
-            action: "update",
-            session: whatsapp
-          });
-        } catch (updateErr) {
-          logger.error(`Error updating WhatsApp ${whatsapp.name} retry status: ${updateErr}`);
-        }
-        
-        // Agendar retry
-        setTimeout(async () => {
-          try {
-            await StartWhatsAppSession(whatsapp, true);
-          } catch (retryErr) {
-            logger.error(`Retry failed for WhatsApp ${whatsapp.name}: ${retryErr}`);
-          }
-        }, delay);
-        
-        return; // Não fazer throw, deixar o retry handle
       }
     }
     
-    throw err; // Propagar erro se não for possível recuperar
+    throw err;
   }
 };
 
-// Função para limpar cache antigo (pode ser chamada periodicamente)
-export const cleanupReconnectionCache = (): void => {
-  const now = Date.now();
-  const maxAge = 30 * 60 * 1000; // 30 minutos
-  
-  for (const [whatsappId, timestamp] of lastErrorTime.entries()) {
-    if (now - timestamp > maxAge) {
-      reconnectionAttempts.delete(whatsappId);
-      lastErrorTime.delete(whatsappId);
-      logger.debug(`Cleaned up old reconnection cache for WhatsApp ${whatsappId}`);
-    }
-  }
-};
-
-// Função para limpar tentativas de reconexão (útil para reset manual)
-export const clearReconnectionAttempts = (whatsappId: number): void => {
-  reconnectionAttempts.delete(whatsappId);
-};
-
-// Função para obter número de tentativas
-export const getReconnectionAttempts = (whatsappId: number): number => {
-  return reconnectionAttempts.get(whatsappId) || 0;
-};
+export default StartWhatsAppSession;

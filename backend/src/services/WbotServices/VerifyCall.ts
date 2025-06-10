@@ -1,4 +1,4 @@
-import { Contact as WbotContact, Call, Client } from "whatsapp-web.js";
+import { WASocket, WACallEvent } from "@whiskeysockets/baileys";
 import { logger } from "../../utils/logger";
 import { isSessionClosedError } from "../../helpers/HandleSessionError";
 import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketService";
@@ -9,8 +9,10 @@ import VerifyContact from "./helpers/VerifyContact";
 import CreateMessageSystemService from "../MessageServices/CreateMessageSystemService";
 import SendMessagesSystemWbot from "./SendMessagesSystemWbot";
 
-interface Session extends Client {
+interface Session extends WASocket {
   id: number;
+  tenantId: number;
+  lastHeartbeat?: number;
 }
 
 interface TenantSettingsResult {
@@ -31,7 +33,7 @@ const tenantSettingsCache = new Map<number, CachedSettings>();
 // Função para verificar se a sessão está saudável
 const isSessionHealthy = (wbot: Session): boolean => {
   try {
-    return Boolean(wbot && wbot.pupPage && !wbot.pupPage.isClosed() && wbot.info && wbot.info.wid);
+    return Boolean(wbot && wbot.user && wbot.user.id);
   } catch (error) {
     return false;
   }
@@ -128,25 +130,8 @@ const isRecoverableError = (error: Error): boolean => {
   return recoverablePatterns.some(pattern => message.includes(pattern));
 };
 
-// Função para rejeitar chamada com timeout
-const rejectCallSafely = async (call: Call): Promise<boolean> => {
-  try {
-    const rejectPromise = call.reject();
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Timeout rejecting call')), 8000);
-    });
-
-    await Promise.race([rejectPromise, timeoutPromise]);
-    logger.info(`Call from ${call.from} rejected successfully`);
-    return true;
-  } catch (error: any) {
-    logger.error(`Error rejecting call from ${call.from}: ${error.message}`);
-    return false;
-  }
-};
-
 // Função para buscar contato com timeout e retry
-const getContactSafely = async (wbot: Session, callFrom: string): Promise<WbotContact | null> => {
+const getContactSafely = async (wbot: Session, callFrom: string): Promise<any> => {
   let attempts = 0;
   const maxAttempts = 2;
 
@@ -160,26 +145,14 @@ const getContactSafely = async (wbot: Session, callFrom: string): Promise<WbotCo
         return null;
       }
 
-      // Primeiro tentar buscar o chat
-      const chatPromise = wbot.getChatById(callFrom);
-      const chatTimeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout getting chat')), 10000);
-      });
-
-      const chat = await Promise.race([chatPromise, chatTimeoutPromise]);
+      // Buscar o contato usando o método correto do Baileys
+      const contact = await wbot.fetchStatus(callFrom);
       
-      if (!chat) {
-        logger.warn(`Chat not found for ${callFrom}`);
+      if (!contact) {
+        logger.warn(`Contact not found for ${callFrom}`);
         return null;
       }
 
-      // Depois buscar o contato do chat
-      const contactPromise = chat.getContact();
-      const contactTimeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout getting contact from chat')), 8000);
-      });
-
-      const contact = await Promise.race([contactPromise, contactTimeoutPromise]);
       logger.debug(`Contact fetched successfully for ${callFrom}`);
       return contact;
 
@@ -215,7 +188,7 @@ const getContactSafely = async (wbot: Session, callFrom: string): Promise<WbotCo
   return null;
 };
 
-const VerifyCall = async (call: Call, wbot: Session): Promise<void> => {
+const VerifyCall = async (calls: WACallEvent[], wbot: Session): Promise<void> => {
   try {
     // Verificar saúde da sessão imediatamente
     if (!isSessionHealthy(wbot)) {
@@ -223,115 +196,102 @@ const VerifyCall = async (call: Call, wbot: Session): Promise<void> => {
       return;
     }
 
-    // Verificar se a chamada tem dados válidos
-    if (!call || !call.from) {
-      logger.warn(`Invalid call data for WhatsApp ${wbot.id}`);
-      return;
-    }
+    // Processar cada evento de chamada
+    for (const call of calls) {
+      // Verificar se a chamada tem dados válidos
+      if (!call || !call.from) {
+        logger.warn(`Invalid call data for WhatsApp ${wbot.id}`);
+        continue;
+      }
 
-    logger.info(`Processing call from ${call.from} on WhatsApp ${wbot.id}`);
+      // Verificar se é uma chamada de oferta (nova chamada)
+      if (call.status !== 'offer') {
+        logger.debug(`Skipping call ${call.id} with status ${call.status}`);
+        continue;
+      }
 
-    // Buscar configurações do tenant
-    const tenantSettings = await getTenantSettings(wbot);
-    
-    if (!tenantSettings) {
-      logger.debug(`No tenant settings found for WhatsApp ${wbot.id}, not rejecting call`);
-      return;
-    }
+      const callType = call.isVideo ? 'video' : 'audio';
+      logger.info(`Processing ${callType} call from ${call.from} on WhatsApp ${wbot.id}`);
 
-    // Se não deve rejeitar chamadas, sair
-    if (!tenantSettings.rejectCalls) {
-      logger.debug(`Call rejection disabled for WhatsApp ${wbot.id}`);
-      return;
-    }
+      // Buscar configurações do tenant
+      const tenantSettings = await getTenantSettings(wbot);
+      
+      if (!tenantSettings) {
+        logger.debug(`No tenant settings found for WhatsApp ${wbot.id}, not rejecting call`);
+        continue;
+      }
 
-    logger.info(`Rejecting call from ${call.from} on WhatsApp ${wbot.id}`);
+      // Se não deve rejeitar chamadas, sair
+      if (!tenantSettings.rejectCalls) {
+        logger.debug(`Call rejection disabled for WhatsApp ${wbot.id}`);
+        continue;
+      }
 
-    // Tentar rejeitar a chamada
-    const callRejected = await rejectCallSafely(call);
-    
-    if (!callRejected) {
-      logger.warn(`Failed to reject call from ${call.from}, but continuing with message processing`);
-    }
+      logger.info(`Rejecting ${callType} call from ${call.from} on WhatsApp ${wbot.id}`);
 
-    // Verificar novamente a saúde da sessão após rejeitar
-    if (!isSessionHealthy(wbot)) {
-      logger.warn(`Session became unhealthy after rejecting call from ${call.from}`);
-      return;
-    }
+      // Tentar rejeitar a chamada usando o método correto do Baileys
+      try {
+        await wbot.rejectCall(call.id, call.from);
+        logger.info(`${callType} call from ${call.from} rejected successfully`);
+      } catch (error: any) {
+        logger.error(`Error rejecting ${callType} call from ${call.from}: ${error.message}`);
+      }
 
-    // Buscar o contato
-    const callContact = await getContactSafely(wbot, call.from);
-    
-    if (!callContact) {
-      logger.warn(`Could not fetch contact for ${call.from}, skipping message creation`);
-      return;
-    }
+      // Buscar contato para criar ticket
+      const contact = await getContactSafely(wbot, call.from);
+      if (!contact) {
+        logger.warn(`Could not fetch contact for ${call.from}, skipping ticket creation`);
+        continue;
+      }
 
-    // Verificar e criar contato
-    let contact;
-    try {
-      contact = await VerifyContact(callContact, tenantSettings.tenantId);
-    } catch (error: any) {
-      logger.error(`Error verifying contact for ${call.from}: ${error.message}`);
-      return;
-    }
-
-    if (!contact) {
-      logger.warn(`Could not verify contact for ${call.from}`);
-      return;
-    }
-
-    // Criar ou encontrar ticket
-    let ticket;
-    try {
-      ticket = await FindOrCreateTicketService({
+      // Criar ticket para a chamada rejeitada
+      const ticketData = {
         contact,
         whatsappId: wbot.id,
         unreadMessages: 1,
-        tenantId: tenantSettings.tenantId,
-        channel: "whatsapp"
-      });
-    } catch (error: any) {
-      logger.error(`Error creating/finding ticket for ${call.from}: ${error.message}`);
-      return;
-    }
-
-    // Criar mensagem de sistema
-    try {
-      await CreateMessageSystemService({
+        tenantId: wbot.tenantId,
         msg: {
+          key: {
+            id: call.id,
+            fromMe: false,
+            remoteJid: call.from
+          },
+          message: {
+            call: {
+              id: call.id,
+              status: 'reject',
+              from: call.from,
+              timestamp: Date.now(),
+              type: callType
+            }
+          }
+        },
+        channel: "whatsapp"
+      };
+
+      const ticket = await FindOrCreateTicketService(ticketData);
+
+      // Enviar mensagem de rejeição de chamada
+      if (ticket && !ticket.isCampaignMessage) {
+        const messageData = {
           body: tenantSettings.callRejectMessage,
           fromMe: true,
           read: true,
           sendType: "bot"
-        },
-        tenantId: ticket.tenantId,
-        ticket,
-        sendType: "call",
-        status: "pending"
-      });
+        };
 
-      logger.info(`Call rejection message created for ${call.from} on ticket ${ticket.id}`);
-    } catch (error: any) {
-      logger.error(`Error creating call rejection message for ${call.from}: ${error.message}`);
-      // Não falhar se a mensagem não puder ser criada
+        await CreateMessageSystemService({
+          msg: messageData,
+          tenantId: wbot.tenantId,
+          ticket,
+          sendType: messageData.sendType,
+          status: "pending"
+        });
+      }
     }
 
   } catch (error: any) {
-    // Log do erro sem fazer throw para não quebrar o listener
-    if (isSessionClosedError(error)) {
-      logger.warn('Session closed during call verification, ignoring');
-      return;
-    }
-
-    if (isRecoverableError(error)) {
-      logger.warn(`Recoverable error in VerifyCall: ${error.message}`);
-      return;
-    }
-
-    logger.error(`Critical error in VerifyCall: ${error.message}`);
-    // Não fazer throw para não quebrar o listener principal
+    logger.error(`Error in VerifyCall: ${error.message}`);
   }
 };
 

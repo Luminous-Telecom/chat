@@ -60,18 +60,20 @@ const SendMessagesSchenduleWbot = async (): Promise<void> => {
     if (message.ticket.channel !== "whatsapp") {
       try {
         const sent = await SendMessageSystemProxy({
+          messageData: message,
           ticket: message.ticket,
-          messageData: message.toJSON(),
-          media: null,
           userId: message.userId
         });
 
-        message.update({
-          messageId: sent.id?.id || sent.messageId,
-          status: "sended",
-          ack: 2,
-          userId: message.userId
-        });
+        await Message.update(
+          {
+            messageId: sent.key.id,
+            status: "SENT"
+          },
+          {
+            where: { id: message.id }
+          }
+        );
       } catch (error) {
         logger.error(
           "SendMessagesSchenduleWbot > SendMessageSystemProxy",

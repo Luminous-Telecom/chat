@@ -1,5 +1,5 @@
 import GetDefaultWhatsApp from "../../helpers/GetDefaultWhatsApp";
-import { getWbot } from "../../libs/wbot";
+import { getBaileys } from "../../libs/baileys";
 import { logger } from "../../utils/logger";
 
 const GetProfilePicUrl = async (
@@ -8,9 +8,15 @@ const GetProfilePicUrl = async (
 ): Promise<string> => {
   try {
     const defaultWhatsapp = await GetDefaultWhatsApp(tenantId);
-    const wbot = getWbot(defaultWhatsapp.id);
-    const profilePicUrl = await wbot.getProfilePicUrl(`${number}@c.us`);
-    return profilePicUrl;
+    const wbot = getBaileys(defaultWhatsapp.id);
+
+    // Format number to WhatsApp format
+    const formattedNumber = number.replace(/\D/g, "");
+    const jid = `${formattedNumber}@s.whatsapp.net`;
+
+    // Get profile picture URL using Baileys
+    const profilePicUrl = await wbot.profilePictureUrl(jid);
+    return profilePicUrl || "";
   } catch (error) {
     logger.error(`GetProfilePicUrl - ${error}`);
     return "";
