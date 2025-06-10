@@ -10,6 +10,7 @@ import GracefulShutdown from "http-graceful-shutdown";
 import bootstrap from "./boot";
 import { initIO } from "../libs/socket";
 import { StartAllWhatsAppsSessions } from "../services/WbotServices/StartAllWhatsAppsSessions";
+import startMonitoring from "../services/WbotServices/wbotMonitor";
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default async function application() {
@@ -27,9 +28,21 @@ export default async function application() {
 
     initIO(app.server);
 
-    // needs to start after socket is available
+    // Inicia o monitoramento do WhatsApp
+    startMonitoring();
+    
+    // Inicia todas as sessões do WhatsApp
     await StartAllWhatsAppsSessions();
-    GracefulShutdown(app.server);
+    
+    GracefulShutdown(app.server, {
+      signals: 'SIGINT SIGTERM',
+      timeout: 10000, // 10 segundos para finalizar conexões
+      development: false,
+      onShutdown: async () => {
+        console.info('Shutting down gracefully...');
+        // Aqui você pode adicionar lógica de limpeza se necessário
+      }
+    });
   }
 
   async function close() {
@@ -38,7 +51,6 @@ export default async function application() {
         if (err) {
           reject(err);
         }
-
         resolve();
       });
     });

@@ -49,33 +49,51 @@ const VerifyMediaMessage = async (
       return;
     }
 
+    // Log inicial para debug
+    logger.info(`Starting media download for message ID: ${msg.id.id}, type: ${msg.type}`);
+
     // Tentar baixar a mídia com retry
     let media: MediaData | null = null;
     let retryCount = 0;
     const maxRetries = 3;
+    let lastError: any = null;
     
     while (retryCount < maxRetries && !media) {
       try {
+        logger.info(`Attempt ${retryCount + 1} to download media for message ID: ${msg.id.id}`);
         media = await (msg as any).downloadMedia() as MediaData;
-        if (media) break;
+        if (media) {
+          logger.info(`Successfully downloaded media for message ID: ${msg.id.id}`);
+          break;
+        }
       } catch (err) {
+        lastError = err;
         retryCount++;
+        logger.warn(`Attempt ${retryCount} failed for message ID: ${msg.id.id}. Error: ${err.message}`);
+        
         if (retryCount === maxRetries) {
-          logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Failed after ${maxRetries} attempts for message ID: ${msg.id.id}`);
+          logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Failed after ${maxRetries} attempts for message ID: ${msg.id.id}. Last error: ${lastError?.message || 'Unknown error'}`);
+          // Tentar registrar mais informações sobre o erro
+          if (lastError?.response) {
+            logger.error(`Error response status: ${lastError.response.status}, data: ${JSON.stringify(lastError.response.data)}`);
+          }
           return;
         }
-        // Esperar um pouco antes de tentar novamente
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        
+        // Esperar um pouco antes de tentar novamente, com tempo crescente
+        const waitTime = 1000 * Math.pow(2, retryCount); // Exponential backoff
+        logger.info(`Waiting ${waitTime}ms before next attempt for message ID: ${msg.id.id}`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
 
     if (!media) {
-      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: No media data for message ID: ${msg.id.id}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: No media data for message ID: ${msg.id.id}. Last error: ${lastError?.message || 'Unknown error'}`);
       return;
     }
 
     if (!media.data) {
-      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: No media data content for message ID: ${msg.id.id}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: No media data content for message ID: ${msg.id.id}. Media object: ${JSON.stringify(media, null, 2)}`);
       return;
     }
 
