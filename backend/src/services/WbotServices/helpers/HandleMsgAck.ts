@@ -37,11 +37,15 @@ const HandleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
     if (messageToUpdate) {
       await messageToUpdate.update({ ack });
       const { ticket } = messageToUpdate;
+      // LOG: Atualização de ACK
+      logger.info(`[DEBUG] ACK atualizado para mensagem ${msg.id.id}: ack=${ack}`);
       socketEmit({
         tenantId: ticket.tenantId,
         type: "chat:ack",
         payload: messageToUpdate
       });
+      // LOG: Evento emitido para frontend
+      logger.info(`[DEBUG] Evento chat:ack emitido para tenant ${ticket.tenantId} (msgId: ${msg.id.id}, ack: ${ack})`);
 
       const apiConfig: any = ticket.apiConfig || {};
       if (apiConfig?.externalKey && apiConfig?.urlMessageStatus) {

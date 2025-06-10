@@ -19,7 +19,16 @@ const HandleBaileysMessage = async (
 ): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     (async () => {
+      //logger.info(`[DEBUG] HandleBaileysMessage called for message:`, JSON.stringify({
+        //id: msg.key.id,
+        //from: msg.key.remoteJid,
+        //fromMe: msg.key.fromMe,
+        //hasMessage: !!msg.message,
+        //type: msg.message ? Object.keys(msg.message)[0] : 'no-message'
+      //}, null, 2));
+
       if (!msg.key.fromMe && !msg.message) {
+        //logger.info(`[DEBUG] Skipping message - no content and not from me`);
         return;
       }
 

@@ -228,7 +228,8 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
           message = { viewOnceMessage: { message: { messageContextInfo: { deviceListMetadataVersion: 2, deviceListMetadata: {}, }, ...message, }, }, };
         }
         return message;
-      }
+      },
+      logger: require('pino')({ level: 'error' })
     }) as BaileysClient;
 
     // Adiciona handler de erro do WebSocket

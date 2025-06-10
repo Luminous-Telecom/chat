@@ -5,6 +5,7 @@ import HandleBaileysMessage from "../BaileysServices/HandleBaileysMessage";
 import { BaileysClient } from "../../types/baileys";
 import { getIO } from "../../libs/socket";
 import AppError from "../../errors/AppError";
+import HandleMsgAck from "./helpers/HandleMsgAck";
 
 export const StartWhatsAppSession = async (
   whatsapp: Whatsapp,
@@ -52,21 +53,32 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
   wbot.ev.on('messages.upsert', async (m: any) => {
     try {
       const messages = m.messages;
-      if (messages.length === 0) return;
+      if (messages.length === 0) {
+        return;
+      }
 
       for (const msg of messages) {
         await HandleBaileysMessage(msg, wbot);
       }
     } catch (err) {
-      logger.error(`Error handling message for ${whatsapp.name}: ${err}`);
+      logger.error(`[DEBUG] Error handling message for ${whatsapp.name}:`, err);
     }
   });
 
   // Handler para atualizações de mensagens (leitura, entrega, etc.)
   wbot.ev.on('messages.update', async (messageUpdate: any) => {
     try {
-      // Aqui você pode adicionar lógica para atualizar status de mensagens
-      logger.debug(`Message update received for ${whatsapp.name}:`, messageUpdate);
+      if (Array.isArray(messageUpdate)) {
+        for (const update of messageUpdate) {
+          if (update.key && typeof update.update === 'object' && update.update.ack !== undefined) {
+            // Chama o handler de ACK para atualizar o status no banco e emitir para o frontend
+            await HandleMsgAck({
+              id: { id: update.key.id },
+              ...update
+            }, update.update.ack);
+          }
+        }
+      }
     } catch (err) {
       logger.error(`Error handling message update for ${whatsapp.name}: ${err}`);
     }
@@ -76,9 +88,8 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
   wbot.ev.on('message-receipt.update', async (receiptUpdate: any) => {
     try {
       // Aqui você pode adicionar lógica para recibos de mensagem
-      logger.debug(`Message receipt update for ${whatsapp.name}:`, receiptUpdate);
     } catch (err) {
-      logger.error(`Error handling receipt update for ${whatsapp.name}: ${err}`);
+      //logger.error(`Error handling receipt update for ${whatsapp.name}: ${err}`);
     }
   });
 
@@ -86,9 +97,8 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
   wbot.ev.on('contacts.update', async (contactUpdate: any) => {
     try {
       // Aqui você pode sincronizar contatos
-      logger.debug(`Contacts updated for ${whatsapp.name}:`, contactUpdate.length);
     } catch (err) {
-      logger.error(`Error handling contacts update for ${whatsapp.name}: ${err}`);
+      //logger.error(`Error handling contacts update for ${whatsapp.name}: ${err}`);
     }
   });
 
@@ -96,9 +106,8 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
   wbot.ev.on('chats.update', async (chatUpdate: any) => {
     try {
       // Aqui você pode sincronizar chats
-      logger.debug(`Chats updated for ${whatsapp.name}:`, chatUpdate.length);
     } catch (err) {
-      logger.error(`Error handling chats update for ${whatsapp.name}: ${err}`);
+      //logger.error(`Error handling chats update for ${whatsapp.name}: ${err}`);
     }
   });
 };
