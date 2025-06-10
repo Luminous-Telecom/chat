@@ -27,7 +27,7 @@ const events: any = {};
 const JoinChatServer = (socket: Socket) => {
   const { user } = socket.handshake.auth;
 
-  logger.info(`joinChatServer USER ${user.name}`);
+  //logger.info(`joinChatServer USER ${user.name}`);
   const { tenantId } = user;
   const socketDataTenant = `socketData_${tenantId}`;
   let dataTenant: any;
@@ -475,7 +475,7 @@ function register(socket: Socket): void {
   events.onDisconnect(socket);
 
   if (socket.handshake.auth.user.id) {
-    JoinChatServer(socket);
+    (socket);
   }
 }
 
