@@ -430,7 +430,7 @@ const onDisconnect = (socket: Socket) => {
     if (reason === "transport error") {
       reason = "client terminated";
     }
-    logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
+    //logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
   });
 };
 
