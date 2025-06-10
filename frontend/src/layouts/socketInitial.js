@@ -86,7 +86,9 @@ export default {
       })
 
       socket.on(`${usuario.tenantId}:whatsappSession`, data => {
+        console.log('Received whatsappSession event:', data)
         if (data.action === 'update') {
+          console.log('Updating session with QR code:', data.session.qrcode ? 'QR code present' : 'No QR code')
           this.$store.commit('UPDATE_SESSION', data.session)
           this.$root.$emit('UPDATE_SESSION', data.session)
         }

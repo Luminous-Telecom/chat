@@ -74,7 +74,18 @@ export default {
   },
   methods: {
     formatarData (data, formato) {
-      return format(parseISO(data), formato, { locale: pt })
+      if (!data) return 'N/A'
+      try {
+        const parsedDate = parseISO(data)
+        if (isNaN(parsedDate.getTime())) {
+          console.warn('Invalid date received:', data)
+          return 'Data inválida'
+        }
+        return format(parsedDate, formato, { locale: pt })
+      } catch (err) {
+        console.error('Error formatting date:', err, 'Date value:', data)
+        return 'Erro ao formatar data'
+      }
     }
   }
 }

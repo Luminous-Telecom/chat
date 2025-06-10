@@ -304,7 +304,7 @@
           <div class="flex flex-inline q-pt-xs">
             <q-scroll-area
               horizontal
-              style="heigth: 40px; width: 300px;"
+              style="height: 40px; width: 300px;"
             >
               <template v-for="item in whatsapps">
                 <q-btn
@@ -895,13 +895,18 @@ export default {
         window.focus()
         this.$store.dispatch('AbrirChatMensagens', data.ticket)
         this.$router.push({ name: 'atendimento' })
-        // history.push(`/tickets/${ticket.id}`);
       }
 
-      this.$nextTick(() => {
-        // utilizar refs do layout
-        this.$refs.audioNotificationPlay.play()
-      })
+      // Tentar tocar o som apenas se o usuário já interagiu com a página
+      if (document.hasFocus()) {
+        this.$nextTick(() => {
+          if (this.$refs.audioNotificationPlay) {
+            this.$refs.audioNotificationPlay.play().catch(err => {
+              console.log('Não foi possível tocar o som de notificação:', err)
+            })
+          }
+        })
+      }
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()
@@ -1095,7 +1100,6 @@ export default {
       Notification.requestPermission()
     }
     this.userProfile = localStorage.getItem('profile')
-    // this.socketInitial()
 
     // se existir ticket na url, abrir o ticket.
     if (this.$route?.params?.ticketId) {
@@ -1110,7 +1114,8 @@ export default {
         this.$store.commit('SET_HAS_MORE', true)
         this.$store.dispatch('AbrirChatMensagens', ticket)
       }
-    } else {
+    } else if (this.$route.name !== 'chat-empty') {
+      // Only navigate if we're not already on the chat-empty route
       this.$router.push({ name: 'chat-empty' })
     }
   },

@@ -25,7 +25,7 @@ const clearReconnectionTimeout = (whatsappId: number): void => {
   }
 };
 
-// Function to remove a session
+// Enhanced session removal with better cleanup
 export const removeBaileysSession = async (whatsappId: number): Promise<void> => {
   const sessionIndex = sessions.findIndex(s => s.id === whatsappId);
   if (sessionIndex !== -1) {
@@ -36,66 +36,123 @@ export const removeBaileysSession = async (whatsappId: number): Promise<void> =>
       // Clear any pending reconnection timeouts
       clearReconnectionTimeout(whatsappId);
       
-      // Remove all event listeners
-      session.ev.removeAllListeners('connection.update');
-      session.ev.removeAllListeners('creds.update');
-      session.ev.removeAllListeners('messages.upsert');
-      session.ev.removeAllListeners('messages.update');
-      session.ev.removeAllListeners('message-receipt.update');
-      session.ev.removeAllListeners('presence.update');
-      session.ev.removeAllListeners('contacts.update');
-      session.ev.removeAllListeners('chats.update');
-      session.ev.removeAllListeners('groups.update');
-      session.ev.removeAllListeners('group-participants.update');
-      session.ev.removeAllListeners('blocklist.set');
-      session.ev.removeAllListeners('blocklist.update');
-      session.ev.removeAllListeners('call');
-      session.ev.removeAllListeners('labels.edit');
-      session.ev.removeAllListeners('labels.association');
+      // Remove from initializing set if present
+      initializingSession.delete(whatsappId);
       
-      // Try to close connection gracefully
+      // Remove all event listeners to prevent memory leaks
       try {
-        if ((session as any).ws && (session as any).ws.readyState === 1) {
+        session.ev.removeAllListeners('connection.update');
+        session.ev.removeAllListeners('creds.update');
+        session.ev.removeAllListeners('messages.upsert');
+        session.ev.removeAllListeners('messages.update');
+        session.ev.removeAllListeners('message-receipt.update');
+        session.ev.removeAllListeners('presence.update');
+        session.ev.removeAllListeners('contacts.update');
+        session.ev.removeAllListeners('chats.update');
+        session.ev.removeAllListeners('groups.update');
+        session.ev.removeAllListeners('group-participants.update');
+        session.ev.removeAllListeners('blocklist.set');
+        session.ev.removeAllListeners('blocklist.update');
+        session.ev.removeAllListeners('call');
+        
+        // These might not exist in all Baileys versions, so wrap in try-catch
+        try {
+          session.ev.removeAllListeners('labels.edit' as any);
+          session.ev.removeAllListeners('labels.association' as any);
+        } catch (labelErr) {
+          // Ignore if these events don't exist
+        }
+      } catch (eventErr) {
+        baseLogger.warn(`Error removing event listeners: ${eventErr}`);
+      }
+      
+      // Close WebSocket connection gracefully
+      try {
+        const wsState = (session as any)?.ws?.readyState;
+        if (wsState === 1) { // WebSocket.OPEN
           await session.logout();
           baseLogger.info(`Successfully logged out session ${whatsappId}`);
+        } else if ((session as any).ws) {
+          (session as any).ws.close();
+          baseLogger.info(`Closed WebSocket for session ${whatsappId}`);
         }
       } catch (err) {
-        baseLogger.warn(`Error during logout, continuing cleanup: ${err}`);
+        baseLogger.warn(`Error during logout/close: ${err}`);
       }
       
       // Remove from sessions array
       sessions.splice(sessionIndex, 1);
-      baseLogger.info(`Session removed from active sessions array`);
+      baseLogger.info(`Session ${whatsappId} removed from active sessions`);
       
     } catch (err) {
-      baseLogger.error(`Error cleaning up session: ${err}`);
+      baseLogger.error(`Error cleaning up session ${whatsappId}: ${err}`);
     }
   }
 };
 
-// Function to get a session
+// Enhanced session getter with better state checking
 export const getBaileysSession = (whatsappId: number): BaileysClient | undefined => {
   const session = sessions.find(s => s.id === whatsappId);
-  if (session) {
-    // Check if session is still active
-    const wsState = (session as any)?.ws?.readyState;
-    const connectionState = (session as any)?.connection;
-    
-    // Consider session active if:
-    // 1. Connection is 'open', 'connecting', or undefined (initial state)
-    // 2. WebSocket is in OPEN (1), CONNECTING (0), or undefined (initial state)
-    // 3. Or if we're in a reconnection attempt (has reconnection timeout)
-    if ((connectionState === 'open' || connectionState === 'connecting' || connectionState === undefined) && 
-        (wsState === 1 || wsState === 0 || wsState === undefined) ||
-        reconnectionTimeouts.has(whatsappId)) {
-      return session;
-    } else {
-      // Only log the state, don't remove the session
-      baseLogger.info(`Session ${whatsappId} is in state (connection: ${connectionState}, ws: ${wsState})`);
-      return session;
+  if (!session) return undefined;
+  
+  const wsState = (session as any)?.ws?.readyState;
+  const connectionState = (session as any)?.connection;
+  
+  // Log current state for debugging
+  baseLogger.debug(`Session ${whatsappId} state - connection: ${connectionState}, ws: ${wsState}`);
+  
+  // Session is usable if:
+  // 1. Connection is open
+  // 2. Connection is connecting and WebSocket is open or connecting
+  // 3. We're in a reconnection attempt
+  const isUsable = (
+    connectionState === 'open' ||
+    (connectionState === 'connecting' && (wsState === 0 || wsState === 1)) ||
+    reconnectionTimeouts.has(whatsappId)
+  );
+  
+  return isUsable ? session : undefined;
+};
+
+// Add a function to force session restart
+export const restartBaileysSession = async (whatsappId: number): Promise<BaileysClient | null> => {
+  try {
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (!whatsapp) {
+      baseLogger.error(`WhatsApp instance ${whatsappId} not found`);
+      return null;
     }
+    
+    baseLogger.info(`Force restarting session for ${whatsapp.name}`);
+    
+    // Clean up existing session
+    await removeBaileysSession(whatsappId);
+    
+    // Clear session directory to force fresh start
+    const sessionDir = join(__dirname, '..', '..', 'session', `session-${whatsappId}`);
+    try {
+      await rm(sessionDir, { recursive: true, force: true });
+      baseLogger.info(`Cleared session directory for fresh start`);
+    } catch (err) {
+      baseLogger.warn(`Could not clear session directory: ${err}`);
+    }
+    
+    // Reset database status
+    await whatsapp.update({
+      status: 'DISCONNECTED',
+      qrcode: '',
+      retries: 0
+    });
+    
+    // Initialize new session
+    const newSession = await initBaileys(whatsapp);
+    sessions.push(newSession);
+    
+    return newSession;
+  } catch (err) {
+    baseLogger.error(`Error restarting session ${whatsappId}: ${err}`);
+    return null;
   }
-  return undefined;
 };
 
 export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> => {
@@ -136,7 +193,7 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
     // Clear any pending reconnection timeouts
     clearReconnectionTimeout(whatsapp.id);
     
-    const sessionDir = join(__dirname, '..', '..', '..', `session-${whatsapp.id}`);
+    const sessionDir = join(__dirname, '..', '..', 'session', `session-${whatsapp.id}`);
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     baseLogger.info(`Created new auth state for session`);
 
@@ -152,16 +209,50 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
       retryRequestDelayMs: 5000,
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
-      keepAliveIntervalMs: 60000,
+      keepAliveIntervalMs: 15000,
       qrTimeout: 60000,
       getMessage: async () => undefined,
       shouldIgnoreJid: () => false,
       linkPreviewImageThumbnailWidth: 0,
       transactionOpts: {
-        maxCommitRetries: 1,
+        maxCommitRetries: 5,
         delayBetweenTriesMs: 3000
+      },
+      patchMessageBeforeSending: (message) => {
+        const requiresPatch = !!(
+          message.buttonsMessage 
+          || message.templateMessage
+          || message.listMessage
+        );
+        if (requiresPatch) {
+          message = { viewOnceMessage: { message: { messageContextInfo: { deviceListMetadataVersion: 2, deviceListMetadata: {}, }, ...message, }, }, };
+        }
+        return message;
       }
     }) as BaileysClient;
+
+    // Adiciona handler de erro do WebSocket
+    if ((wbot as any).ws) {
+      const ws = (wbot as any).ws;
+      
+      ws.on('error', (err: Error) => {
+        baseLogger.error(`WebSocket error for ${whatsapp.name}: ${err.message}`);
+        // Não desconecta aqui, deixa o handler de connection.update lidar com isso
+      });
+
+      ws.on('close', (code: number, reason: string) => {
+        baseLogger.info(`WebSocket closed for ${whatsapp.name} (code: ${code}, reason: ${reason})`);
+        // Não desconecta aqui, deixa o handler de connection.update lidar com isso
+      });
+
+      ws.on('ping', () => {
+        baseLogger.debug(`WebSocket ping received for ${whatsapp.name}`);
+      });
+
+      ws.on('pong', () => {
+        baseLogger.debug(`WebSocket pong sent for ${whatsapp.name}`);
+      });
+    }
 
     // Add necessary properties
     (wbot as any).id = whatsapp.id;
@@ -201,7 +292,7 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
       }
     });
 
-    // Set up connection handler
+    // Fixed connection handler
     wbot.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
       
@@ -210,11 +301,23 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
       
       if (qr) {
         baseLogger.info(`QR Code received for ${whatsapp.name}`);
-        baseLogger.info(`QR Code generated for ${whatsapp.name}`);
         await whatsapp.update({ 
           status: 'qrcode',
           qrcode: qr,
           retries: 0
+        });
+        // Emitir evento para o frontend com o novo QR code
+        const io = require('../libs/socket').getIO();
+        io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+          action: "update",
+          session: {
+            id: whatsapp.id,
+            name: whatsapp.name,
+            status: 'qrcode',
+            qrcode: qr,
+            isDefault: whatsapp.isDefault,
+            tenantId: whatsapp.tenantId
+          }
         });
         return;
       }
@@ -231,93 +334,122 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
         const errorMessage = lastDisconnect?.error?.message || 'Unknown error';
         
-        // Don't treat temporary disconnections as fatal
-        const isTemporaryDisconnect = statusCode === 515 || // Stream error (expected after pairing)
-                                     statusCode === 401 || // Unauthorized (can be temporary)
-                                     statusCode === 503;   // Service unavailable
+        baseLogger.info(`Connection closed for ${whatsapp.name} (status code: ${statusCode}, error: ${errorMessage})`);
         
-        const shouldReconnect = (statusCode !== DisconnectReason.loggedOut && 
-                                statusCode !== DisconnectReason.forbidden &&
-                                currentRetries < MAX_RECONNECT_ATTEMPTS) ||
-                               isTemporaryDisconnect;
+        // Clean up session first
+        await removeBaileysSession(whatsapp.id);
         
-        baseLogger.info(`Connection closed for ${whatsapp.name} (status code: ${statusCode}, error: ${errorMessage}), should reconnect: ${shouldReconnect}`);
+        // Define when NOT to reconnect (fatal errors)
+        const fatalErrors = [
+          DisconnectReason.loggedOut,     // 401 - Need new QR code
+          DisconnectReason.forbidden,     // 403 - Banned
+          DisconnectReason.badSession,    // 400 - Session corrupted
+          DisconnectReason.multideviceMismatch, // Device mismatch
+        ];
         
-        // Only remove session if we're not going to reconnect
+        // Define temporary errors that should retry quickly
+        const temporaryErrors = [
+          515, // Stream error
+          503, // Service unavailable  
+          408, // Request timeout
+          429, // Too many requests
+        ];
+        
+        const shouldReconnect = !fatalErrors.includes(statusCode) && 
+                               currentRetries < MAX_RECONNECT_ATTEMPTS;
+        
         if (!shouldReconnect) {
-          await removeBaileysSession(whatsapp.id);
+          if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+            baseLogger.info(`Session ${whatsapp.name} logged out or auth failed - clearing session and requiring new QR`);
+            
+            // Clear the session directory to force new QR generation
+            const sessionDir = join(__dirname, '..', '..', 'session', `session-${whatsapp.id}`);
+            try {
+              await rm(sessionDir, { recursive: true, force: true });
+              baseLogger.info(`Cleared session directory for ${whatsapp.name}`);
+            } catch (err) {
+              baseLogger.warn(`Could not clear session directory: ${err}`);
+            }
+            
+            await whatsapp.update({
+              status: 'DISCONNECTED',
+              qrcode: '',
+              retries: 0
+            });
+          } else {
+            baseLogger.error(`Fatal error for ${whatsapp.name} (${statusCode}), not reconnecting`);
+            await whatsapp.update({
+              status: 'DISCONNECTED',
+              qrcode: '',
+              retries: 0
+            });
+          }
+          return;
         }
         
-        if (shouldReconnect) {
-          const newRetries = isTemporaryDisconnect ? currentRetries : currentRetries + 1;
-          await whatsapp.update({
-            status: 'DISCONNECTED',
-            qrcode: '',
-            retries: newRetries
-          });
-          
-          // For temporary disconnections, use shorter delays
-          let retryDelay;
-          if (isTemporaryDisconnect) {
-            retryDelay = 5000; // 5 seconds for temporary disconnections
-            baseLogger.info(`Temporary disconnect (${statusCode}) detected - using short retry delay`);
-          } else if (statusCode === 440) {
-            retryDelay = 15000; // Conflict error - wait longer
-            baseLogger.warn(`Conflict error (440) detected - waiting longer to avoid race conditions`);
-          } else {
-            retryDelay = Math.min(5000 * Math.pow(2, currentRetries), 30000);
-          }
-          
-          baseLogger.info(`Scheduling reconnection attempt ${newRetries}/${MAX_RECONNECT_ATTEMPTS} in ${retryDelay}ms`);
-          
-          const timeout = setTimeout(async () => {
-            try {
-              reconnectionTimeouts.delete(whatsapp.id);
-              
-              // Check if session is not already being initialized
-              if (initializingSession.has(whatsapp.id)) {
-                baseLogger.info(`Session ${whatsapp.name} is already being initialized, skipping reconnection`);
-                return;
-              }
-              
-              baseLogger.info(`Attempting to reconnect session for ${whatsapp.name} (attempt ${newRetries})`);
-              const newSession = await initBaileys(whatsapp);
-              sessions.push(newSession);
-            } catch (err) {
-              baseLogger.error(`Error during reconnection attempt ${newRetries}: ${err}`);
-              
-              if (newRetries >= MAX_RECONNECT_ATTEMPTS) {
-                baseLogger.error(`All reconnection attempts failed for ${whatsapp.name}`);
-                await whatsapp.update({
-                  status: 'DISCONNECTED',
-                  qrcode: '',
-                  retries: 0
-                });
-              }
-            }
-          }, retryDelay);
-          
-          reconnectionTimeouts.set(whatsapp.id, timeout);
+        // Calculate retry delay based on error type
+        let retryDelay;
+        const newRetries = currentRetries + 1;
+        
+        if (temporaryErrors.includes(statusCode)) {
+          retryDelay = statusCode === 429 ? 30000 : 10000; // Rate limit vs other temp errors
+          baseLogger.info(`Temporary error (${statusCode}) - short retry delay`);
         } else {
-          // Don't reconnect - reset retries and set as disconnected
-          await whatsapp.update({
-            status: 'DISCONNECTED',
-            qrcode: '',
-            retries: 0
-          });
-          baseLogger.info(`Session ${whatsapp.name} will not reconnect (reason: ${statusCode})`);
+          // Exponential backoff for other errors
+          retryDelay = Math.min(15000 * Math.pow(1.5, currentRetries), 120000); // Max 2 minutes
+          baseLogger.info(`Using exponential backoff: ${retryDelay}ms`);
         }
+        
+        await whatsapp.update({
+          status: 'DISCONNECTED',
+          qrcode: '',
+          retries: newRetries
+        });
+        
+        baseLogger.info(`Scheduling reconnection attempt ${newRetries}/${MAX_RECONNECT_ATTEMPTS} in ${retryDelay}ms`);
+        
+        const timeout = setTimeout(async () => {
+          try {
+            reconnectionTimeouts.delete(whatsapp.id);
+            
+            // Double-check we're not already initializing
+            if (initializingSession.has(whatsapp.id)) {
+              baseLogger.info(`Session ${whatsapp.name} already initializing, skipping`);
+              return;
+            }
+            
+            baseLogger.info(`Reconnection attempt ${newRetries} for ${whatsapp.name}`);
+            
+            // Refresh whatsapp data before reconnecting
+            await whatsapp.reload();
+            const newSession = await initBaileys(whatsapp);
+            sessions.push(newSession);
+            
+          } catch (err) {
+            baseLogger.error(`Reconnection attempt ${newRetries} failed: ${err}`);
+            
+            if (newRetries >= MAX_RECONNECT_ATTEMPTS) {
+              baseLogger.error(`All reconnection attempts exhausted for ${whatsapp.name}`);
+              await whatsapp.update({
+                status: 'DISCONNECTED',
+                qrcode: '',
+                retries: 0
+              });
+            }
+          }
+        }, retryDelay);
+        
+        reconnectionTimeouts.set(whatsapp.id, timeout);
       }
 
       if (connection === 'open') {
-        baseLogger.info(`Session ${whatsapp.name} connected successfully`);
+        baseLogger.info(`Session ${whatsapp.name} connected successfully!`);
         await whatsapp.update({
           status: 'CONNECTED',
           qrcode: '',
           retries: 0
         });
         
-        // Clear any pending reconnection timeouts since we're now connected
         clearReconnectionTimeout(whatsapp.id);
       }
     });
@@ -344,6 +476,25 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
     });
     throw err;
   }
+};
+
+// Utility function to get all active sessions
+export const getAllSessions = (): BaileysClient[] => {
+  return sessions.filter(session => {
+    const connectionState = (session as any)?.connection;
+    return connectionState === 'open' || connectionState === 'connecting';
+  });
+};
+
+// Utility function to get session count
+export const getSessionCount = (): number => {
+  return sessions.length;
+};
+
+// Utility function to check if session exists and is connected
+export const isSessionConnected = (whatsappId: number): boolean => {
+  const session = getBaileysSession(whatsappId);
+  return session ? (session as any)?.connection === 'open' : false;
 };
 
 export { sessions };

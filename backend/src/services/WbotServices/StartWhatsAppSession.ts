@@ -17,6 +17,9 @@ export const StartWhatsAppSession = async (
       const state = (existingSession as any)?.connection;
       if (state === 'open') {
         logger.info(`Session already exists and is connected for ${whatsapp.name}`);
+        
+        // Apenas adiciona os handlers que não estão no initBaileys
+        setupAdditionalHandlers(existingSession, whatsapp);
         return;
       } else {
         // Remove a sessão antiga se não estiver ativa
@@ -24,122 +27,195 @@ export const StartWhatsAppSession = async (
       }
     }
 
+    // Inicializa nova sessão (já inclui handlers de conexão)
     const wbot = await initBaileys(whatsapp);
-    const io = getIO();
+    
+    // Configura handlers adicionais específicos da aplicação
+    setupAdditionalHandlers(wbot, whatsapp);
+    
+    // Configura handler para notificações WebSocket
+    setupSocketNotifications(wbot, whatsapp);
 
-    // Configura o handler de QR code
-    wbot.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
-      if (qr) {
-        // Atualiza o status para QR_CODE e salva o QR code
-        await whatsapp.update({
-          status: "qrcode",
-          qrcode: qr
-        });
-        io.emit(`${whatsapp.tenantId}:whatsappSession`, {
-          action: "update",
-          session: whatsapp
-        });
-        logger.info(`QR Code generated for ${whatsapp.name}`);
-        return;
-      }
-
-      if (connection === 'close') {
-        const shouldReconnect = (lastDisconnect?.error as any)?.output?.statusCode !== 401;
-        logger.info(`Connection closed for ${whatsapp.name}, should reconnect: ${shouldReconnect}`);
-
-        if (shouldReconnect) {
-          // Limpa o QR code se existir
-          await whatsapp.update({
-            status: "DISCONNECTED",
-            qrcode: null
-          });
-
-          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
-            action: "update",
-            session: whatsapp
-          });
-
-          // Agenda uma nova tentativa de conexão
-          setTimeout(async () => {
-            try {
-              logger.info(`Attempting to reconnect session for ${whatsapp.name}`);
-              await StartWhatsAppSession(whatsapp, companyId);
-            } catch (err) {
-              logger.error(`Error during reconnection attempt: ${err}`);
-            }
-          }, 5000); // Espera 5 segundos antes de tentar reconectar
-        } else {
-          // Se não deve reconectar, limpa a sessão
-          await removeBaileysSession(whatsapp.id);
-          await whatsapp.update({
-            status: "DISCONNECTED",
-            qrcode: null
-          });
-
-          io.emit(`${whatsapp.tenantId}:whatsappSession`, {
-            action: "update",
-            session: whatsapp
-          });
-        }
-      }
-
-      if (connection === 'open') {
-        // Limpa o QR code quando conectado
-        await whatsapp.update({
-          status: "CONNECTED",
-          qrcode: null
-        });
-
-        io.emit(`${whatsapp.tenantId}:whatsappSession`, {
-          action: "update",
-          session: whatsapp
-        });
-
-        logger.info(`Session connected successfully for ${whatsapp.name}`);
-      }
-    });
-
-    // Configura os outros event listeners com tratamento de erro
-    wbot.ev.on('messages.upsert', async (m: any) => {
-      try {
-        const messages = m.messages;
-        if (messages.length === 0) return;
-
-        for (const msg of messages) {
-          await HandleBaileysMessage(msg, wbot);
-        }
-      } catch (err) {
-        logger.error(`Error handling message: ${err}`);
-      }
-    });
-
-    wbot.ev.on('messages.update', async (messageInfo: any) => {
-      try {
-        for (const msg of messageInfo) {
-          if (msg.key && msg.key.fromMe) {
-            await HandleBaileysMessage(msg, wbot);
-          }
-        }
-      } catch (err) {
-        logger.error(`Error handling message update: ${err}`);
-      }
-    });
-
-    wbot.ev.on('message-receipt.update', async (messageReceipts: any) => {
-      try {
-        for (const receipt of messageReceipts) {
-          if (receipt.key && receipt.key.fromMe) {
-            await HandleBaileysMessage(receipt, wbot);
-          }
-        }
-      } catch (err) {
-        logger.error(`Error handling message receipt: ${err}`);
-      }
-    });
-
-    logger.info(`WhatsApp session initialized for ${whatsapp.name}`);
+    logger.info(`WhatsApp session service initialized for ${whatsapp.name}`);
   } catch (err) {
     logger.error(`Error starting WhatsApp session: ${err}`);
+    throw new AppError(`Failed to start WhatsApp session: ${err.message}`, 500);
+  }
+};
+
+// Função para configurar handlers adicionais que não estão no initBaileys
+const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void => {
+  // Remove listeners existentes para evitar duplicação
+  wbot.ev.removeAllListeners('messages.upsert');
+  
+  // Handler para mensagens
+  wbot.ev.on('messages.upsert', async (m: any) => {
+    try {
+      const messages = m.messages;
+      if (messages.length === 0) return;
+
+      for (const msg of messages) {
+        await HandleBaileysMessage(msg, wbot);
+      }
+    } catch (err) {
+      logger.error(`Error handling message for ${whatsapp.name}: ${err}`);
+    }
+  });
+
+  // Handler para atualizações de mensagens (leitura, entrega, etc.)
+  wbot.ev.on('messages.update', async (messageUpdate: any) => {
+    try {
+      // Aqui você pode adicionar lógica para atualizar status de mensagens
+      logger.debug(`Message update received for ${whatsapp.name}:`, messageUpdate);
+    } catch (err) {
+      logger.error(`Error handling message update for ${whatsapp.name}: ${err}`);
+    }
+  });
+
+  // Handler para recibos de mensagem
+  wbot.ev.on('message-receipt.update', async (receiptUpdate: any) => {
+    try {
+      // Aqui você pode adicionar lógica para recibos de mensagem
+      logger.debug(`Message receipt update for ${whatsapp.name}:`, receiptUpdate);
+    } catch (err) {
+      logger.error(`Error handling receipt update for ${whatsapp.name}: ${err}`);
+    }
+  });
+
+  // Handler para atualizações de contatos
+  wbot.ev.on('contacts.update', async (contactUpdate: any) => {
+    try {
+      // Aqui você pode sincronizar contatos
+      logger.debug(`Contacts updated for ${whatsapp.name}:`, contactUpdate.length);
+    } catch (err) {
+      logger.error(`Error handling contacts update for ${whatsapp.name}: ${err}`);
+    }
+  });
+
+  // Handler para atualizações de chats
+  wbot.ev.on('chats.update', async (chatUpdate: any) => {
+    try {
+      // Aqui você pode sincronizar chats
+      logger.debug(`Chats updated for ${whatsapp.name}:`, chatUpdate.length);
+    } catch (err) {
+      logger.error(`Error handling chats update for ${whatsapp.name}: ${err}`);
+    }
+  });
+};
+
+// Função para configurar notificações WebSocket
+const setupSocketNotifications = (wbot: BaileysClient, whatsapp: Whatsapp): void => {
+  const io = getIO();
+
+  // Handler para mudanças de conexão (para notificar o frontend)
+  wbot.ev.on('connection.update', async ({ connection, qr }) => {
+    try {
+      // Recarrega dados atualizados do banco
+      await whatsapp.reload();
+      
+      // Notifica o frontend sobre mudanças de status
+      io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+        action: "update",
+        session: {
+          id: whatsapp.id,
+          name: whatsapp.name,
+          status: whatsapp.status,
+          qrcode: whatsapp.qrcode,
+          isDefault: whatsapp.isDefault,
+          tenantId: whatsapp.tenantId
+        }
+      });
+
+      // Log específico para cada estado
+      if (qr) {
+        logger.info(`QR Code generated for ${whatsapp.name} - notified frontend`);
+      } else if (connection === 'open') {
+        logger.info(`Session ${whatsapp.name} connected - notified frontend`);
+      } else if (connection === 'close') {
+        logger.info(`Session ${whatsapp.name} disconnected - notified frontend`);
+      }
+    } catch (err) {
+      logger.error(`Error notifying frontend for ${whatsapp.name}: ${err}`);
+    }
+  });
+};
+
+// Função para parar uma sessão
+export const StopWhatsAppSession = async (whatsappId: number): Promise<void> => {
+  try {
+    logger.info(`Stopping WhatsApp session for ID: ${whatsappId}`);
+    await removeBaileysSession(whatsappId);
+    
+    // Atualiza status no banco
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (whatsapp) {
+      await whatsapp.update({
+        status: "DISCONNECTED",
+        qrcode: null,
+        retries: 0
+      });
+
+      // Notifica frontend
+      const io = getIO();
+      io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+        action: "update",
+        session: whatsapp
+      });
+    }
+    
+    logger.info(`WhatsApp session stopped for ID: ${whatsappId}`);
+  } catch (err) {
+    logger.error(`Error stopping WhatsApp session ${whatsappId}: ${err}`);
+    throw new AppError(`Failed to stop WhatsApp session: ${err.message}`, 500);
+  }
+};
+
+// Função para reiniciar uma sessão
+export const RestartWhatsAppSession = async (
+  whatsappId: number, 
+  companyId: number
+): Promise<void> => {
+  try {
+    logger.info(`Restarting WhatsApp session for ID: ${whatsappId}`);
+    
+    // Para a sessão atual
+    await StopWhatsAppSession(whatsappId);
+    
+    // Aguarda um pouco para garantir limpeza
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Busca dados atualizados e reinicia
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (!whatsapp) {
+      throw new AppError("WhatsApp instance not found", 404);
+    }
+    
+    await StartWhatsAppSession(whatsapp, companyId);
+    
+    logger.info(`WhatsApp session restarted for ID: ${whatsappId}`);
+  } catch (err) {
+    logger.error(`Error restarting WhatsApp session ${whatsappId}: ${err}`);
     throw err;
   }
+};
+
+// Função para verificar status da sessão
+export const GetSessionStatus = (whatsappId: number): {
+  exists: boolean;
+  connected: boolean;
+  connectionState?: string;
+} => {
+  const session = getBaileysSession(whatsappId);
+  
+  if (!session) {
+    return { exists: false, connected: false };
+  }
+  
+  const connectionState = (session as any)?.connection;
+  
+  return {
+    exists: true,
+    connected: connectionState === 'open',
+    connectionState
+  };
 };

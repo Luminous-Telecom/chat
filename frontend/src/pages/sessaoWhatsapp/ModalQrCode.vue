@@ -65,6 +65,7 @@ export default {
   watch: {
     channel: {
       handler (v) {
+        console.log('ModalQrCode - Channel updated:', v)
         if (this.channel.status === 'CONNECTED') {
           this.fecharModalQrModal()
         }
@@ -74,6 +75,7 @@ export default {
   },
   computed: {
     cQrcode () {
+      console.log('ModalQrCode - Channel QR code:', this.channel.qrcode ? 'Present' : 'Not present')
       return this.channel.qrcode
     }
   },

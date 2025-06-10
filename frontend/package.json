@@ -8,7 +8,8 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
-    "test": "echo \"No test specified\" && exit 0"
+    "test": "echo \"No test specified\" && exit 0",
+    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider quasar dev"
   },
   "dependencies": {
     "@quasar/extras": "^1.15.6",
@@ -44,6 +45,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.18.9",
     "@quasar/app": "^2.4.3",
     "babel-eslint": "^10.0.1",
+    "cross-env": "^7.0.3",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-loader": "^3.0.3",

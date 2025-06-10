@@ -59,26 +59,23 @@ export default {
       // const searchParam = null
     },
     socketTicketListNew () {
-      // // if (status) {
-      // socket.emit(`${usuario.tenantId}:joinTickets`, 'open')
-      // socket.emit(`${usuario.tenantId}:joinTickets`, 'pending')
-      // socket.emit(`${usuario.tenantId}:joinTickets`, 'closed')
-      // // } else {
-      // socket.emit(`${usuario.tenantId}:joinNotification`)
-      // }
-
       socket.on('connect', () => {
+        console.log('Socket connected in mixinSockets')
         socket.on(`${usuario.tenantId}:ticketList`, async data => {
+          console.log('Received ticketList event:', data)
           if (data.type === 'chat:create') {
+            console.log('Processing chat:create event:', data.payload)
             if (
               !data.payload.read &&
               (data.payload.ticket.userId === userId || !data.payload.ticket.userId) &&
               data.payload.ticket.id !== this.$store.getters.ticketFocado.id
             ) {
               if (checkTicketFilter(data.payload.ticket)) {
+                console.log('Emitting notification for message')
                 this.handlerNotifications(data.payload)
               }
             }
+            console.log('Updating messages in store')
             this.$store.commit('UPDATE_MESSAGES', data.payload)
             this.scrollToBottom()
             // Atualiza notificações de mensagem
@@ -94,19 +91,19 @@ export default {
               includeNotQueueDefined: true
             }
             try {
+              console.log('Updating notifications')
               const { data } = await ConsultarTickets(params)
-              this.countTickets = data.count // count total de tickets no status
+              this.countTickets = data.count
               this.$store.commit('UPDATE_NOTIFICATIONS', data)
             } catch (err) {
+              console.error('Error updating notifications:', err)
               this.$notificarErro('Algum problema', err)
-              console.error(err)
             }
           }
-
           if (data.type === 'chat:ack' || data.type === 'chat:delete') {
+            console.log('Processing message status update:', data.type, data.payload)
             this.$store.commit('UPDATE_MESSAGE_STATUS', data.payload)
           }
-
           if (data.type === 'ticket:update') {
             this.$store.commit('UPDATE_TICKET', data.payload)
           }
