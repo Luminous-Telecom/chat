@@ -8,9 +8,7 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
-    "test": "echo \"No test specified\" && exit 0",
-    "build": "NODE_OPTIONS=--openssl-legacy-provider quasar build",
-    "dev": "NODE_OPTIONS=--openssl-legacy-provider quasar dev"
+    "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
     "@quasar/extras": "^1.15.6",
