@@ -1,4 +1,4 @@
-import { format, parseISO, parseJSON, isValid } from 'date-fns'
+import { format, parseISO, parseJSON } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
 import { mapGetters } from 'vuex'
 
@@ -17,41 +17,17 @@ export default {
         this.$root.$emit('scrollToBottomMessageChat')
       }, 200)
     },
-    dataInWords (data) {
-      if (!data) return 'N/A'
+    dataInWords (date) {
+      if (!date) return ''
       try {
-        let parsedDate
-        if (typeof data === 'string') {
-          // Tenta primeiro como ISO
-          parsedDate = parseISO(data)
-          if (!isValid(parsedDate)) {
-            // Se não for ISO válido, tenta como JSON
-            parsedDate = parseJSON(data)
-          }
-        } else if (typeof data === 'number') {
-          // Se for timestamp
-          parsedDate = new Date(data)
-        } else if (data instanceof Date) {
-          // Se já for Date
-          parsedDate = data
-        } else if (data && typeof data === 'object' && data.$date) {
-          // Formato do MongoDB/Sequelize
-          parsedDate = new Date(data.$date)
-        } else {
-          console.warn('Invalid date format in dataInWords:', data)
-          return 'Data inválida'
+        const parsedDate = parseJSON(date)
+        if (isNaN(parsedDate.getTime())) {
+          return ''
         }
-
-        if (!isValid(parsedDate)) {
-          console.warn('Invalid date after parsing in dataInWords:', data)
-          return 'Data inválida'
-        }
-
-        // Retorna apenas o horário no formato HH:mm
         return format(parsedDate, 'HH:mm', { locale: pt })
-      } catch (err) {
-        console.error('Error formatting date in dataInWords:', err, 'Date value:', data)
-        return 'Erro ao formatar data'
+      } catch (error) {
+        console.warn('Erro ao formatar data em dataInWords:', date, error)
+        return ''
       }
     },
     farmatarMensagemWhatsapp (body) {
@@ -90,39 +66,16 @@ export default {
       return format
     },
     formatarData (data, formato = 'dd/MM/yyyy') {
-      if (!data) return 'N/A'
+      if (!data) return ''
       try {
-        let parsedDate
-        if (typeof data === 'string') {
-          // Tenta primeiro como ISO
-          parsedDate = parseISO(data)
-          if (!isValid(parsedDate)) {
-            // Se não for ISO válido, tenta como JSON
-            parsedDate = parseJSON(data)
-          }
-        } else if (typeof data === 'number') {
-          // Se for timestamp
-          parsedDate = new Date(data)
-        } else if (data instanceof Date) {
-          // Se já for Date
-          parsedDate = data
-        } else if (data && typeof data === 'object' && data.$date) {
-          // Formato do MongoDB/Sequelize
-          parsedDate = new Date(data.$date)
-        } else {
-          console.warn('Invalid date format:', data)
-          return 'Data inválida'
+        const parsedDate = parseISO(data)
+        if (isNaN(parsedDate.getTime())) {
+          return ''
         }
-
-        if (!isValid(parsedDate)) {
-          console.warn('Invalid date after parsing:', data)
-          return 'Data inválida'
-        }
-
         return format(parsedDate, formato, { locale: pt })
-      } catch (err) {
-        console.error('Error formatting date:', err, 'Date value:', data)
-        return 'Erro ao formatar data'
+      } catch (error) {
+        console.warn('Erro ao formatar data:', data, error)
+        return ''
       }
     }
   }
