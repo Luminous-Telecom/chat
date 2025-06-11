@@ -45,9 +45,9 @@
          <div v-else class="loading-container">
           <q-spinner-dots
             color="primary"
-            size="40px"
-            class="q-mb-md" />
-          <div class="text-body2" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }">
+            size="32px"
+            class="q-mb-sm" />
+          <div class="text-body1" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }" style="font-size: 13px;">
             Gerando QR Code...
           </div>
         </div>
@@ -56,12 +56,12 @@
       <!-- Instructions Section -->
       <q-card-section class="q-pa-xs q-pt-none">
         <div class="instruction-card">
-          <div class="text-body2 text-center q-mb-md" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }">
-            <q-icon name="smartphone" class="q-mr-xs" />
+          <div class="text-body1 text-center q-mb-sm" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }" style="font-size: 13px;">
+            <q-icon name="smartphone" class="q-mr-xs" size="16px" />
             Abra o WhatsApp no seu celular e escaneie o código
           </div>
 
-          <div class="text-caption text-center q-mb-lg" :class="{ 'text-grey-6': !$q.dark.isActive, 'text-grey-4': $q.dark.isActive }">
+          <div class="text-overline text-center q-mb-md" :class="{ 'text-grey-6': !$q.dark.isActive, 'text-grey-4': $q.dark.isActive }" style="font-size: 11px;">
             Caso tenha problemas com a leitura, solicite um novo QR Code
           </div>
 
@@ -73,7 +73,8 @@
               label="Gerar Novo QR Code"
               @click="solicitarQrCode"
               icon="refresh"
-              class="modern-btn q-px-lg"
+              class="modern-btn q-px-md"
+              size="sm"
               :loading="false" />
           </div>
         </div>
