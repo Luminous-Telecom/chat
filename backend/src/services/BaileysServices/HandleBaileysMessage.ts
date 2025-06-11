@@ -25,7 +25,9 @@ const HandleBaileysMessage = async (
   return new Promise<void>((resolve, reject) => {
     (async () => {
       try {
-      
+        // Logs iniciais para debug
+        logger.debug(`[HandleBaileysMessage] Processing message - fromMe: ${msg.key.fromMe}, messageType: ${msg.message ? Object.keys(msg.message)[0] : 'undefined'}`);
+        logger.debug(`[HandleBaileysMessage] Message IDs - remoteJid: ${msg.key.remoteJid}, participant: ${msg.key.participant}`);
 
         // Verificar se mensagem é válida
         if (!msg.key.fromMe && !msg.message) {
@@ -84,9 +86,15 @@ const HandleBaileysMessage = async (
         // Processar contato
         const { msgContact, groupContact } = await processMessageContact(msg, tenantId);
         
+        // Log do contato processado
+        logger.debug(`[HandleBaileysMessage] Processed contact - Number: ${msgContact.number}, Name: ${msgContact.name}, isGroup: ${msgContact.isGroup}`);
+        
         // Criar/buscar ticket
         const unreadMessages = msg.key.fromMe ? 0 : 1;
         const contact = await VerifyContact(msgContact, tenantId);
+        
+        logger.debug(`[HandleBaileysMessage] Verified contact in DB - ID: ${contact.id}, Name: ${contact.name}, Number: ${contact.number}`);
+        
         const ticket = await FindOrCreateTicketService({
           contact,
           whatsappId: wbot.id,
@@ -136,6 +144,8 @@ const HandleBaileysMessage = async (
         resolve();
 
       } catch (err) {
+        logger.error(`[HandleBaileysMessage] Error processing message: ${err}`);
+        logger.error(`[HandleBaileysMessage] Error stack: ${err.stack}`);
         reject(err);
       }
     })();
@@ -162,52 +172,103 @@ const attemptSessionReconnect = async (whatsapp: any, msg: proto.IWebMessageInfo
 };
 
 const processMessageContact = async (msg: proto.IWebMessageInfo, tenantId: number) => {
-  const jid = msg.key.remoteJid || msg.key.participant || "";
-  const numero = jid.split('@')[0].replace(/\D/g, '');
-  const isGroup = jid.endsWith('@g.us');
+  // CORREÇÃO: Lógica melhorada para identificar corretamente o contato
+  let contactJid: string;
+  let contactNumber: string;
+  
+  const isGroup = (msg.key.remoteJid || '').endsWith('@g.us');
+  
+  if (msg.key.fromMe) {
+    // Mensagem enviada por mim - o contato da conversa é o destinatário
+    contactJid = msg.key.remoteJid || '';
+    contactNumber = contactJid.split('@')[0].replace(/\D/g, '');
+    
+    logger.debug(`[processMessageContact] FromMe=true - Contact JID: ${contactJid}, Number: ${contactNumber}`);
+  } else {
+    // Mensagem recebida - o contato é o remetente
+    if (isGroup) {
+      // Em grupos, o remetente individual é o participant
+      contactJid = msg.key.participant || msg.key.remoteJid || '';
+      contactNumber = contactJid.split('@')[0].replace(/\D/g, '');
+      
+      logger.debug(`[processMessageContact] FromMe=false, Group - Participant JID: ${contactJid}, Number: ${contactNumber}`);
+    } else {
+      // Em conversas individuais, o remetente é o remoteJid
+      contactJid = msg.key.remoteJid || '';
+      contactNumber = contactJid.split('@')[0].replace(/\D/g, '');
+      
+      logger.debug(`[processMessageContact] FromMe=false, Individual - Remote JID: ${contactJid}, Number: ${contactNumber}`);
+    }
+  }
 
-  // Buscar ou criar contato
+  // Validar se temos um número válido
+  if (!contactNumber || contactNumber.length < 10) {
+    logger.warn(`[processMessageContact] Invalid contact number: ${contactNumber}, using fallback`);
+    contactNumber = contactJid.split('@')[0] || 'unknown';
+  }
+
+  // Buscar ou criar contato no banco de dados
   const [foundContact] = await Contact.findOrCreate({
     where: { 
-      number: numero,
+      number: contactNumber,
       tenantId 
     },
     defaults: {
-      name: msg.pushName || numero,
+      name: msg.pushName || contactNumber,
       isWAContact: true,
       profilePicUrl: null
     }
   });
 
-  // Atualizar nome se necessário
-  if (msg.pushName && foundContact.name !== msg.pushName) {
+  // Atualizar nome se necessário e se não for grupo
+  // CORREÇÃO: Só atualizar o nome do contato com pushName se a mensagem NÃO for enviada por mim
+  // Para mensagens fromMe=true, o pushName é do remetente (eu), não do destinatário
+  if (msg.pushName && foundContact.name !== msg.pushName && !isGroup && !msg.key.fromMe) {
     await foundContact.update({ name: msg.pushName });
+    logger.debug(`[processMessageContact] Updated contact name from ${foundContact.name} to ${msg.pushName}`);
   }
 
+  // Criar objeto de contato compatível
   const msgContact = {
     id: {
-      user: numero,
-      _serialized: jid
+      user: contactNumber,
+      _serialized: contactJid
     },
-    name: foundContact.name || '',
-    pushname: foundContact.pushname || '',
-    number: numero,
-    isGroup: false,
+    name: foundContact.name || contactNumber,
+    // CORREÇÃO: Para mensagens fromMe=true, não usar pushName pois representa o remetente (eu)
+    pushname: msg.key.fromMe ? '' : (msg.pushName || ''),
+    number: contactNumber,
+    isGroup: false, // O contato individual nunca é grupo
     isMe: msg.key.fromMe || false,
     isWAContact: true,
     isMyContact: true,
     getProfilePicUrl: async () => foundContact.profilePicUrl || ''
   };
 
+  // Processar contato do grupo se necessário
   let groupContact;
   if (isGroup) {
     const groupPhoneNumber = msg.key.remoteJid?.split('@')[0];
     if (groupPhoneNumber) {
-      groupContact = await Contact.findOne({
-        where: { number: groupPhoneNumber, tenantId }
+      // Buscar ou criar o contato do grupo
+      const [foundGroupContact] = await Contact.findOrCreate({
+        where: { 
+          number: groupPhoneNumber, 
+          tenantId 
+        },
+        defaults: {
+          name: `Grupo ${groupPhoneNumber}`,
+          isWAContact: true,
+          profilePicUrl: null
+        }
       });
+      
+      groupContact = foundGroupContact;
+      logger.debug(`[processMessageContact] Group contact - ID: ${groupContact.id}, Number: ${groupContact.number}`);
     }
   }
+
+  logger.debug(`[processMessageContact] Final result - Contact: ${msgContact.number}, Group: ${groupContact?.number || 'none'}`);
 
   return { msgContact, groupContact };
 };
@@ -217,10 +278,10 @@ const processMessage = async (msg: proto.IWebMessageInfo, ticket: any, contact: 
     const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
     const messageType = Object.keys(msg.message || {})[0];
     
-    logger.info(`[HandleBaileysMessage] Processing message type: ${messageType}, hasMedia: ${adaptedMessage.hasMedia}`);
+    logger.info(`[HandleBaileysMessage] Processing message type: ${messageType}, hasMedia: ${adaptedMessage.hasMedia}, ticketId: ${ticket.id}`);
     
     let message;
-    if (messageType !== 'conversation' && messageType !== 'extendedTextMessage') {
+    if (adaptedMessage.hasMedia) {
       logger.info(`[HandleBaileysMessage] Processing as media message for ticket ${ticket.id}`);
       message = await VerifyMediaMessage(adaptedMessage, ticket, contact);
     } else {

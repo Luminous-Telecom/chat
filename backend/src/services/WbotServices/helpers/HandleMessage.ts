@@ -27,6 +27,7 @@ const HandleMessage = async (
 
       const { tenantId } = whatsapp;
       const chat = await msg.getChat();
+      
       // IGNORAR MENSAGENS DE GRUPO
       const Settingdb = await Setting.findOne({
         where: { key: "ignoreGroupMsg", tenantId }
@@ -44,6 +45,10 @@ const HandleMessage = async (
         let msgContact: WbotContact;
         let groupContact: Contact | undefined;
 
+        // Logs para debug
+        logger.debug(`[HandleMessage] Processing message - fromMe: ${msg.fromMe}, type: ${msg.type}, hasMedia: ${msg.hasMedia}`);
+        logger.debug(`[HandleMessage] Message IDs - from: ${msg.from}, to: ${msg.to}`);
+
         if (msg.fromMe) {
           // media messages sent from me from cell phone, first comes with "hasMedia = false" and type = "image/ptt/etc"
           // the media itself comes on body of message, as base64
@@ -52,18 +57,89 @@ const HandleMessage = async (
           if (!msg.hasMedia && msg.type !== "chat" && msg.type !== "vcard")
             return;
 
-          msgContact = (wbot as any).getContactById(msg.to);
+          // CORREÇÃO: Quando a mensagem é enviada por mim, preciso identificar corretamente o destinatário
+          if (chat.isGroup) {
+            // Em grupos, o destinatário é sempre o grupo
+            msgContact = (wbot as any).getContactById(msg.to);
+          } else {
+            // Em conversas individuais, buscar o contato através do chat
+            try {
+              // Usar o ID do destinatário diretamente
+              msgContact = (wbot as any).getContactById(msg.to);
+            } catch (err) {
+              logger.warn(`[HandleMessage] Error getting contact by ID: ${err}`);
+              // Fallback: criar contato básico a partir do número
+              const number = msg.to.split('@')[0];
+              msgContact = {
+                id: { user: number, _serialized: msg.to },
+                name: number,
+                number: number,
+                isGroup: false,
+                isMe: false,
+                isWAContact: true,
+                isMyContact: false,
+                getProfilePicUrl: async () => ''
+              };
+            }
+          }
+
+          // Verificação adicional para evitar usar próprio contato
+          if (msgContact && msgContact.id && msgContact.isMe) {
+            logger.warn(`[HandleMessage] Detected own contact, trying alternative method`);
+            // Tentar extrair o número do destinatário da conversa
+            const chatId = chat.id._serialized;
+            if (chatId && !chatId.endsWith('@g.us')) {
+              msgContact = (wbot as any).getContactById(chatId);
+            }
+          }
+
         } else {
+          // Quando a mensagem é recebida, o contato da conversa é o remetente
           msgContact = await msg.getContact();
         }
+
+        // Log do contato identificado
+        logger.debug(`[HandleMessage] Identified contact - ID: ${msgContact?.id?._serialized}, Name: ${msgContact?.name || 'N/A'}`);
 
         if (chat.isGroup) {
           let msgGroupContact;
 
           if (msg.fromMe) {
-            msgGroupContact = (wbot as any).getContactById(msg.to);
+            // Em grupos, quando envio uma mensagem, o grupo é o destinatário (msg.to)
+            try {
+              msgGroupContact = (wbot as any).getContactById(msg.to);
+            } catch (err) {
+              logger.warn(`[HandleMessage] Error getting group contact (to): ${err}`);
+              const number = msg.to.split('@')[0];
+              msgGroupContact = {
+                id: { user: number, _serialized: msg.to },
+                name: number,
+                number: number,
+                isGroup: true,
+                isMe: false,
+                isWAContact: true,
+                isMyContact: false,
+                getProfilePicUrl: async () => ''
+              };
+            }
           } else {
-            msgGroupContact = (wbot as any).getContactById(msg.from);
+            // Em grupos, quando recebo uma mensagem, o grupo é o remetente (msg.from)
+            try {
+              msgGroupContact = (wbot as any).getContactById(msg.from);
+            } catch (err) {
+              logger.warn(`[HandleMessage] Error getting group contact (from): ${err}`);
+              const number = msg.from.split('@')[0];
+              msgGroupContact = {
+                id: { user: number, _serialized: msg.from },
+                name: number,
+                number: number,
+                isGroup: true,
+                isMe: false,
+                isWAContact: true,
+                isMyContact: false,
+                getProfilePicUrl: async () => ''
+              };
+            }
           }
 
           groupContact = await VerifyContact(msgGroupContact, tenantId);
@@ -73,6 +149,9 @@ const HandleMessage = async (
 
         // const profilePicUrl = await msgContact.getProfilePicUrl();
         const contact = await VerifyContact(msgContact, tenantId);
+        
+        logger.debug(`[HandleMessage] Created/found contact in DB - ID: ${contact.id}, Name: ${contact.name}, Number: ${contact.number}`);
+
         const ticket = await FindOrCreateTicketService({
           contact,
           whatsappId: wbot.id!,
@@ -130,7 +209,8 @@ const HandleMessage = async (
 
         resolve();
       } catch (err) {
-        logger.error(err);
+        logger.error(`[HandleMessage] Error processing message: ${err}`);
+        logger.error(`[HandleMessage] Error stack: ${err.stack}`);
         reject(err);
       }
     })();
