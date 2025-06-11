@@ -44,11 +44,12 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
       tenantId
     });
 
-  try {
-    SetTicketMessagesAsRead(ticket);
-  } catch (error) {
-    console.log("SetTicketMessagesAsRead", error);
-  }
+  // Removido para evitar marcação automática como lida no WhatsApp
+  // try {
+  //   SetTicketMessagesAsRead(ticket);
+  // } catch (error) {
+  //   console.log("SetTicketMessagesAsRead", error);
+  // }
 
   return res.json({ count, messages, messagesOffLine, ticket, hasMore });
 };
@@ -60,11 +61,12 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const medias = req.files as Express.Multer.File[];
   const ticket = await ShowTicketService({ id: ticketId, tenantId });
 
-  try {
-    SetTicketMessagesAsRead(ticket);
-  } catch (error) {
-    console.log("SetTicketMessagesAsRead", error);
-  }
+  // Removido para evitar marcação automática como lida no WhatsApp
+  // try {
+  //   SetTicketMessagesAsRead(ticket);
+  // } catch (error) {
+  //   console.log("SetTicketMessagesAsRead", error);
+  // }
 
   await CreateMessageSystemService({
     msg: messageData,
