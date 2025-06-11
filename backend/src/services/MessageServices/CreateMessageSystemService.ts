@@ -1,24 +1,18 @@
 /* eslint-disable prefer-destructuring */
 import fs from "fs";
-// import { promisify } from "util";
+import { promisify } from "util";
 import { join } from "path";
 import axios from "axios";
 import mime from "mime";
 import { v4 as uuidv4 } from "uuid";
 import { logger } from "../../utils/logger";
-// import MessageOffLine from "../../models/MessageOffLine";
 import Ticket from "../../models/Ticket";
 import Message from "../../models/Message";
 import socketEmit from "../../helpers/socketEmit";
 import Queue from "../../libs/Queue";
-import { pupa } from "../../utils/pupa";
-import SendWhatsAppMedia from "../WbotServices/SendWhatsAppMedia";
-import SendWhatsAppMessage from "../WbotServices/SendWhatsAppMessage";
-import { getInstaBot } from "../../libs/InstaBot";
-import InstagramSendMessagesSystem from "../InstagramBotServices/InstagramSendMessagesSystem";
-import TelegramSendMessagesSystem from "../TbotServices/TelegramSendMessagesSystem";
-import { getTbot } from "../../libs/tbot";
 import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
+
+const writeFileAsync = promisify(fs.writeFile);
 
 interface MessageData {
   ticketId: number;
@@ -35,13 +29,14 @@ interface MessageData {
   userId?: string | number;
   quotedMsgId?: string;
   quotedMsg?: any;
-  // status?: string;
   scheduleDate?: string | Date;
   sendType?: string;
   status?: string;
   idFront?: string;
   id?: string;
   tenantId: string | number;
+  ack?: number;
+  messageId?: string;
 }
 
 interface MessageRequest {
@@ -49,6 +44,7 @@ interface MessageRequest {
   fromMe: boolean;
   read: boolean;
   quotedMsg?: Message;
+  messageId?: string;
 }
 
 interface Request {
@@ -63,7 +59,9 @@ interface Request {
   idFront?: string;
 }
 
-// const writeFileAsync = promisify(writeFile);
+interface CustomFile extends Express.Multer.File {
+  mediaType?: string;
+}
 
 const downloadMedia = async (msg: any): Promise<any> => {
   try {
@@ -89,7 +87,7 @@ const downloadMedia = async (msg: any): Promise<any> => {
           resolve(mediaData);
         })
         .on("error", (error: any) => {
-          console.error("ERROR DONWLOAD", error);
+          console.error("ERROR DOWNLOAD", error);
           fs.rmdirSync(mediaPath, { recursive: true });
           reject(new Error(error));
         });
@@ -123,187 +121,229 @@ const downloadMedia = async (msg: any): Promise<any> => {
 const CreateMessageSystemService = async ({
   msg,
   tenantId,
-  medias,
   ticket,
   userId,
-  scheduleDate,
+  medias,
   sendType,
+  scheduleDate,
   status,
   idFront
 }: Request): Promise<void> => {
-  const messageData: MessageData = {
-    ticketId: ticket.id,
-    body: Array.isArray(msg.body) ? undefined : msg.body,
-    contactId: ticket.contactId,
-    fromMe: sendType === "API" ? true : msg?.fromMe,
-    read: true,
-    mediaType: "chat",
-    mediaUrl: undefined,
-    mediaName: undefined,
-    originalName: undefined,
-    timestamp: new Date().getTime(),
-    quotedMsgId: msg?.quotedMsg?.id,
-    quotedMsg: msg?.quotedMsg,
-    userId,
-    scheduleDate,
-    sendType,
-    status,
-    tenantId,
-    idFront
-  };
-
   try {
-    // Alter template message
-    if (msg.body && !Array.isArray(msg.body)) {
-      messageData.body = pupa(msg.body || "", {
-        // greeting: será considerado conforme data/hora da mensagem internamente na função pupa
-        protocol: ticket.protocol,
-        name: ticket.contact.name
-      });
-    }
-    if (sendType === "API" && msg.mediaUrl) {
-      medias = [];
-      const mediaData = await downloadMedia(msg);
-      medias.push(mediaData);
-    }
 
-    if (sendType === "API" && !msg.mediaUrl && msg.media) {
-      medias = [];
-      medias.push(msg.media);
-    }
+    const baseMessageData: MessageData = {
+      ticketId: ticket.id,
+      body: msg.body,
+      contactId: ticket.contactId,
+      fromMe: true,
+      read: true,
+      mediaType: "chat",
+      mediaUrl: undefined,
+      timestamp: new Date().getTime(),
+      quotedMsgId: msg.quotedMsg?.id,
+      userId,
+      scheduleDate,
+      sendType,
+      status: status || "pending",
+      idFront,
+      tenantId,
+      ack: 0, // Iniciar com ACK 0 (pending)
+      messageId: msg.messageId || null
+    };
 
-    if (medias) {
-      await Promise.all(
-        medias.map(async (media: Express.Multer.File | any) => {
-          try {
-            if (!media.filename) {
-              const ext = media.mimetype.split("/")[1].split(";")[0];
-              media.filename = `${new Date().getTime()}.${ext}`;
-            }
-          } catch (err) {
-            logger.error(err);
-          }
 
-          messageData.mediaType = media.mimetype.split("/")[0];
-          messageData.mediaName = media.filename;
-          messageData.originalName = media.originalname;
-
-          let message: any = {};
-
-          if (!messageData.scheduleDate) {
-            /// enviar mensagem > run time
-            message = await SendMessageSystemProxy({
-              ticket,
-              messageData,
-              media,
-              userId
-            });
-            ///
-          }
-
-          const msgCreated = await Message.create({
-            ...messageData,
-            ...message,
-            userId,
-            messageId: message.id?.id || message.messageId || null,
-            body: media.originalname,
-            mediaUrl: media.filename,
-            mediaType:
-              media.mediaType ||
-              media.mimetype.substr(0, media.mimetype.indexOf("/"))
-          });
-
-          const messageCreated = await Message.findByPk(msgCreated.id, {
-            include: [
-              {
-                model: Ticket,
-                as: "ticket",
-                where: { tenantId },
-                include: ["contact"]
-              },
-              {
-                model: Message,
-                as: "quotedMsg",
-                include: ["contact"]
-              }
-            ]
-          });
-
-          if (!messageCreated) {
-            throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
-          }
-
-          await ticket.update({
-            lastMessage: messageCreated.body,
-            lastMessageAt: new Date().getTime()
-          });
-
-          socketEmit({
-            tenantId,
-            type: "chat:create",
-            payload: messageCreated
-          });
-        })
-      );
+    if (medias && medias.length > 0) {
+      await processMediaMessages(medias, baseMessageData, ticket, tenantId, userId);
     } else {
-      let message: any = {};
-
-      if (!messageData.scheduleDate) {
-        /// enviar mensagem > run time
-        message = await SendMessageSystemProxy({
-          ticket,
-          messageData,
-          media: null,
-          userId
-        });
-        ///
-      }
-
-      const msgCreated = await Message.create({
-        ...messageData,
-        ...message,
-        id: messageData.id,
-        userId,
-        messageId: message.id?.id || message.messageId || null,
-        mediaType: "chat"
-      });
-
-      const messageCreated = await Message.findByPk(msgCreated.id, {
-        include: [
-          {
-            model: Ticket,
-            as: "ticket",
-            where: { tenantId },
-            include: ["contact"]
-          },
-          {
-            model: Message,
-            as: "quotedMsg",
-            include: ["contact"]
-          }
-        ]
-      });
-
-      if (!messageCreated) {
-        // throw new AppError("ERR_CREATING_MESSAGE", 501);
-        throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
-      }
-
-      await ticket.update({
-        lastMessage: messageCreated.body,
-        lastMessageAt: new Date().getTime(),
-        answered: true
-      });
-
-      socketEmit({
-        tenantId,
-        type: "chat:create",
-        payload: messageCreated
-      });
+      await processTextMessage(baseMessageData, ticket, tenantId, userId);
     }
+
+
   } catch (error) {
-    logger.error("CreateMessageSystemService", error);
+    logger.error(`[CreateMessageSystemService] Error:`, error);
     throw error;
+  }
+};
+
+const processMediaMessages = async (
+  medias: CustomFile[],
+  messageData: MessageData,
+  ticket: Ticket,
+  tenantId: string | number,
+  userId?: string | number
+): Promise<void> => {
+
+  await Promise.all(
+    medias.map(async (media: CustomFile, index: number) => {
+      try {
+        // Preparar arquivo
+        if (!media.filename) {
+          const ext = media.mimetype.split("/")[1].split(";")[0];
+          media.filename = `${new Date().getTime()}_${index}.${ext}`;
+        }
+
+        await writeFileAsync(
+          join(__dirname, "..", "..", "..", "..", "public", media.filename),
+          media.buffer,
+          "base64"
+        );
+
+        // Preparar dados da mensagem de mídia
+        const mediaMessageData = {
+          ...messageData,
+          mediaType: media.mimetype.split("/")[0],
+          mediaName: media.filename,
+          originalName: media.originalname,
+          body: media.originalname,
+          mediaUrl: media.filename,
+          userId
+        };
+
+        // Enviar mensagem
+        let sentMessage: any = {};
+        if (!mediaMessageData.scheduleDate) {
+          sentMessage = await SendMessageSystemProxy({
+            ticket,
+            messageData: mediaMessageData,
+            media,
+            userId
+          });
+        }
+
+        // Extrair messageId do retorno
+        const messageId = extractMessageId(sentMessage, mediaMessageData.messageId);
+      
+
+        // Criar registro no banco
+        const msgCreated = await Message.create({
+          ...mediaMessageData,
+          messageId,
+          ack: sentMessage ? 1 : 0, // ACK 1 se enviado, 0 se agendado
+          status: sentMessage ? "sended" : "pending"
+        });
+
+        // Buscar mensagem completa e notificar
+        await finalizeMessage(msgCreated.id, ticket, tenantId);
+
+      } catch (err) {
+        logger.error(`[CreateMessageSystemService] Error processing media ${index}:`, err);
+        throw err;
+      }
+    })
+  );
+};
+
+const processTextMessage = async (
+  messageData: MessageData,
+  ticket: Ticket,
+  tenantId: string | number,
+  userId?: string | number
+): Promise<void> => {
+
+  // Enviar mensagem
+  let sentMessage: any = {};
+  if (!messageData.scheduleDate) {
+    sentMessage = await SendMessageSystemProxy({
+      ticket,
+      messageData,
+      media: null,
+      userId
+    });
+  }
+
+  // Extrair messageId do retorno
+  const messageId = extractMessageId(sentMessage, messageData.messageId);
+
+  // Criar registro no banco
+  const msgCreated = await Message.create({
+    ...messageData,
+    messageId,
+    ack: sentMessage ? 1 : 0, // ACK 1 se enviado, 0 se agendado
+    status: sentMessage ? "sended" : "pending",
+    mediaType: "chat",
+    userId
+  });
+
+
+  // Finalizar mensagem
+  await finalizeMessage(msgCreated.id, ticket, tenantId);
+};
+
+const extractMessageId = (sentMessage: any, fallbackId?: string): string | null => {
+  // Tentar extrair messageId de diferentes estruturas de retorno
+  const messageId = sentMessage?.id?.id || 
+                   sentMessage?.messageId || 
+                   sentMessage?.key?.id ||
+                   sentMessage?.id ||
+                   fallbackId ||
+                   null;
+
+  return messageId;
+};
+
+const finalizeMessage = async (
+  messageId: string,
+  ticket: Ticket,
+  tenantId: string | number
+): Promise<void> => {
+  try {
+    // Buscar mensagem completa
+    const messageCreated = await Message.findByPk(messageId, {
+      include: [
+        {
+          model: Ticket,
+          as: "ticket",
+          where: { tenantId },
+          include: ["contact"]
+        },
+        {
+          model: Message,
+          as: "quotedMsg",
+          include: ["contact"]
+        }
+      ]
+    });
+
+    if (!messageCreated) {
+      throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
+    }
+
+    // Atualizar ticket
+    await ticket.update({
+      lastMessage: messageCreated.body,
+      lastMessageAt: new Date().getTime(),
+      answered: true
+    });
+
+    // Emitir eventos para o frontend
+    socketEmit({
+      tenantId,
+      type: "chat:create",
+      payload: messageCreated
+    });
+
+    // Emitir evento de status usando chat:ack que é um tipo válido
+    socketEmit({
+      tenantId,
+      type: "chat:ack",
+      payload: {
+        id: messageCreated.id,
+        messageId: messageCreated.messageId,
+        ack: messageCreated.ack,
+        status: messageCreated.status,
+        fromMe: messageCreated.fromMe,
+        ticket: {
+          id: ticket.id,
+          status: ticket.status,
+          unreadMessages: ticket.unreadMessages,
+          answered: ticket.answered
+        }
+      }
+    });
+
+  } catch (err) {
+    logger.error(`[CreateMessageSystemService] Error finalizing message:`, err);
+    throw err;
   }
 };
 

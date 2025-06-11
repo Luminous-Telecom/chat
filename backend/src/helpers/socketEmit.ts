@@ -5,6 +5,7 @@ type Events =
   | "chat:delete"
   | "chat:update"
   | "chat:ack"
+  | "chat:messagesRead"
   | "ticket:update"
   | "ticket:create"
   | "contact:update"

@@ -310,34 +310,33 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
-      console.log('Store: UPDATE_MESSAGES mutation called with payload:', payload)
+      // Adiciona log apenas para status e ack das mensagens
+      if (payload.status !== undefined || payload.ack !== undefined) {
+        console.info('[LOG] UPDATE_MESSAGES:', {
+          id: payload.id,
+          status: payload.status,
+          ack: payload.ack
+        })
+      }
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id === payload.ticket.id) {
-        console.log('Updating messages for focused ticket:', state.ticketFocado.id)
         const messageIndex = state.mensagens.findIndex(m => m.id === payload.id)
         const mensagens = [...state.mensagens]
         if (messageIndex !== -1) {
-          console.log('Updating existing message at index:', messageIndex)
           mensagens[messageIndex] = payload
         } else {
-          console.log('Adding new message to state')
           mensagens.push(payload)
         }
         state.mensagens = mensagens
-        console.log('Updated messages state:', state.mensagens)
         if (payload.scheduleDate && payload.status == 'pending') {
           const idxScheduledMessages = state.ticketFocado.scheduledMessages.findIndex(m => m.id === payload.id)
           if (idxScheduledMessages === -1) {
-            console.log('Adding scheduled message')
             state.ticketFocado.scheduledMessages.push(payload)
           }
         }
-      } else {
-        console.log('Message not for focused ticket, skipping update')
       }
       const TicketIndexUpdate = state.tickets.findIndex(t => t.id == payload.ticket.id)
       if (TicketIndexUpdate !== -1) {
-        console.log('Updating ticket in list')
         const tickets = [...state.tickets]
         const unreadMessages = state.ticketFocado.id == payload.ticket.id ? 0 : payload.ticket.unreadMessages
         tickets[TicketIndexUpdate] = {
@@ -351,6 +350,15 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGE_STATUS (state, payload) {
+      // Adiciona log apenas para status e ack das mensagens
+      if (payload.status !== undefined || payload.ack !== undefined) {
+        console.info('[LOG] UPDATE_MESSAGE_STATUS:', {
+          id: payload.id,
+          status: payload.status,
+          ack: payload.ack,
+          fromMe: payload.fromMe
+        })
+      }
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id != payload.ticket.id) {
         return
@@ -358,12 +366,15 @@ const atendimentoTicket = {
       const messageIndex = state.mensagens.findIndex(m => m.id === payload.id)
       const mensagens = [...state.mensagens]
       if (messageIndex !== -1) {
-        mensagens[messageIndex] = payload
+        // Preserva os campos existentes da mensagem e atualiza apenas os campos do payload
+        mensagens[messageIndex] = {
+          ...mensagens[messageIndex],
+          ...payload,
+          // Garante que o fromMe seja preservado se não vier no payload
+          fromMe: payload.fromMe !== undefined ? payload.fromMe : mensagens[messageIndex].fromMe
+        }
         state.mensagens = mensagens
       }
-
-      // Se existir mensagens agendadas no ticket focado,
-      // tratar a atualização das mensagens deletadas.
       if (state.ticketFocado?.scheduledMessages) {
         const scheduledMessages = [...state.ticketFocado.scheduledMessages]
         const scheduled = scheduledMessages.filter(m => m.id != payload.id)

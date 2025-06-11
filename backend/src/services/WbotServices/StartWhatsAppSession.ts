@@ -48,6 +48,7 @@ export const StartWhatsAppSession = async (
 const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void => {
   // Remove listeners existentes para evitar duplicação
   wbot.ev.removeAllListeners('messages.upsert');
+  wbot.ev.removeAllListeners('messages.update');
   
   // Handler para mensagens
   wbot.ev.on('messages.upsert', async (m: any) => {
@@ -68,28 +69,70 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
   // Handler para atualizações de mensagens (leitura, entrega, etc.)
   wbot.ev.on('messages.update', async (messageUpdate: any) => {
     try {
-      if (Array.isArray(messageUpdate)) {
-        for (const update of messageUpdate) {
-          if (update.key && typeof update.update === 'object' && update.update.ack !== undefined) {
-            // Chama o handler de ACK para atualizar o status no banco e emitir para o frontend
+      if (!Array.isArray(messageUpdate)) {
+        return;
+      }
+
+      for (const update of messageUpdate) {
+
+        if (update.key && typeof update.update === 'object') {
+          const messageId = update.key.id;
+          const messageUpdate = update.update;
+
+          // Processa ACK se presente
+          if (messageUpdate.ack !== undefined) {
             await HandleMsgAck({
-              id: { id: update.key.id },
+              id: { id: messageId, _serialized: messageId },
               ...update
-            }, update.update.ack);
+            }, messageUpdate.ack);
+          }
+          
+          // Processa status se presente
+          if (messageUpdate.status !== undefined) {
+            
+            // Mapeia status para ACK
+            const statusToAck = {
+              1: 0,  // Pending -> ACK 0
+              2: 1,  // Sent -> ACK 1
+              3: 2,  // Delivered -> ACK 2
+              4: 3   // Read -> ACK 3
+            };
+            
+            const ack = statusToAck[messageUpdate.status] ?? messageUpdate.status;
+            
+            await HandleMsgAck({
+              id: { id: messageId, _serialized: messageId },
+              ...update
+            }, ack);
           }
         }
       }
     } catch (err) {
-      logger.error(`Error handling message update for ${whatsapp.name}: ${err}`);
+      logger.error(`[ERROR] Error handling message update for ${whatsapp.name}:`, err);
     }
   });
 
   // Handler para recibos de mensagem
   wbot.ev.on('message-receipt.update', async (receiptUpdate: any) => {
     try {
-      // Aqui você pode adicionar lógica para recibos de mensagem
+      if (!Array.isArray(receiptUpdate)) {
+        return;
+      }
+
+      for (const receipt of receiptUpdate) {
+        if (receipt.key && receipt.receipt) {
+
+          // Se o recibo indica leitura, atualiza o ACK
+          if (receipt.receipt.readTimestamp) {
+            await HandleMsgAck({
+              id: { id: receipt.key.id },
+              ...receipt
+            }, 3); // ACK 3 = lido
+          }
+        }
+      }
     } catch (err) {
-      //logger.error(`Error handling receipt update for ${whatsapp.name}: ${err}`);
+      logger.error(`[ERROR] Error handling receipt update for ${whatsapp.name}:`, err);
     }
   });
 
@@ -98,7 +141,7 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
     try {
       // Aqui você pode sincronizar contatos
     } catch (err) {
-      //logger.error(`Error handling contacts update for ${whatsapp.name}: ${err}`);
+      logger.error(`[ERROR] Error handling contacts update for ${whatsapp.name}:`, err);
     }
   });
 

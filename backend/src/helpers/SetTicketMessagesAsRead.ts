@@ -5,88 +5,247 @@ import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import { logger } from "../utils/logger";
 import GetTicketWbot from "./GetTicketWbot";
 import socketEmit from "./socketEmit";
+import Whatsapp from "../models/Whatsapp";
+import { StartWhatsAppSessionVerify } from "../services/WbotServices/StartWhatsAppSessionVerify";
 
-const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
-  await Message.update(
-    { read: true },
-    {
+const SetTicketMessagesAsRead = async (ticket: Ticket, force = false): Promise<void> => {
+  try {
+
+    // Verificar se há mensagens não lidas
+    const unreadCount = await Message.count({
       where: {
         ticketId: ticket.id,
-        read: false
+        read: false,
+        fromMe: false
       }
+    });
+
+    if (unreadCount === 0 && !force) {
+      return;
     }
-  );
 
-  await ticket.update({ unreadMessages: 0 });
-
-  try {
-    if (ticket.channel === "whatsapp") {
-      const wbot = await GetTicketWbot(ticket);
-      
-      // Implementação do Baileys para marcar mensagens como lidas
-      try {
-        const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "s"}.whatsapp.net`;
-        
-        // Buscar mensagens não lidas
-        const unreadMessages = await Message.findAll({
-          where: {
-            ticketId: ticket.id,
-            read: false,
-            fromMe: false
-          },
-          order: [["createdAt", "DESC"]],
-          limit: 100 // Limitar a quantidade para evitar sobrecarga
-        });
-
-        // Marcar cada mensagem como lida
-        for (const message of unreadMessages) {
-          if (message.messageId) {
-            try {
-              await wbot.chatModify(
-                { 
-                  markRead: true, 
-                  lastMessages: [{
-                    key: {
-                      remoteJid: chatId,
-                      id: message.messageId,
-                      fromMe: false
-                    },
-                    messageTimestamp: message.timestamp || Date.now()
-                  }]
-                },
-                chatId
-              );
-              logger.info(`Message ${message.messageId} marked as read`);
-            } catch (err) {
-              logger.warn(`Could not mark message ${message.messageId} as read: ${err}`);
-            }
-          }
+    // Buscar mensagens não lidas com messageId válido
+    const unreadMessages = await Message.findAll({
+      where: {
+        ticketId: ticket.id,
+        read: false,
+        fromMe: false,
+        messageId: {
+          [require('sequelize').Op.ne]: null
         }
-      } catch (err) {
-        logger.warn(`Error marking messages as read for Baileys: ${err}`);
+      },
+      order: [["createdAt", "ASC"]], // Ordem cronológica
+      limit: 20 // Aumentar limite
+    });
+
+    logger.info(`[SetTicketMessagesAsRead] Processing ${unreadMessages.length} messages with valid messageId`);
+
+    // Atualizar mensagens no banco primeiro
+    const [updatedCount] = await Message.update(
+      { read: true },
+      {
+        where: {
+          ticketId: ticket.id,
+          read: false,
+          fromMe: false
+        }
       }
+    );
+
+    logger.info(`[SetTicketMessagesAsRead] Updated ${updatedCount} messages in database`);
+
+    // Atualizar contador do ticket
+    await ticket.update({ unreadMessages: 0 });
+
+    // Processar por canal
+    if (ticket.channel === "whatsapp") {
+      await handleWhatsAppReadReceipt(ticket, unreadMessages);
+    } else if (ticket.channel === "messenger") {
+      await handleMessengerReadReceipt(ticket);
     }
-    if (ticket.channel === "messenger") {
-      const messengerBot = getMessengerBot(ticket.whatsappId);
-      messengerBot.markSeen(ticket.contact.messengerId);
+
+    // Notificar frontend
+    await notifyFrontend(ticket);
+
+    logger.info(`[SetTicketMessagesAsRead] Completed for ticket ${ticket.id}`);
+
+  } catch (err: any) {
+    logger.error(`[SetTicketMessagesAsRead] Error for ticket ${ticket.id}: ${err?.message || err}`);
+    throw err;
+  }
+};
+
+const handleWhatsAppReadReceipt = async (ticket: Ticket, unreadMessages: Message[]): Promise<void> => {
+  try {
+    const wbot = await GetTicketWbot(ticket);
+    
+    if (!wbot) {
+      logger.warn(`[SetTicketMessagesAsRead] No WhatsApp bot found for ticket ${ticket.id}`);
+      return;
+    }
+
+    // Verificar estado da sessão
+    const sessionState = (wbot as any)?.connection;
+    const wsExists = !!(wbot as any)?.ws;
+    
+
+    if (sessionState !== 'open') {
+      logger.warn(`[SetTicketMessagesAsRead] WhatsApp session not open (${sessionState}) for ticket ${ticket.id}`);
+      await attemptReconnection(ticket.whatsappId, 'ERR_WAPP_NOT_INITIALIZED');
+      return;
+    }
+
+    if (!wsExists) {
+      logger.warn(`[SetTicketMessagesAsRead] WhatsApp WS not available for ticket ${ticket.id}`);
+      await attemptReconnection(ticket.whatsappId, 'ERR_WAPP_NOT_INITIALIZED');
+      return;
+    }
+
+    const chatId = ticket.isGroup 
+      ? `${ticket.contact.number}@g.us`
+      : `${ticket.contact.number}@s.whatsapp.net`;
+    
+
+    if (unreadMessages.length === 0) {
+      return;
+    }
+
+    // Tentar múltiplas estratégias
+    const success = await tryReadMessageStrategies(wbot, chatId, unreadMessages);
+    
+    if (success) {
+      logger.info(`[SetTicketMessagesAsRead] Successfully marked messages as read for ${chatId}`);
+    } else {
+      logger.warn(`[SetTicketMessagesAsRead] All strategies failed for ${chatId}`);
+    }
+
+  } catch (err: any) {
+    logger.error(`[SetTicketMessagesAsRead] WhatsApp error: ${err?.message || err}`);
+    
+    // Tentar reconectar se erro de sessão
+    if (isSessionError(err)) {
+      await attemptReconnection(ticket.whatsappId, err.message);
+    }
+  }
+};
+
+const tryReadMessageStrategies = async (wbot: any, chatId: string, messages: Message[]): Promise<boolean> => {
+  // Estratégia 1: readMessages em lotes
+  try {
+    const messageKeys = messages
+      .filter(msg => msg.messageId)
+      .map(msg => ({
+        remoteJid: chatId,
+        id: msg.messageId,
+        fromMe: false
+      }));
+
+    if (messageKeys.length > 0) {
+      // Processar em lotes de 5
+      for (let i = 0; i < messageKeys.length; i += 5) {
+        const batch = messageKeys.slice(i, i + 5);
+        await wbot.readMessages(batch);
+        
+        // Pequeno delay entre lotes
+        if (i + 5 < messageKeys.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      return true;
     }
   } catch (err) {
-    logger.warn(
-      `Could not mark messages as read. Maybe whatsapp session disconnected? Err: ${err}`
-    );
-    // throw new Error("ERR_WAPP_NOT_INITIALIZED");
+    logger.warn(`[SetTicketMessagesAsRead] readMessages strategy failed: ${err}`);
   }
 
-  const ticketReload = await ShowTicketService({
-    id: ticket.id,
-    tenantId: ticket.tenantId
-  });
+  // Estratégia 2: Presença atualizada
+  try {
+    await wbot.sendPresenceUpdate('available', chatId);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await wbot.sendPresenceUpdate('composing', chatId);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    await wbot.sendPresenceUpdate('paused', chatId);
+    logger.info(`[SetTicketMessagesAsRead] Presence strategy completed for ${chatId}`);
+    return true;
+  } catch (err) {
+    logger.warn(`[SetTicketMessagesAsRead] Presence strategy failed: ${err}`);
+  }
 
-  socketEmit({
-    tenantId: ticket.tenantId,
-    type: "ticket:update",
-    payload: ticketReload
-  });
+  // Estratégia 3: Marcar individual
+  try {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.messageId) {
+      await wbot.readMessages([{
+        remoteJid: chatId,
+        id: lastMessage.messageId,
+        fromMe: false
+      }]);
+      logger.info(`[SetTicketMessagesAsRead] Individual strategy completed for ${chatId}`);
+      return true;
+    }
+  } catch (err) {
+    logger.warn(`[SetTicketMessagesAsRead] Individual strategy failed: ${err}`);
+  }
+
+  return false;
+};
+
+const handleMessengerReadReceipt = async (ticket: Ticket): Promise<void> => {
+  try {
+    const messengerBot = getMessengerBot(ticket.whatsappId);
+    if (messengerBot && ticket.contact.messengerId) {
+      await messengerBot.markSeen(ticket.contact.messengerId);
+      logger.info(`[SetTicketMessagesAsRead] Messenger messages marked as seen for ticket ${ticket.id}`);
+    }
+  } catch (err: any) {
+    logger.warn(`[SetTicketMessagesAsRead] Messenger error: ${err?.message || err}`);
+  }
+};
+
+const attemptReconnection = async (whatsappId: number, reason: string): Promise<void> => {
+  try {
+    logger.info(`[SetTicketMessagesAsRead] Attempting reconnection for WhatsApp ${whatsappId}`);
+    await StartWhatsAppSessionVerify(whatsappId, reason);
+    // Aguardar reconexão
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  } catch (err) {
+    logger.error(`[SetTicketMessagesAsRead] Reconnection failed: ${err}`);
+  }
+};
+
+const notifyFrontend = async (ticket: Ticket): Promise<void> => {
+  try {
+    const ticketReload = await ShowTicketService({
+      id: ticket.id,
+      tenantId: ticket.tenantId
+    });
+
+    // Emitir múltiplos eventos para garantir atualização
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "ticket:update",
+      payload: ticketReload
+    });
+
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "chat:messagesRead",
+      payload: {
+        ticketId: ticket.id,
+        unreadMessages: 0
+      }
+    });
+
+  } catch (err: any) {
+    logger.warn(`[SetTicketMessagesAsRead] Frontend notification error: ${err?.message || err}`);
+  }
+};
+
+const isSessionError = (err: any): boolean => {
+  const errorMessage = err?.message || err?.toString() || '';
+  return errorMessage.includes('ERR_WAPP_NOT_INITIALIZED') ||
+         errorMessage.includes('Connection Closed') ||
+         errorMessage.includes('session') ||
+         errorMessage.includes('disconnected');
 };
 
 export default SetTicketMessagesAsRead;

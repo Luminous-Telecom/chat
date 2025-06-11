@@ -12,76 +12,135 @@ import CampaignContacts from "../../../models/CampaignContacts";
 import ApiMessage from "../../../models/ApiMessage";
 import socketEmit from "../../../helpers/socketEmit";
 import Queue from "../../../libs/Queue";
+import { Op } from "sequelize";
+import Contact from "../../../models/Contact";
+import { getIO } from "../../../libs/socket";
+import { WAMessage } from "@whiskeysockets/baileys";
 
-const HandleMsgAck = async (msg: WbotMessage, ack: MessageAck) => {
-  await new Promise(r => setTimeout(r, 500));
+// Helper function to get message status from ack
+const getMessageStatus = (ack: number): string => {
+  switch (ack) {
+    case 3:
+      return "received";
+    case 2:
+      return "delivered";
+    default:
+      return "sended";
+  }
+};
 
+export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> => {
   try {
-    const messageToUpdate = await Message.findOne({
-      where: { messageId: msg.id.id },
+    const messageId = msg.key?.id;
+    if (!messageId) {
+      return;
+    }
+
+    const message = await Message.findOne({
+      where: {
+        messageId: {
+          [Op.or]: [
+            messageId,
+            messageId.split('_')[0],
+            messageId.split(':')[0],
+            messageId.replace(/[^A-Z0-9]/g, ''),
+            { [Op.like]: `%${messageId}%` }
+          ]
+        }
+      },
       include: [
-        "contact",
         {
           model: Ticket,
-          as: "ticket",
-          attributes: ["id", "tenantId", "apiConfig"]
-        },
-        {
-          model: Message,
-          as: "quotedMsg",
-          include: ["contact"]
+          include: [{ model: Contact }]
         }
-      ]
+      ],
+      order: [['createdAt', 'DESC']]
     });
 
-    if (messageToUpdate) {
-      await messageToUpdate.update({ ack });
-      const { ticket } = messageToUpdate;
-      // LOG: Atualização de ACK
-      logger.info(`[DEBUG] ACK atualizado para mensagem ${msg.id.id}: ack=${ack}`);
-      socketEmit({
-        tenantId: ticket.tenantId,
-        type: "chat:ack",
-        payload: messageToUpdate
-      });
-      // LOG: Evento emitido para frontend
-      logger.info(`[DEBUG] Evento chat:ack emitido para tenant ${ticket.tenantId} (msgId: ${msg.id.id}, ack: ${ack})`);
+    if (message) {
+      const newStatus = getMessageStatus(ack);
+      await message.update({ ack, status: newStatus });
 
-      const apiConfig: any = ticket.apiConfig || {};
-      if (apiConfig?.externalKey && apiConfig?.urlMessageStatus) {
-        const payload = {
+      // Emitir evento no canal correto com o id da mensagem e informações do ticket
+      const io = getIO();
+      io.to(message.ticket.tenantId.toString()).emit(`${message.ticket.tenantId}:ticketList`, {
+        type: "chat:ack",
+        payload: {
+          id: message.id,
+          messageId: message.messageId,
           ack,
-          messageId: msg.id.id,
-          ticketId: ticket.id,
-          externalKey: apiConfig?.externalKey,
-          authToken: apiConfig?.authToken,
-          type: "hookMessageStatus"
-        };
-        Queue.add("WebHooksAPI", {
-          url: apiConfig.urlMessageStatus,
-          type: payload.type,
-          payload
+          status: newStatus,
+          fromMe: message.fromMe,
+          ticket: {
+            id: message.ticket.id,
+            status: message.ticket.status,
+            unreadMessages: message.ticket.unreadMessages,
+            answered: message.ticket.answered
+          }
+        }
+      });
+    } else {
+      
+      // Tenta buscar por ID direto
+      const messageByPk = await Message.findByPk(messageId);
+      if (messageByPk) {
+
+        return await HandleMsgAck({
+          ...msg,
+          key: {
+            ...msg.key,
+            id: messageByPk.messageId
+          }
+        }, ack);
+      }
+
+      // Se ainda não encontrou, tenta buscar mensagens recentes do mesmo ticket
+      if (msg.key.remoteJid) {
+        const recentMessages = await Message.findAll({
+          where: {
+            createdAt: {
+              [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24h
+            }
+          },
+          include: [
+            {
+              model: Ticket,
+              as: "ticket",
+              include: [
+                {
+                  model: Contact,
+                  as: "contact",
+                  where: {
+                    number: msg.key.remoteJid.split('@')[0]
+                  }
+                }
+              ]
+            }
+          ],
+          order: [['createdAt', 'DESC']],
+          limit: 10
         });
+
+        if (recentMessages.length > 0) {
+          const similarMessage = recentMessages.find(m => {
+            if (!m.messageId) return false;
+            return m.messageId.includes(messageId) || messageId.includes(m.messageId);
+          });
+
+          if (similarMessage) {
+            return await HandleMsgAck({
+              ...msg,
+              key: {
+                ...msg.key,
+                id: similarMessage.messageId
+              }
+            }, ack);
+          }
+        }
       }
     }
-
-    const messageAPI = await ApiMessage.findOne({
-      where: { messageId: msg.id.id }
-    });
-
-    if (messageAPI) {
-      await messageAPI.update({ ack });
-    }
-
-    const messageCampaign = await CampaignContacts.findOne({
-      where: { messageId: msg.id.id }
-    });
-
-    if (messageCampaign) {
-      await messageCampaign.update({ ack });
-    }
   } catch (err) {
-    logger.error(err);
+    logger.error(`Erro ao processar ACK para mensagem ${msg.key?.id || 'unknown'}: ${err}`);
   }
 };
 

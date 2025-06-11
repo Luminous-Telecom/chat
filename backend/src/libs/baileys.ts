@@ -92,6 +92,56 @@ const resetWsUndefinedChecks = (whatsappId: number): void => {
   wsUndefinedChecks.delete(whatsappId);
 };
 
+// Add this function after the clearReconnectionTimeout function
+const handleWsUndefined = async (whatsappId: number, whatsapp: Whatsapp): Promise<void> => {
+  const check = wsUndefinedChecks.get(whatsappId) || { count: 0, lastCheck: Date.now(), isHandling: false };
+  
+  // If we're already handling this, skip
+  if (check.isHandling) {
+    return;
+  }
+  
+  // If we've checked too many times recently, wait
+  const now = Date.now();
+  if (check.count >= WS_UNDEFINED_CONFIG.MAX_CHECKS && 
+      (now - check.lastCheck) < WS_UNDEFINED_CONFIG.RESET_TIME) {
+    return;
+  }
+  
+  // Reset count if enough time has passed
+  if ((now - check.lastCheck) > WS_UNDEFINED_CONFIG.RESET_TIME) {
+    check.count = 0;
+  }
+  
+  // Update check state
+  check.count++;
+  check.lastCheck = now;
+  check.isHandling = true;
+  wsUndefinedChecks.set(whatsappId, check);
+  
+  try {
+    baseLogger.warn(`Handling ws undefined state for ${whatsapp.name} (attempt ${check.count}/${WS_UNDEFINED_CONFIG.MAX_CHECKS})`);
+    
+    // Force session cleanup
+    await removeBaileysSession(whatsappId);
+    
+    // Wait a bit before reconnecting
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Attempt to reinitialize
+    const newSession = await initBaileys(whatsapp);
+    sessions.push(newSession);
+    
+    baseLogger.info(`Successfully reinitialized session for ${whatsapp.name}`);
+  } catch (err) {
+    baseLogger.error(`Failed to handle ws undefined state for ${whatsapp.name}: ${err}`);
+  } finally {
+    // Reset handling state
+    check.isHandling = false;
+    wsUndefinedChecks.set(whatsappId, check);
+  }
+};
+
 // Enhanced session removal with better cleanup
 export const removeBaileysSession = async (whatsappId: number): Promise<void> => {
   const sessionIndex = sessions.findIndex(s => s.id === whatsappId);
@@ -372,15 +422,22 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
       }
     });
 
-    // Fixed connection handler
+    // Modify the connection.update handler in initBaileys
     wbot.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
       
-      // Atualizar estado da conexão
+      // Update connection state
       (wbot as any).connection = connection;
       
-      // Reset WebSocket checks quando conecta com sucesso
-      if (connection === 'open') {
+      // Check for ws undefined state
+      if (connection === 'open' && !(wbot as any).ws) {
+        baseLogger.warn(`Session ${whatsapp.name} has open connection but ws is undefined`);
+        await handleWsUndefined(whatsapp.id, whatsapp);
+        return;
+      }
+      
+      // Reset WebSocket checks when successfully connected
+      if (connection === 'open' && (wbot as any).ws) {
         resetWsUndefinedChecks(whatsapp.id);
       }
       

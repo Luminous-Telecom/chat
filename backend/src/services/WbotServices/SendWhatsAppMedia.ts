@@ -5,6 +5,7 @@ import Ticket from "../../models/Ticket";
 import UserMessagesLog from "../../models/UserMessagesLog";
 import { logger } from "../../utils/logger";
 import mime from "mime-types";
+import Message from "../../models/Message";
 
 interface Request {
   media: Express.Multer.File;
@@ -36,6 +37,23 @@ const SendWhatsAppMedia = async ({
     }
 
     const sendMessage = await (wbot as any).sendMessage(chatId, content, options);
+
+    // Atualizar o status da mensagem para enviada
+    const messageToUpdate = await Message.findOne({
+      where: {
+        ticketId: ticket.id,
+        status: "pending"
+      },
+      order: [["createdAt", "DESC"]]
+    });
+
+    if (messageToUpdate) {
+      await messageToUpdate.update({
+        messageId: sendMessage.id.id,
+        status: "sended",
+        ack: 2
+      });
+    }
 
     await ticket.update({
       lastMessage: media.filename,

@@ -101,7 +101,6 @@ export default {
             }
           }
           if (data.type === 'chat:ack' || data.type === 'chat:delete') {
-            console.log('Processing message status update:', data.type, data.payload)
             this.$store.commit('UPDATE_MESSAGE_STATUS', data.payload)
           }
           if (data.type === 'ticket:update') {

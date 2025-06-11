@@ -47,6 +47,23 @@ const SendWhatsAppMessage = async ({
       messageOptions
     );
 
+    // Atualizar o status da mensagem para enviada
+    const messageToUpdate = await Message.findOne({
+      where: {
+        ticketId: ticket.id,
+        status: "pending"
+      },
+      order: [["createdAt", "DESC"]]
+    });
+
+    if (messageToUpdate) {
+      await messageToUpdate.update({
+        messageId: sendMessage.key.id,
+        status: "sended",
+        ack: 2
+      });
+    }
+
     await ticket.update({
       lastMessage: body,
       lastMessageAt: new Date().getTime()
