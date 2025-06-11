@@ -24,7 +24,7 @@
       </q-card-section>
 
       <!-- QR Code Section -->
-      <q-card-section class="q-pa-sm">
+      <q-card-section class="q-pa-xs">
         <div v-if="cQrcode" class="text-center qr-section">
           <!-- Logo above QR Code -->
           <div class="logo-above-qr">
@@ -35,7 +35,7 @@
           <div class="qr-code-wrapper">
             <qrcode-vue
               :value="cQrcode"
-              :size="200"
+              :size="180"
               level="M"
               render-as="svg"
               class="qr-code-modern" />
@@ -53,8 +53,8 @@
         </div>
       </q-card-section>
 
-      <!-- Instructions -->
-      <q-card-section class="q-pa-sm q-pt-none">
+      <!-- Instructions Section -->
+      <q-card-section class="q-pa-xs q-pt-none">
         <div class="instruction-card">
           <div class="text-body2 text-center q-mb-md" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }">
             <q-icon name="smartphone" class="q-mr-xs" />
@@ -189,22 +189,22 @@ export default {
 }
 
 .qr-section {
-  padding: 8px;
+  padding: 6px;
 }
 
 .logo-above-qr {
   display: flex;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 
 .baileys-logo-above {
-  width: 140px;
-  height: 45px;
-  border-radius: 8px;
+  width: 120px;
+  height: 38px;
+  border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: white;
-  padding: 6px;
+  padding: 4px;
   object-fit: contain;
 }
 
@@ -223,17 +223,17 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
-  padding: 16px;
+  min-height: 160px;
+  padding: 12px;
 }
 
 .instruction-card {
   background: rgba(255, 255, 255, 0.5);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 10px;
+  padding: 10px;
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .modern-btn {
