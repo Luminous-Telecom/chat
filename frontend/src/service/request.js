@@ -1,11 +1,8 @@
 import axios from 'axios'
-import Router from '../router/index.js'
-
 import loading from '../utils/loading.js'
-import { Notify } from 'quasar'
+import { Notify, Loading } from 'quasar'
 
 import backendErrors from './erros.js'
-import { RefreshToken } from './login.js'
 
 const service = axios.create({
   baseURL: process.env.VUE_URL_API,
@@ -31,8 +28,7 @@ const handlerError = err => {
       message: error.toString()
     })
   } catch (notifyError) {
-    console.error('Error showing notification:', notifyError)
-    console.error('Original error:', error)
+    // Error showing notification
   }
 }
 
@@ -47,30 +43,26 @@ const handlerError = err => {
 //   return is_init
 // }
 
+// Interceptor de requisição
 service.interceptors.request.use(
   config => {
     try {
-      if (config.loading) {
-        loading.show(config.loading)
-      }
+      Loading.show()
     } catch (error) {
-
+      // Error showing loading
     }
 
-    // let url = config.url
-    // const r = new RegExp('id_conta_cliente', 'g')
-    // url = url.replace(r, id_conta_cliente)
-    // const u = new RegExp('id_unidade_negocio', 'g')
-    // config.url = url.replace(u, id_unidade_negocio)
     const token = localStorage.getItem('token')
+
     if (token) {
-      config.headers.Authorization = 'Bearer ' + token
+      config.headers.Authorization = `Bearer ${token}`
     }
+
     return config
   },
   error => {
     // handlerError(error)
-    Promise.reject(error)
+    return Promise.reject(error)
   }
 )
 
@@ -81,30 +73,18 @@ service.interceptors.response.use(
   },
   error => {
     loading.hide(error.config)
-    if (error?.response?.status === 403 && !error.config._retry) {
-      error.config._retry = true
-      return RefreshToken().then(res => {
-        if (res.data) {
-          localStorage.setItem('token', res.data.token)
-          // Retry the original request with the new token
-          error.config.headers.Authorization = `Bearer ${res.data.token}`
-          return service(error.config)
-        }
-        return Promise.reject(error)
-      })
-    }
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('username')
-      localStorage.removeItem('profile')
-      localStorage.removeItem('userId')
-      if (error.config.url.indexOf('logout') === -1) {
-        handlerError(error)
-        setTimeout(() => {
-          Router.push({
-            name: 'login'
-          })
-        }, 2000)
+
+    if (error.response?.status === 403 || error.response?.status === 401) {
+      const isLogged = localStorage.getItem('token')
+
+      if (isLogged) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('username')
+        localStorage.removeItem('profile')
+        localStorage.removeItem('userId')
+        localStorage.removeItem('usuario')
+
+        window.location.href = '/login'
       }
     } else {
       handlerError(error)

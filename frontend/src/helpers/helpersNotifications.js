@@ -15,7 +15,7 @@ export const notificarErro = (error) => {
     ]
   })
 
-  console.error('Erro:', { errorMessage, errorTitle, originalError: error })
+  // Erro de notificação
 }
 
 export const notificarSucesso = (message, title = 'Sucesso') => {

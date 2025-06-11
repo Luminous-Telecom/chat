@@ -1100,7 +1100,7 @@ export default {
     }
   },
   mounted () {
-    console.log('node_form montou', this.node)
+    // node_form montou
     this.buscarFilaPadrao()
   }
 }

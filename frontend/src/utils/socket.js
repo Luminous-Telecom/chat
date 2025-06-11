@@ -15,9 +15,8 @@ export const socketIO = () => {
 
 const socket = socketIO()
 
-socket.io.on('error', (error) => {
-  // ...
-  console.error('socket error', error)
+socket.io.on('error', (_error) => {
+  // socket error
 })
 
 socket.on('disconnect', (reason) => {

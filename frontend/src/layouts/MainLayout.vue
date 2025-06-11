@@ -492,7 +492,7 @@ export default {
         })
         this.queueTicketCounts = counts
       } catch (error) {
-        console.error('Erro ao buscar contadores de tickets por fila:', error)
+        // Erro ao buscar contadores
       }
     },
     async consultarTickets () {
@@ -513,7 +513,7 @@ export default {
         this.$store.commit('UPDATE_NOTIFICATIONS', data)
       } catch (err) {
         this.$notificarErro('Algum problema', err)
-        console.error(err)
+        // Erro no processo
       }
       const params2 = {
         searchParam: '',
@@ -532,7 +532,7 @@ export default {
         this.$store.commit('UPDATE_NOTIFICATIONS_P', data)
       } catch (err) {
         this.$notificarErro('Algum problema', err)
-        console.error(err)
+        // Erro no processo
       }
     },
     abrirChatContato (ticket) {

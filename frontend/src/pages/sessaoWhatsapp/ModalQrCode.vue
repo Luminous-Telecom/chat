@@ -154,7 +154,7 @@ export default {
   methods: {
     solicitarQrCode () {
       this.$emit('gerar-novo-qrcode', this.channel)
-      this.fecharModalQrModal()
+      // Não fecha o modal para permitir ver o novo QR code sendo gerado
     },
     fecharModalQrModal () {
       this.$emit('update:abrirModalQR', false)
@@ -163,8 +163,13 @@ export default {
   mounted () {
     // Listener direto para atualizações de sessão via socket
     this.$root.$on('UPDATE_SESSION', (session) => {
-      if (session.id === this.channel.id && session.status === 'CONNECTED') {
-        this.fecharModalQrModal()
+      if (session.id === this.channel.id) {
+        // Só fecha o modal se a sessão estiver conectada, não para qrcode
+        if (session.status === 'CONNECTED') {
+          this.fecharModalQrModal()
+        }
+        // Para status 'qrcode', apenas atualiza os dados sem fechar o modal
+        // O canal será atualizado automaticamente via props reativas
       }
     })
 

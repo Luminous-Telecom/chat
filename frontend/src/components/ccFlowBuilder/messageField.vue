@@ -123,7 +123,7 @@ export default {
       }, 10)
     },
     onInsertSelectVariable (variable) {
-      console.log('onInsertSelectVariable', variable)
+      // onInsertSelectVariable
       const self = this
       var tArea = this.$refs.inputEnvioMensagem
       // get cursor's position:

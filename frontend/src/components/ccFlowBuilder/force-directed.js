@@ -137,14 +137,14 @@ function calculateTraction () {
     const eEndID = mEdgeList[e].target
     startNode = mNodeMap[eStartID]
     endNode = mNodeMap[eEndID]
-    if (!startNode) {
-      console.log('Cannot find start node id: ' + eStartID + ', please check it out.')
-      return
-    }
-    if (!endNode) {
-      console.log('Cannot find end node id: ' + eEndID + ', please check it out.')
-      return
-    }
+    if (startNode == null) {
+        // Cannot find start node
+        return
+      }
+      if (endNode == null) {
+        // Cannot find end node
+        return
+      }
     const distX = startNode.x - endNode.x
     const distY = startNode.y - endNode.y
     const dist = Math.sqrt(distX * distX + distY * distY)

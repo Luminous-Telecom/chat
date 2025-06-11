@@ -3,7 +3,7 @@ import { notificarErro } from '../helpers/helpersNotifications'
 
 // Validar se a URL da API está definida
 if (!process.env.VUE_URL_API) {
-  console.error('VUE_URL_API não está definida nas variáveis de ambiente!')
+  // VUE_URL_API não está definida
   notificarErro({ message: 'Configuração inválida: URL da API não definida' })
 }
 
@@ -31,7 +31,7 @@ api.interceptors.response.use(
   response => response,
   error => {
     // Log do erro para debug
-    console.error('API Error:', error)
+    // API Error
 
     if (error.response) {
       // O servidor respondeu com um status de erro

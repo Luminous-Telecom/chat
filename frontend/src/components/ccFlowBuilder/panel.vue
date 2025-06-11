@@ -310,7 +310,7 @@ export default {
         })
 
         this.jsPlumb.bind('contextmenu', (evt) => {
-          console.log('contextmenu', evt)
+          // contextmenu event
         })
 
         this.jsPlumb.bind('beforeDrop', (evt) => {
@@ -318,7 +318,7 @@ export default {
         })
 
         this.jsPlumb.bind('beforeDetach', (evt) => {
-          console.log('beforeDetach', evt)
+          // beforeDetach event
         })
         this.jsPlumb.setContainer(this.$refs.efContainer)
       })
@@ -333,7 +333,7 @@ export default {
           this.jsPlumb.draggable(node.id, {
             containment: 'parent',
             stop: function (el) {
-              console.log('arraste para o final: ', el)
+              // arraste para o final
             }
           })
         }
@@ -481,7 +481,7 @@ export default {
         this.jsPlumb.draggable(nodeId, {
           containment: 'parent',
           stop: function (el) {
-            console.log('arastado para o final: ', el)
+            // arastado para o final
           }
         })
       })

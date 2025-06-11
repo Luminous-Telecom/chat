@@ -65,7 +65,7 @@ export default {
             // console.log(this.notifications)
           } catch (err) {
             this.$notificarErro('Algum problema', err)
-            console.error(err)
+            // Erro no socket
           }
         }
       })
@@ -136,7 +136,7 @@ export default {
             verify = data_noti
           } catch (err) {
             this.$notificarErro('Algum problema', err)
-            console.error(err)
+            // Erro no socket
           }
           // Faz verificação para se certificar que notificação pertence a fila do usuário
           var pass_noti = false

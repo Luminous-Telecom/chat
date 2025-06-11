@@ -26,7 +26,7 @@ export default {
         }
         return format(parsedDate, 'HH:mm', { locale: pt })
       } catch (error) {
-        console.warn('Erro ao formatar data em dataInWords:', date, error)
+        // Erro ao formatar data
         return ''
       }
     },
@@ -74,7 +74,7 @@ export default {
         }
         return format(parsedDate, formato, { locale: pt })
       } catch (error) {
-        console.warn('Erro ao formatar data:', data, error)
+        // Erro ao formatar data
         return ''
       }
     }

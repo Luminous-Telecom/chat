@@ -689,8 +689,8 @@ export default {
           new_contacts: 0
         }
       })
-        .catch(err => {
-          console.error('Erro ao carregar dados gerais:', err)
+        .catch(_err => {
+          // Erro ao carregar dados gerais
           this.ticketsAndTimes = {
             qtd_total_atendimentos: 0,
             qtd_demanda_ativa: 0,
@@ -732,7 +732,7 @@ export default {
           this.$refs.ChartTicketsQueue.updateSeries(series, true)
         }
       } catch (err) {
-        console.error('Erro ao carregar dados do gráfico:', err)
+        // Erro ao carregar dados do gráfico
         this.ticketsQueueOptions = {
           ...this.ticketsQueueOptions,
           series: [0],
@@ -774,8 +774,8 @@ export default {
           this.$refs.ChartTicketsChannels.updateSeries(series, true)
         }
       })
-        .catch(err => {
-          console.error('Erro ao carregar dados dos canais:', err)
+        .catch(_err => {
+          // Erro ao carregar dados dos canais
           // Set fallback data on error
           this.ticketsChannelsOptions.series = [0]
           this.ticketsChannelsOptions.labels = ['Erro ao carregar']
@@ -837,8 +837,8 @@ export default {
             this.$refs.ChartTicketsEvolutionChannels.updateSeries(series, true)
           }
         })
-        .catch(error => {
-          console.error('Erro ao carregar evolução dos canais:', error)
+        .catch(_error => {
+          // Erro ao carregar evolução dos canais
 
           // Set fallback data on error
           this.ticketsEvolutionChannelsOptions.series = [{
@@ -892,8 +892,8 @@ export default {
             this.$refs.ChartTicketsEvolutionByPeriod.updateSeries(series, true)
           }
         })
-        .catch(error => {
-          console.error('Erro ao carregar evolução por período:', error)
+        .catch(_error => {
+          // Erro ao carregar evolução por período
 
           // Set fallback data on error
           const fallbackSeries = [{
@@ -918,8 +918,8 @@ export default {
         .then(res => {
           this.ticketsPerUsersDetail = res.data || []
         })
-        .catch(error => {
-          console.error('Erro ao carregar detalhes por usuário:', error)
+        .catch(_error => {
+          // Erro ao carregar detalhes por usuário
           this.ticketsPerUsersDetail = []
         })
     },

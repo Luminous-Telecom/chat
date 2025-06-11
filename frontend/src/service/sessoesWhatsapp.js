@@ -14,11 +14,13 @@ export function StartWhatsappSession (whatsAppId) {
   })
 }
 
-export function DeleteWhatsappSession (whatsAppId) {
-  return request({
+export const DeleteWhatsappSession = async (whatsAppId) => {
+  const { data } = await request({
     url: `/whatsappsession/${whatsAppId}`,
-    method: 'delete'
+    method: 'DELETE'
   })
+
+  return data
 }
 
 export function RequestNewQrCode (data) {
