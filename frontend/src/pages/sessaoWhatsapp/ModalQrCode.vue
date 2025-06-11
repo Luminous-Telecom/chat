@@ -35,9 +35,9 @@
             />
             <!-- Baileys Logo Overlay -->
             <div class="baileys-logo-overlay">
-              <img 
-                src="~assets/baileys.png" 
-                alt="Baileys Logo" 
+              <img
+                src="~assets/baileys.png"
+                alt="Baileys Logo"
                 class="baileys-logo"
                 width="40"
                 height="40"
