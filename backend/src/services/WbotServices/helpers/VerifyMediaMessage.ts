@@ -47,7 +47,9 @@ const VerifyMediaMessage = async (
 
     
     // Verificar se a mensagem tem mídia antes de tentar baixar
-    if (!msg.hasMedia) {
+    // Permitir tentativa de download mesmo se hasMedia for false para alguns tipos de mensagem
+    const mediaTypes = ['image', 'video', 'audio', 'document', 'sticker'];
+    if (!msg.hasMedia && !mediaTypes.includes(msg.type)) {
       logger.warn(`[VerifyMediaMessage] Message ${msg.id.id} has no media content for ticket ${ticket.id}`);
       logger.info(`[VerifyMediaMessage] Message type: ${msg.type}, hasMedia: ${msg.hasMedia}`);
       logger.info(`[VerifyMediaMessage] Message body: ${msg.body}`);
@@ -66,10 +68,27 @@ const VerifyMediaMessage = async (
     while (retryCount < maxRetries && !media) {
       try {
         logger.info(`Attempt ${retryCount + 1} to download media for message ID: ${msg.id.id}`);
-        media = await (msg as any).downloadMedia() as MediaData;
-        if (media) {
-          logger.info(`Successfully downloaded media for message ID: ${msg.id.id}`);
+        
+        // Tentar diferentes métodos de download
+        if (retryCount === 0) {
+          media = await (msg as any).downloadMedia() as MediaData;
+        } else if (retryCount === 1) {
+          // Tentar com opções específicas
+          media = await (msg as any).downloadMedia({ highQuality: false }) as MediaData;
+        } else {
+          // Última tentativa com timeout maior
+          media = await Promise.race([
+            (msg as any).downloadMedia(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Download timeout')), 30000))
+          ]) as MediaData;
+        }
+        
+        if (media && media.data) {
+          logger.info(`Successfully downloaded media for message ID: ${msg.id.id} on attempt ${retryCount + 1}`);
           break;
+        } else if (media) {
+          logger.warn(`Media downloaded but no data for message ID: ${msg.id.id} on attempt ${retryCount + 1}`);
+          media = null;
         }
       } catch (err) {
         lastError = err;
@@ -98,7 +117,11 @@ const VerifyMediaMessage = async (
     }
 
     if (!media.data) {
-      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: No media data content for message ID: ${msg.id.id}. Media object: ${JSON.stringify(media, null, 2)}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: No media data content for message ID: ${msg.id.id}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Media object keys: ${Object.keys(media)}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Media mimetype: ${media.mimetype}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Media filename: ${media.filename}`);
+      logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Message type: ${msg.type}, hasMedia: ${msg.hasMedia}`);
       return;
     }
 

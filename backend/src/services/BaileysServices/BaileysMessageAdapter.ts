@@ -48,31 +48,48 @@ export class BaileysMessageAdapter {
           return null;
         }
 
-        try {
-          console.log('[BaileysMessageAdapter] Attempting to download media for message type:', messageType);
-          console.log('[BaileysMessageAdapter] Content has URL:', !!content.url);
-          
-          // Use the imported downloadMediaMessage function
-          const buffer = await downloadMediaMessage(msg, 'buffer', {});
-          
-          if (buffer) {
-            console.log('[BaileysMessageAdapter] Successfully downloaded media, buffer size:', buffer.length);
-          } else {
-            console.log('[BaileysMessageAdapter] Download returned null/empty buffer');
+        // Tentar download com retry
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (retryCount <= maxRetries) {
+          try {
+            console.log(`[BaileysMessageAdapter] Attempting to download media (attempt ${retryCount + 1}/${maxRetries + 1}) for message type:`, messageType);
+            
+            // Use the imported downloadMediaMessage function
+            const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            
+            if (buffer && buffer.length > 0) {
+              console.log('[BaileysMessageAdapter] Successfully downloaded media, buffer size:', buffer.length);
+              return buffer as Buffer;
+            } else {
+              console.log('[BaileysMessageAdapter] Download returned null/empty buffer');
+              if (retryCount === maxRetries) {
+                return null;
+              }
+            }
+          } catch (error) {
+            console.error(`[BaileysMessageAdapter] Error downloading media (attempt ${retryCount + 1}):`, error.message || 'Unknown error');
+            
+            if (retryCount === maxRetries) {
+              console.error('[BaileysMessageAdapter] Final error details:', {
+                messageType,
+                hasUrl: !!content.url,
+                contentKeys: Object.keys(content),
+                errorMessage: error.message
+              });
+              return null;
+            }
           }
           
-          return buffer as Buffer;
-        } catch (error) {
-          console.error('[BaileysMessageAdapter] Error downloading media:', error.message || 'Unknown error');
-          console.error('[BaileysMessageAdapter] Error details:', {
-            messageType,
-            hasUrl: !!content.url,
-            contentKeys: Object.keys(content),
-            errorMessage: error.message,
-            errorStack: error.stack
-          });
-          return null;
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            // Aguardar antes da próxima tentativa
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
         }
+        
+        return null;
       },
       getChat: async () => this.getChat(msg),
       getContact: async () => this.getContact(msg),

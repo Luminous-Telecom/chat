@@ -65,14 +65,34 @@ interface CustomFile extends Express.Multer.File {
 
 const downloadMedia = async (msg: any): Promise<any> => {
   try {
+    // Verificar se a URL de mídia é válida
+    if (!msg.mediaUrl) {
+      throw new Error('No media URL provided');
+    }
+
     const request = await axios.get(msg.mediaUrl, {
-      responseType: "stream"
+      responseType: "stream",
+      timeout: 30000, // 30 segundos de timeout
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MediaDownloader/1.0)'
+      }
     });
+    
     const cType = request.headers["content-type"];
+    if (!cType) {
+      throw new Error('No content-type header received');
+    }
+    
     const tMine: any = mime;
-    const fileExt = tMine.extension(cType);
+    const fileExt = tMine.extension(cType) || 'bin';
     const mediaName = uuidv4();
     const dir = join(__dirname, "..", "..", "..", "public");
+    
+    // Verificar se o diretório existe, criar se necessário
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
     const fileName = `${mediaName}.${fileExt}`;
     const mediaPath = join(dir, fileName);
     const mediaData = {
@@ -88,7 +108,14 @@ const downloadMedia = async (msg: any): Promise<any> => {
         })
         .on("error", (error: any) => {
           console.error("ERROR DOWNLOAD", error.message || 'Unknown error');
-          fs.rmdirSync(mediaPath, { recursive: true });
+          // Tentar remover o arquivo se existir
+          try {
+            if (fs.existsSync(mediaPath)) {
+              fs.unlinkSync(mediaPath);
+            }
+          } catch (unlinkError) {
+            console.error("Error removing failed download file:", unlinkError.message);
+          }
           reject(new Error(error));
         });
     });
