@@ -35,16 +35,13 @@
             />
             <!-- Baileys Logo Overlay -->
             <div class="baileys-logo-overlay">
-              <svg width="60" height="60" viewBox="0 0 100 100" class="baileys-logo">
-                <!-- Background circle -->
-                <circle cx="50" cy="50" r="45" fill="#25D366" stroke="white" stroke-width="4"/>
-                <!-- WhatsApp-style icon -->
-                <path d="M50 15C30.67 15 15 30.67 15 50c0 6.08 1.56 11.8 4.3 16.78L15 85l18.22-4.3C38.2 83.44 43.92 85 50 85c19.33 0 35-15.67 35-35S69.33 15 50 15zm0 63c-5.22 0-10.16-1.44-14.38-4.17L25 76l2.17-10.62C24.44 60.16 23 55.22 23 50c0-14.91 12.09-27 27-27s27 12.09 27 27-12.09 27-27 27z" fill="white"/>
-                <!-- Inner chat bubble -->
-                <path d="M42 38c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h8l6 6V40c0-1.1-.9-2-2-2H42z" fill="white"/>
-                <!-- Baileys text -->
-                <text x="50" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#25D366">BAILEYS</text>
-              </svg>
+              <img 
+                src="~assets/baileys.png" 
+                alt="Baileys Logo" 
+                class="baileys-logo"
+                width="40"
+                height="40"
+              />
             </div>
           </div>
           <div v-else class="loading-container">
@@ -203,8 +200,15 @@ export default {
 }
 
 .baileys-logo {
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  padding: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.9);
   animation: pulse 2s infinite;
+  object-fit: contain;
 }
 
 @keyframes pulse {
