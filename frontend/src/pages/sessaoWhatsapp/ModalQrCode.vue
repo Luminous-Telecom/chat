@@ -30,19 +30,11 @@
             <qrcode-vue
               :value="cQrcode"
               :size="280"
-              level="M"
+              level="H"
+              :margin="2"
+              :image-settings="logoSettings"
               class="qr-code-modern"
             />
-            <!-- Baileys Logo Overlay -->
-            <div class="baileys-logo-overlay">
-              <img
-                src="~assets/baileys.png"
-                alt="Baileys Logo"
-                class="baileys-logo"
-                width="40"
-                height="40"
-              />
-            </div>
           </div>
           <div v-else class="loading-container">
             <q-spinner-dots size="40px" color="primary" />
@@ -123,6 +115,14 @@ export default {
   computed: {
     cQrcode () {
       return this.channel.qrcode
+    },
+    logoSettings () {
+      return {
+        src: require('@/assets/baileys.png'),
+        width: 50,
+        height: 50,
+        excavate: true
+      }
     }
   },
   methods: {
@@ -190,38 +190,7 @@ export default {
   }
 }
 
-.baileys-logo-overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-  pointer-events: none;
-}
 
-.baileys-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: white;
-  padding: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  animation: pulse 2s infinite;
-  object-fit: contain;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
 
 .loading-container {
   display: flex;
