@@ -33,19 +33,16 @@ export default {
       })
 
       socket.on(`${usuario.tenantId}:ticketList`, async data => {
-        console.log('socket ON')
         if (data.type === 'chat:create') {
-          console.log('chat:create')
           if (data.payload.ticket.userId !== userId) return
           if (data.payload.fromMe) return
+          // eslint-disable-next-line no-unused-vars
           const message = new self.Notification('Contato: ' + data.payload.ticket.contact.name, {
             body: 'Mensagem: ' + data.payload.body,
             tag: 'simple-push-demo-notification',
             image: data.payload.ticket.contact.profilePicUrl,
             icon: data.payload.ticket.contact.profilePicUrl
           })
-          console.log(message)
-          console.log('enviou msg')
           // Atualiza notificações de mensagem
           const params = {
             searchParam: '',
@@ -59,20 +56,14 @@ export default {
             includeNotQueueDefined: true
             // date: new Date(),
           }
-          console.log('Definiu parametros')
           try {
-            console.log('try')
             const { data } = await ConsultarTickets(params)
-            console.log('try 1')
             this.countTickets = data.count // count total de tickets no status
-            console.log('try 2')
             // this.ticketsList = data.tickets
             this.$store.commit('UPDATE_NOTIFICATIONS', data)
-            console.log('try 3')
             // this.$store.commit('SET_HAS_MORE', data.hasMore)
             // console.log(this.notifications)
           } catch (err) {
-            console.log('error try')
             this.$notificarErro('Algum problema', err)
             console.error(err)
           }
@@ -86,9 +77,7 @@ export default {
       })
 
       socket.on(`${usuario.tenantId}:whatsappSession`, data => {
-        console.log('Received whatsappSession event:', data)
         if (data.action === 'update') {
-          console.log('Updating session with QR code:', data.session.qrcode ? 'QR code present' : 'No QR code')
           this.$store.commit('UPDATE_SESSION', data.session)
           this.$root.$emit('UPDATE_SESSION', data.session)
         }
@@ -153,11 +142,11 @@ export default {
           verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
           // Exibe Notificação
           if (pass_noti) {
+            // eslint-disable-next-line no-unused-vars
             const message = new self.Notification('Novo cliente pendente', {
               body: 'Cliente: ' + data.payload.contact.name,
               tag: 'simple-push-demo-notification'
             })
-            console.log(message)
           }
         }
       })

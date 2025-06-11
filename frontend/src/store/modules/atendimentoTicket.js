@@ -312,11 +312,6 @@ const atendimentoTicket = {
     UPDATE_MESSAGES (state, payload) {
       // Adiciona log apenas para status e ack das mensagens
       if (payload.status !== undefined || payload.ack !== undefined) {
-        console.info('[LOG] UPDATE_MESSAGES:', {
-          id: payload.id,
-          status: payload.status,
-          ack: payload.ack
-        })
       }
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id === payload.ticket.id) {
@@ -350,15 +345,6 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGE_STATUS (state, payload) {
-      // Adiciona log apenas para status e ack das mensagens
-      if (payload.status !== undefined || payload.ack !== undefined) {
-        console.info('[LOG] UPDATE_MESSAGE_STATUS:', {
-          id: payload.id,
-          status: payload.status,
-          ack: payload.ack,
-          fromMe: payload.fromMe
-        })
-      }
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id != payload.ticket.id) {
         return

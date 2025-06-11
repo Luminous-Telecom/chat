@@ -60,22 +60,17 @@ export default {
     },
     socketTicketListNew () {
       socket.on('connect', () => {
-        console.log('Socket connected in mixinSockets')
         socket.on(`${usuario.tenantId}:ticketList`, async data => {
-          console.log('Received ticketList event:', data)
           if (data.type === 'chat:create') {
-            console.log('Processing chat:create event:', data.payload)
             if (
               !data.payload.read &&
               (data.payload.ticket.userId === userId || !data.payload.ticket.userId) &&
               data.payload.ticket.id !== this.$store.getters.ticketFocado.id
             ) {
               if (checkTicketFilter(data.payload.ticket)) {
-                console.log('Emitting notification for message')
                 this.handlerNotifications(data.payload)
               }
             }
-            console.log('Updating messages in store')
             this.$store.commit('UPDATE_MESSAGES', data.payload)
             this.scrollToBottom()
             // Atualiza notificações de mensagem
@@ -91,7 +86,6 @@ export default {
               includeNotQueueDefined: true
             }
             try {
-              console.log('Updating notifications')
               const { data } = await ConsultarTickets(params)
               this.countTickets = data.count
               this.$store.commit('UPDATE_NOTIFICATIONS', data)
@@ -110,9 +104,6 @@ export default {
         socket.on(`${usuario.tenantId}:ticketList`, async data => {
           var verify = []
           if (data.type === 'notification:new') {
-            // console.log(data)
-            // Atualiza notificações de mensagem
-            // var data_noti = []
             const params = {
               searchParam: '',
               pageNumber: 1,
@@ -138,11 +129,11 @@ export default {
             verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
             // Exibe Notificação
             if (pass_noti) {
-              const message = new self.Notification('Novo cliente pendente', {
+              // eslint-disable-next-line no-unused-vars
+              const notification = new self.Notification('Novo cliente pendente', {
                 body: 'Cliente: ' + data.payload.contact.name,
                 tag: 'simple-push-demo-notification'
               })
-              console.log(message)
             }
           }
         })
