@@ -23,6 +23,36 @@
           class="hover-scale" />
       </q-card-section>
 
+      <!-- QR Code Section -->
+      <q-card-section class="q-pa-lg">
+        <div v-if="cQrcode" class="text-center">
+          <!-- Logo above QR Code -->
+          <div class="logo-above-qr">
+            <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-above" />
+          </div>
+          
+          <!-- QR Code -->
+          <div class="qr-code-wrapper">
+            <qrcode-vue
+              :value="cQrcode"
+              :size="280"
+              level="M"
+              render-as="svg"
+              class="qr-code-modern" />
+          </div>
+        </div>
+        
+        <div v-else class="loading-container">
+          <q-spinner-dots
+            color="primary"
+            size="40px"
+            class="q-mb-md" />
+          <div class="text-body2" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }">
+            Gerando QR Code...
+          </div>
+        </div>
+      </q-card-section>
+
       <!-- Instructions -->
       <q-card-section class="q-pa-lg">
         <div class="instruction-card">
@@ -54,10 +84,14 @@
 </template>
 
 <script>
+import { QrcodeVue } from 'qrcode.vue'
 import baileysLogo from 'assets/baileys.png'
 
 export default {
   name: 'ModalQrCode',
+  components: {
+    QrcodeVue
+  },
   props: {
     abrirModalQR: {
       type: Boolean,
