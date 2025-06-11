@@ -87,7 +87,7 @@ const downloadMedia = async (msg: any): Promise<any> => {
           resolve(mediaData);
         })
         .on("error", (error: any) => {
-          console.error("ERROR DOWNLOAD", error);
+          console.error("ERROR DOWNLOAD", error.message || 'Unknown error');
           fs.rmdirSync(mediaPath, { recursive: true });
           reject(new Error(error));
         });
@@ -160,7 +160,8 @@ const CreateMessageSystemService = async ({
 
 
   } catch (error) {
-    logger.error(`[CreateMessageSystemService] Error:`, error);
+    logger.error(`[CreateMessageSystemService] Error:`, error.message || 'Unknown error');
+    logger.error(`[CreateMessageSystemService] Error stack:`, error.stack);
     throw error;
   }
 };

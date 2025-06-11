@@ -63,7 +63,7 @@ export class BaileysMessageAdapter {
           
           return buffer as Buffer;
         } catch (error) {
-          console.error('[BaileysMessageAdapter] Error downloading media:', error);
+          console.error('[BaileysMessageAdapter] Error downloading media:', error.message || 'Unknown error');
           console.error('[BaileysMessageAdapter] Error details:', {
             messageType,
             hasUrl: !!content.url,
