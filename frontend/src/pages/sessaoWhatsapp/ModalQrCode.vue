@@ -42,7 +42,7 @@
             <div class="qr-frame">
               <qrcode-vue
                 :value="cQrcode"
-                :size="200"
+                :size="160"
                 level="M"
                 render-as="svg"
                 class="qr-code-professional" />
@@ -186,9 +186,9 @@ export default {
 <style lang="scss" scoped>
 // Professional Modal Container
 .modern-modal-professional {
-  width: 420px;
+  width: 380px;
+  max-width: 90vw;
   border-radius: 20px;
-  overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -205,7 +205,7 @@ export default {
 // Professional Header
 .professional-header {
   background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  padding: 24px;
+  padding: 20px;
   position: relative;
   overflow: hidden;
 
@@ -281,7 +281,7 @@ export default {
 
 // QR Code Section
 .qr-main-section {
-  padding: 32px 24px;
+  padding: 16px 20px;
   text-align: center;
 }
 
@@ -289,7 +289,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
 
 .logo-container {
@@ -299,15 +299,15 @@ export default {
 
 .logo-badge {
   background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
-  padding: 12px 20px;
-  border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .baileys-logo-professional {
-  width: 140px;
-  height: 42px;
+  width: 120px;
+  height: 36px;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
@@ -319,8 +319,8 @@ export default {
 
 .qr-frame {
   background: white;
-  padding: 20px;
-  border-radius: 20px;
+  padding: 16px;
+  border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
@@ -426,39 +426,39 @@ export default {
 
 // Instructions Section
 .instructions-section {
-  padding: 0 24px 32px;
+  padding: 0 20px 16px;
 }
 
 .instruction-panel {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
   border-radius: 16px;
-  padding: 24px;
+  padding: 16px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
 }
 
 .instruction-steps {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .step-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .step-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 20px;
+  font-size: 18px;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
@@ -482,7 +482,7 @@ export default {
   text-align: center;
   font-size: 13px;
   color: #64748b;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   font-weight: 400;
 }
 
