@@ -118,7 +118,7 @@ export default {
     },
     logoSettings () {
       return {
-        src: require('@/assets/baileys.png'),
+        src: require('assets/baileys.png'),
         width: 50,
         height: 50,
         excavate: true
