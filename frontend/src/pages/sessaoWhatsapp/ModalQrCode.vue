@@ -426,53 +426,53 @@ export default {
 
 // Instructions Section
 .instructions-section {
-  padding: 0 20px 12px;
+  padding: 0 16px 8px;
 }
 
 .instruction-panel {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 8px;
+  padding: 8px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .instruction-steps {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .step-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .step-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 8px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 14px;
-  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
 }
 
 .step-text {
   .step-title {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
     letter-spacing: -0.025em;
   }
 
   .step-desc {
-    font-size: 12px;
+    font-size: 10px;
     color: #64748b;
     font-weight: 400;
   }
@@ -480,9 +480,9 @@ export default {
 
 .help-text {
   text-align: center;
-  font-size: 11px;
+  font-size: 9px;
   color: #64748b;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   font-weight: 400;
 }
 
@@ -495,9 +495,9 @@ export default {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 11px;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 10px;
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 1px 4px rgba(16, 185, 129, 0.3);
