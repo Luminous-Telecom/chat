@@ -115,6 +115,11 @@ export default {
       immediate: true
     }
   },
+  data () {
+    return {
+      baileysLogo
+    }
+  },
   computed: {
     cQrcode () {
       return this.channel.qrcode
