@@ -190,8 +190,6 @@ export default {
   }
 }
 
-
-
 .loading-container {
   display: flex;
   flex-direction: column;
