@@ -5,7 +5,7 @@
     <q-card
       :class="{ 'bg-white': !$q.dark.isActive, 'bg-dark': $q.dark.isActive }"
       class="modern-modal"
-      style="min-width: 320px; max-width: 380px; border-radius: 16px; overflow: hidden;">
+      style="width: 350px; border-radius: 16px; overflow: hidden;">
 
       <!-- Header -->
       <q-card-section class="row items-center justify-between q-pa-md" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
@@ -24,8 +24,8 @@
       </q-card-section>
 
       <!-- QR Code Section -->
-      <q-card-section class="q-pa-md">
-        <div v-if="cQrcode" class="text-center">
+      <q-card-section class="q-pa-sm">
+        <div v-if="cQrcode" class="text-center qr-section">
           <!-- Logo above QR Code -->
           <div class="logo-above-qr">
             <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-above" />
@@ -35,7 +35,7 @@
           <div class="qr-code-wrapper">
             <qrcode-vue
               :value="cQrcode"
-              :size="220"
+              :size="200"
               level="M"
               render-as="svg"
               class="qr-code-modern" />
@@ -54,7 +54,7 @@
       </q-card-section>
 
       <!-- Instructions -->
-      <q-card-section class="q-pa-md">
+      <q-card-section class="q-pa-sm q-pt-none">
         <div class="instruction-card">
           <div class="text-body2 text-center q-mb-md" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }">
             <q-icon name="smartphone" class="q-mr-xs" />
@@ -188,15 +188,19 @@ export default {
   display: inline-block;
 }
 
+.qr-section {
+  padding: 8px;
+}
+
 .logo-above-qr {
   display: flex;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .baileys-logo-above {
-  width: 160px;
-  height: 50px;
+  width: 140px;
+  height: 45px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: white;
@@ -219,15 +223,17 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: 180px;
+  padding: 16px;
 }
 
 .instruction-card {
   background: rgba(255, 255, 255, 0.5);
   border-radius: 12px;
-  padding: 16px;
+  padding: 12px;
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 8px;
 }
 
 .modern-btn {
