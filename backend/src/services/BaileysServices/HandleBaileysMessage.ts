@@ -16,7 +16,7 @@ import socketEmit from '../../helpers/socketEmit';
 import Contact from '../../models/Contact';
 import { BaileysMessageAdapter } from './BaileysMessageAdapter';
 import Message from '../../models/Message';
-import SetTicketMessagesAsRead from '../../helpers/SetTicketMessagesAsRead';
+// import SetTicketMessagesAsRead from '../../helpers/SetTicketMessagesAsRead'; // Removido - não usado mais
 
 const HandleBaileysMessage = async (
   msg: proto.IWebMessageInfo,
@@ -93,17 +93,17 @@ const HandleBaileysMessage = async (
           return;
         }
 
-        // Marcar como lida se não for própria mensagem
-        if (!msg.key.fromMe) {
-          // Usar setTimeout para não bloquear o processamento principal
-          setTimeout(async () => {
-            try {
-              await handleMessageReadReceipt(msg, ticket, message, wbot);
-            } catch (err) {
-              logger.error(`[HandleBaileysMessage] Error in read receipt: ${err}`);
-            }
-          }, 1000);
-        }
+        // Marcar como lida se não for própria mensagem - COMENTADO PARA EVITAR MARCAÇÃO AUTOMÁTICA
+        // if (!msg.key.fromMe) {
+        //   // Usar setTimeout para não bloquear o processamento principal
+        //   setTimeout(async () => {
+        //     try {
+        //       await handleMessageReadReceipt(msg, ticket, message, wbot);
+        //     } catch (err) {
+        //       logger.error(`[HandleBaileysMessage] Error in read receipt: ${err}`);
+        //     }
+        //   }, 1000);
+        // }
 
         // Verificar horário comercial e chat flow
         const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
