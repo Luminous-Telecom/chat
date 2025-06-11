@@ -115,7 +115,6 @@ const HandleBaileysMessage = async (
         // Webhook para API externa
         await handleExternalWebhook(msg, ticket);
 
-        logger.debug(`[HandleBaileysMessage] Successfully processed message ${msg.key.id}`);
         resolve();
 
       } catch (err) {
@@ -207,13 +206,10 @@ const processMessage = async (msg: proto.IWebMessageInfo, ticket: any, contact: 
       message = await VerifyMessage(adaptedMessage, ticket, contact);
     }
 
-    if (message) {
-      logger.debug(`[HandleBaileysMessage] Created message ${message.id} for ticket ${ticket.id}`);
-    }
-
     return message;
   } catch (err) {
-    logger.error(`[HandleBaileysMessage] Error creating message: ${err}`);
+    logger.error(`[HandleBaileysMessage] Error creating message for ticket ${ticket.id}: ${err}`);
+    logger.error(`[HandleBaileysMessage] Error stack: ${err.stack}`);
     return null;
   }
 };
@@ -225,15 +221,12 @@ const handleMessageReadReceipt = async (
   wbot: BaileysClient
 ): Promise<void> => {
   try {
-    logger.debug(`[HandleBaileysMessage] Processing read receipt for message ${message.id}`);
-
     // Verificar se mensagem ainda não foi lida
     const freshMessage = await Message.findOne({
       where: { id: message.id, read: false }
     });
 
     if (!freshMessage) {
-      logger.debug(`[HandleBaileysMessage] Message ${message.id} already read`);
       return;
     }
 
@@ -249,7 +242,6 @@ const handleMessageReadReceipt = async (
           id: msg.key.id,
           fromMe: false
         }]);
-        logger.debug(`[HandleBaileysMessage] Marked message ${msg.key.id} as read using readMessages`);
       } catch (readErr) {
         logger.warn(`[HandleBaileysMessage] readMessages failed: ${readErr}`);
         
@@ -258,7 +250,6 @@ const handleMessageReadReceipt = async (
           await wbot.sendPresenceUpdate('available', jid);
           await wbot.sendPresenceUpdate('composing', jid);
           await wbot.sendPresenceUpdate('paused', jid);
-          logger.debug(`[HandleBaileysMessage] Used presence fallback for ${jid}`);
         } catch (presenceErr) {
           logger.warn(`[HandleBaileysMessage] Presence fallback failed: ${presenceErr}`);
         }
@@ -285,8 +276,6 @@ const handleMessageReadReceipt = async (
         read: true
       }
     });
-
-    logger.debug(`[HandleBaileysMessage] Successfully processed read receipt for message ${message.id}`);
 
   } catch (err) {
     logger.error(`[HandleBaileysMessage] Error processing read receipt: ${err}`);

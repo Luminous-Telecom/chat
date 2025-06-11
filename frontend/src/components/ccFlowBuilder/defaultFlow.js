@@ -41,7 +41,8 @@ const data = {
           number: 3,
           type: 1,
           destiny: ''
-        }
+        },
+        defaultQueueId: null
       }
     },
     {

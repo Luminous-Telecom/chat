@@ -6,8 +6,7 @@ export const socketIO = () => {
     autoConnect: true,
     transports: ['websocket'],
     auth: (cb) => {
-      const tokenItem = localStorage.getItem('token')
-      const token = tokenItem ? JSON.parse(tokenItem) : null
+      const token = localStorage.getItem('token')
       // eslint-disable-next-line standard/no-callback-literal
       cb({ token })
     }

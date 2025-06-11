@@ -43,7 +43,7 @@ const user = {
       user.email = user.email.trim()
       try {
         const { data } = await RealizarLogin(user)
-        localStorage.setItem('token', JSON.stringify(data.token))
+        localStorage.setItem('token', data.token)
         localStorage.setItem('username', data.username)
         localStorage.setItem('profile', data.profile)
         localStorage.setItem('userId', data.userId)

@@ -20,145 +20,144 @@
       </q-card>
     </div>
     <div class="row full-width">
-      <template v-for="item in canais">
-        <q-card
-          flat
-          bordered
-          class="col-xs-12 col-sm-5 col-md-4 col-lg-3 q-ma-sm"
-          :key="item.id"
-        >
-          <q-item>
-            <q-item-section avatar>
-              <q-avatar>
-                <q-icon
-                  size="40px"
-                  :name="`img:${item.type}-logo.png`"
-                />
-              </q-avatar>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label class="text-h6 text-bold">Nome: {{ item.name }}</q-item-label>
-              <q-item-label class="text-h6 text-caption">
-                {{ item.type }}
-              </q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-btn
-                round
-                flat
-                dense
-                icon="mdi-pen"
-                @click="handleOpenModalWhatsapp(item)"
-                v-if="isAdmin"
+      <q-card
+        v-for="item in canais"
+        :key="item.id"
+        flat
+        bordered
+        class="col-xs-12 col-sm-5 col-md-4 col-lg-3 q-ma-sm"
+      >
+        <q-item>
+          <q-item-section avatar>
+            <q-avatar>
+              <q-icon
+                size="40px"
+                :name="`img:${item.type}-logo.png`"
               />
-            </q-item-section>
-          </q-item>
-          <q-separator />
-          <q-card-section>
-            <ItemStatusChannel :item="item" />
-            <template v-if="item.type === 'messenger'">
-              <div class="text-body2 text-bold q-mt-sm">
-                <span> Página: </span>
-                {{ item.fbObject && item.fbObject.name || 'Nenhuma página configurada.' }}
-              </div>
-            </template>
-          </q-card-section>
-          <q-card-section>
-            <q-select
-              outlined
+            </q-avatar>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="text-h6 text-bold">Nome: {{ item.name }}</q-item-label>
+            <q-item-label class="text-h6 text-caption">
+              {{ item.type }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-btn
+              round
+              flat
               dense
-              rounded
-              label="Bot"
-              v-model="item.chatFlowId"
-              :options="listaChatFlow"
-              map-options
-              emit-value
-              option-value="id"
-              option-label="name"
-              clearable
-              @input="handleSaveWhatsApp(item)"
+              icon="mdi-pen"
+              @click="handleOpenModalWhatsapp(item)"
+              v-if="isAdmin"
             />
-          </q-card-section>
-          <q-separator />
-          <q-card-actions
-            class="q-gutter-md q-pa-md q-pt-none"
-            align="center"
-          >
-            <template v-if="item.type !== 'messenger'">
+          </q-item-section>
+        </q-item>
+        <q-separator />
+        <q-card-section>
+          <ItemStatusChannel :item="item" />
+          <template v-if="item.type === 'messenger'">
+            <div class="text-body2 text-bold q-mt-sm">
+              <span> Página: </span>
+              {{ item.fbObject && item.fbObject.name || 'Nenhuma página configurada.' }}
+            </div>
+          </template>
+        </q-card-section>
+        <q-card-section>
+          <q-select
+            outlined
+            dense
+            rounded
+            label="Bot"
+            v-model="item.chatFlowId"
+            :options="listaChatFlow"
+            map-options
+            emit-value
+            option-value="id"
+            option-label="name"
+            clearable
+            @input="handleSaveWhatsApp(item)"
+          />
+        </q-card-section>
+        <q-separator />
+        <q-card-actions
+          class="q-gutter-md q-pa-md q-pt-none"
+          align="center"
+        >
+          <template v-if="item.type !== 'messenger'">
+            <q-btn
+              rounded
+              v-if="item.type == 'whatsapp' && item.status == 'qrcode'"
+              color="blue-5"
+              label="QR Code"
+              @click="handleOpenQrModal(item, 'btn-qrCode')"
+              icon-right="watch_later"
+              :disable="!isAdmin"
+            />
+
+            <div
+              v-if="item.status == 'DISCONNECTED'"
+              class="q-gutter-sm"
+            >
               <q-btn
                 rounded
-                v-if="item.type == 'whatsapp' && item.status == 'qrcode'"
+                color="positive"
+                label="Conectar"
+                @click="handleStartWhatsAppSession(item.id)"
+              />
+              <q-btn
+                rounded
+                v-if="item.status == 'DISCONNECTED' && item.type == 'whatsapp'"
                 color="blue-5"
-                label="QR Code"
-                @click="handleOpenQrModal(item, 'btn-qrCode')"
+                label="Novo QR Code"
+                @click="handleRequestNewQrCode(item, 'btn-qrCode')"
                 icon-right="watch_later"
                 :disable="!isAdmin"
               />
+            </div>
 
-              <div
-                v-if="item.status == 'DISCONNECTED'"
-                class="q-gutter-sm"
-              >
-                <q-btn
-                  rounded
-                  color="positive"
-                  label="Conectar"
-                  @click="handleStartWhatsAppSession(item.id)"
-                />
-                <q-btn
-                  rounded
-                  v-if="item.status == 'DISCONNECTED' && item.type == 'whatsapp'"
-                  color="blue-5"
-                  label="Novo QR Code"
-                  @click="handleRequestNewQrCode(item, 'btn-qrCode')"
-                  icon-right="watch_later"
-                  :disable="!isAdmin"
-                />
-              </div>
-
-              <div
-                v-if="item.status == 'OPENING'"
-                class="row items-center q-gutter-sm flex flex-inline"
-              >
-                <div class="text-bold">
-                  Conectando
-                </div>
-                <q-spinner-radio
-                  color="positive"
-                  size="2em"
-                />
-                <q-separator
-                  vertical
-                  spaced=""
-                />
-              </div>
-
-              <q-btn
-                v-if="['OPENING', 'CONNECTED', 'PAIRING', 'TIMEOUT'].includes(item.status)"
-                color="negative"
-                label="Desconectar"
-                @click="handleDisconectWhatsSession(item.id)"
-                :disable="!isAdmin"
-                class="q-mx-sm"
-              />
-            </template>
-            <q-btn
-              color="red"
-              icon="mdi-delete"
-              @click="deleteWhatsapp(item)"
-              :disable="!isAdmin"
-              dense
-              round
-              flat
-              class="absolute-bottom-right"
+            <div
+              v-if="item.status == 'OPENING'"
+              class="row items-center q-gutter-sm flex flex-inline"
             >
-              <q-tooltip>
-                Deletar conexáo
-              </q-tooltip>
-            </q-btn>
-          </q-card-actions>
-        </q-card>
-      </template>
+              <div class="text-bold">
+                Conectando
+              </div>
+              <q-spinner-radio
+                color="positive"
+                size="2em"
+              />
+              <q-separator
+                vertical
+                spaced=""
+              />
+            </div>
+
+            <q-btn
+              v-if="['OPENING', 'CONNECTED', 'PAIRING', 'TIMEOUT'].includes(item.status)"
+              color="negative"
+              label="Desconectar"
+              @click="handleDisconectWhatsSession(item.id)"
+              :disable="!isAdmin"
+              class="q-mx-sm"
+            />
+          </template>
+          <q-btn
+            color="red"
+            icon="mdi-delete"
+            @click="deleteWhatsapp(item)"
+            :disable="!isAdmin"
+            dense
+            round
+            flat
+            class="absolute-bottom-right"
+          >
+            <q-tooltip>
+              Deletar conexáo
+            </q-tooltip>
+          </q-btn>
+        </q-card-actions>
+      </q-card>
     </div>
     <ModalQrCode
       :abrirModalQR.sync="abrirModalQR"
@@ -181,7 +180,7 @@
 
 <script>
 
-import { DeletarWhatsapp, DeleteWhatsappSession, StartWhatsappSession, ListarWhatsapps, RequestNewQrCode, UpdateWhatsapp } from 'src/service/sessoesWhatsapp'
+import { ListarWhatsapps, DeletarWhatsapp, UpdateWhatsapp, StartWhatsappSession, RequestNewQrCode, DeleteWhatsappSession } from 'src/service/sessoesWhatsapp'
 import { format, parseISO } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR/index'
 import ModalQrCode from './ModalQrCode'
@@ -189,6 +188,7 @@ import { mapGetters } from 'vuex'
 import ModalWhatsapp from './ModalWhatsapp'
 import ItemStatusChannel from './ItemStatusChannel'
 import { ListarChatFlow } from 'src/service/chatFlow'
+import request from 'src/service/request'
 
 const userLogado = JSON.parse(localStorage.getItem('usuario'))
 
@@ -316,25 +316,117 @@ export default {
     },
     async handleStartWhatsAppSession (whatsAppId) {
       try {
+        this.loading = true
+        const { data: currentState } = await request({
+          url: `/whatsapp/${whatsAppId}`,
+          method: 'get'
+        })
+        if (['CONNECTING', 'CONNECTED', 'OPENING'].includes(currentState.status)) {
+          this.$q.notify({
+            type: 'info',
+            message: 'Sessão já está em andamento, aguarde...',
+            position: 'top'
+          })
+          return
+        }
+        if (['DISCONNECTED', 'TIMEOUT', 'ERROR'].includes(currentState.status)) {
+          await DeleteWhatsappSession(whatsAppId)
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
         await StartWhatsappSession(whatsAppId)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Iniciando conexão com o WhatsApp...',
+          position: 'top',
+          timeout: 3000
+        })
+        let attempts = 0
+        const maxAttempts = 10
+        const checkConnection = async () => {
+          if (attempts >= maxAttempts) {
+            this.$q.notify({
+              type: 'negative',
+              message: 'Tempo limite excedido ao tentar conectar',
+              position: 'top'
+            })
+            return
+          }
+          try {
+            const { data: status } = await request({
+              url: `/whatsapp/${whatsAppId}`,
+              method: 'get'
+            })
+            if (status.status === 'CONNECTED') {
+              this.$q.notify({
+                type: 'positive',
+                message: 'Conectado com sucesso!',
+                position: 'top'
+              })
+              await this.loadWhatsapps()
+              return
+            }
+            if (['DISCONNECTED', 'TIMEOUT', 'ERROR'].includes(status.status)) {
+              this.$q.notify({
+                type: 'negative',
+                message: 'Falha na conexão. Tente novamente.',
+                position: 'top'
+              })
+              return
+            }
+            attempts++
+            setTimeout(checkConnection, 2000)
+          } catch (error) {
+            console.error('Erro ao verificar conexão:', error)
+            attempts++
+            setTimeout(checkConnection, 2000)
+          }
+        }
+        setTimeout(checkConnection, 2000)
       } catch (error) {
-        console.error(error)
+        console.error('Erro ao iniciar sessão:', error)
+        let msg = ''
+        if (error?.response?.data?.error) {
+          msg = error.response.data.error
+        } else if (error?.response?.data?.details) {
+          msg = error.response.data.details
+        } else if (error?.message && error.message !== 'Network Error') {
+          msg = error.message
+        }
+        if (msg) {
+          this.$q.notify({
+            type: 'negative',
+            message: msg,
+            position: 'top'
+          })
+        }
+      } finally {
+        this.loading = false
       }
     },
     async handleRequestNewQrCode (channel, origem) {
       if (channel.type === 'telegram' && !channel.tokenTelegram) {
         this.$notificarErro('Necessário informar o token para Telegram')
+        return
       }
       this.loading = true
       try {
-        await RequestNewQrCode({ id: channel.id, isQrcode: true })
-        setTimeout(() => {
-          this.handleOpenQrModal(channel)
-        }, 2000)
+        if (channel.status !== 'DISCONNECTED') {
+          await DeleteWhatsappSession(channel.id)
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        await RequestNewQrCode({ id: channel.id, isQrcode: true, forceNewSession: true })
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        this.handleOpenQrModal(channel)
       } catch (error) {
-        console.error(error)
+        console.error('Erro ao gerar novo QR code:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao gerar novo QR code. Tente novamente em alguns segundos.',
+          position: 'top'
+        })
+      } finally {
+        this.loading = false
       }
-      this.loading = false
     },
     async listarWhatsapps () {
       const { data } = await ListarWhatsapps()
@@ -395,6 +487,82 @@ export default {
             color: 'white'
           }]
         })
+      }
+    },
+    async handleSessionError (error) {
+      if (error.message && error.message.includes('conflict')) {
+        try {
+          await request.post(`/whatsappSession/${this.channel.id}/force-new`)
+          this.$q.notify({
+            type: 'info',
+            message: 'Sessão anterior removida. Tentando nova conexão...'
+          })
+          await this.loadSession()
+        } catch (err) {
+          this.$q.notify({
+            type: 'negative',
+            message: 'Erro ao forçar nova sessão: ' + err.message
+          })
+        }
+      } else {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro na sessão: ' + error.message
+        })
+      }
+    },
+    async loadSession () {
+      try {
+        const { data } = await request({
+          url: `/whatsappSession/${this.channel.id}`,
+          method: 'get'
+        })
+        this.channel = data
+        if (data.status === 'CONNECTED') {
+          this.abrirModalQrModal = false
+        } else if (data.status === 'OPENING') {
+          this.abrirModalQrModal = true
+        }
+      } catch (error) {
+        await this.handleSessionError(error)
+      }
+    },
+    async handleWhatsAppSession () {
+      try {
+        await StartWhatsappSession(this.whatsapp.id)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Sessão iniciada com sucesso!'
+        })
+        await this.loadWhatsapps()
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao iniciar sessão!'
+        })
+      }
+    },
+    async handleWhatsAppSessionDelete () {
+      try {
+        await DeleteWhatsappSession(this.whatsapp.id)
+        this.$q.notify({
+          position: 'top',
+          icon: 'mdi-wifi-arrow-up-down',
+          message: 'Sessão do WhatsApp encerrada com sucesso!',
+          type: 'positive',
+          color: 'primary',
+          html: true,
+          progress: true,
+          timeout: 7000,
+          actions: [{
+            icon: 'close',
+            round: true,
+            color: 'white'
+          }],
+          classes: 'text-body2 text-weight-medium'
+        })
+      } catch (error) {
+        this.$notificarErro('Não foi possível encerrar a sessão', error)
       }
     }
   },

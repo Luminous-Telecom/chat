@@ -9,7 +9,7 @@ export function ListarWhatsapps (whatsAppId) {
 
 export function StartWhatsappSession (whatsAppId) {
   return request({
-    url: `/whatsappsession/${whatsAppId}`,
+    url: `/whatsappsession/${whatsAppId}/start`,
     method: 'post'
   })
 }

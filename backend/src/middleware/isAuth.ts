@@ -32,6 +32,7 @@ const isAuth = (req: Request, res: Response, next: NextFunction): void => {
       tenantId
     };
   } catch (err) {
+    console.error('Token verification error:', err);
     throw new AppError("Invalid token.", 403);
   }
 

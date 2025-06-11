@@ -111,6 +111,32 @@
         v-ripple
       >
         <q-item-section>
+          <q-item-label>Fila Padrão do Sistema</q-item-label>
+          <q-item-label caption>Fila para onde os atendimentos sem direcionamento específico serão encaminhados automaticamente</q-item-label>
+        </q-item-section>
+        <q-item-section avatar>
+          <q-select
+            style="width: 300px"
+            outlined
+            dense
+            rounded
+            v-model="defaultQueueId"
+            :options="listaFilas"
+            map-options
+            emit-value
+            option-value="id"
+            option-label="queue"
+            clearable
+            @input="atualizarConfiguracao('defaultQueueId')"
+          />
+        </q-item-section>
+      </q-item>
+
+      <q-item
+        tag="label"
+        v-ripple
+      >
+        <q-item-section>
           <q-item-label>Ignorar Mensagens de Grupo</q-item-label>
           <q-item-label caption>Habilitando esta opção o sistema não abrirá ticket para grupos</q-item-label>
         </q-item-section>
@@ -179,16 +205,19 @@
 <script>
 import { ListarChatFlow } from 'src/service/chatFlow'
 import { ListarConfiguracoes, AlterarConfiguracao } from 'src/service/configuracoes'
+import { ListarFilas } from 'src/service/filas'
 export default {
   name: 'IndexConfiguracoes',
   data () {
     return {
       configuracoes: [],
       listaChatFlow: [],
+      listaFilas: [],
       NotViewAssignedTickets: null,
       NotViewTicketsChatBot: null,
       DirectTicketsToWallets: null,
       botTicketActive: null,
+      defaultQueueId: null,
       ignoreGroupMsg: null,
       rejectCalls: null,
       callRejectMessage: ''
@@ -209,6 +238,10 @@ export default {
     async listarChatFlow () {
       const { data } = await ListarChatFlow()
       this.listaChatFlow = data.chatFlow
+    },
+    async listarFilas () {
+      const { data } = await ListarFilas()
+      this.listaFilas = data
     },
     async atualizarConfiguracao (key) {
       const params = {
@@ -237,6 +270,7 @@ export default {
   async mounted () {
     await this.listarConfiguracoes()
     await this.listarChatFlow()
+    await this.listarFilas()
   }
 }
 </script>

@@ -1,8 +1,8 @@
-import request from 'src/service/request'
+import request from '../service/request.js'
 
 export function RealizarLogin (user) {
   return request({
-    url: '/auth/login/',
+    url: '/auth/login',
     method: 'post',
     data: user
   })
@@ -10,7 +10,7 @@ export function RealizarLogin (user) {
 
 export function RealizarLogout (user) {
   return request({
-    url: '/auth/logout/',
+    url: '/auth/logout',
     method: 'post',
     data: user
   })

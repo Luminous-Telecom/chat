@@ -165,13 +165,17 @@
         <q-card>
           <q-card-section class="q-pa-md">
             <ApexChart
+              v-if="ticketsQueueOptions.series && ticketsQueueOptions.series.length > 0"
               ref="ChartTicketsQueue"
               type="donut"
               height="300"
               width="100%"
-              :options="ticketsQueueOptions"
+              :options="chartOptions"
               :series="ticketsQueueOptions.series"
             />
+            <div v-else class="text-center q-pa-md">
+              Carregando dados...
+            </div>
           </q-card-section>
         </q-card>
       </div>
@@ -179,6 +183,7 @@
     <q-card class="q-my-md">
       <q-card-section>
         <ApexChart
+          v-if="ticketsEvolutionChannelsOptions.series && ticketsEvolutionChannelsOptions.series.length > 0"
           ref="ChartTicketsEvolutionChannels"
           type="bar"
           height="300"
@@ -186,17 +191,24 @@
           :options="ticketsEvolutionChannelsOptions"
           :series="ticketsEvolutionChannelsOptions.series"
         />
+        <div v-else class="text-center q-pa-md">
+          Carregando dados...
+        </div>
       </q-card-section>
     </q-card>
     <q-card class="q-my-md">
       <q-card-section class="q-pa-md">
         <ApexChart
+          v-if="ticketsEvolutionByPeriodOptions.series && ticketsEvolutionByPeriodOptions.series.length > 0"
           ref="ChartTicketsEvolutionByPeriod"
           type="line"
           height="300"
           :options="ticketsEvolutionByPeriodOptions"
           :series="ticketsEvolutionByPeriodOptions.series"
         />
+        <div v-else class="text-center q-pa-md">
+          Carregando dados...
+        </div>
       </q-card-section>
     </q-card>
 
@@ -331,81 +343,44 @@ export default {
       },
       ticketsQueue: [],
       ticketsQueueOptions: {
-        // colors: ['#008FFB', '#00E396', '#FEB019'],
-        animations: {
-          enabled: true,
-          easing: 'easeinout',
-          speed: 1000
-        },
-        fill: {
-          type: 'gradient',
-          gradient: {
-            shade: 'dark',
-            type: 'vertical',
-            shadeIntensity: 0.05,
-            inverseColors: false,
-            opacityFrom: 1,
-            opacityTo: 0.9,
-            stops: [0, 100]
-          }
-        },
+        series: [0],
+        labels: ['Carregando...'],
         chart: {
+          type: 'donut',
           toolbar: {
             show: true
           }
         },
-        // responsive: [{
-        //   breakpoint: 480,
-        //   options: {
-        //     chart: {
-        //       width: 250
-        //     },
-        //     legend: {
-        //       position: 'bottom'
-        //     }
-        //   }
-        // }],
+        plotOptions: {
+          pie: {
+            donut: {
+              size: '50%'
+            }
+          }
+        },
         legend: {
           position: 'bottom'
         },
         title: {
-          text: 'Atendimento por fila'
+          text: 'Atendimento por fila',
+          align: 'center'
         },
         noData: {
-          text: 'Sem dados aqui!',
+          text: 'Sem dados disponíveis',
           align: 'center',
-          verticalAlign: 'middle',
-          offsetX: 0,
-          offsetY: 0,
-          style: {
-            color: undefined,
-            fontSize: '14px',
-            fontFamily: undefined
-          }
+          verticalAlign: 'middle'
         },
-        series: [],
-        labels: [],
-        theme: {
-          mode: 'light',
-          palette: 'palette1'
-        },
-        plotOptions: {
-          pie: {
-            dataLabels: {
-              offset: -10
+        responsive: [{
+          breakpoint: 480,
+          options: {
+            chart: {
+              width: 200
+            },
+            legend: {
+              position: 'bottom'
             }
           }
-        },
-        dataLabels: {
-          enabled: true,
-          textAnchor: 'middle',
-          style: {
-            fontSize: '16px',
-            offsetY: '150',
-            fontFamily: 'Helvetica, Arial, sans-serif'
-          },
-          offsetX: 0
-        }
+        }]
       },
       ticketsEvolutionChannels: [],
       ticketsEvolutionChannelsOptions: {
@@ -463,6 +438,10 @@ export default {
         stroke: {
           width: 0
         },
+        series: [{
+          name: 'Carregando...',
+          data: [0]
+        }],
         // responsive: [{
         //   breakpoint: 480,
         //   options: {
@@ -476,7 +455,7 @@ export default {
         // }],
         xaxis: {
           type: 'category',
-          categories: [],
+          categories: ['Carregando...'],
           tickPlacement: 'on'
           // labels: {
           //   formatter: function (value, timestamp, opts) {
@@ -567,8 +546,16 @@ export default {
           enabled: true,
           enabledOnSeries: [1]
         },
+        series: [{
+          name: 'Atendimentos',
+          type: 'column',
+          data: [0]
+        }, {
+          type: 'line',
+          data: [0]
+        }],
         xaxis: {
-          categories: []
+          categories: ['Carregando...']
         },
         yaxis: {
           title: {
@@ -670,6 +657,13 @@ export default {
     cTmeFormat () {
       const tme = this.ticketsAndTimes.tme || {}
       return formatDuration(tme) || ''
+    },
+    chartOptions () {
+      return {
+        ...this.ticketsQueueOptions,
+        labels: this.ticketsQueueOptions.labels || ['Carregando...'],
+        series: this.ticketsQueueOptions.series || [0]
+      }
     }
   },
   methods: {
@@ -688,83 +682,181 @@ export default {
     },
     getDashTicketsAndTimes () {
       GetDashTicketsAndTimes(this.params).then(res => {
-        this.ticketsAndTimes = res.data[0]
+        this.ticketsAndTimes = (res.data && res.data[0]) || {
+          qtd_total_atendimentos: 0,
+          qtd_demanda_ativa: 0,
+          qtd_demanda_receptiva: 0,
+          new_contacts: 0
+        }
       })
         .catch(err => {
-          console.error(err)
+          console.error('Erro ao carregar dados gerais:', err)
+          this.ticketsAndTimes = {
+            qtd_total_atendimentos: 0,
+            qtd_demanda_ativa: 0,
+            qtd_demanda_receptiva: 0,
+            new_contacts: 0
+          }
         })
     },
-    getDashTicketsQueue () {
-      GetDashTicketsQueue(this.params).then(res => {
-        this.ticketsQueue = res.data
+    async getDashTicketsQueue () {
+      try {
+        const res = await GetDashTicketsQueue(this.params)
         const series = []
         const labels = []
-        this.ticketsQueue.forEach(e => {
-          series.push(+e.qtd)
-          labels.push(e.label)
-        })
-        this.ticketsQueueOptions.series = series
-        this.ticketsQueueOptions.labels = labels
-        this.$refs.ChartTicketsQueue.updateOptions(this.ticketsQueueOptions)
-        this.$refs.ChartTicketsQueue.updateSeries(series, true)
-      })
-        .catch(err => {
-          console.error(err)
-        })
+
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          this.ticketsQueue = res.data
+          res.data.forEach(e => {
+            if (e?.qtd != null && e?.label) {
+              series.push(Number(e.qtd) || 0)
+              labels.push(String(e.label) || 'Não informado')
+            }
+          })
+        }
+
+        if (series.length === 0) {
+          series.push(0)
+          labels.push('Sem dados')
+        }
+
+        this.ticketsQueueOptions = {
+          ...this.ticketsQueueOptions,
+          series,
+          labels
+        }
+
+        if (this.$refs.ChartTicketsQueue) {
+          await this.$nextTick()
+          this.$refs.ChartTicketsQueue.updateOptions(this.ticketsQueueOptions)
+          this.$refs.ChartTicketsQueue.updateSeries(series, true)
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados do gráfico:', err)
+        this.ticketsQueueOptions = {
+          ...this.ticketsQueueOptions,
+          series: [0],
+          labels: ['Erro ao carregar']
+        }
+        if (this.$refs.ChartTicketsQueue) {
+          await this.$nextTick()
+          this.$refs.ChartTicketsQueue.updateOptions(this.ticketsQueueOptions)
+          this.$refs.ChartTicketsQueue.updateSeries([0], true)
+        }
+      }
     },
     getDashTicketsChannels () {
       GetDashTicketsChannels(this.params).then(res => {
-        this.ticketsChannels = res.data
+        this.ticketsChannels = res.data || []
         const series = []
         const labels = []
-        this.ticketsChannels.forEach(e => {
-          series.push(+e.qtd)
-          labels.push(e.label)
-        })
+
+        if (Array.isArray(this.ticketsChannels) && this.ticketsChannels.length > 0) {
+          this.ticketsChannels.forEach(e => {
+            if (e && e.qtd !== undefined && e.label) {
+              series.push(+e.qtd)
+              labels.push(e.label)
+            }
+          })
+        }
+
+        // Ensure we have data to display
+        if (series.length === 0) {
+          series.push(0)
+          labels.push('Sem dados')
+        }
+
         this.ticketsChannelsOptions.series = series
         this.ticketsChannelsOptions.labels = labels
-        this.$refs.ChartTicketsChannels.updateOptions(this.ticketsChannelsOptions)
-        this.$refs.ChartTicketsChannels.updateSeries(series, true)
+
+        if (this.$refs.ChartTicketsChannels) {
+          this.$refs.ChartTicketsChannels.updateOptions(this.ticketsChannelsOptions)
+          this.$refs.ChartTicketsChannels.updateSeries(series, true)
+        }
       })
         .catch(err => {
-          console.error(err)
+          console.error('Erro ao carregar dados dos canais:', err)
+          // Set fallback data on error
+          this.ticketsChannelsOptions.series = [0]
+          this.ticketsChannelsOptions.labels = ['Erro ao carregar']
+          if (this.$refs.ChartTicketsChannels) {
+            this.$refs.ChartTicketsChannels.updateOptions(this.ticketsChannelsOptions)
+            this.$refs.ChartTicketsChannels.updateSeries([0], true)
+          }
         })
     },
     getDashTicketsEvolutionChannels () {
       GetDashTicketsEvolutionChannels(this.params)
         .then(res => {
-          this.ticketsEvolutionChannels = res.data
+          this.ticketsEvolutionChannels = res.data || []
+
+          if (!Array.isArray(this.ticketsEvolutionChannels) || this.ticketsEvolutionChannels.length === 0) {
+            // Set fallback data
+            this.ticketsEvolutionChannelsOptions.series = [{
+              name: 'Sem dados',
+              data: [0]
+            }]
+            this.ticketsEvolutionChannelsOptions.xaxis.categories = ['Sem dados']
+            if (this.$refs.ChartTicketsEvolutionChannels) {
+              this.$refs.ChartTicketsEvolutionChannels.updateOptions(this.ticketsEvolutionChannelsOptions)
+              this.$refs.ChartTicketsEvolutionChannels.updateSeries(this.ticketsEvolutionChannelsOptions.series, true)
+            }
+            return
+          }
+
           const dataLabel = groupBy({ ...this.ticketsEvolutionChannels }, 'dt_referencia')
           const labels = Object.keys(dataLabel)
-          // .map(l => {
-          //   return format(new Date(l), 'dd/MM')
-          // })
+
           this.ticketsEvolutionChannelsOptions.labels = labels
           this.ticketsEvolutionChannelsOptions.xaxis.categories = labels
           const series = []
           const dados = groupBy({ ...this.ticketsEvolutionChannels }, 'label')
+
           for (const item in dados) {
-            series.push({
-              name: item,
-              // type: 'line',
-              data: dados[item].map(d => {
-                // if (labels.includes(format(new Date(d.dt_ref), 'dd/MM'))) {
-                return d.qtd
+            if (Array.isArray(dados[item])) {
+              series.push({
+                name: item,
+                data: dados[item].map(d => {
+                  return d && d.qtd !== undefined ? d.qtd : 0
+                })
               })
+            }
+          }
+
+          // Ensure we have valid series data
+          if (!series || series.length === 0) {
+            series.push({
+              name: 'Sem dados',
+              data: [0]
             })
           }
+
           this.ticketsEvolutionChannelsOptions.series = series
-          this.$refs.ChartTicketsEvolutionChannels.updateOptions(this.ticketsEvolutionChannelsOptions)
-          this.$refs.ChartTicketsEvolutionChannels.updateSeries(series, true)
+          if (this.$refs.ChartTicketsEvolutionChannels) {
+            this.$refs.ChartTicketsEvolutionChannels.updateOptions(this.ticketsEvolutionChannelsOptions)
+            this.$refs.ChartTicketsEvolutionChannels.updateSeries(series, true)
+          }
         })
         .catch(error => {
-          console.error(error)
+          console.error('Erro ao carregar evolução dos canais:', error)
+
+          // Set fallback data on error
+          this.ticketsEvolutionChannelsOptions.series = [{
+            name: 'Erro ao carregar',
+            data: [0]
+          }]
+          this.ticketsEvolutionChannelsOptions.xaxis.categories = ['Erro']
+          if (this.$refs.ChartTicketsEvolutionChannels) {
+            this.$refs.ChartTicketsEvolutionChannels.updateOptions(this.ticketsEvolutionChannelsOptions)
+            this.$refs.ChartTicketsEvolutionChannels.updateSeries(this.ticketsEvolutionChannelsOptions.series, true)
+          }
         })
     },
     getDashTicketsEvolutionByPeriod () {
       GetDashTicketsEvolutionByPeriod(this.params)
         .then(res => {
-          this.ticketsEvolutionByPeriod = res.data
+          this.ticketsEvolutionByPeriod = res.data || []
+
           const series = [{
             name: 'Atendimentos',
             type: 'column',
@@ -772,30 +864,63 @@ export default {
           }, {
             type: 'line',
             data: []
-          }
-          ]
+          }]
+
           const labels = []
-          this.ticketsEvolutionByPeriod.forEach(e => {
-            series[0].data.push(+e.qtd)
-            labels.push(e.label)
-          })
+
+          if (Array.isArray(this.ticketsEvolutionByPeriod) && this.ticketsEvolutionByPeriod.length > 0) {
+            this.ticketsEvolutionByPeriod.forEach(e => {
+              if (e && e.qtd !== undefined && e.label) {
+                series[0].data.push(+e.qtd)
+                labels.push(e.label)
+              }
+            })
+          }
+
+          // Ensure we have at least some data
+          if (series[0].data.length === 0) {
+            series[0].data.push(0)
+            labels.push('Sem dados')
+          }
+
           series[1].data = series[0].data
           this.ticketsEvolutionByPeriodOptions.labels = labels
           this.ticketsEvolutionByPeriodOptions.series = series
-          this.$refs.ChartTicketsEvolutionByPeriod.updateOptions(this.ticketsEvolutionByPeriodOptions)
-          this.$refs.ChartTicketsEvolutionByPeriod.updateSeries(series, true)
+
+          if (this.$refs.ChartTicketsEvolutionByPeriod) {
+            this.$refs.ChartTicketsEvolutionByPeriod.updateOptions(this.ticketsEvolutionByPeriodOptions)
+            this.$refs.ChartTicketsEvolutionByPeriod.updateSeries(series, true)
+          }
         })
         .catch(error => {
-          console.error(error)
+          console.error('Erro ao carregar evolução por período:', error)
+
+          // Set fallback data on error
+          const fallbackSeries = [{
+            name: 'Atendimentos',
+            type: 'column',
+            data: [0]
+          }, {
+            type: 'line',
+            data: [0]
+          }]
+          this.ticketsEvolutionByPeriodOptions.labels = ['Erro']
+          this.ticketsEvolutionByPeriodOptions.series = fallbackSeries
+
+          if (this.$refs.ChartTicketsEvolutionByPeriod) {
+            this.$refs.ChartTicketsEvolutionByPeriod.updateOptions(this.ticketsEvolutionByPeriodOptions)
+            this.$refs.ChartTicketsEvolutionByPeriod.updateSeries(fallbackSeries, true)
+          }
         })
     },
     getDashTicketsPerUsersDetail () {
       GetDashTicketsPerUsersDetail(this.params)
         .then(res => {
-          this.ticketsPerUsersDetail = res.data
+          this.ticketsPerUsersDetail = res.data || []
         })
         .catch(error => {
-          console.error(error)
+          console.error('Erro ao carregar detalhes por usuário:', error)
+          this.ticketsPerUsersDetail = []
         })
     },
     getDashData () {

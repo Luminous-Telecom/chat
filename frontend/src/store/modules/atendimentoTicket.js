@@ -67,13 +67,11 @@ const checkTicketFilter = (ticket) => {
 
   // se status do ticket diferente do staatus filtrado, retornar false
   if (filtros.status.length > 0 && !filtros.status.includes(ticket.status)) {
-    console.log('Status ticket', filtros.status, ticket.status)
     return false
   }
 
   // verificar se já é um ticket do usuário
   if (ticket?.userId == userId) {
-    console.log('Ticket do usuário', ticket?.userId, userId)
     return true
   }
 
@@ -81,7 +79,6 @@ const checkTicketFilter = (ticket) => {
   // desde que ainda não exista usuário ou fila definida
   if (NotViewTicketsChatBot() && ticket.autoReplyId) {
     if (!ticket?.userId && !ticket.queueId) {
-      console.log('NotViewTicketsChatBot e o ticket está sem usuário e fila definida')
       return false
     }
   }
@@ -97,12 +94,17 @@ const checkTicketFilter = (ticket) => {
 
   // verificar se o usuário possui fila liberada
   if (isQueuesTenantExists) {
-    const isQueueUser = UserQueues.findIndex(q => ticket.queueId === q.id)
-    if (isQueueUser !== -1) {
-      console.log('Fila do ticket liberada para o Usuario', ticket.queueId)
+    // Se ticket não tem fila (queueId null) e está buscando não atribuídos, permitir
+    if (!ticket.queueId && filtros.isNotAssignedUser) {
       isValid = true
+    } else if (ticket.queueId) {
+      const isQueueUser = UserQueues.findIndex(q => ticket.queueId === q.id)
+      if (isQueueUser !== -1) {
+        isValid = true
+      } else {
+        return false
+      }
     } else {
-      console.log('Usuario não tem acesso a fila', ticket.queueId)
       return false
     }
   }
@@ -111,7 +113,6 @@ const checkTicketFilter = (ticket) => {
   if (isQueuesTenantExists && filtros?.queuesIds.length) {
     const isQueue = filtros.queuesIds.findIndex(q => ticket.queueId === q)
     if (isQueue == -1) {
-      console.log('filas filtradas e diferentes da do ticket', ticket.queueId)
       return false
     }
   }
@@ -120,17 +121,14 @@ const checkTicketFilter = (ticket) => {
   if (DirectTicketsToWallets() && (ticket?.contact?.wallets?.length || 0) > 0) {
     const idx = ticket?.contact?.wallets.findIndex(w => w.id == userId)
     if (idx !== -1) {
-      console.log('Ticket da carteira do usuário')
       return true
     }
-    console.log('DirectTicketsToWallets: Ticket não pertence à carteira do usuário', ticket)
     return false
   }
 
   // verificar se o parametro para não permitir visualizar
   // tickets atribuidos à outros usuários está ativo
   if (isNotViewAssignedTickets() && (ticket?.userId || userId) !== userId) {
-    console.log('isNotViewAssignedTickets e ticket não é do usuário', ticket?.userId, userId)
     // se usuário não estiver atribuido, permitir visualizar
     if (!ticket?.userId) {
       return true
@@ -140,7 +138,6 @@ const checkTicketFilter = (ticket) => {
 
   // verificar se filtro somente tickets não assinados (isNotAssingned) ativo
   if (filtros.isNotAssignedUser) {
-    console.log('isNotAssignedUser ativo para exibir somente tickets não assinados', filtros.isNotAssignedUser, !ticket.userId)
     return filtros.isNotAssignedUser && !ticket.userId
   }
 
@@ -310,9 +307,6 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
-      // Adiciona log apenas para status e ack das mensagens
-      if (payload.status !== undefined || payload.ack !== undefined) {
-      }
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id === payload.ticket.id) {
         const messageIndex = state.mensagens.findIndex(m => m.id === payload.id)
@@ -330,6 +324,7 @@ const atendimentoTicket = {
           }
         }
       }
+
       const TicketIndexUpdate = state.tickets.findIndex(t => t.id == payload.ticket.id)
       if (TicketIndexUpdate !== -1) {
         const tickets = [...state.tickets]
@@ -352,15 +347,12 @@ const atendimentoTicket = {
       const messageIndex = state.mensagens.findIndex(m => m.id === payload.id)
       const mensagens = [...state.mensagens]
       if (messageIndex !== -1) {
-        // Preserva os campos existentes da mensagem e atualiza apenas os campos do payload
-        mensagens[messageIndex] = {
-          ...mensagens[messageIndex],
-          ...payload,
-          // Garante que o fromMe seja preservado se não vier no payload
-          fromMe: payload.fromMe !== undefined ? payload.fromMe : mensagens[messageIndex].fromMe
-        }
+        mensagens[messageIndex] = payload
         state.mensagens = mensagens
       }
+
+      // Se existir mensagens agendadas no ticket focado,
+      // tratar a atualização das mensagens deletadas.
       if (state.ticketFocado?.scheduledMessages) {
         const scheduledMessages = [...state.ticketFocado.scheduledMessages]
         const scheduled = scheduledMessages.filter(m => m.id != payload.id)

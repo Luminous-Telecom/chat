@@ -292,8 +292,7 @@ export default {
     async confirmarTransferenciaTicket () {
       if (!this.filaSelecionada) return
       // if (!this.usuarioSelecionado) return
-      console.log('usuario selecionado: ' + this.usuarioSelecionado)
-      console.log('usuario atual do ticket: ' + this.ticketFocado.userId)
+
       if (this.ticketFocado.userId === this.usuarioSelecionado && this.ticketFocado.userId != null) {
         this.$q.notify({
           type: 'info',

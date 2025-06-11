@@ -42,25 +42,21 @@ const checkTicketFilter = (ticket) => {
 
   // Verificar se é admin e se está solicitando para mostrar todos
   if (isAdminShowAll) {
-    console.log('isAdminShowAll', isAdminShowAll)
     return true
   }
 
   // se ticket for um grupo, todos podem verificar.
   if (ticket.isGroup) {
-    console.log('ticket.isGroup', ticket.isGroup)
     return true
   }
 
   // se status do ticket diferente do staatus filtrado, retornar false
   if (filtros.status.length > 0 && !filtros.status.includes(ticket.status)) {
-    console.log('Status ticket', filtros.status, ticket.status)
     return false
   }
 
   // verificar se já é um ticket do usuário
   if (ticket?.userId == userId) {
-    console.log('Ticket do usuário', ticket?.userId, userId)
     return true
   }
 
@@ -68,28 +64,25 @@ const checkTicketFilter = (ticket) => {
   // desde que ainda não exista usuário ou fila definida
   if (NotViewTicketsChatBot() && ticket.autoReplyId) {
     if (!ticket?.userId && !ticket.queueId) {
-      console.log('NotViewTicketsChatBot e o ticket está sem usuário e fila definida')
       return false
     }
   }
-
-  // Se o ticket não possuir fila definida, checar o filtro
-  // permite visualizar tickets sem filas definidas é falso.
-  // if (isQueuesTenantExists && !ticket.queueId && !filtros.includeNotQueueDefined) {
-  //   console.log('filtros.includeNotQueueDefined', ticket.queueId, !filtros.includeNotQueueDefined)
-  //   return false
-  // }
 
   let isValid = true
 
   // verificar se o usuário possui fila liberada
   if (isQueuesTenantExists) {
-    const isQueueUser = UserQueues.findIndex(q => ticket.queueId === q.id)
-    if (isQueueUser !== -1) {
-      console.log('Fila do ticket liberada para o Usuario', ticket.queueId)
+    // Se ticket não tem fila (queueId null) e está buscando não atribuídos, permitir
+    if (!ticket.queueId && filtros.isNotAssignedUser) {
       isValid = true
+    } else if (ticket.queueId) {
+      const isQueueUser = UserQueues.findIndex(q => ticket.queueId === q.id)
+      if (isQueueUser !== -1) {
+        isValid = true
+      } else {
+        return false
+      }
     } else {
-      console.log('Usuario não tem acesso a fila', ticket.queueId)
       return false
     }
   }
@@ -98,7 +91,6 @@ const checkTicketFilter = (ticket) => {
   if (isQueuesTenantExists && filtros?.queuesIds.length) {
     const isQueue = filtros.queuesIds.findIndex(q => ticket.queueId === q)
     if (isQueue == -1) {
-      console.log('filas filtradas e diferentes da do ticket', ticket.queueId)
       return false
     }
   }
@@ -107,17 +99,14 @@ const checkTicketFilter = (ticket) => {
   if (DirectTicketsToWallets() && (ticket?.contact?.wallets?.length || 0) > 0) {
     const idx = ticket?.contact?.wallets.findIndex(w => w.id == userId)
     if (idx !== -1) {
-      console.log('Ticket da carteira do usuário')
       return true
     }
-    console.log('DirectTicketsToWallets: Ticket não pertence à carteira do usuário', ticket)
     return false
   }
 
   // verificar se o parametro para não permitir visualizar
   // tickets atribuidos à outros usuários está ativo
   if (isNotViewAssignedTickets() && (ticket?.userId || userId) !== userId) {
-    console.log('isNotViewAssignedTickets e ticket não é do usuário', ticket?.userId, userId)
     // se usuário não estiver atribuido, permitir visualizar
     if (!ticket?.userId) {
       return true
@@ -127,7 +116,6 @@ const checkTicketFilter = (ticket) => {
 
   // verificar se filtro somente tickets não assinados (isNotAssingned) ativo
   if (filtros.isNotAssignedUser) {
-    console.log('isNotAssignedUser ativo para exibir somente tickets não assinados', filtros.isNotAssignedUser, !ticket.userId)
     return filtros.isNotAssignedUser && !ticket.userId
   }
 

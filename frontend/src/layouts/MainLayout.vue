@@ -1,59 +1,52 @@
 <template>
   <q-layout view="hHh Lpr lFf">
+    <q-btn
+      flat
+      dense
+      round
+      icon="menu"
+      aria-label="Menu"
+      @click="leftDrawerOpen = !leftDrawerOpen"
+      class="q-ml-sm"
+      v-show="!leftDrawerOpen"
+    />
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      :mini="miniState"
 
-    <q-header
-      class="bg-white text-grey-8 q-py-xs "
-      height-hint="58"
-      bordered
+      mini-to-overlay
+      :width="220"
+      :breakpoint="400"
+      class="bg-grey-1"
     >
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          @click="leftDrawerOpen = !leftDrawerOpen"
-          aria-label="Menu"
-          icon="menu"
-        >
-          <q-tooltip>Menu</q-tooltip>
-        </q-btn>
-
-        <q-btn
-          flat
-          no-caps
-          no-wrap
-          dense
-          class="q-ml-sm"
-          v-if="$q.screen.gt.xs"
-        >
-          <q-img
-            src="/izing-logo_5_transparent.png"
-            spinner-color="primary"
-            style="height: 50px; width: 140px"
-          />
-        </q-btn>
-
-        <q-space />
-
-        <div class="q-gutter-sm row items-center no-wrap">
-          <q-btn
-            round
-            dense
-            flat
-            color="grey-8"
-            icon="notifications"
-          >
-            <q-badge
-              color="red"
-              text-color="white"
-              floating
-              v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) > 0"
-            >
-              {{ parseInt(notifications.count) + parseInt(notifications_p.count) }}
-            </q-badge>
-            <q-menu>
+      <q-scroll-area class="fit">
+        <q-list padding :key="userProfile">
+          <q-item clickable v-ripple class="houverList" @click="miniState = !miniState">
+            <q-item-section avatar>
+              <q-icon name="menu" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Menu</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item clickable v-ripple class="houverList">
+            <q-item-section avatar>
+              <q-icon name="notifications" />
+              <q-badge
+                color="red"
+                text-color="white"
+                floating
+                v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) > 0"
+              >
+                {{ parseInt(notifications.count) + parseInt(notifications_p.count) }}
+              </q-badge>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Notificações</q-item-label>
+            </q-item-section>
+            <q-menu anchor="top right" self="top left">
               <q-list style="min-width: 300px">
-
                 <q-item v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) == 0">
                   <q-item-section style="cursor: pointer;">
                     Nada de novo por aqui!
@@ -99,91 +92,16 @@
                     style="cursor: pointer;"
                   >
                     <q-list>
-                      <q-item style="text-align:center; font-size: 17px; font-weight: bold; min-height: 0">{{ ticket.name
-                      }}</q-item>
+                      <q-item style="text-align:center; font-size: 17px; font-weight: bold; min-height: 0">{{ ticket.name }}</q-item>
                       <q-item style="min-height: 0; padding-top: 0"><b>Mensagem: </b> {{ ticket.lastMessage }}</q-item>
                     </q-list>
                   </q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
-            <q-tooltip>Notificações</q-tooltip>
-          </q-btn>
-          <q-avatar
-            :color="usuario.status === 'offline' ? 'negative' : 'positive'"
-            text-color="white"
-            size="25px"
-            :icon="usuario.status === 'offline' ? 'mdi-account-off' : 'mdi-account-check'"
-            rounded
-            class="q-ml-lg"
-          >
-            <q-tooltip>
-              {{ usuario.status === 'offline' ? 'Usuário Offiline' : 'Usuário Online' }}
-            </q-tooltip>
-          </q-avatar>
-          <q-btn
-            round
-            flat
-            class="bg-padrao text-bold q-mx-sm q-ml-lg"
-          >
-            <q-avatar size="26px">
-              {{ $iniciaisString(username) }}
-            </q-avatar>
-            <q-menu>
-              <q-list style="min-width: 100px">
-                <q-item-label header> Olá! <b> {{ username }} </b> </q-item-label>
-
-                <cStatusUsuario
-                  @update:usuario="atualizarUsuario"
-                  :usuario="usuario"
-                />
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="abrirModalUsuario"
-                >
-                  <q-item-section>Perfil</q-item-section>
-                </q-item>
-                <q-item
-                  clickable
-                  v-close-popup
-                  @click="efetuarLogout"
-                >
-                  <q-item-section>Sair</q-item-section>
-                </q-item>
-                <q-separator />
-                <q-item>
-                  <q-item-section>
-                    <cSystemVersion />
-                  </q-item-section>
-                </q-item>
-
-              </q-list>
-            </q-menu>
-
-            <q-tooltip>Usuário</q-tooltip>
-          </q-btn>
-        </div>
-      </q-toolbar>
-    </q-header>
-
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-      :mini="miniState"
-      @mouseover="miniState = false"
-      @mouseout="miniState = true"
-      mini-to-overlay
-      content-class="bg-white text-grey-9"
-    >
-      <q-scroll-area class="fit">
-        <q-list
-          padding
-          :key="userProfile"
-        >
+          </q-item>
           <EssentialLink
-            v-for="item in menuData"
+            v-for="item in cMenuData"
             :key="item.title"
             v-bind="item"
           />
@@ -197,32 +115,53 @@
                 v-bind="item"
               />
             </template>
+            <q-separator spaced />
           </div>
-
+          <div class="q-mt-lg">
+            <q-item clickable v-ripple class="houverList">
+              <q-item-section avatar>
+                <q-icon name="mdi-account-circle-outline" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>Usuário</q-item-label>
+              </q-item-section>
+              <q-menu anchor="top right" self="top left">
+                <q-list style="min-width: 100px">
+                  <q-item-label header> Olá! <b> {{ username }} </b> </q-item-label>
+                  <q-item
+                    clickable
+                    v-close-popup
+                    @click="abrirModalUsuario"
+                  >
+                    <q-item-section>Perfil</q-item-section>
+                  </q-item>
+                  <q-item
+                    clickable
+                    v-close-popup
+                    @click="efetuarLogout"
+                  >
+                    <q-item-section>Sair</q-item-section>
+                  </q-item>
+                  <q-separator />
+                  <q-item>
+                    <q-item-section>
+                      <cSystemVersion />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-item>
+            <q-item clickable v-ripple class="houverList" @click="$setConfigsUsuario({ isDark: !$q.dark.isActive })">
+              <q-item-section avatar>
+                <q-icon :name="$q.dark.isActive ? 'mdi-weather-night' : 'mdi-weather-sunny'" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ $q.dark.isActive ? 'Modo Claro' : 'Modo Escuro' }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </div>
         </q-list>
       </q-scroll-area>
-      <div
-        class="absolute-bottom text-center row justify-start"
-        :class="{ 'bg-grey-3': $q.dark.isActive }"
-        style="height: 40px"
-      >
-        <q-toggle
-          size="xl"
-          keep-color
-          dense
-          class="text-bold q-ml-xs"
-          :icon-color="$q.dark.isActive ? 'black' : 'white'"
-          :value="$q.dark.isActive"
-          :color="$q.dark.isActive ? 'grey-3' : 'black'"
-          checked-icon="mdi-white-balance-sunny"
-          unchecked-icon="mdi-weather-sunny"
-          @input="$setConfigsUsuario({ isDark: !$q.dark.isActive })"
-        >
-          <q-tooltip content-class="text-body1 hide-scrollbar">
-            {{ $q.dark.isActive ? 'Desativar' : 'Ativar' }} Modo Escuro (Dark Mode)
-          </q-tooltip>
-        </q-toggle>
-      </div>
     </q-drawer>
 
     <q-page-container>
@@ -256,9 +195,9 @@ import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { mapGetters } from 'vuex'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { RealizarLogout } from 'src/service/login'
-import cStatusUsuario from '../components/cStatusUsuario.vue'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
+import { ContarTicketsNaoLidosPorFila } from 'src/service/filas'
 
 const socket = socketIO()
 
@@ -266,20 +205,34 @@ const objMenu = [
   {
     title: 'Dashboard',
     caption: '',
-    icon: 'mdi-home',
+    icon: 'mdi-view-dashboard-outline',
     routeName: 'home-dashboard'
   },
-
   {
-    title: 'Atendimentos',
+    title: 'Atendimentos na Fila',
+    caption: 'Tickets em espera',
+    icon: 'mdi-clock-outline',
+    routeName: 'atendimento',
+    query: { status: 'pending' }
+  },
+  {
+    title: 'Atendimentos em Andamento',
     caption: 'Lista de atendimentos',
-    icon: 'mdi-forum-outline',
-    routeName: 'atendimento'
+    icon: 'mdi-message-text-outline',
+    routeName: 'atendimento',
+    query: { status: 'open' }
+  },
+  {
+    title: 'Atendimentos Finalizados',
+    caption: 'Histórico de atendimentos',
+    icon: 'mdi-folder-outline',
+    routeName: 'atendimento',
+    query: { status: 'closed' }
   },
   {
     title: 'Contatos',
     caption: 'Lista de contatos',
-    icon: 'mdi-card-account-mail',
+    icon: 'mdi-account-group-outline',
     routeName: 'contatos'
   }
 ]
@@ -288,7 +241,7 @@ const objMenuAdmin = [
   {
     title: 'Canais',
     caption: 'Canais de Comunicação',
-    icon: 'mdi-cellphone-wireless',
+    icon: 'mdi-whatsapp',
     routeName: 'sessoes'
   },
   {
@@ -318,43 +271,43 @@ const objMenuAdmin = [
   {
     title: 'Mensagens Rápidas',
     caption: 'Mensagens pré-definidas',
-    icon: 'mdi-reply-all-outline',
+    icon: 'mdi-lightning-bolt-outline',
     routeName: 'mensagens-rapidas'
   },
   {
     title: 'Chatbot',
     caption: 'Robô de atendimento',
-    icon: 'mdi-robot',
+    icon: 'mdi-robot-outline',
     routeName: 'chat-flow'
   },
   {
     title: 'Etiquetas',
     caption: 'Cadastro de etiquetas',
-    icon: 'mdi-tag-text',
+    icon: 'mdi-tag-multiple-outline',
     routeName: 'etiquetas'
   },
   {
     title: 'Horário de Atendimento',
     caption: 'Horário de funcionamento',
-    icon: 'mdi-calendar-clock',
+    icon: 'mdi-clock-time-four-outline',
     routeName: 'horarioAtendimento'
   },
   {
     title: 'Configurações',
     caption: 'Configurações gerais',
-    icon: 'mdi-cog',
+    icon: 'mdi-cog-outline',
     routeName: 'configuracoes'
   },
   {
     title: 'Campanha',
     caption: 'Campanhas de envio',
-    icon: 'mdi-message-bookmark-outline',
+    icon: 'mdi-bullhorn-outline',
     routeName: 'campanhas'
   },
   {
     title: 'API',
     caption: 'Integração sistemas externos',
-    icon: 'mdi-call-split',
+    icon: 'mdi-api',
     routeName: 'api-service'
   }
 ]
@@ -362,7 +315,7 @@ const objMenuAdmin = [
 export default {
   name: 'MainLayout',
   mixins: [socketInitial],
-  components: { EssentialLink, ModalUsuario, cStatusUsuario, cSystemVersion },
+  components: { EssentialLink, ModalUsuario, cSystemVersion },
   data () {
     return {
       username,
@@ -372,11 +325,14 @@ export default {
       modalUsuario: false,
       usuario: {},
       alertSound,
-      leftDrawerOpen: false,
-      menuData: objMenu,
+      leftDrawerOpen: true, // Alterado de false para true
+      menuData: [
+        ...objMenu.filter(item => item.routeName === 'dashboard'),
+        ...objMenu.filter(item => item.routeName !== 'dashboard')
+      ],
       menuDataAdmin: objMenuAdmin,
-      countTickets: 0,
-      ticketsList: []
+      ticketsList: [],
+      queueTicketCounts: {}
     }
   },
   computed: {
@@ -409,10 +365,44 @@ export default {
           return menu
         })
       }
-      return objMenu
+      return objMenu.map(menu => {
+        // Adicionar badge para atendimentos na fila
+        if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
+          const totalPending = Object.values(this.queueTicketCounts).reduce((sum, count) => sum + count, 0)
+          return { ...menu, badge: totalPending }
+        }
+        return menu
+      })
+    },
+    // Adicionar computed para menuData com badge
+    cMenuData () {
+      return this.menuData.map(menu => {
+        // Adicionar badge para atendimentos na fila
+        if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
+          const totalPending = Object.values(this.queueTicketCounts).reduce((sum, count) => sum + count, 0)
+          return { ...menu, badge: totalPending }
+        }
+        return menu
+      })
     }
   },
   methods: {
+    requestNotificationPermissionOnInteraction () {
+      const requestPermission = () => {
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission()
+        }
+        // Remove the event listener after first interaction
+        document.removeEventListener('click', requestPermission)
+        document.removeEventListener('keydown', requestPermission)
+        document.removeEventListener('touchstart', requestPermission)
+      }
+
+      // Add event listeners for user interactions
+      document.addEventListener('click', requestPermission, { once: true })
+      document.addEventListener('keydown', requestPermission, { once: true })
+      document.addEventListener('touchstart', requestPermission, { once: true })
+    },
     exibirMenuBeta (itemMenu) {
       if (!itemMenu?.isBeta) return true
       for (const domain of this.domainExperimentalsMenus) {
@@ -477,6 +467,12 @@ export default {
       socket.on(`${usuario.tenantId}:chat:updateOnlineBubbles`, data => {
         this.$store.commit('SET_USERS_APP', data)
       })
+      // Socket para atualizar contadores de tickets por fila
+      socket.on(`${usuario.tenantId}:ticketList`, async data => {
+        if (data.type === 'ticket:update' || data.type === 'notification:new') {
+          await this.buscarContadoresTicketsPorFila()
+        }
+      })
     },
     atualizarUsuario () {
       this.usuario = JSON.parse(localStorage.getItem('usuario'))
@@ -485,6 +481,18 @@ export default {
       }
       if (this.usuario.status === 'online') {
         socket.emit(`${this.usuario.tenantId}:setUserActive`)
+      }
+    },
+    async buscarContadoresTicketsPorFila () {
+      try {
+        const { data } = await ContarTicketsNaoLidosPorFila()
+        const counts = {}
+        data.queues.forEach(queue => {
+          counts[queue.queueId] = queue.count
+        })
+        this.queueTicketCounts = counts
+      } catch (error) {
+        console.error('Erro ao buscar contadores de tickets por fila:', error)
       }
     },
     async consultarTickets () {
@@ -568,13 +576,12 @@ export default {
     await this.listarWhatsapps()
     await this.listarConfiguracoes()
     await this.consultarTickets()
-    if (!('Notification' in window)) {
-    } else {
-      Notification.requestPermission()
-    }
+    await this.buscarContadoresTicketsPorFila()
     this.usuario = JSON.parse(localStorage.getItem('usuario'))
     this.userProfile = localStorage.getItem('profile')
     await this.conectarSocket(this.usuario)
+    // Request notification permission on first user interaction
+    this.requestNotificationPermissionOnInteraction()
   },
   destroyed () {
     socket.disconnect()

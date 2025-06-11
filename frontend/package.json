@@ -9,7 +9,9 @@
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "cross-env NODE_OPTIONS=--openssl-legacy-provider quasar dev"
+    "build": "NODE_OPTIONS=--openssl-legacy-provider quasar build",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider quasar dev",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider quasar dev"
   },
   "dependencies": {
     "@quasar/extras": "^1.15.6",
@@ -23,6 +25,7 @@
     "lodash": "^4.17.20",
     "mic-recorder-to-mp3": "^2.2.2",
     "printd": "^1.4.2",
+    "qrcode": "^1.5.4",
     "qrcode.vue": "^1.7.0",
     "quasar": "^1.22.2",
     "socket.io-client": "^3.0.5",
@@ -45,7 +48,6 @@
     "@babel/plugin-proposal-optional-chaining": "^7.18.9",
     "@quasar/app": "^2.4.3",
     "babel-eslint": "^10.0.1",
-    "cross-env": "^7.0.3",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-loader": "^3.0.3",

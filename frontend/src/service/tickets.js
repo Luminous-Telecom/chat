@@ -1,4 +1,4 @@
-import request from 'src/service/request'
+import request from './request.js'
 
 export function ConsultarTickets (params) {
   return request({

@@ -41,11 +41,14 @@ const VerifyMediaMessage = async (
   contact: Contact
 ): Promise<Message | void> => {
   try {
+
+    
     const quotedMsg = await VerifyQuotedMessage(msg);
+
     
     // Verificar se a mensagem tem mídia antes de tentar baixar
     if (!msg.hasMedia) {
-      logger.info(`Message ${msg.id.id} has no media content`);
+      logger.warn(`[VerifyMediaMessage] Message ${msg.id.id} has no media content for ticket ${ticket.id}`);
       return;
     }
 
@@ -162,7 +165,10 @@ const VerifyMediaMessage = async (
       status: msg.fromMe ? "sended" : "received"
     };
 
+
+
     const message = await CreateMessageService({ messageData, tenantId: ticket.tenantId });
+
 
     await ticket.update({
       lastMessage: msg.body || filename,
@@ -170,9 +176,11 @@ const VerifyMediaMessage = async (
       answered: msg.fromMe || false
     });
 
+
     return message;
   } catch (err) {
-    logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Unexpected error processing media for message ID: ${msg.id.id}: ${err}`);
+    logger.error(`[VerifyMediaMessage] Unexpected error processing media for ticket ${ticket.id}, message ID: ${msg.id.id}: ${err}`);
+    logger.error(`[VerifyMediaMessage] Error stack: ${err.stack}`);
     return;
   }
 };

@@ -203,7 +203,7 @@ const ListTicketsService = async ({
   and c."tenantId" = :tenantId
   and t.status in ( :status )
   and (( :isShowAll = 'N' and  (
-    (:isExistsQueueTenant = 'S' and t."queueId" in ( :queuesIdsUser ))
+    (:isExistsQueueTenant = 'S' and (t."queueId" in ( :queuesIdsUser ) or (:isNotAssigned = 'S' and t."queueId" is null)))
     or t."userId" = :userId or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
   ) OR (:isShowAll = 'S') OR (t."isGroup" = true) OR (:isExistsQueueTenant = 'N') )
   and (( :isUnread = 'S'  and t."unreadMessages" > 0) OR (:isUnread = 'N'))
@@ -219,6 +219,8 @@ const ListTicketsService = async ({
 
   const limit = 30;
   const offset = limit * (+pageNumber - 1);
+
+
 
   const tickets: any = await Ticket.sequelize?.query(query, {
     replacements: {

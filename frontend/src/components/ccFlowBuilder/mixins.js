@@ -69,13 +69,6 @@ export const easyFlowMixin = {
             direction: 1, // 方向，默认值为1（表示向前），可选-1（表示向后）
             foldback: 0.623 // 折回，也就是尾翼的角度，默认0.623，当为1时，为正三角
           }],
-          // ['Diamond', {
-          //     events: {
-          //         dblclick: function (diamondOverlay, originalEvent) {
-          //             console.log('double click on diamond overlay for : ' + diamondOverlay.component)
-          //         }
-          //     }
-          // }],
           ['Label', {
             label: '',
             location: 0.1,

@@ -729,6 +729,38 @@
           </q-card-section>
         </q-card>
 
+        <q-card
+          class="full-width q-my-sm"
+          style="height: 200px;"
+        >
+          <div class="full-width bg-grey-3 text-bold text-body1 row col justify-between text-left q-pa-md">
+            Fila Padrão do Fluxo
+            <div class="row text-subtitle2">
+              Configure uma fila padrão específica para este fluxo. Quando não houver direcionamento específico, os atendimentos serão encaminhados para esta fila.
+            </div>
+          </div>
+          <q-card-section class="q-pa-sm">
+            <div class="row q-mt-sm">
+              <div class="col">
+                <q-select
+                  dense
+                  label="Selecione uma fila"
+                  outlined
+                  rounded
+                  v-model="node.configurations.defaultQueueId"
+                  :options="filas"
+                  option-value="id"
+                  option-label="queue"
+                  emit-value
+                  map-options
+                  clearable
+                  hint="Deixe vazio para usar a configuração global do sistema"
+                />
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+
       </q-card-section>
 
       <q-card-section
@@ -751,6 +783,51 @@
             </div>
           </div>
         </q-card>
+
+        <q-card class="full-width q-my-sm" v-if="flowDefaultQueue">
+          <div class="full-width bg-blue-2 text-bold row col justify-between text-left q-pa-md">
+            <div class="row items-center">
+              <q-icon name="mdi-account-group" size="md" class="q-mr-sm" color="primary" />
+              Fila Padrão do Fluxo Configurada
+            </div>
+            <div class="row text-subtitle2 q-mt-sm">
+              Quando não houver direcionamento específico, os atendimentos serão encaminhados para:
+            </div>
+            <div class="row text-subtitle1 text-weight-medium q-mt-sm text-primary">
+              {{ flowDefaultQueue.queue }}
+            </div>
+          </div>
+        </q-card>
+
+        <q-card class="full-width q-my-sm" v-if="!flowDefaultQueue && defaultQueue">
+          <div class="full-width bg-cyan-2 text-bold row col justify-between text-left q-pa-md">
+            <div class="row items-center">
+              <q-icon name="mdi-account-group" size="md" class="q-mr-sm" color="cyan" />
+              Fila Padrão Global Configurada
+            </div>
+            <div class="row text-subtitle2 q-mt-sm">
+              Este fluxo usará a fila padrão global do sistema:
+            </div>
+            <div class="row text-subtitle1 text-weight-medium q-mt-sm text-cyan">
+              {{ defaultQueue.queue }}
+            </div>
+            <div class="row text-caption q-mt-sm">
+              Configure uma fila específica para este fluxo nas configurações acima para sobrescrever esta configuração.
+            </div>
+          </div>
+        </q-card>
+
+        <q-card class="full-width q-my-sm" v-if="!flowDefaultQueue && !defaultQueue">
+          <div class="full-width bg-orange-2 text-bold row col justify-between text-left q-pa-md">
+            <div class="row items-center">
+              <q-icon name="mdi-alert" size="md" class="q-mr-sm" color="orange" />
+              Nenhuma Fila Padrão Configurada
+            </div>
+            <div class="row text-subtitle2 q-mt-sm">
+              Configure uma fila padrão específica para este fluxo nas configurações acima, ou configure uma fila padrão global nas configurações do sistema.
+            </div>
+          </div>
+        </q-card>
       </q-card-section>
 
     </q-card>
@@ -762,6 +839,7 @@ import { uid } from 'quasar'
 import MessageField from './messageField'
 import MediaField from './mediaField.vue'
 import { VEmojiPicker } from 'v-emoji-picker'
+import { ListarConfiguracoes } from 'src/service/configuracoes'
 export default {
   components: {
     MessageField,
@@ -800,6 +878,7 @@ export default {
       node: {},
       line: {},
       data: {},
+      defaultQueue: null,
       stateList: [{
         state: 'success',
         label: '成功'
@@ -989,10 +1068,40 @@ export default {
           this.$emit('repaintEverything')
         }
       })
+    },
+    async buscarFilaPadrao () {
+      try {
+        const { data } = await ListarConfiguracoes()
+        const defaultQueueIdConfig = data.find(config => config.key === 'defaultQueueId')
+
+        if (defaultQueueIdConfig && defaultQueueIdConfig.value) {
+          const defaultQueueId = parseInt(defaultQueueIdConfig.value)
+          this.defaultQueue = this.filas.find(fila => fila.id === defaultQueueId)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar fila padrão:', error)
+      }
+    }
+  },
+  computed: {
+    flowDefaultQueue () {
+      if (!this.nodesList?.nodeList) return null
+      const configNode = this.nodesList.nodeList.find(node => node.type === 'configurations')
+      if (!configNode?.configurations?.defaultQueueId) return null
+      return this.filas.find(fila => fila.id === configNode.configurations.defaultQueueId)
+    }
+  },
+  watch: {
+    filas: {
+      handler () {
+        this.buscarFilaPadrao()
+      },
+      immediate: true
     }
   },
   mounted () {
     console.log('node_form montou', this.node)
+    this.buscarFilaPadrao()
   }
 }
 </script>

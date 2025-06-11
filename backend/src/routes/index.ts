@@ -37,7 +37,7 @@ routes.use(whatsappSessionRoutes);
 routes.use(autoReplyRoutes);
 routes.use(queueRoutes);
 routes.use(fastReplyRoutes);
-routes.use(statisticsRoutes);
+routes.use("/statistics", statisticsRoutes);
 routes.use(tagRoutes);
 routes.use(campaignRoutes);
 routes.use(campaignContactsRoutes);

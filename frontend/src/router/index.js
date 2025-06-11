@@ -2,7 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import { Notify } from 'quasar'
 
-import routes from './routes'
+import routes from './routes.js'
 
 // Ajuste para desativar error por navegação duplicada
 // https://github.com/vuejs/vue-router/issues/2881#issuecomment-520554378
@@ -45,12 +45,16 @@ const whiteListName = [
 ]
 
 Router.beforeEach((to, from, next) => {
-  const token = JSON.parse(localStorage.getItem('token'))
+  const token = localStorage.getItem('token')
 
   if (!token) {
     if (whiteListName.indexOf(to.name) == -1) {
       if (to.fullPath !== '/login' && !to.query.tokenSetup) {
-        Notify.create({ message: 'Necessário realizar login', position: 'top' })
+        Notify.create({
+          type: 'warning',
+          message: 'Necessário realizar login',
+          position: 'top'
+        })
         next({ name: 'login' })
       } else {
         next()

@@ -26,7 +26,7 @@
 import 'codemirror/lib/codemirror.css'
 import { codemirror } from 'vue-codemirror'
 
-require('codemirror/mode/javascript/javascript.js')
+require('codemirror/mode/javascript/javascript')
 
 export default {
   props: {

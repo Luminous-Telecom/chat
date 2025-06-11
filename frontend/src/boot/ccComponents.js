@@ -85,7 +85,7 @@ const setConfigsUsuario = ({ isDark }) => {
     isDark: Dark.isActive
   }
   UpdateConfiguracoesUsuarios(usuario.userId, data)
-    .then(r => console.log('Configurações do usuário atualizadas'))
+    .then(r => r)
     .catch(e => console.error)
 
   localStorage.setItem('usuario', JSON.stringify({ ...usuario, configs: data }))

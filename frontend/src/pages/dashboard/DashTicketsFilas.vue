@@ -71,73 +71,93 @@
 
     <div style="height: 85vh"
       class="scroll">
-      <template v-for="(items, key) in sets">
-        <div :style="{ height: 800 }"
-          :key="key"
-          class="row q-pa-md q-col-gutter-md q-mb-sm">
-          <div :class="contentClass"
-            v-for="(item, index) in items"
-            :key="index">
-            <q-card bordered
-              square
-              flat>
-              <q-item v-if="visao === 'U' || visao === 'US'"
-                class="text-bold"
-                :class="{
-                  'bg-negative text-white': definirNomeUsuario(item[0]) === 'Pendente'
-                }">
-                <!-- <q-item-section avatar>
-                  <q-avatar>
-                    <img src="https://cdn.quasar.dev/img/boy-avatar.png">
-                  </q-avatar>
-                </q-item-section> -->
-                <q-item-section>
-                  <q-item-label class="text-bold text-h6">{{ definirNomeUsuario(item[0]) }}</q-item-label>
-                  <q-item-label caption
-                    :class="{
-                      'text-white': definirNomeUsuario(item[0]) === 'Pendente'
-                    }">
-                    Atendimentos: {{ item.length }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
+      <div v-for="(items, key) in sets"
+        :key="key"
+        :style="{ height: 800 }"
+        class="row q-pa-md q-col-gutter-md q-mb-sm">
+        <div :class="contentClass"
+          v-for="(item, index) in items"
+          :key="index">
+          <q-card bordered
+            square
+            flat>
+            <q-item v-if="visao === 'U' || visao === 'US'"
+              class="text-bold"
+              :class="{
+                'bg-negative text-white': definirNomeUsuario(item[0]) === 'Pendente'
+              }">
+              <q-item-section avatar v-if="definirNomeUsuario(item[0]) === 'Pendente'">
+                <q-avatar color="negative" text-color="white">
+                  <q-icon name="mdi-clock-alert" size="md" />
+                </q-avatar>
+              </q-item-section>
+              <q-item-section avatar v-else>
+                <q-avatar>
+                  <q-icon name="mdi-account-circle" size="md" />
+                </q-avatar>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-bold text-h6">
+                  {{ definirNomeUsuario(item[0]) }}
+                  <q-badge v-if="definirNomeUsuario(item[0]) === 'Pendente'"
+                    color="orange"
+                    text-color="white"
+                    class="q-ml-sm"
+                    label="AGUARDANDO ATENDIMENTO" />
+                </q-item-label>
+                <q-item-label caption
+                  :class="{
+                    'text-white': definirNomeUsuario(item[0]) === 'Pendente'
+                  }">
+                  Total: {{ item.length }} | Abertos: {{ counterStatus(item).open }} | Pendentes: {{ counterStatus(item).pending }}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
 
-              <q-item v-if="visao === 'F' || visao === 'FS'"
-                class="text-bold"
-                :class="{
-                  'bg-negative text-white': definirNomeFila(item[0]) === 'Sem Fila'
-                }">
-                <q-item-section avatar>
-                  <q-avatar>
-                    <img src="https://cdn.quasar.dev/img/boy-avatar.png">
-                  </q-avatar>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ definirNomeFila(item[0]) }}</q-item-label>
-                  <q-item-label caption
-                    :class="{
-                      'text-white': definirNomeFila(item[0]) === 'Sem Fila'
-                    }">
-                    Abertos: {{ counterStatus(item).open }} | Pendentes: {{ counterStatus(item).pending }} | Total: {{
-                        item.length
-                    }}
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-              <q-separator />
-              <q-card-section :style="{ height: '320px' }"
-                class="scroll"
-                v-if="visao === 'U' || visao === 'F'">
-                <ItemTicket v-for="(ticket, i) in item"
-                  :key="i"
-                  :ticket="ticket"
-                  :filas="filas" />
-              </q-card-section>
-            </q-card>
-          </div>
-          <q-resize-observer @resize="onResize"></q-resize-observer>
+            <q-item v-if="visao === 'F' || visao === 'FS'"
+              class="text-bold"
+              :class="{
+                'bg-negative text-white': definirNomeFila(item[0]) === 'Sem Fila',
+                'bg-orange-2': counterStatus(item).pending > 0 && definirNomeFila(item[0]) !== 'Sem Fila'
+              }">
+              <q-item-section avatar>
+                <q-avatar :color="definirNomeFila(item[0]) === 'Sem Fila' ? 'negative' : (counterStatus(item).pending > 0 ? 'orange' : 'primary')"
+                  text-color="white">
+                  <q-icon :name="definirNomeFila(item[0]) === 'Sem Fila' ? 'mdi-alert-circle' : (counterStatus(item).pending > 0 ? 'mdi-clock-alert' : 'mdi-folder-account')" size="md" />
+                </q-avatar>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-bold">
+                  {{ definirNomeFila(item[0]) }}
+                  <q-badge v-if="counterStatus(item).pending > 0"
+                    color="orange"
+                    text-color="white"
+                    class="q-ml-sm"
+                    :label="`${counterStatus(item).pending} PENDENTE${counterStatus(item).pending > 1 ? 'S' : ''}`" />
+                </q-item-label>
+                <q-item-label caption
+                  :class="{
+                    'text-white': definirNomeFila(item[0]) === 'Sem Fila'
+                  }">
+                  <span class="text-bold">Total: {{ item.length }}</span> |
+                  <span class="text-positive text-bold">Abertos: {{ counterStatus(item).open }}</span> |
+                  <span class="text-orange text-bold">Pendentes: {{ counterStatus(item).pending }}</span>
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-separator />
+            <q-card-section :style="{ height: '320px' }"
+              class="scroll"
+              v-if="visao === 'U' || visao === 'F'">
+              <ItemTicket v-for="(ticket, i) in item"
+                :key="i"
+                :ticket="ticket"
+                :filas="filas" />
+            </q-card-section>
+          </q-card>
         </div>
-      </template>
+        <q-resize-observer @resize="onResize"></q-resize-observer>
+      </div>
     </div>
 
   </div>
@@ -156,7 +176,7 @@ import { groupBy } from 'lodash'
 const profile = localStorage.getItem('profile')
 import { format, sub } from 'date-fns'
 export default {
-  name: 'painel-controle',
+  name: 'PainelDeControle',
   components: { ItemTicket },
   data () {
     return {
@@ -229,7 +249,53 @@ export default {
     },
     cTicketsUser () {
       const field = this.visao === 'U' || this.visao === 'US' ? 'userId' : 'queueId'
-      return [groupBy(this.tickets, field)]
+      const grouped = groupBy(this.tickets, field)
+
+      // Ordenar grupos para priorizar atendimentos pendentes
+      const sortedGroups = Object.entries(grouped).sort((a, b) => {
+        const aPendingCount = a[1].filter(ticket => ticket.status === 'pending').length
+        const bPendingCount = b[1].filter(ticket => ticket.status === 'pending').length
+
+        // Grupos com mais pendentes primeiro
+        if (aPendingCount !== bPendingCount) {
+          return bPendingCount - aPendingCount
+        }
+
+        // Se mesmo número de pendentes, ordenar por nome/fila
+        if (this.visao === 'U' || this.visao === 'US') {
+          const aName = this.definirNomeUsuario(a[1][0])
+          const bName = this.definirNomeUsuario(b[1][0])
+          if (aName === 'Pendente' && bName !== 'Pendente') return -1
+          if (aName !== 'Pendente' && bName === 'Pendente') return 1
+          return aName.localeCompare(bName)
+        } else {
+          const aQueue = this.definirNomeFila(a[1][0])
+          const bQueue = this.definirNomeFila(b[1][0])
+          if (aQueue === 'Sem Fila' && bQueue !== 'Sem Fila') return -1
+          if (aQueue !== 'Sem Fila' && bQueue === 'Sem Fila') return 1
+          return aQueue.localeCompare(bQueue)
+        }
+      })
+
+      // Converter de volta para objeto e ordenar tickets dentro de cada grupo
+      const sortedGrouped = {}
+      sortedGroups.forEach(([key, value]) => {
+        // Ordenar tickets dentro do grupo: pendentes primeiro, depois por data
+        const sortedTickets = value.sort((a, b) => {
+          // Pendentes primeiro
+          if (a.status === 'pending' && b.status !== 'pending') return -1
+          if (a.status !== 'pending' && b.status === 'pending') return 1
+
+          // Se ambos são pendentes ou ambos não são, ordenar por data (mais recente primeiro)
+          const aDate = new Date(a.updatedAt || a.createdAt)
+          const bDate = new Date(b.updatedAt || b.createdAt)
+          return bDate - aDate
+        })
+
+        sortedGrouped[key] = sortedTickets
+      })
+
+      return [sortedGrouped]
     }
   },
   methods: {

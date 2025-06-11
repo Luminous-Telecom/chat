@@ -1,6 +1,10 @@
 import * as Yup from "yup";
 import { Request, Response } from "express";
+import { Op, fn, col } from "sequelize";
 import AppError from "../errors/AppError";
+import sequelize from "../database";
+import Queue from "../models/Queue";
+import Ticket from "../models/Ticket";
 
 import CreateQueueService from "../services/QueueServices/CreateQueueService";
 import ListQueueService from "../services/QueueServices/ListQueueService";
@@ -90,3 +94,35 @@ export const remove = async (
   await DeleteQueueService({ id: queueId, tenantId });
   return res.status(200).json({ message: "Queue deleted" });
 };
+
+export const getUnreadCount = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { tenantId } = req.user;
+    
+    const unreadCount = await Ticket.findAll({
+      where: {
+        tenantId,
+        unreadMessages: {
+          [Op.gt]: 0
+        }
+      },
+      attributes: [
+        'queueId',
+        [fn('SUM', col('unreadMessages')), 'unreadCount']
+      ],
+      group: ['queueId', 'queue.id', 'queue.queue'],
+      include: [
+        {
+          model: Queue,
+          as: 'queue',
+          attributes: ['id', 'queue']
+        }
+      ]
+    });
+
+    return res.status(200).json({ queues: unreadCount });
+  } catch (error) {
+     console.error('Error in getUnreadCount:', error);
+     return res.status(500).json({ error: 'Internal server error', details: error.message });
+   }
+ };

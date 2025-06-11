@@ -2,7 +2,7 @@ import request from 'src/service/request'
 
 export function ListarContatos (params) {
   return request({
-    url: '/contacts/',
+    url: '/contacts',
     method: 'get',
     params
   })

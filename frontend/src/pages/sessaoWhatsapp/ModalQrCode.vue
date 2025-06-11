@@ -15,10 +15,10 @@
       </q-card-section>
       <q-card-section class="text-center"
         :style="$q.dark.isActive ? 'background: white !important' : ''">
-        <QrcodeVue v-if="cQrcode"
-          :value="cQrcode"
-          :size="300"
-          level="H" />
+        <img v-if="cQrcode"
+          :src="cQrcode"
+          style="width: 300px; height: 300px;"
+          alt="QR Code" />
         <span v-else>
           Aguardando o Qr Code
         </span>
@@ -42,13 +42,8 @@
 
 <script>
 
-import QrcodeVue from 'qrcode.vue'
-
 export default {
   name: 'ModalQrCode',
-  components: {
-    QrcodeVue
-  },
   props: {
     abrirModalQR: {
       type: Boolean,
@@ -65,7 +60,6 @@ export default {
   watch: {
     channel: {
       handler (v) {
-        console.log('ModalQrCode - Channel updated:', v)
         if (this.channel.status === 'CONNECTED') {
           this.fecharModalQrModal()
         }
@@ -75,7 +69,6 @@ export default {
   },
   computed: {
     cQrcode () {
-      console.log('ModalQrCode - Channel QR code:', this.channel.qrcode ? 'Present' : 'Not present')
       return this.channel.qrcode
     }
   },
