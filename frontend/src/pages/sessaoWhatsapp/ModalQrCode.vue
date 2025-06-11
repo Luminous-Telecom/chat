@@ -426,53 +426,53 @@ export default {
 
 // Instructions Section
 .instructions-section {
-  padding: 0 20px 16px;
+  padding: 0 20px 12px;
 }
 
 .instruction-panel {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 12px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
 .instruction-steps {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .step-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .step-icon {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 18px;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  font-size: 14px;
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
 }
 
 .step-text {
   .step-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     letter-spacing: -0.025em;
   }
 
   .step-desc {
-    font-size: 14px;
+    font-size: 12px;
     color: #64748b;
     font-weight: 400;
   }
@@ -480,9 +480,9 @@ export default {
 
 .help-text {
   text-align: center;
-  font-size: 13px;
+  font-size: 11px;
   color: #64748b;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   font-weight: 400;
 }
 
@@ -495,9 +495,9 @@ export default {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
-  font-size: 14px;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
