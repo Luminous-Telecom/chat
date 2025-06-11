@@ -519,9 +519,9 @@ export default {
         })
         this.channel = data
         if (data.status === 'CONNECTED') {
-          this.abrirModalQrModal = false
+          this.abrirModalQR = false
         } else if (data.status === 'OPENING') {
-          this.abrirModalQrModal = true
+          this.abrirModalQR = true
         }
       } catch (error) {
         await this.handleSessionError(error)

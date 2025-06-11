@@ -632,6 +632,20 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
           retries: 0
         });
         
+        // Emitir evento para o frontend quando conectado com sucesso
+        const io = require('../libs/socket').getIO();
+        io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+          action: "update",
+          session: {
+            id: whatsapp.id,
+            name: whatsapp.name,
+            status: 'CONNECTED',
+            qrcode: '',
+            isDefault: whatsapp.isDefault,
+            tenantId: whatsapp.tenantId
+          }
+        });
+        
         clearReconnectionTimeout(whatsapp.id);
         resetWsUndefinedChecks(whatsapp.id);
       }

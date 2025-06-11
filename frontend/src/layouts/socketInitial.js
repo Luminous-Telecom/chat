@@ -83,6 +83,7 @@ export default {
         }
 
         if (data.action === 'readySession') {
+          this.$root.$emit('READY_SESSION', data.session)
           this.$q.notify({
             position: 'top',
             icon: 'mdi-wifi-arrow-up-down',
