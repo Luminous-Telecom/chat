@@ -68,7 +68,8 @@ const UpdateTicketService = async ({
     throw new AppError("ERR_NO_TICKET_FOUND", 404);
   }
 
-  await SetTicketMessagesAsRead(ticket);
+  // Removido para evitar marcação automática como lida no WhatsApp
+  // await SetTicketMessagesAsRead(ticket);
 
   // Variavel para notificar usuário de novo contato como pendente
   const toPending =

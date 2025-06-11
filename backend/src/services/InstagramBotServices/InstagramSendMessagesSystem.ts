@@ -86,7 +86,8 @@ const InstagramSendMessagesSystem = async (
     };
 
     logger.info("Message Update ok");
-    await SetTicketMessagesAsRead(ticket);
+    // Removido para evitar marcação automática como lida no WhatsApp
+    // await SetTicketMessagesAsRead(ticket);
 
     return messageToUpdate;
   } catch (error) {
