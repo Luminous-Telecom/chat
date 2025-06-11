@@ -75,6 +75,7 @@
 
 <script>
 import QrcodeVue from 'qrcode.vue'
+import baileysLogo from 'assets/baileys.png'
 
 export default {
   name: 'ModalQrCode',
@@ -118,7 +119,7 @@ export default {
     },
     logoSettings () {
       return {
-        src: require('assets/baileys.png'),
+        src: baileysLogo,
         width: 50,
         height: 50,
         excavate: true
