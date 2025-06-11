@@ -32,21 +32,45 @@ export class BaileysMessageAdapter {
       },
       timestamp: Number(msg.messageTimestamp) || 0,
       downloadMedia: async () => {
-        if (!wbot || !msg.message) return null;
+        if (!wbot || !msg.message) {
+          console.log('[BaileysMessageAdapter] No wbot or message available for download');
+          return null;
+        }
 
         const content = msg.message.imageMessage || 
                        msg.message.videoMessage || 
                        msg.message.audioMessage || 
                        msg.message.documentMessage;
 
-        if (!content || typeof content !== 'object' || !('url' in content)) return null;
+        if (!content || typeof content !== 'object' || !('url' in content)) {
+          console.log('[BaileysMessageAdapter] No valid media content found. Message type:', messageType);
+          console.log('[BaileysMessageAdapter] Available message keys:', Object.keys(msg.message || {}));
+          return null;
+        }
 
         try {
+          console.log('[BaileysMessageAdapter] Attempting to download media for message type:', messageType);
+          console.log('[BaileysMessageAdapter] Content has URL:', !!content.url);
+          
           // Use the imported downloadMediaMessage function
           const buffer = await downloadMediaMessage(msg, 'buffer', {});
+          
+          if (buffer) {
+            console.log('[BaileysMessageAdapter] Successfully downloaded media, buffer size:', buffer.length);
+          } else {
+            console.log('[BaileysMessageAdapter] Download returned null/empty buffer');
+          }
+          
           return buffer as Buffer;
         } catch (error) {
-          console.error('Error downloading media:', error);
+          console.error('[BaileysMessageAdapter] Error downloading media:', error);
+          console.error('[BaileysMessageAdapter] Error details:', {
+            messageType,
+            hasUrl: !!content.url,
+            contentKeys: Object.keys(content),
+            errorMessage: error.message,
+            errorStack: error.stack
+          });
           return null;
         }
       },

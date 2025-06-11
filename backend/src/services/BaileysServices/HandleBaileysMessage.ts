@@ -217,11 +217,21 @@ const processMessage = async (msg: proto.IWebMessageInfo, ticket: any, contact: 
     const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
     const messageType = Object.keys(msg.message || {})[0];
     
+    logger.info(`[HandleBaileysMessage] Processing message type: ${messageType}, hasMedia: ${adaptedMessage.hasMedia}`);
+    
     let message;
     if (messageType !== 'conversation' && messageType !== 'extendedTextMessage') {
+      logger.info(`[HandleBaileysMessage] Processing as media message for ticket ${ticket.id}`);
       message = await VerifyMediaMessage(adaptedMessage, ticket, contact);
     } else {
+      logger.info(`[HandleBaileysMessage] Processing as text message for ticket ${ticket.id}`);
       message = await VerifyMessage(adaptedMessage, ticket, contact);
+    }
+
+    if (message) {
+      logger.info(`[HandleBaileysMessage] Successfully created message ${message.id} for ticket ${ticket.id}`);
+    } else {
+      logger.warn(`[HandleBaileysMessage] Failed to create message for ticket ${ticket.id} - message type: ${messageType}`);
     }
 
     return message;

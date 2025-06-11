@@ -49,6 +49,8 @@ const VerifyMediaMessage = async (
     // Verificar se a mensagem tem mídia antes de tentar baixar
     if (!msg.hasMedia) {
       logger.warn(`[VerifyMediaMessage] Message ${msg.id.id} has no media content for ticket ${ticket.id}`);
+      logger.info(`[VerifyMediaMessage] Message type: ${msg.type}, hasMedia: ${msg.hasMedia}`);
+      logger.info(`[VerifyMediaMessage] Message body: ${msg.body}`);
       return;
     }
 
