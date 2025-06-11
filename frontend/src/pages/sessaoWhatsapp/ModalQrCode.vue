@@ -30,8 +30,8 @@
           <div class="logo-above-qr">
             <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-above" />
           </div>
-          
-          <!-- QR Code -->
+
+           <!-- QR Code -->
           <div class="qr-code-wrapper">
             <qrcode-vue
               :value="cQrcode"
@@ -41,8 +41,8 @@
               class="qr-code-modern" />
           </div>
         </div>
-        
-        <div v-else class="loading-container">
+
+         <div v-else class="loading-container">
           <q-spinner-dots
             color="primary"
             size="40px"
@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import { QrcodeVue } from 'qrcode.vue'
+import QrcodeVue from 'qrcode.vue'
 import baileysLogo from 'assets/baileys.png'
 
 export default {
