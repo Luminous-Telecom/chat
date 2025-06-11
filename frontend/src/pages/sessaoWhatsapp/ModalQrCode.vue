@@ -2,38 +2,67 @@
   <q-dialog :value="abrirModalQR"
     @hide="fecharModalQrModal"
     persistent>
-    <q-card :class="{ 'bg-white': !$q.dark.isActive, 'bg-dark': $q.dark.isActive }">
-      <q-card-section>
-        <div class="text-h6 text-primary">
-          Leia o QrCode para iniciar a sessão
-          <q-btn round
-            class="q-ml-md"
-            color="negative"
-            icon="mdi-close"
-            @click="fecharModalQrModal" />
+    <q-card 
+      :class="{ 'bg-white': !$q.dark.isActive, 'bg-dark': $q.dark.isActive }"
+      class="modern-modal"
+      style="min-width: 400px; border-radius: 16px; overflow: hidden;">
+      
+      <!-- Header -->
+      <q-card-section class="row items-center justify-between q-pa-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="text-h6 text-white font-weight-medium">
+          <q-icon name="qr_code_scanner" class="q-mr-sm" size="24px" />
+          Conectar WhatsApp
+        </div>
+        <q-btn 
+          round
+          flat
+          color="white"
+          icon="close"
+          size="sm"
+          @click="fecharModalQrModal" 
+          class="hover-scale" />
+      </q-card-section>
+      
+      <!-- QR Code Section -->
+      <q-card-section class="text-center q-pa-xl qr-code-section" style="background: #f8f9fa;">
+        <div class="qr-container">
+          <qrcode-vue
+            v-if="cQrcode"
+            :value="cQrcode"
+            :size="280"
+            level="M"
+            class="qr-code-modern"
+          />
+          <div v-else class="loading-container">
+            <q-spinner-dots size="40px" color="primary" />
+            <div class="text-body1 text-grey-7 q-mt-md">Aguardando QR Code...</div>
+          </div>
         </div>
       </q-card-section>
-      <q-card-section class="text-center qr-code-section bg-white">
-        <qrcode-vue
-          v-if="cQrcode"
-          :value="cQrcode"
-          :size="300"
-          level="M"
-        />
-        <span v-else class="text-black">
-          Aguardando o Qr Code
-        </span>
-      </q-card-section>
-      <q-card-section>
-        <div class="row" :class="{ 'text-black': !$q.dark.isActive, 'text-white': $q.dark.isActive }">Caso tenha problema com a leitura, solicite um novo Qr Code </div>
-        <div class="row col-12 justify-center">
-          <q-btn color="primary"
-            glossy
-            ripple
-            outline
-            label="Novo QR Code"
-            @click="solicitarQrCode"
-            icon="watch_later" />
+      
+      <!-- Instructions -->
+      <q-card-section class="q-pa-lg">
+        <div class="instruction-card">
+          <div class="text-body2 text-center q-mb-md" :class="{ 'text-grey-8': !$q.dark.isActive, 'text-grey-3': $q.dark.isActive }">
+            <q-icon name="smartphone" class="q-mr-xs" />
+            Abra o WhatsApp no seu celular e escaneie o código
+          </div>
+          
+          <div class="text-caption text-center q-mb-lg" :class="{ 'text-grey-6': !$q.dark.isActive, 'text-grey-4': $q.dark.isActive }">
+            Caso tenha problemas com a leitura, solicite um novo QR Code
+          </div>
+          
+          <div class="row justify-center">
+            <q-btn 
+              color="primary"
+              unelevated
+              rounded
+              label="Gerar Novo QR Code"
+              @click="solicitarQrCode"
+              icon="refresh"
+              class="modern-btn q-px-lg" 
+              :loading="false" />
+          </div>
         </div>
       </q-card-section>
     </q-card>
@@ -118,5 +147,97 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.modern-modal {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
 
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 320px;
+  padding: 20px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.qr-code-modern {
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+
+.instruction-card {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modern-btn {
+  transition: all 0.3s ease;
+  font-weight: 500;
+  text-transform: none;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.hover-scale {
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+// Dark theme adjustments
+body.body--dark {
+  .instruction-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .qr-container {
+    background: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+// Responsive design
+@media (max-width: 480px) {
+  .modern-modal {
+    margin: 16px;
+    min-width: auto;
+    width: calc(100vw - 32px);
+  }
+  
+  .qr-code-modern {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .qr-container {
+    padding: 16px;
+    min-height: 280px;
+  }
+}
 </style>
