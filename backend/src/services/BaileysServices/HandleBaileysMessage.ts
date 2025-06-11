@@ -34,6 +34,24 @@ const HandleBaileysMessage = async (
           return;
         }
 
+        // Ignorar tipos de mensagem especiais que não devem ser processados
+        const messageType = msg.message ? Object.keys(msg.message)[0] : '';
+        const ignoredMessageTypes = [
+          'protocolMessage',
+          'ephemeralMessage', 
+          'reactionMessage',
+          'pollCreationMessage',
+          'pollUpdateMessage',
+          'senderKeyDistributionMessage',
+          'fastRatchetKeySenderKeyDistributionMessage'
+        ];
+        
+        if (ignoredMessageTypes.includes(messageType)) {
+          logger.debug(`[HandleBaileysMessage] Ignoring ${messageType} type message`);
+          resolve();
+          return;
+        }
+
         const whatsapp = await ShowWhatsAppService({ id: wbot.id });
         const { tenantId } = whatsapp;
 
