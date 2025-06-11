@@ -26,13 +26,27 @@
       <!-- QR Code Section -->
       <q-card-section class="text-center q-pa-xl qr-code-section" style="background: #f8f9fa;">
         <div class="qr-container">
-          <qrcode-vue
-            v-if="cQrcode"
-            :value="cQrcode"
-            :size="280"
-            level="M"
-            class="qr-code-modern"
-          />
+          <div v-if="cQrcode" class="qr-code-wrapper">
+            <qrcode-vue
+              :value="cQrcode"
+              :size="280"
+              level="M"
+              class="qr-code-modern"
+            />
+            <!-- Baileys Logo Overlay -->
+            <div class="baileys-logo-overlay">
+              <svg width="60" height="60" viewBox="0 0 100 100" class="baileys-logo">
+                <!-- Background circle -->
+                <circle cx="50" cy="50" r="45" fill="#25D366" stroke="white" stroke-width="4"/>
+                <!-- WhatsApp-style icon -->
+                <path d="M50 15C30.67 15 15 30.67 15 50c0 6.08 1.56 11.8 4.3 16.78L15 85l18.22-4.3C38.2 83.44 43.92 85 50 85c19.33 0 35-15.67 35-35S69.33 15 50 15zm0 63c-5.22 0-10.16-1.44-14.38-4.17L25 76l2.17-10.62C24.44 60.16 23 55.22 23 50c0-14.91 12.09-27 27-27s27 12.09 27 27-12.09 27-27 27z" fill="white"/>
+                <!-- Inner chat bubble -->
+                <path d="M42 38c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h8l6 6V40c0-1.1-.9-2-2-2H42z" fill="white"/>
+                <!-- Baileys text -->
+                <text x="50" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#25D366">BAILEYS</text>
+              </svg>
+            </div>
+          </div>
           <div v-else class="loading-container">
             <q-spinner-dots size="40px" color="primary" />
             <div class="text-body1 text-grey-7 q-mt-md">Aguardando QR Code...</div>
@@ -164,6 +178,11 @@ export default {
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+.qr-code-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .qr-code-modern {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
@@ -171,6 +190,32 @@ export default {
 
   &:hover {
     transform: scale(1.02);
+  }
+}
+
+.baileys-logo-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.baileys-logo {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
