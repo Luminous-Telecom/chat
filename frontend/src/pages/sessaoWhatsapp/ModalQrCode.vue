@@ -27,12 +27,14 @@
       <q-card-section class="text-center q-pa-xl qr-code-section" style="background: #f8f9fa;">
         <div class="qr-container">
           <div v-if="cQrcode" class="qr-code-wrapper">
+            <div class="logo-above-qr">
+              <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-above" />
+            </div>
             <qrcode-vue
               :value="cQrcode"
               :size="280"
               level="H"
               :margin="2"
-              :image-settings="logoSettings"
               class="qr-code-modern"
             />
           </div>
@@ -116,14 +118,6 @@ export default {
   computed: {
     cQrcode () {
       return this.channel.qrcode
-    },
-    logoSettings () {
-      return {
-        src: baileysLogo,
-        width: 50,
-        height: 50,
-        excavate: true
-      }
     }
   },
   methods: {
@@ -179,6 +173,21 @@ export default {
 .qr-code-wrapper {
   position: relative;
   display: inline-block;
+}
+
+.logo-above-qr {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.baileys-logo-above {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  padding: 8px;
 }
 
 .qr-code-modern {
