@@ -39,6 +39,11 @@ const HandleMessage = async (
       ) {
         return;
       }
+      
+      // Verificar se é mensagem de canal/newsletter do WhatsApp
+      if (msg.from && (msg.from.includes('@newsletter') || msg.from.includes('newsletter'))) {
+        return;
+      }
       // IGNORAR MENSAGENS DE GRUPO
 
       try {

@@ -57,6 +57,14 @@ const HandleBaileysMessage = async (
         const whatsapp = await ShowWhatsAppService({ id: wbot.id });
         const { tenantId } = whatsapp;
 
+        // Verificar se é mensagem de canal/newsletter do WhatsApp
+        const remoteJid = msg.key.remoteJid || '';
+        if (remoteJid.includes('@newsletter') || remoteJid.includes('newsletter')) {
+          logger.debug(`[HandleBaileysMessage] Ignoring WhatsApp channel/newsletter message from: ${remoteJid}`);
+          resolve();
+          return;
+        }
+
         // Verificar configuração de grupos
         const Settingdb = await Setting.findOne({
           where: { key: 'ignoreGroupMsg', tenantId }
