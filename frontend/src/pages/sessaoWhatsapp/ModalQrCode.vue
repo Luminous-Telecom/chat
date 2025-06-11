@@ -205,7 +205,7 @@ export default {
 // Professional Header
 .professional-header {
   background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  padding: 20px;
+  padding: 16px;
   position: relative;
   overflow: hidden;
 
