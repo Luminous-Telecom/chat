@@ -2,7 +2,7 @@
   <q-dialog :value="abrirModalQR"
     @hide="fecharModalQrModal"
     persistent>
-    <q-card style="background: white;">
+    <q-card :class="{ 'bg-white': !$q.dark.isActive, 'bg-dark': $q.dark.isActive }">
       <q-card-section>
         <div class="text-h6 text-primary">
           Leia o QrCode para iniciar a sessão
@@ -13,20 +13,19 @@
             @click="fecharModalQrModal" />
         </div>
       </q-card-section>
-      <q-card-section class="text-center"
-        :style="$q.dark.isActive ? 'background: white !important' : ''">
+      <q-card-section class="text-center qr-code-section bg-white">
         <qrcode-vue
           v-if="cQrcode"
           :value="cQrcode"
           :size="300"
           level="M"
         />
-        <span v-else>
+        <span v-else class="text-black">
           Aguardando o Qr Code
         </span>
       </q-card-section>
       <q-card-section>
-        <div class="row">Caso tenha problema com a leitura, solicite um novo Qr Code </div>
+        <div class="row" :class="{ 'text-black': !$q.dark.isActive, 'text-white': $q.dark.isActive }">Caso tenha problema com a leitura, solicite um novo Qr Code </div>
         <div class="row col-12 justify-center">
           <q-btn color="primary"
             glossy
