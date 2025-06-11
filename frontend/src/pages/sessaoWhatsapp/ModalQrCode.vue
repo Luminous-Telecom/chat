@@ -80,7 +80,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="help-text">
             Problemas para conectar? Gere um novo código
           </div>
@@ -192,11 +192,11 @@ export default {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  
+
   &.light-theme {
     background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   }
-  
+
   &.dark-theme {
     background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
   }
@@ -208,7 +208,7 @@ export default {
   padding: 24px;
   position: relative;
   overflow: hidden;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -259,7 +259,7 @@ export default {
     margin-bottom: 4px;
     letter-spacing: -0.025em;
   }
-  
+
   .subtitle {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
@@ -272,7 +272,7 @@ export default {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
@@ -325,7 +325,7 @@ export default {
   border: 1px solid rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -341,7 +341,7 @@ export default {
 .qr-code-professional {
   border-radius: 12px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: scale(1.02);
   }
@@ -398,14 +398,14 @@ export default {
   gap: 8px;
   margin-top: 16px;
   justify-content: center;
-  
+
   span {
     width: 8px;
     height: 8px;
     background: #10b981;
     border-radius: 50%;
     animation: bounce 1.4s ease-in-out infinite both;
-    
+
     &:nth-child(1) { animation-delay: -0.32s; }
     &:nth-child(2) { animation-delay: -0.16s; }
     &:nth-child(3) { animation-delay: 0s; }
@@ -470,7 +470,7 @@ export default {
     margin-bottom: 4px;
     letter-spacing: -0.025em;
   }
-  
+
   .step-desc {
     font-size: 14px;
     color: #64748b;
@@ -502,13 +502,13 @@ export default {
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
   letter-spacing: -0.025em;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
@@ -520,23 +520,23 @@ export default {
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  
+
   .step-text .step-title {
     color: #f1f5f9;
   }
-  
+
   .step-text .step-desc {
     color: #94a3b8;
   }
-  
+
   .help-text {
     color: #94a3b8;
   }
-  
+
   .loading-text {
     color: #94a3b8;
   }
-  
+
   .logo-badge {
     background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
   }
@@ -548,23 +548,23 @@ export default {
     width: calc(100vw - 32px);
     margin: 16px;
   }
-  
+
   .professional-header {
     padding: 20px;
   }
-  
+
   .qr-main-section {
     padding: 24px 16px;
   }
-  
+
   .instructions-section {
     padding: 0 16px 24px;
   }
-  
+
   .qr-frame {
     padding: 16px;
   }
-  
+
   .qr-code-professional {
     width: 180px;
     height: 180px;
