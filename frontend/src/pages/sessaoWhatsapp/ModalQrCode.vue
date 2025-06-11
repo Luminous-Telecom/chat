@@ -23,27 +23,7 @@
           class="hover-scale" />
       </q-card-section>
 
-      <!-- QR Code Section -->
-      <q-card-section class="text-center q-pa-xl qr-code-section" style="background: #f8f9fa;">
-        <div class="qr-container">
-          <div v-if="cQrcode" class="qr-code-wrapper">
-            <div class="logo-above-qr">
-              <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-above" />
-            </div>
-            <qrcode-vue
-              :value="cQrcode"
-              :size="280"
-              level="H"
-              :margin="2"
-              class="qr-code-modern"
-            />
-          </div>
-          <div v-else class="loading-container">
-            <q-spinner-dots size="40px" color="primary" />
-            <div class="text-body1 text-grey-7 q-mt-md">Aguardando QR Code...</div>
-          </div>
-        </div>
-      </q-card-section>
+
 
       <!-- Instructions -->
       <q-card-section class="q-pa-lg">
