@@ -2,27 +2,27 @@
   <q-dialog :value="abrirModalQR"
     @hide="fecharModalQrModal"
     persistent>
-    <q-card 
+    <q-card
       :class="{ 'bg-white': !$q.dark.isActive, 'bg-dark': $q.dark.isActive }"
       class="modern-modal"
       style="min-width: 400px; border-radius: 16px; overflow: hidden;">
-      
+
       <!-- Header -->
       <q-card-section class="row items-center justify-between q-pa-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <div class="text-h6 text-white font-weight-medium">
           <q-icon name="qr_code_scanner" class="q-mr-sm" size="24px" />
           Conectar WhatsApp
         </div>
-        <q-btn 
+        <q-btn
           round
           flat
           color="white"
           icon="close"
           size="sm"
-          @click="fecharModalQrModal" 
+          @click="fecharModalQrModal"
           class="hover-scale" />
       </q-card-section>
-      
+
       <!-- QR Code Section -->
       <q-card-section class="text-center q-pa-xl qr-code-section" style="background: #f8f9fa;">
         <div class="qr-container">
@@ -39,7 +39,7 @@
           </div>
         </div>
       </q-card-section>
-      
+
       <!-- Instructions -->
       <q-card-section class="q-pa-lg">
         <div class="instruction-card">
@@ -47,20 +47,20 @@
             <q-icon name="smartphone" class="q-mr-xs" />
             Abra o WhatsApp no seu celular e escaneie o código
           </div>
-          
+
           <div class="text-caption text-center q-mb-lg" :class="{ 'text-grey-6': !$q.dark.isActive, 'text-grey-4': $q.dark.isActive }">
             Caso tenha problemas com a leitura, solicite um novo QR Code
           </div>
-          
+
           <div class="row justify-center">
-            <q-btn 
+            <q-btn
               color="primary"
               unelevated
               rounded
               label="Gerar Novo QR Code"
               @click="solicitarQrCode"
               icon="refresh"
-              class="modern-btn q-px-lg" 
+              class="modern-btn q-px-lg"
               :loading="false" />
           </div>
         </div>
@@ -168,7 +168,7 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease;
-  
+
   &:hover {
     transform: scale(1.02);
   }
@@ -194,7 +194,7 @@ export default {
   transition: all 0.3s ease;
   font-weight: 500;
   text-transform: none;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -203,7 +203,7 @@ export default {
 
 .hover-scale {
   transition: transform 0.2s ease;
-  
+
   &:hover {
     transform: scale(1.1);
   }
@@ -215,7 +215,7 @@ body.body--dark {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  
+
   .qr-container {
     background: white;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -229,12 +229,12 @@ body.body--dark {
     min-width: auto;
     width: calc(100vw - 32px);
   }
-  
+
   .qr-code-modern {
     max-width: 100%;
     height: auto;
   }
-  
+
   .qr-container {
     padding: 16px;
     min-height: 280px;
