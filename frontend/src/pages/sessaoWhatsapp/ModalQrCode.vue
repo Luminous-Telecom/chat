@@ -187,12 +187,13 @@ export default {
 }
 
 .baileys-logo-above {
-  width: 60px;
-  height: 60px;
+  width: 120px;
+  height: 40px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: white;
   padding: 8px;
+  object-fit: contain;
 }
 
 .qr-code-modern {
