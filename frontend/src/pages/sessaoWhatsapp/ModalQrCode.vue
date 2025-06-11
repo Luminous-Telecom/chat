@@ -23,8 +23,6 @@
           class="hover-scale" />
       </q-card-section>
 
-
-
       <!-- Instructions -->
       <q-card-section class="q-pa-lg">
         <div class="instruction-card">
@@ -56,14 +54,10 @@
 </template>
 
 <script>
-import QrcodeVue from 'qrcode.vue'
 import baileysLogo from 'assets/baileys.png'
 
 export default {
   name: 'ModalQrCode',
-  components: {
-    QrcodeVue
-  },
   props: {
     abrirModalQR: {
       type: Boolean,
