@@ -70,25 +70,56 @@ const VerifyMediaMessage = async (
         logger.info(`Attempt ${retryCount + 1} to download media for message ID: ${msg.id.id}`);
         
         // Tentar diferentes métodos de download
+        let downloadResult: any = null;
         if (retryCount === 0) {
-          media = await (msg as any).downloadMedia() as MediaData;
+          downloadResult = await (msg as any).downloadMedia();
         } else if (retryCount === 1) {
           // Tentar com opções específicas
-          media = await (msg as any).downloadMedia({ highQuality: false }) as MediaData;
+          downloadResult = await (msg as any).downloadMedia({ highQuality: false });
         } else {
           // Última tentativa com timeout maior
-          media = await Promise.race([
+          downloadResult = await Promise.race([
             (msg as any).downloadMedia(),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Download timeout')), 30000))
-          ]) as MediaData;
+          ]);
         }
         
-        if (media && media.data) {
-          logger.info(`Successfully downloaded media for message ID: ${msg.id.id} on attempt ${retryCount + 1}`);
-          break;
-        } else if (media) {
-          logger.warn(`Media downloaded but no data for message ID: ${msg.id.id} on attempt ${retryCount + 1}`);
-          media = null;
+        // Verificar se o resultado é um Buffer (Baileys) ou objeto MediaData (WhatsApp Web.js)
+        if (downloadResult) {
+          if (Buffer.isBuffer(downloadResult)) {
+            // Baileys retorna Buffer diretamente
+            logger.info(`Successfully downloaded media buffer for message ID: ${msg.id.id} on attempt ${retryCount + 1}, size: ${downloadResult.length}`);
+            
+            const detectedMimetype = msg.message?.imageMessage?.mimetype || 
+                                   msg.message?.videoMessage?.mimetype || 
+                                   msg.message?.audioMessage?.mimetype || 
+                                   msg.message?.documentMessage?.mimetype || 
+                                   'application/octet-stream';
+            
+            const fileExtension = getFileExtension(detectedMimetype);
+            const baseFilename = msg.message?.imageMessage?.caption || 
+                               msg.message?.videoMessage?.caption || 
+                               msg.message?.documentMessage?.fileName || 
+                               `media_${Date.now()}`;
+            
+            // Garantir que o filename tenha a extensão correta
+            const finalFilename = baseFilename.includes('.') ? baseFilename : `${baseFilename}.${fileExtension}`;
+            
+            media = {
+              data: downloadResult,
+              mimetype: detectedMimetype,
+              filename: finalFilename
+            } as MediaData;
+            break;
+          } else if (downloadResult.data) {
+            // WhatsApp Web.js retorna objeto com propriedade data
+            logger.info(`Successfully downloaded media object for message ID: ${msg.id.id} on attempt ${retryCount + 1}`);
+            media = downloadResult as MediaData;
+            break;
+          } else {
+            logger.warn(`Media downloaded but invalid format for message ID: ${msg.id.id} on attempt ${retryCount + 1}`);
+            logger.warn(`Download result type: ${typeof downloadResult}, keys: ${Object.keys(downloadResult || {})}`);
+          }
         }
       } catch (err) {
         lastError = err;
