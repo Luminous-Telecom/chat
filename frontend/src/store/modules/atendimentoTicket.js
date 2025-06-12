@@ -338,9 +338,6 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
-      // console.log('[DEBUG] UPDATE_MESSAGES mutation called with payload:', payload)
-      // console.log('[DEBUG] Current ticketFocado:', state.ticketFocado)
-
       // Criar um cache de mensagens por ticket se não existir
       if (!state.messagesByTicket) {
         state.messagesByTicket = {}
@@ -356,17 +353,25 @@ const atendimentoTicket = {
       // Atualizar mensagens no cache do ticket
       const messageIndex = state.messagesByTicket[ticketId].findIndex(m => m.id === payload.id)
       if (messageIndex !== -1) {
-        // console.log('[DEBUG] Atualizando mensagem existente no cache do ticket:', ticketId)
         state.messagesByTicket[ticketId][messageIndex] = payload
       } else {
-        // console.log('[DEBUG] Adicionando nova mensagem ao cache do ticket:', ticketId)
         state.messagesByTicket[ticketId].push(payload)
       }
 
       // Se o ticket estiver focado, atualizar também o array de mensagens visível
       if (state.ticketFocado.id === ticketId) {
-        // console.log('[DEBUG] Atualizando mensagens do ticket focado')
-        state.mensagens = [...state.messagesByTicket[ticketId]]
+        // Verificar se a mensagem já existe no array de mensagens visível
+        const visibleMessageIndex = state.mensagens.findIndex(m => m.id === payload.id)
+        if (visibleMessageIndex !== -1) {
+          // Atualizar mensagem existente
+          const mensagens = [...state.mensagens]
+          mensagens[visibleMessageIndex] = payload
+          state.mensagens = mensagens
+        } else {
+          // Adicionar nova mensagem mantendo ordem
+          const newMessages = [...state.mensagens, payload]
+          state.mensagens = orderMessages(newMessages)
+        }
 
         if (payload.scheduleDate && payload.status == 'pending') {
           const idxScheduledMessages = state.ticketFocado.scheduledMessages.findIndex(m => m.id === payload.id)
@@ -379,7 +384,6 @@ const atendimentoTicket = {
       // Atualizar informações do ticket na lista
       const TicketIndexUpdate = state.tickets.findIndex(t => t.id == ticketId)
       if (TicketIndexUpdate !== -1) {
-        // console.log('[DEBUG] Atualizando ticket na lista')
         const tickets = [...state.tickets]
         const unreadMessages = payload.ticket.unreadMessages
         tickets[TicketIndexUpdate] = {
@@ -389,7 +393,6 @@ const atendimentoTicket = {
           lastMessage: payload.mediaName || payload.body
         }
         state.tickets = tickets
-        // console.log('[DEBUG] Ticket atualizado na lista:', tickets[TicketIndexUpdate])
       }
     },
     // OK
