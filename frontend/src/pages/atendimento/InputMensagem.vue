@@ -1,7 +1,27 @@
 <template>
   <div>
-    <template v-if="ticketFocado.status != 'pending'">
+    <!-- Botão de iniciar atendimento para tickets pending -->
+    <template v-if="ticketFocado.status === 'pending'">
+      <div
+        style="min-height: 80px"
+        class="row q-pb-md q-pt-sm bg-white justify-center items-center text-grey-9 relative-position"
+      >
+        <q-btn
+          push
+          rounded
+          style="width: 250px"
+          class="text-bold"
+          color="positive"
+          icon="mdi-send-circle"
+          label="Iniciar o atendimento"
+          @click="iniciarAtendimento(ticketFocado)"
+          :loading="loading"
+        />
+      </div>
+    </template>
 
+    <!-- Interface normal de chat para tickets não pending -->
+    <template v-if="ticketFocado.status !== 'pending'">
       <div
         class="row absolute-full fit col-12"
         ref="menuFast"
@@ -20,7 +40,6 @@
           @hide="visualizarMensagensRapidas = false"
           :value="textChat.startsWith('/') || visualizarMensagensRapidas"
         >
-          <!-- :value="textChat.startsWith('/')" -->
           <q-list
             class="no-shadow no-box-shadow"
             style="min-width: 100px"
@@ -67,7 +86,6 @@
         style="min-height: 80px"
         class="row q-pb-md q-pt-sm bg-white justify-start items-center text-grey-9 relative-position"
       >
-
         <div
           class="row col-12 q-pa-sm"
           v-if="isScheduleDate"
@@ -179,9 +197,6 @@
             :value="textChat"
             @paste="handleInputPaste"
           >
-            <!-- <template v-slot:hint>
-          "Quebra linha: Shift + Enter"
-        </template> -->
             <template
               v-slot:prepend
               v-if="$q.screen.width < 500"
@@ -325,7 +340,6 @@
                 class="bg-padrao btn-rounded q-mx-xs"
               />
             </div>
-
           </div>
         </template>
 
@@ -375,28 +389,19 @@
         </q-dialog>
       </div>
     </template>
-    <template v-else>
-      <div
-        style="min-height: 80px"
-        class="row q-pb-md q-pt-sm bg-white justify-center items-center text-grey-9 relative-position"
-      >
-        <q-btn
-          push
-          rounded
-          style="width: 250px"
-          class="text-bold"
-          color="positive"
-          icon="mdi-send-circle"
-          label="Iniciar o atendimento"
-          @click="iniciarAtendimento(ticketFocado)"
-        />
 
-      </div>
+    <!-- Debug info -->
+    <div v-if="$route.query.debug" class="q-pa-sm bg-orange-1">
+      <small>Debug: Status = {{ ticketFocado.status }}, ID = {{ ticketFocado.id }}</small>
+    </div>
+
+    <template v-if="ticketFocado.status !== 'pending'">
+      <!-- Conteúdo principal do chat -->
+      <p
+        v-if="!cMostrarEnvioArquivo"
+        class="row col text-caption text-blue-grey-10"
+      >Quebra linha/Parágrafo: Shift + Enter ||| Enviar Mensagem: Enter</p>
     </template>
-    <!-- <p
-      v-if="!cMostrarEnvioArquivo"
-      class="row col text-caption text-blue-grey-10"
-    >Quebra linha/Parágrafo: Shift + Enter ||| Enviar Mensagem: Enter</p> -->
   </div>
 </template>
 
@@ -463,7 +468,25 @@ export default {
         search = search.replace('/', '')
       }
       return !search ? this.mensagensRapidas : this.mensagensRapidas.filter(r => r.key.toLowerCase().indexOf(search) !== -1)
-      // return this.mensagensRapidas
+    }
+  },
+  watch: {
+    // Observar mudanças no status do ticket
+    'ticketFocado.status': {
+      handler (newStatus, oldStatus) {
+        if (newStatus === 'pending') {
+        } else {
+        }
+      },
+      immediate: true
+    },
+    // Observar mudanças no ticket inteiro
+    ticketFocado: {
+      handler (newTicket, oldTicket) {
+        if (newTicket.id !== oldTicket?.id) {
+        }
+      },
+      deep: true
     }
   },
   methods: {
@@ -584,7 +607,6 @@ export default {
       this.arquivos.forEach(media => {
         formData.append('medias', media)
         formData.append('body', media.name)
-        // formData.append('idFront', uid())
         if (this.isScheduleDate) {
           formData.append('scheduleDate', this.scheduleDate)
         }
@@ -623,7 +645,6 @@ export default {
         body: mensagem,
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
-        // idFront: uid()
         id: uid()
       }
       if (this.isScheduleDate) {
@@ -677,7 +698,6 @@ export default {
         body: mensagem,
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
-        // idFront: uid()
         id: uid()
       }
 

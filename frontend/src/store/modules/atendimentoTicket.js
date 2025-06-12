@@ -86,7 +86,6 @@ const checkTicketFilter = (ticket) => {
   // Se o ticket não possuir fila definida, checar o filtro
   // permite visualizar tickets sem filas definidas é falso.
   // if (isQueuesTenantExists && !ticket.queueId && !filtros.includeNotQueueDefined) {
-  //   console.log('filtros.includeNotQueueDefined', ticket.queueId, !filtros.includeNotQueueDefined)
   //   return false
   // }
 
@@ -275,11 +274,9 @@ const atendimentoTicket = {
     },
     // OK
     TICKET_FOCADO (state, payload) {
-      const params = {
-        ...payload,
-        status: payload.status == 'pending' ? 'open' : payload.status
-      }
-      state.ticketFocado = params
+      // Manter o status original do ticket sem forçar mudança de 'pending' para 'open'
+      // Isso permite que o botão "Iniciar o atendimento" apareça corretamente
+      state.ticketFocado = payload
       // return state.ticketFocado
     },
     // OK

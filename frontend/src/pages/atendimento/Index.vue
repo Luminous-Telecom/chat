@@ -103,6 +103,8 @@
             :key="key"
             :ticket="ticket"
             :filas="filas"
+            :buscaTicket="false"
+            @debug="logTicketDebug"
           />
           <div v-if="loading">
             <div class="row justify-center q-my-md">
@@ -699,7 +701,8 @@ export default {
     }
   },
   methods: {
-
+    logTicketDebug (ticketData) {
+    },
     toggleStatus (status) {
       // Substitui o array atual por um novo array contendo apenas o status selecionado
       this.pesquisaTickets.status = [status]

@@ -21,17 +21,20 @@
         avatar
         class="q-px-none"
       >
+        <!-- Botão de atender sempre visível quando shouldShowAttendButton for true -->
         <q-btn
           flat
-          @click="iniciarAtendimento(ticket)"
+          @click.stop="iniciarAtendimento(ticket)"
           push
           color="positive"
           dense
           round
-          v-if="ticket.status === 'pending' || (buscaTicket && ticket.status === 'pending')"
+          v-if="shouldShowAttendButton"
+          style="display: block !important; visibility: visible !important; opacity: 1 !important; z-index: 999 !important; position: relative !important;"
+          class="debug-attend-button"
         >
           <q-badge
-            v-if="ticket.unreadMessages"
+            v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
             style="border-radius: 10px;"
             class="text-center text-bold"
             floating
@@ -50,13 +53,15 @@
             Atender
           </q-tooltip>
         </q-btn>
+
+        <!-- Avatar do contato - só aparece quando não estiver pending -->
         <q-avatar
           size="50px"
-          v-if="ticket.status !== 'pending'"
+          v-if="!shouldShowAttendButton"
           class="relative-position"
         >
           <q-badge
-            v-if="ticket.unreadMessages"
+            v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
             style="border-radius: 10px; z-index: 99"
             class="text-center text-bold"
             floating
@@ -167,7 +172,6 @@
       color="grey-2"
       inset="item"
     />
-    <!-- <q-separator /> -->
   </q-list>
 </template>
 
@@ -200,17 +204,33 @@ export default {
         closed: 'positive'
       },
       borderColor: {
-        open: 'primary',
-        pending: 'negative',
-        closed: 'positive'
+        open: '#1976d2', // primary color
+        pending: '#c62828', // negative/red color
+        closed: '#388e3c' // positive/green color
       }
+    }
+  },
+  computed: {
+    shouldShowAttendButton () {
+      const ticket = this.ticket
+
+      // Verifica se é pending e não está em busca
+      const isPending = ticket.status === 'pending'
+      const isNotInSearch = this.buscaTicket === false || this.buscaTicket === undefined
+
+      const shouldShow = isPending && isNotInSearch
+
+      if (shouldShow) {
+      } else {
+      }
+
+      return shouldShow
     }
   },
   props: {
     ticket: {
       type: Object,
-      default: () => {
-      }
+      default: () => ({})
     },
     buscaTicket: {
       type: Boolean,
@@ -250,10 +270,28 @@ export default {
       this.$store.dispatch('AbrirChatMensagens', ticket)
     }
   },
+  watch: {
+    // Observa mudanças no ticket para re-avaliar se o botão deve aparecer
+    'ticket.status': {
+      handler (newStatus, oldStatus) {
+        if (newStatus !== oldStatus) {
+          this.$forceUpdate() // Força re-render do componente
+        }
+      }
+    },
+    'ticket.unreadMessages': {
+      handler (newCount, oldCount) {
+        if (newCount !== oldCount) {
+        }
+      }
+    }
+  },
   created () {
     setInterval(() => {
       this.recalcularHora++
     }, 20000)
+  },
+  mounted () {
   }
 }
 </script>
@@ -283,20 +321,16 @@ img:after
   color: transparent
 
 .ticket-active-item
-  // border: 2px solid rgb(21, 120, 173)
-  // border-left: 3px solid $light //rgb(21, 120, 173)
   border-radius: 0
   position: relative
   height: 100%
-  background: $blue-1 //$active-item-ticket
-  // background-color: #e6ebf5
-
+  background: $blue-1
 #ListItemsTicket
   .q-item__label + .q-item__label
     margin-top: 1.5px
 
 #item-ticket-houve:hover
-  background: $blue-1 //$active-item-ticket
+  background: $blue-1
   transition: all .2s
 
 .primary
@@ -314,4 +348,12 @@ img:after
 
 .ticketBorderGrey
   border-left: 5px solid $grey-4
+
+// Garantir que o botão seja sempre visível
+.debug-attend-button
+  display: block !important
+  visibility: visible !important
+  opacity: 1 !important
+  z-index: 999 !important
+  position: relative !important
 </style>

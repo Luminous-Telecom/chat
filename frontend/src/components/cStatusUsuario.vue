@@ -64,7 +64,6 @@ export default {
       const usuario = { ...this.usuario, status }
       localStorage.setItem('usuario', JSON.stringify(usuario))
       this.$emit('update:usuario', usuario)
-
     }
   }
 }

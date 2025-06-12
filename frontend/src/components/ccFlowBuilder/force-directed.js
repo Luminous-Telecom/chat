@@ -138,13 +138,13 @@ function calculateTraction () {
     startNode = mNodeMap[eStartID]
     endNode = mNodeMap[eEndID]
     if (startNode == null) {
-        // Cannot find start node
-        return
-      }
-      if (endNode == null) {
-        // Cannot find end node
-        return
-      }
+      // Cannot find start node
+      return
+    }
+    if (endNode == null) {
+      // Cannot find end node
+      return
+    }
     const distX = startNode.x - endNode.x
     const distY = startNode.y - endNode.y
     const dist = Math.sqrt(distX * distX + distY * distY)

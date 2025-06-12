@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "izing-frontend-dev",
+      name: 'izing-frontend-dev',
       script: 'npm',
       args: 'run dev',
       exec_mode: 'fork',
@@ -18,11 +18,11 @@ module.exports = {
   ],
   deploy: {
     production: {
-      name: "izing-frontend-prod",
+      name: 'izing-frontend-prod',
       script: 'npm',
       args: 'run start',
       exec_mode: 'cluster',
-      instances: "max",
+      instances: 'max',
       watch: false,
       env: {
         NODE_ENV: 'production'
@@ -31,7 +31,7 @@ module.exports = {
       out_file: './logs/pm2-out-prod.log',
       log_file: './logs/pm2-combined-prod.log',
       time: true,
-      cron_restart: "00 00 * * *"
+      cron_restart: '00 00 * * *'
     }
   }
-};
+}
