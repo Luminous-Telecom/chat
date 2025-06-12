@@ -47,7 +47,7 @@ class Ticket extends Model<Ticket> {
   @Column
   channel: string;
 
-  @Default(true)
+  @Default(false)
   @Column
   answered: boolean;
 
