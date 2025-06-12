@@ -11,6 +11,11 @@ import Message from "../../models/Message";
 import socketEmit from "../../helpers/socketEmit";
 import Queue from "../../libs/Queue";
 import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
+import Contact from "../../models/Contact";
+import UserMessagesLog from "../../models/UserMessagesLog";
+import AppError from "../../errors/AppError";
+import SendWhatsAppMessage from "../WbotServices/SendWhatsAppMessage";
+import SendWhatsAppMedia from "../WbotServices/SendWhatsAppMedia";
 
 const writeFileAsync = promisify(fs.writeFile);
 
@@ -208,7 +213,6 @@ const processMediaMessages = async (
   tenantId: string | number,
   userId?: string | number
 ): Promise<void> => {
-
   await Promise.all(
     medias.map(async (media: CustomFile, index: number) => {
       try {
@@ -235,31 +239,31 @@ const processMediaMessages = async (
           userId
         };
 
-        // Enviar mensagem
+        // Enviar mensagem e obter a mensagem criada
         let sentMessage: any = {};
         if (!mediaMessageData.scheduleDate) {
-          sentMessage = await SendMessageSystemProxy({
-            ticket,
-            messageData: mediaMessageData,
-            media,
-            userId
+          sentMessage = await SendWhatsAppMedia({ media, ticket, userId });
+        } else {
+          // Se for mensagem agendada, criar sem enviar
+          sentMessage = await Message.create({
+            ...mediaMessageData,
+            status: "pending",
+            messageId: null,
+            ack: 0
           });
         }
 
-        // Extrair messageId do retorno
-        const messageId = extractMessageId(sentMessage, mediaMessageData.messageId);
-      
-
-        // Criar registro no banco
-        const msgCreated = await Message.create({
-          ...mediaMessageData,
-          messageId,
-          ack: sentMessage ? 1 : 0, // ACK 1 se enviado, 0 se agendado
-          status: sentMessage ? "sended" : "pending"
-        });
-
         // Buscar mensagem completa e notificar
-        await finalizeMessage(msgCreated.id, ticket, tenantId);
+        await finalizeMessage(sentMessage.id, ticket, tenantId);
+
+        // Registrar atividade do usuário se houver userId
+        if (userId) {
+          await UserMessagesLog.create({
+            messageId: sentMessage.id,
+            userId,
+            tenantId
+          });
+        }
 
       } catch (err) {
         logger.error(`[CreateMessageSystemService] Error processing media ${index}:`, err);
@@ -275,34 +279,62 @@ const processTextMessage = async (
   tenantId: string | number,
   userId?: string | number
 ): Promise<void> => {
+  try {
+    // Verificar se o ticket tem whatsappId
+    if (!ticket.whatsappId) {
+      logger.error(`[CreateMessageSystemService] Ticket ${ticket.id} has no whatsappId`);
+      throw new AppError("ERR_TICKET_NO_WHATSAPP_ID");
+    }
 
-  // Enviar mensagem
-  let sentMessage: any = {};
-  if (!messageData.scheduleDate) {
-    sentMessage = await SendMessageSystemProxy({
-      ticket,
-      messageData,
-      media: null,
-      userId
-    });
+    // Buscar o contato
+    const contact = await Contact.findByPk(ticket.contactId);
+    if (!contact) {
+      logger.error(`[CreateMessageSystemService] Contact not found for ticket ${ticket.id}`);
+      throw new AppError("ERR_CONTACT_NOT_FOUND");
+    }
+
+    // Enviar mensagem e obter a mensagem criada
+    let sentMessage: any = {};
+    if (!messageData.scheduleDate) {
+      const quotedMsg = messageData?.quotedMsg?.id ? 
+        (await Message.findByPk(messageData.quotedMsg.id)) as Message | undefined : 
+        undefined;
+
+      sentMessage = await SendWhatsAppMessage(
+        contact,
+        ticket,
+        messageData.body,
+        quotedMsg
+      );
+    } else {
+      // Se for mensagem agendada, criar sem enviar
+      sentMessage = await Message.create({
+        ...messageData,
+        status: "pending",
+        messageId: null,
+        ack: 0,
+        mediaType: "chat",
+        userId
+      });
+    }
+
+    // Buscar mensagem completa e notificar
+    await finalizeMessage(sentMessage.id, ticket, tenantId);
+
+    // Registrar atividade do usuário se houver userId
+    if (userId) {
+      await UserMessagesLog.create({
+        messageId: sentMessage.id,
+        userId,
+        tenantId
+      });
+    }
+
+  } catch (error) {
+    logger.error(`[CreateMessageSystemService] Erro ao processar mensagem de texto:`, error.message || 'Erro desconhecido');
+    logger.error(`[CreateMessageSystemService] Stack trace:`, error.stack);
+    throw new Error(`Erro ao processar mensagem de texto: ${error.message || 'Erro desconhecido'}`);
   }
-
-  // Extrair messageId do retorno
-  const messageId = extractMessageId(sentMessage, messageData.messageId);
-
-  // Criar registro no banco
-  const msgCreated = await Message.create({
-    ...messageData,
-    messageId,
-    ack: sentMessage ? 1 : 0, // ACK 1 se enviado, 0 se agendado
-    status: sentMessage ? "sended" : "pending",
-    mediaType: "chat",
-    userId
-  });
-
-
-  // Finalizar mensagem
-  await finalizeMessage(msgCreated.id, ticket, tenantId);
 };
 
 const extractMessageId = (sentMessage: any, fallbackId?: string): string | null => {

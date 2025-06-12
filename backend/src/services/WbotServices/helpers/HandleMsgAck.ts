@@ -7,141 +7,164 @@ type MessageAck = number; // ou defina conforme necessário para o seu uso
 // import { MessageAck } from "whatsapp-web.js";
 import Message from "../../../models/Message";
 import Ticket from "../../../models/Ticket";
+import Contact from "../../../models/Contact";
+import { getIO } from "../../../libs/socket";
+import { WAMessage } from "@whiskeysockets/baileys";
+import { Op, Sequelize } from "sequelize";
+import sequelize from "../../../database";
 import { logger } from "../../../utils/logger";
 import CampaignContacts from "../../../models/CampaignContacts";
 import ApiMessage from "../../../models/ApiMessage";
 import socketEmit from "../../../helpers/socketEmit";
 import Queue from "../../../libs/Queue";
-import { Op } from "sequelize";
-import Contact from "../../../models/Contact";
-import { getIO } from "../../../libs/socket";
-import { WAMessage } from "@whiskeysockets/baileys";
 
 // Helper function to get message status from ack
 const getMessageStatus = (ack: number): string => {
   switch (ack) {
-    case 3:
-      return "received";
+    case 1:
+      return "sended";
     case 2:
       return "delivered";
+    case 3:
+      return "received";
     default:
-      return "sended";
+      return "pending";
   }
 };
 
 export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> => {
+  const t = await sequelize.transaction();
   try {
     const messageId = msg.key?.id;
     if (!messageId) {
+      await t.rollback();
       return;
     }
 
-    const message = await Message.findOne({
+    logger.info(`[HandleMsgAck] Processing ack ${ack} for message ${messageId}`);
+
+    // Primeiro, busca TODAS as mensagens com esse messageId
+    const messages = await Message.findAll({
       where: {
-        messageId: {
-          [Op.or]: [
-            messageId,
-            messageId.split('_')[0],
-            messageId.split(':')[0],
-            messageId.replace(/[^A-Z0-9]/g, ''),
-            { [Op.like]: `%${messageId}%` }
-          ]
-        }
+        messageId: messageId,
+        fromMe: true,
+        isDeleted: false
       },
-      include: [
-        {
-          model: Ticket,
-          include: [{ model: Contact }]
-        }
-      ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']], // Ordena por mais recente primeiro
+      lock: true,
+      transaction: t
     });
 
-    if (message) {
-      const newStatus = getMessageStatus(ack);
-      await message.update({ ack, status: newStatus });
+    if (messages.length === 0) {
+      logger.warn(`[HandleMsgAck] No message found for ID ${messageId}`);
+      await t.rollback();
+      return;
+    }
 
-      // Emitir evento no canal correto com o id da mensagem e informações do ticket
-      const io = getIO();
-      io.to(message.ticket.tenantId.toString()).emit(`${message.ticket.tenantId}:ticketList`, {
-        type: "chat:ack",
-        payload: {
-          id: message.id,
-          messageId: message.messageId,
-          ack,
-          status: newStatus,
-          read: ack >= 3, // Mensagem é considerada lida quando ack >= 3
-          fromMe: message.fromMe,
-          ticket: {
-            id: message.ticket.id,
-            status: message.ticket.status,
-            unreadMessages: message.ticket.unreadMessages,
-            answered: message.ticket.answered
-          }
-        }
-      });
+    // Se temos mais de uma mensagem, vamos analisar qual devemos atualizar
+    let messageToUpdate: Message | null = null;
+    let duplicateMessages: Message[] = [];
+
+    if (messages.length === 1) {
+      // Se só temos uma mensagem, ela é a que devemos atualizar
+      messageToUpdate = messages[0];
     } else {
+      // Se temos múltiplas mensagens, vamos analisar cada uma
+      logger.warn(`[HandleMsgAck] Found ${messages.length} messages for ID ${messageId}, analyzing...`);
       
-      // Tenta buscar por ID direto
-      const messageByPk = await Message.findByPk(messageId);
-      if (messageByPk) {
-
-        return await HandleMsgAck({
-          ...msg,
-          key: {
-            ...msg.key,
-            id: messageByPk.messageId
-          }
-        }, ack);
+      // Primeiro, vamos verificar se alguma mensagem já tem um ACK maior
+      const messagesWithHigherAck = messages.filter(m => m.ack >= ack);
+      if (messagesWithHigherAck.length > 0) {
+        logger.info(`[HandleMsgAck] Found ${messagesWithHigherAck.length} messages with higher or equal ack (${ack}), ignoring update`);
+        await t.rollback();
+        return;
       }
 
-      // Se ainda não encontrou, tenta buscar mensagens recentes do mesmo ticket
-      if (msg.key.remoteJid) {
-        const recentMessages = await Message.findAll({
-          where: {
-            createdAt: {
-              [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) // últimas 24h
-            }
-          },
-          include: [
-            {
-              model: Ticket,
-              as: "ticket",
-              include: [
-                {
-                  model: Contact,
-                  as: "contact",
-                  where: {
-                    number: msg.key.remoteJid.split('@')[0]
-                  }
-                }
-              ]
-            }
-          ],
-          order: [['createdAt', 'DESC']],
-          limit: 10
-        });
+      // Agora vamos verificar qual mensagem devemos atualizar
+      // Preferimos a mensagem que:
+      // 1. Tem o ACK mais alto (mas menor que o novo ack)
+      // 2. Foi criada mais recentemente
+      messageToUpdate = messages.reduce((best, current) => {
+        if (!best) return current;
+        if (current.ack > best.ack) return current;
+        if (current.ack === best.ack && current.createdAt > best.createdAt) return current;
+        return best;
+      }, null as Message | null);
 
-        if (recentMessages.length > 0) {
-          const similarMessage = recentMessages.find(m => {
-            if (!m.messageId) return false;
-            return m.messageId.includes(messageId) || messageId.includes(m.messageId);
-          });
+      // Todas as outras mensagens são duplicadas
+      duplicateMessages = messages.filter(m => m.id !== messageToUpdate?.id);
+    }
 
-          if (similarMessage) {
-            return await HandleMsgAck({
-              ...msg,
-              key: {
-                ...msg.key,
-                id: similarMessage.messageId
-              }
-            }, ack);
-          }
+    if (!messageToUpdate) {
+      logger.error(`[HandleMsgAck] Could not determine which message to update for ID ${messageId}`);
+      await t.rollback();
+      return;
+    }
+
+    // Não permitir que um ACK menor sobrescreva um ACK maior
+    if (ack <= messageToUpdate.ack) {
+      logger.info(`[HandleMsgAck] Ignoring ack ${ack} for message ${messageToUpdate.id} as current ack ${messageToUpdate.ack} is higher or equal`);
+      await t.rollback();
+      return;
+    }
+
+    // Busca o ticket e contato em uma segunda query
+    const ticket = await Ticket.findOne({
+      where: { id: messageToUpdate.ticketId },
+      include: [{ model: Contact }],
+      transaction: t
+    });
+
+    if (!ticket) {
+      logger.error(`[HandleMsgAck] Ticket not found for message ${messageToUpdate.id}`);
+      await t.rollback();
+      return;
+    }
+
+    const newStatus = getMessageStatus(ack);
+    logger.info(`[HandleMsgAck] Updating message ${messageToUpdate.id} from ack ${messageToUpdate.ack} to ${ack} (status: ${newStatus})`);
+    
+    // Atualiza a mensagem com lock
+    await messageToUpdate.update({
+      ack,
+      status: newStatus
+    }, { transaction: t });
+
+    // Emitir evento no canal correto
+    const io = getIO();
+    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, {
+      type: "chat:ack",
+      payload: {
+        id: messageToUpdate.id,
+        messageId: messageToUpdate.messageId,
+        ack,
+        status: newStatus,
+        read: ack >= 3,
+        fromMe: messageToUpdate.fromMe,
+        ticket: {
+          id: ticket.id,
+          status: ticket.status,
+          unreadMessages: ticket.unreadMessages,
+          answered: ticket.answered
         }
+      }
+    });
+
+    logger.info(`[HandleMsgAck] Message ${messageToUpdate.id} updated successfully to status ${newStatus}`);
+
+    // Se temos mensagens duplicadas, marca como deletadas
+    if (duplicateMessages.length > 0) {
+      logger.warn(`[HandleMsgAck] Found ${duplicateMessages.length} duplicate messages for ID ${messageId}, marking them as deleted`);
+      for (const dup of duplicateMessages) {
+        logger.warn(`[HandleMsgAck] - Duplicate message ${dup.id} created at ${dup.createdAt.toISOString()}, current ack: ${dup.ack}`);
+        await dup.update({ isDeleted: true }, { transaction: t });
       }
     }
+
+    await t.commit();
   } catch (err) {
-    logger.error(`Erro ao processar ACK para mensagem ${msg.key?.id || 'unknown'}: ${err}`);
+    await t.rollback();
+    logger.error(`[HandleMsgAck] Error processing ACK for message ${msg.key?.id || 'unknown'}: ${err}`);
   }
 };
 
