@@ -13,6 +13,8 @@ const DeleteMessageSystem = async (
   messageId: string,
   tenantId: string | number
 ): Promise<void> => {
+  console.log('[DEBUG DELETE SYSTEM] Received params:', { id, messageId, tenantId });
+  
   const message = await Message.findOne({
     where: { id },
     include: [
@@ -25,39 +27,73 @@ const DeleteMessageSystem = async (
     ]
   });
 
+  console.log('[DEBUG DELETE SYSTEM] Message found:', message ? 'YES' : 'NO');
+  if (message) {
+    console.log('[DEBUG DELETE SYSTEM] Message details:', {
+      id: message.id,
+      messageId: message.messageId,
+      createdAt: message.createdAt,
+      ticketId: message.ticketId
+    });
+  }
+
   if (message) {
     const diffHoursDate = differenceInHours(
       new Date(),
       parseJSON(message?.createdAt)
     );
+    console.log('[DEBUG DELETE SYSTEM] Hours difference:', diffHoursDate);
     if (diffHoursDate > 2) {
+      console.log('[DEBUG DELETE SYSTEM] Message too old, throwing error');
       throw new AppError("No delete message afeter 2h sended");
     }
   }
 
   if (!message) {
+    console.log('[DEBUG DELETE SYSTEM] No message found, throwing error');
     throw new AppError("No message found with this ID.");
   }
 
   const { ticket } = message;
 
   if (ticket.channel === "whatsapp") {
-    const messageToDelete = await GetWbotMessage(ticket, messageId);
-    if (!messageToDelete) {
-      throw new AppError("ERROR_NOT_FOUND_MESSAGE");
-    }
-    
-    // Para Baileys, não há método delete direto na mensagem
-    // A exclusão de mensagens deve ser implementada através do socket
-    const wbot = await GetTicketWbot(ticket);
-    const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
-    
     try {
-      // Tentar deletar a mensagem usando o socket do Baileys
-      await wbot.sendMessage(chatId, { delete: messageToDelete.key });
+      const wbot = await GetTicketWbot(ticket);
+      const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
+      
+      console.log('[DEBUG DELETE SYSTEM] Attempting WhatsApp deletion for chatId:', chatId, 'messageId:', messageId);
+      
+      // Tentar buscar a mensagem no store
+      const messageToDelete = await GetWbotMessage(ticket, messageId);
+      
+      if (messageToDelete) {
+        console.log('[DEBUG DELETE SYSTEM] Message found in store, attempting deletion with key:', JSON.stringify(messageToDelete.key));
+        
+        // Tentar deletar usando a chave da mensagem encontrada
+        await wbot.sendMessage(chatId, { delete: messageToDelete.key });
+        console.log('[DEBUG DELETE SYSTEM] Message deletion request sent successfully');
+        
+      } else {
+        console.log('[DEBUG DELETE SYSTEM] Message not found in store, trying alternative deletion method');
+        
+        // Se não encontrou no store, tentar criar uma chave baseada no messageId
+        const messageKey = {
+          remoteJid: chatId,
+          fromMe: message.fromMe,
+          id: messageId
+        };
+        
+        console.log('[DEBUG DELETE SYSTEM] Attempting deletion with constructed key:', JSON.stringify(messageKey));
+        await wbot.sendMessage(chatId, { delete: messageKey });
+        console.log('[DEBUG DELETE SYSTEM] Alternative deletion request sent');
+      }
+      
+      // Aguardar um pouco para garantir que a exclusão foi processada
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
     } catch (error) {
-      console.warn('Não foi possível deletar a mensagem:', error);
-      throw new AppError("ERROR_DELETE_MESSAGE_FAILED");
+      console.error('[DEBUG DELETE SYSTEM] WhatsApp deletion failed:', error);
+      console.log('[DEBUG DELETE SYSTEM] Continuing with database deletion only');
     }
   }
 
@@ -84,18 +120,39 @@ const DeleteMessageSystem = async (
   }
 
   await message.update({ isDeleted: true });
+  console.log('[DEBUG DELETE SYSTEM] Message updated with isDeleted: true');
+  console.log('[DEBUG DELETE SYSTEM] Updated message:', { id: message.id, isDeleted: message.isDeleted });
 
   const io = getIO();
-  // .to(`tenant:${tenantId}:notification`)
-  io.to(`tenant:${tenantId}:${ticket.id}`).emit(
-    `tenant:${tenantId}:appMessage`,
-    {
-      action: "update",
-      message,
-      ticket,
-      contact: ticket.contact
-    }
-  );
+  const eventData = {
+    action: "update",
+    message,
+    ticket,
+    contact: ticket.contact
+  };
+  
+  console.log('[DEBUG DELETE SYSTEM] Emitting socket events with data:', eventData);
+  console.log('[DEBUG DELETE SYSTEM] Emitting to channel: tenant:' + tenantId + ':appMessage');
+  
+  // Emitir diretamente para o canal que o frontend está escutando
+  io.emit(`tenant:${tenantId}:appMessage`, eventData);
+  
+  console.log('[DEBUG DELETE SYSTEM] Primary emit completed');
+  
+  // Também emitir para os canais adicionais para garantir compatibilidade
+  console.log('[DEBUG DELETE SYSTEM] Emitting to additional channels:', {
+    channel1: `${tenantId}-${ticket.id.toString()}`,
+    channel2: `${tenantId}-${ticket.status}`,
+    channel3: `${tenantId}-notification`,
+    event: `${tenantId}-appMessage`
+  });
+  
+  io.to(`${tenantId}-${ticket.id.toString()}`)
+    .to(`${tenantId}-${ticket.status}`)
+    .to(`${tenantId}-notification`)
+    .emit(`${tenantId}-appMessage`, eventData);
+    
+  console.log('[DEBUG DELETE SYSTEM] All socket events emitted successfully');
 };
 
 export default DeleteMessageSystem;

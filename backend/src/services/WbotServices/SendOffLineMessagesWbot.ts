@@ -62,14 +62,22 @@ const SendOffLineMessagesWbot = async (
             logger.error(`Error criar log mensagem ${error}`);
           }
         } else {
-          await SendWhatsAppMessage({
-            body: message.body,
-            ticket: message.ticket,
-            quotedMsg: message.quotedMsg,
-            userId: message.userId
-          });
+          await SendWhatsAppMessage(
+            message.contact,
+            message.ticket,
+            message.body,
+            message.quotedMsg
+          );
         }
         await MessagesOffLine.destroy({ where: { id: message.id } });
+        
+        // Emitir para o canal correto que o frontend está escutando
+        io.emit(`tenant:${tenantId}:appMessage`, {
+          action: "delete",
+          message
+        });
+        
+        // Também emitir para o canal antigo para compatibilidade
         io.to(`${tenantId}-${message.ticketId.toString()}`).emit(
           `${tenantId}-appMessage`,
           {

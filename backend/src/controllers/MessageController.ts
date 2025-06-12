@@ -85,15 +85,32 @@ export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  console.log('[DEBUG DELETE CONTROLLER] Remove function called');
   const { messageId } = req.params;
   const { tenantId } = req.user;
+  
+  // Debug logs para investigar o erro 400
+  console.log('[DEBUG DELETE CONTROLLER] messageId from params:', messageId);
+  console.log('[DEBUG DELETE CONTROLLER] req.body:', JSON.stringify(req.body, null, 2));
+  console.log('[DEBUG DELETE CONTROLLER] tenantId:', tenantId);
+  console.log('[DEBUG DELETE CONTROLLER] req.method:', req.method);
+  console.log('[DEBUG DELETE CONTROLLER] req.url:', req.url);
+  
   try {
+    console.log('[DEBUG DELETE CONTROLLER] Calling DeleteMessageSystem with params:', {
+      id: req.body.id,
+      messageId,
+      tenantId
+    });
     await DeleteMessageSystem(req.body.id, messageId, tenantId);
+    console.log('[DEBUG DELETE CONTROLLER] DeleteMessageSystem completed successfully');
   } catch (error) {
+    console.log('[DEBUG DELETE CONTROLLER] Error details:', error);
     logger.error(`ERR_DELETE_SYSTEM_MSG: ${error}`);
     throw new AppError("ERR_DELETE_SYSTEM_MSG");
   }
 
+  console.log('[DEBUG DELETE CONTROLLER] Sending response');
   return res.send();
 };
 

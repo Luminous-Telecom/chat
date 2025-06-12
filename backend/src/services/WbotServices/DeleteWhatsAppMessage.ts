@@ -31,7 +31,15 @@ const DeleteWhatsAppMessage = async (
     });
     if (message) {
       const io = getIO();
-      // .to(`tenant:${tenantId}:notification`)
+      // Emitir diretamente para o canal que o frontend está escutando
+      io.emit(`tenant:${tenantId}:appMessage`, {
+        action: "update",
+        message,
+        ticket: message.ticket,
+        contact: message.ticket.contact
+      });
+      
+      // Também emitir para o canal específico para compatibilidade
       io.to(`tenant:${tenantId}:${message.ticket.id}`).emit(
         `tenant:${tenantId}:appMessage`,
         {
@@ -85,7 +93,14 @@ const DeleteWhatsAppMessage = async (
   await message.update({ isDeleted: true });
 
   const io = getIO();
-  // .to(`tenant:${tenantId}:notification`)
+  // Emitir diretamente para o canal que o frontend está escutando
+  io.emit(`tenant:${tenantId}:appMessage`, {
+    action: "update",
+    message,
+    contact: ticket.contact
+  });
+  
+  // Também emitir para o canal específico para compatibilidade
   io.to(`tenant:${tenantId}:${message.ticket.id}`).emit(
     `tenant:${tenantId}:appMessage`,
     {

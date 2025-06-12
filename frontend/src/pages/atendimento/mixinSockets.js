@@ -51,7 +51,35 @@ export default {
       }, 200)
     },
     socketMessagesList () {
+      const self = this
+      socket.on('connect', () => {
+        console.log('[DEBUG FRONTEND] Registrando listener para canal:', `tenant:${usuario.tenantId}:appMessage`)
+        console.log('[DEBUG FRONTEND] Usuario tenantId:', usuario.tenantId)
 
+        socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
+          console.log('[DEBUG FRONTEND] ===== EVENTO APPMESSAGE RECEBIDO =====', data)
+          console.log('[DEBUG FRONTEND] Canal:', `tenant:${usuario.tenantId}:appMessage`)
+          console.log('[DEBUG FRONTEND] Action:', data.action)
+          console.log('[DEBUG FRONTEND] Message isDeleted:', data.message?.isDeleted)
+          console.log('[DEBUG FRONTEND] Message ID:', data.message?.id)
+          console.log('[DEBUG FRONTEND] Ticket ID:', data.ticket?.id)
+
+          if (data.action === 'update' && data.message) {
+            console.log('[DEBUG FRONTEND] Processando update de mensagem')
+            // Atualizar a mensagem no store para refletir mudanças como isDeleted
+            const messageWithTicket = {
+              ...data.message,
+              ticket: data.ticket
+            }
+            console.log('[DEBUG FRONTEND] Mensagem com ticket preparada:', messageWithTicket)
+            console.log('[DEBUG FRONTEND] Chamando UPDATE_MESSAGES mutation')
+            self.$store.commit('UPDATE_MESSAGES', messageWithTicket)
+            console.log('[DEBUG FRONTEND] UPDATE_MESSAGES mutation executada')
+          } else {
+            console.log('[DEBUG FRONTEND] Condição não atendida - action:', data.action, 'message exists:', !!data.message)
+          }
+        })
+      })
     },
     socketTicket () {
       socket.on('connect', () => {

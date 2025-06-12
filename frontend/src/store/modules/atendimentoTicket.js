@@ -338,12 +338,18 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
+      console.log('[DEBUG STORE] UPDATE_MESSAGES chamado com payload:', payload)
+      console.log('[DEBUG STORE] Payload isDeleted:', payload.isDeleted)
+      console.log('[DEBUG STORE] Payload ID:', payload.id)
+      console.log('[DEBUG STORE] Ticket ID:', payload.ticket?.id)
+
       // Criar um cache de mensagens por ticket se não existir
       if (!state.messagesByTicket) {
         state.messagesByTicket = {}
       }
 
       const ticketId = payload.ticket.id
+      console.log('[DEBUG STORE] TicketId extraído:', ticketId)
 
       // Inicializar array de mensagens para o ticket se não existir
       if (!state.messagesByTicket[ticketId]) {
@@ -352,23 +358,32 @@ const atendimentoTicket = {
 
       // Atualizar mensagens no cache do ticket
       const messageIndex = state.messagesByTicket[ticketId].findIndex(m => m.id === payload.id)
+      console.log('[DEBUG STORE] Message index no cache:', messageIndex)
       if (messageIndex !== -1) {
+        console.log('[DEBUG STORE] Atualizando mensagem existente no cache')
         state.messagesByTicket[ticketId][messageIndex] = payload
       } else {
+        console.log('[DEBUG STORE] Adicionando nova mensagem ao cache')
         state.messagesByTicket[ticketId].push(payload)
       }
 
       // Se o ticket estiver focado, atualizar também o array de mensagens visível
+      console.log('[DEBUG STORE] Ticket focado ID:', state.ticketFocado?.id)
+      console.log('[DEBUG STORE] Ticket é o focado?', state.ticketFocado.id === ticketId)
       if (state.ticketFocado.id === ticketId) {
         // Verificar se a mensagem já existe no array de mensagens visível
         const visibleMessageIndex = state.mensagens.findIndex(m => m.id === payload.id)
+        console.log('[DEBUG STORE] Visible message index:', visibleMessageIndex)
         if (visibleMessageIndex !== -1) {
           // Atualizar mensagem existente
+          console.log('[DEBUG STORE] Atualizando mensagem visível existente')
           const mensagens = [...state.mensagens]
           mensagens[visibleMessageIndex] = payload
           state.mensagens = mensagens
+          console.log('[DEBUG STORE] Mensagem atualizada no array visível:', mensagens[visibleMessageIndex])
         } else {
           // Adicionar nova mensagem mantendo ordem
+          console.log('[DEBUG STORE] Adicionando nova mensagem ao array visível')
           const newMessages = [...state.mensagens, payload]
           state.mensagens = orderMessages(newMessages)
         }
@@ -379,6 +394,8 @@ const atendimentoTicket = {
             state.ticketFocado.scheduledMessages.push(payload)
           }
         }
+      } else {
+        console.log('[DEBUG STORE] Ticket não é o focado, não atualizando mensagens visíveis')
       }
 
       // Atualizar informações do ticket na lista

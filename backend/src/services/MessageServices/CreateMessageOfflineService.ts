@@ -108,6 +108,15 @@ const CreateMessageOffilineService = async ({
             throw new Error("ERR_CREATING_MESSAGE");
           }
 
+          // Emitir para o canal correto que o frontend está escutando
+          io.emit(`tenant:${tenantId}:appMessage`, {
+            action: "create",
+            message: messageCreated,
+            ticket: messageCreated.ticket,
+            contact: messageCreated.ticket.contact
+          });
+          
+          // Também emitir para os canais antigos para compatibilidade
           io.to(`${tenantId}-${messageCreated.ticketId.toString()}`)
             .to(`${tenantId}-${messageCreated.ticket.status}`)
             .to(`${tenantId}-notification`)
@@ -157,6 +166,15 @@ const CreateMessageOffilineService = async ({
         lastMessageAt: new Date().getTime()
       });
 
+      // Emitir para o canal correto que o frontend está escutando
+      io.emit(`tenant:${tenantId}:appMessage`, {
+        action: "create",
+        message: messageCreated,
+        ticket: messageCreated.ticket,
+        contact: messageCreated.ticket.contact
+      });
+      
+      // Também emitir para os canais antigos para compatibilidade
       io.to(`${tenantId}-${messageCreated.ticketId.toString()}`)
         .to(`${tenantId}-${messageCreated.ticket.status}`)
         .to(`${tenantId}-notification`)

@@ -102,8 +102,12 @@ export default {
       handler (newVal, oldVal) {
         // //console.log('DEBUG: ticketFocado.id changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
         if (this.socket && this.ticketFocado?.id) {
-          // //console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          console.log('[DEBUG FRONTEND] Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          console.log('[DEBUG FRONTEND] Channel:', `tenant:${this.ticketFocado.tenantId}:joinChatBox`)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
+          console.log('[DEBUG FRONTEND] joinChatBox emitted successfully')
+        } else {
+          console.log('[DEBUG FRONTEND] Cannot emit joinChatBox - socket:', !!this.socket, 'ticketId:', this.ticketFocado?.id)
         }
       },
       immediate: true
@@ -112,8 +116,12 @@ export default {
       handler (newVal, oldVal) {
         // //console.log('DEBUG: socket changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
         if (this.socket && this.ticketFocado?.id) {
-          // //console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          console.log('[DEBUG FRONTEND] Socket handler - Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          console.log('[DEBUG FRONTEND] Socket handler - Channel:', `tenant:${this.ticketFocado.tenantId}:joinChatBox`)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
+          console.log('[DEBUG FRONTEND] Socket handler - joinChatBox emitted successfully')
+        } else {
+          console.log('[DEBUG FRONTEND] Socket handler - Cannot emit joinChatBox - socket:', !!this.socket, 'ticketId:', this.ticketFocado?.id)
         }
       },
       immediate: true
@@ -196,14 +204,14 @@ export default {
         ticket.queueId && this.queuesIds.indexOf(ticket.queueId) === -1
 
       this.socket.on('connect', () => {
-        // console.log('[DEBUG] Socket connected successfully')
-        if (this.status) {
-          // console.log('[DEBUG] Joining tickets room:', `tenant:${usuario.tenantId}:joinTickets`, this.status)
-          this.socket.emit(`tenant:${usuario.tenantId}:joinTickets`, this.status)
-        } else {
-          // console.log('[DEBUG] Joining notification room:', `tenant:${usuario.tenantId}:joinNotification`)
-          this.socket.emit(`tenant:${usuario.tenantId}:joinNotification`)
-        }
+        console.log('[DEBUG FRONTEND] Socket connected successfully')
+        console.log('[DEBUG FRONTEND] Usuario tenantId:', usuario.tenantId)
+        console.log('[DEBUG FRONTEND] Joining tickets room:', `tenant:${usuario.tenantId}:joinTickets`, 'status:', this.status)
+        this.socket.emit(`tenant:${usuario.tenantId}:joinTickets`, this.status)
+        console.log('[DEBUG FRONTEND] Joining tickets room completed')
+        console.log('[DEBUG FRONTEND] Joining notification room:', `tenant:${usuario.tenantId}:joinNotification`)
+        this.socket.emit(`tenant:${usuario.tenantId}:joinNotification`)
+        console.log('[DEBUG FRONTEND] Joining notification room completed')
       })
 
       this.socket.on('disconnect', (reason) => {
@@ -236,8 +244,17 @@ export default {
         }
       })
 
+      console.log('[DEBUG TICKETLIST] Registrando listener para canal:', `tenant:${usuario.tenantId}:appMessage`)
+      console.log('[DEBUG TICKETLIST] Usuario tenantId:', usuario.tenantId)
+
       this.socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
-        // console.log('[DEBUG] Evento appMessage recebido:', data)
+        console.log('[DEBUG TICKETLIST] ===== EVENTO APPMESSAGE RECEBIDO =====', data)
+        console.log('[DEBUG TICKETLIST] Canal:', `tenant:${usuario.tenantId}:appMessage`)
+        console.log('[DEBUG TICKETLIST] Action:', data.action)
+        console.log('[DEBUG TICKETLIST] Message isDeleted:', data.message?.isDeleted)
+        console.log('[DEBUG TICKETLIST] Message ID:', data.message?.id)
+        console.log('[DEBUG TICKETLIST] Ticket ID:', data.ticket?.id)
+
         if (data.action === 'create' && shouldUpdateTicket(data.ticket)) {
           if (this.ticketFocado.id !== data.ticket.id && this.status !== 'closed' && !data.message.fromMe && !data.ticket.chatFlowId) {
             this.$root.$emit('handlerNotifications', data.message)
@@ -247,6 +264,31 @@ export default {
           //  ticket: data.ticket
           // })
           this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', { type: this.status, ticket: data.ticket })
+        }
+
+        if (data.action === 'update' && shouldUpdateTicket(data.ticket)) {
+          console.log('[DEBUG TICKETLIST] Atualizando mensagem de app:', data)
+          console.log('[DEBUG TICKETLIST] Message isDeleted:', data.message?.isDeleted)
+          console.log('[DEBUG TICKETLIST] Message ID:', data.message?.id)
+          console.log('[DEBUG TICKETLIST] shouldUpdateTicket result:', shouldUpdateTicket(data.ticket))
+
+          // Atualizar a mensagem no store para refletir mudanças como isDeleted
+          const messageWithTicket = {
+            ...data.message,
+            ticket: data.ticket
+          }
+          console.log('[DEBUG TICKETLIST] Mensagem preparada para store:', messageWithTicket)
+          this.$store.commit('UPDATE_MESSAGES', messageWithTicket)
+          console.log('[DEBUG TICKETLIST] UPDATE_MESSAGES executado')
+
+          // Atualizar contagem de mensagens não lidas se necessário
+          this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', { type: this.status, ticket: data.ticket })
+          console.log('[DEBUG TICKETLIST] UPDATE_TICKET_UNREAD_MESSAGES executado')
+        } else {
+          console.log('[DEBUG TICKETLIST] Condição não atendida:')
+          console.log('[DEBUG TICKETLIST] - action:', data.action)
+          console.log('[DEBUG TICKETLIST] - shouldUpdateTicket:', shouldUpdateTicket(data.ticket))
+          console.log('[DEBUG TICKETLIST] - ticket:', data.ticket)
         }
       })
 
