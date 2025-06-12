@@ -154,7 +154,8 @@ const Waba360SendMessagesSystem = async (
         mediaUrl: messageItem.mediaUrl, // necessário para enviar error no envio do socket - call size
         messageId: messageToUpdate.messageId,
         status: "sended",
-        ack: 2
+        ack: 2,
+        fromMe: messageItem.fromMe
       }
     });
 

@@ -70,6 +70,7 @@ export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> =
           messageId: message.messageId,
           ack,
           status: newStatus,
+          read: ack >= 3, // Mensagem é considerada lida quando ack >= 3
           fromMe: message.fromMe,
           ticket: {
             id: message.ticket.id,

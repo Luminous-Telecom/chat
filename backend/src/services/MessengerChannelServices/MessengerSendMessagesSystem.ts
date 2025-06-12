@@ -149,7 +149,8 @@ const MessengerSendMessagesSystem = async (
           timestamp: message.timestamp,
           messageId: sendedMessage.messageId,
           status: "sended",
-          ack: 2
+          ack: 2,
+          fromMe: message.fromMe
         }
       });
 

@@ -3,9 +3,10 @@ import Router from 'src/router/index'
 import checkTicketFilter from 'src/utils/checkTicketFilter'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
+import { debounce } from 'quasar'
 
 const socket = socketIO()
-
+const DEBOUNCE_TIME = 300 // Manter em 300ms para ser responsivo mas evitar duplicações
 const userId = +localStorage.getItem('userId')
 
 // localStorage.debug = '*'
@@ -27,13 +28,21 @@ socket.on(`tokenInvalid:${socket.id}`, () => {
 export default {
   data () {
     return {
-      processingMessages: new Set() // Set para controlar mensagens em processamento
+      processingMessages: new Set(), // Set para controlar mensagens em processamento
+      ultimoStatusMensagem: new Map(), // Mapa para rastrear último status da mensagem
+      ultimaAtualizacaoNaoLidas: new Map(), // Mapa para rastrear última atualização de não lidas
+      ultimoAck: new Map() // Mapa para rastrear último ack de cada mensagem
     }
   },
   computed: {
     isMessageProcessing () {
-      return messageId => this.$store.getters['atendimentoTicket/isMessageProcessing'](messageId)
+      return this.$store.getters['atendimentoTicket/isMessageProcessing']
     }
+  },
+  created () {
+    // Criar versões com debounce das funções de atualização
+    this.atualizarStatusMensagemComDebounce = debounce(this.atualizarStatusMensagem, DEBOUNCE_TIME)
+    this.atualizarNaoLidasComDebounce = debounce(this.atualizarNaoLidas, DEBOUNCE_TIME)
   },
   methods: {
     scrollToBottom () {
@@ -68,21 +77,52 @@ export default {
       this.socketTicketListNew()
     },
     socketTicketListNew () {
+      const self = this // Guardar contexto do componente
+
       socket.on('connect', () => {
-        socket.on(`${usuario.tenantId}:ticketList`, async data => {
+        socket.on(`${usuario.tenantId}:ticketList`, async function (data) {
           if (data.type === 'chat:create') {
             if (
               !data.payload.read &&
               (data.payload.ticket.userId === userId || !data.payload.ticket.userId) &&
-              data.payload.ticket.id !== this.$store.getters.ticketFocado.id
+              data.payload.ticket.id !== self.$store.getters.ticketFocado.id
             ) {
               if (checkTicketFilter(data.payload.ticket)) {
-                this.handlerNotifications(data.payload)
+                self.handlerNotifications(data.payload)
               }
             }
-            this.$store.commit('UPDATE_MESSAGES', data.payload)
-            this.scrollToBottom()
-            // Atualiza notificações de mensagem
+            // Garantir que temos o ID do ticket no payload
+            const ticketId = data.payload.ticket?.id
+            if (!ticketId) {
+              console.warn('[socketTicketList] ID do ticket ausente no payload:', data.payload)
+              return
+            }
+
+            // Atualizar mensagem primeiro
+            const messagePayload = {
+              ...data.payload,
+              id: data.payload.id || data.payload.messageId // Garantir que sempre temos um ID
+            }
+            self.$store.commit('UPDATE_MESSAGES', messagePayload)
+            self.scrollToBottom()
+
+            // Atualizar contagem de não lidas apenas se for uma nova mensagem não lida
+            // e não for do usuário atual
+            if (data.payload.ticket?.unreadMessages !== undefined &&
+                !data.payload.fromMe &&
+                !data.payload.read &&
+                data.payload.ticket.userId !== userId) {
+              // Usar o valor do backend diretamente
+              self.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+                type: self.status,
+                ticket: {
+                  id: data.payload.ticket.id,
+                  unreadMessages: data.payload.ticket.unreadMessages
+                }
+              })
+            }
+
+            // Atualizar notificações de mensagem
             const params = {
               searchParam: '',
               pageNumber: 1,
@@ -96,52 +136,85 @@ export default {
             }
             try {
               const { data } = await ConsultarTickets(params)
-              this.countTickets = data.count
-              this.$store.commit('UPDATE_NOTIFICATIONS', data)
+              self.countTickets = data.count
+              self.$store.commit('UPDATE_NOTIFICATIONS', data)
             } catch (err) {
-              this.$notificarErro('Algum problema', err)
+              self.$notificarErro('Algum problema', err)
               console.error(err)
             }
           }
 
           if (data.type === 'chat:update') {
-            // Verificar se a mensagem está em processamento
-            if (this.isMessageProcessing(data.payload.messageId)) {
+            const messageId = data.payload.messageId
+            const ticketId = data.payload.ticket?.id
+
+            // Pular se dados obrigatórios estiverem ausentes
+            if (!messageId || !ticketId) {
               return
             }
-            this.$store.commit('UPDATE_MESSAGE_STATUS', {
-              ticketId: data.payload.ticketId,
-              messageId: data.payload.messageId,
-              read: data.payload.read,
+
+            // Usar atualização com debounce
+            self.atualizarStatusMensagemComDebounce({
+              messageId,
+              ticketId,
+              read: data.payload.read || false, // Garantir que read nunca seja undefined
               ticket: data.payload.ticket
             })
           }
 
           if (data.type === 'chat:ack') {
-            // Verificar se a mensagem está em processamento
-            if (this.isMessageProcessing(data.payload.messageId)) {
+            const messageId = data.payload.id || data.payload.messageId // Garantir que temos um ID
+            const ticketId = data.payload.ticket?.id
+
+            // Pular se dados obrigatórios estiverem ausentes
+            if (!messageId || !ticketId) {
+              console.warn('[chat:ack] Dados obrigatórios ausentes:', data.payload)
               return
             }
-            this.$store.commit('UPDATE_MESSAGE_STATUS', {
-              ticketId: data.payload.ticketId,
+
+            // Preparar payload comum
+            const statusPayload = {
+              id: messageId,
               messageId: data.payload.messageId,
+              ticketId,
               ack: data.payload.ack,
+              read: data.payload.ack >= 3, // Considerar lido quando ack >= 3
+              status: data.payload.status,
               ticket: data.payload.ticket
-            })
+            }
+
+            // Atualizar status imediatamente para ack >= 3 (mensagem lida)
+            // ou quando o ack é maior que o atual
+            const chave = `${ticketId}-${messageId}`
+            const statusAtual = self.ultimoStatusMensagem.get(chave)
+
+            if (data.payload.ack >= 3 || !statusAtual || data.payload.ack > statusAtual.ack) {
+              self.atualizarStatusMensagem(statusPayload)
+            } else {
+              // Para outros casos, usar debounce
+              self.atualizarStatusMensagemComDebounce(statusPayload)
+            }
           }
 
           if (data.type === 'chat:messagesRead') {
-            this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
-              type: this.status,
+            const ticketId = data.payload.ticketId
+            if (!ticketId) {
+              console.warn('[socketTicketList] ID do ticket ausente no payload de messagesRead:', data.payload)
+              return
+            }
+
+            // Usar o valor do backend diretamente
+            self.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+              type: self.status,
               ticket: {
-                id: data.payload.ticketId,
+                id: ticketId,
                 unreadMessages: data.payload.unreadMessages
               }
             })
           }
         })
 
-        socket.on(`${usuario.tenantId}:ticketList`, async data => {
+        socket.on(`${usuario.tenantId}:ticketList`, async function (data) {
           var verify = []
           if (data.type === 'notification:new') {
             const params = {
@@ -157,10 +230,10 @@ export default {
             }
             try {
               const data_noti = await ConsultarTickets(params)
-              this.$store.commit('UPDATE_NOTIFICATIONS_P', data_noti.data)
+              self.$store.commit('UPDATE_NOTIFICATIONS_P', data_noti.data)
               verify = data_noti
             } catch (err) {
-              this.$notificarErro('Algum problema', err)
+              self.$notificarErro('Algum problema', err)
               console.error(err)
             }
             // Faz verificação para se certificar que notificação pertence a fila do usuário
@@ -177,13 +250,101 @@ export default {
           }
         })
 
-        socket.on(`${usuario.tenantId}:contactList`, data => {
-          this.$store.commit('UPDATE_CONTACT', data.payload)
+        socket.on(`${usuario.tenantId}:contactList`, function (data) {
+          self.$store.commit('UPDATE_CONTACT', data.payload)
         })
       })
     },
     socketDisconnect () {
       socket.disconnect()
+    },
+    // Método auxiliar para atualizar status da mensagem
+    atualizarStatusMensagem (payload) {
+      const { id, messageId, ticketId, ack, read, status, ticket, fromMe } = payload
+      if (!messageId || !ticketId) {
+        console.warn('[atualizarStatusMensagem] Dados obrigatórios ausentes:', payload)
+        return
+      }
+
+      const chave = `${ticketId}-${messageId}`
+      const statusAtual = this.ultimoStatusMensagem.get(chave)
+
+      // Se já temos um status atual, verificar se a nova atualização é relevante
+      if (statusAtual) {
+        // Se o ack atual é maior que o novo, ignorar a atualização silenciosamente
+        if (statusAtual.ack > ack) {
+          return
+        }
+
+        // Se o ack é igual e o read não mudou, ignorar a atualização
+        if (statusAtual.ack === ack && statusAtual.read === (read || false)) {
+          return
+        }
+      }
+
+      // Atualizar último status conhecido
+      const novoStatus = {
+        ack,
+        read: read || false,
+        fromMe: fromMe // Preservar o valor de fromMe
+      }
+      this.ultimoStatusMensagem.set(chave, novoStatus)
+      this.ultimoAck.set(chave, ack)
+
+      // Commit no store com todos os dados necessários
+      this.$store.commit('UPDATE_MESSAGE_STATUS', {
+        id: id || messageId,
+        ticketId,
+        messageId,
+        ack,
+        read: novoStatus.read,
+        status: status || this.getStatusFromAck(ack),
+        ticket,
+        fromMe: fromMe // Garantir que fromMe seja incluído no commit
+      })
+
+      // Não atualizar contagem de não lidas aqui, deixar o backend controlar
+    },
+
+    // Método auxiliar para obter status a partir do ack
+    getStatusFromAck (ack) {
+      switch (ack) {
+        case 3:
+          return 'received'
+        case 2:
+          return 'delivered'
+        default:
+          return 'sended'
+      }
+    },
+
+    // Método auxiliar para atualizar mensagens não lidas
+    atualizarNaoLidas (payload) {
+      const { ticketId, unreadMessages, type } = payload
+      if (!ticketId || unreadMessages === undefined) {
+        console.warn('[atualizarNaoLidas] Dados obrigatórios ausentes:', payload)
+        return
+      }
+
+      const chave = `${ticketId}-${type || 'open'}`
+      const contagemAtual = this.ultimaAtualizacaoNaoLidas.get(chave)
+
+      // Pular se a contagem não mudou ou é inválida
+      if (contagemAtual === unreadMessages || unreadMessages < 0) {
+        return
+      }
+
+      // Atualizar última contagem conhecida
+      this.ultimaAtualizacaoNaoLidas.set(chave, unreadMessages)
+
+      // Commit no store
+      this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+        type: type || 'open',
+        ticket: {
+          id: ticketId,
+          unreadMessages
+        }
+      })
     }
   }
 }

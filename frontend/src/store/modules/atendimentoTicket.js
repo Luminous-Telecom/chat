@@ -355,7 +355,12 @@ const atendimentoTicket = {
       const mensagens = [...state.mensagens]
       if (messageIndex !== -1) {
         console.log('[UPDATE_MESSAGE_STATUS] Atualizando mensagem')
-        mensagens[messageIndex] = payload
+        // Preservar o campo fromMe ao atualizar a mensagem
+        mensagens[messageIndex] = {
+          ...mensagens[messageIndex],
+          ...payload,
+          fromMe: payload.fromMe !== undefined ? payload.fromMe : mensagens[messageIndex].fromMe
+        }
         state.mensagens = mensagens
       }
 
