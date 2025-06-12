@@ -15,8 +15,13 @@ import ListMessagesService from "../services/MessageServices/ListMessagesService
 import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import DeleteWhatsAppMessage from "../services/WbotServices/DeleteWhatsAppMessage";
 import { logger } from "../utils/logger";
-// import SendWhatsAppMedia from "../services/WbotServices/SendWhatsAppMedia";
-// import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
+import { getIO } from "../libs/socket";
+import CreateMessageService from "../services/MessageServices/CreateMessageService";
+import SendWhatsAppMedia from "../services/WbotServices/SendWhatsAppMedia";
+import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
+import { Op } from "sequelize";
+import Ticket from "../models/Ticket";
+import Contact from "../models/Contact";
 
 type IndexQuery = {
   pageNumber: string;
@@ -43,13 +48,6 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
       ticketId,
       tenantId
     });
-
-  // Removido para evitar marcação automática como lida no WhatsApp
-  // try {
-  //   SetTicketMessagesAsRead(ticket);
-  // } catch (error) {
-  //   console.log("SetTicketMessagesAsRead", error);
-  // }
 
   return res.json({ count, messages, messagesOffLine, ticket, hasMore });
 };
@@ -117,4 +115,77 @@ export const forward = async (
   }
 
   return res.send();
+};
+
+export const markAsRead = async (req: Request, res: Response): Promise<Response> => {
+  const { messageId } = req.params;
+  const { tenantId } = req.user;
+
+  logger.info(`[markAsRead] Iniciando marcação de mensagem como lida. MessageId: ${messageId}, TenantId: ${tenantId}`);
+
+  try {
+    const message = await Message.findOne({
+      where: { 
+        id: messageId,
+        tenantId
+      },
+      include: [
+        {
+          model: Ticket,
+          include: [{ model: Contact }]
+        }
+      ]
+    });
+
+    if (!message) {
+      logger.warn(`[markAsRead] Mensagem não encontrada. MessageId: ${messageId}`);
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    logger.info(`[markAsRead] Mensagem encontrada:`, {
+      messageId: message.id,
+      ticketId: message.ticketId,
+      read: message.read
+    });
+
+    // Marcar mensagem como lida
+    await message.update({ read: true });
+    logger.info(`[markAsRead] Mensagem marcada como lida`);
+
+    // Atualizar contador de mensagens não lidas no ticket
+    const unreadCount = await Message.count({
+      where: { 
+        ticketId: message.ticketId, 
+        read: false,
+        fromMe: false
+      }
+    });
+
+    logger.info(`[markAsRead] Novo contador de mensagens não lidas: ${unreadCount}`);
+
+    await message.ticket.update({ unreadMessages: unreadCount });
+    logger.info(`[markAsRead] Ticket atualizado com novo contador`);
+
+    // Notificar frontend
+    const io = getIO();
+    io.to(tenantId.toString()).emit(`${tenantId}:ticketList`, {
+      type: "chat:update",
+      payload: {
+        ticketId: message.ticketId,
+        messageId: message.id,
+        read: true,
+        ticket: {
+          id: message.ticket.id,
+          unreadMessages: unreadCount
+        }
+      }
+    });
+    logger.info(`[markAsRead] Evento emitido para o frontend`);
+
+    return res.status(200).json({ message: "Message marked as read" });
+  } catch (err) {
+    logger.error(`[markAsRead] Erro ao marcar mensagem como lida:`, err);
+    logger.error(`[markAsRead] Stack do erro:`, err.stack);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };

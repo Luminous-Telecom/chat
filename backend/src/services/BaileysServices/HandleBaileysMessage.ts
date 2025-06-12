@@ -127,17 +127,17 @@ const HandleBaileysMessage = async (
           return;
         }
 
-        // Marcar como lida se não for própria mensagem - COMENTADO PARA EVITAR MARCAÇÃO AUTOMÁTICA
-        // if (!msg.key.fromMe) {
-        //   // Usar setTimeout para não bloquear o processamento principal
-        //   setTimeout(async () => {
-        //     try {
-        //       await handleMessageReadReceipt(msg, ticket, message, wbot);
-        //     } catch (err) {
-        //       logger.error(`[HandleBaileysMessage] Error in read receipt: ${err}`);
-        //     }
-        //   }, 1000);
-        // }
+        // Marcar como lida se não for própria mensagem
+        if (!msg.key.fromMe) {
+          // Usar setTimeout para não bloquear o processamento principal
+          setTimeout(async () => {
+            try {
+              await handleMessageReadReceipt(msg, ticket, message, wbot);
+            } catch (err) {
+              logger.error(`[HandleBaileysMessage] Error in read receipt: ${err}`);
+            }
+          }, 1000);
+        }
 
         // Verificar horário comercial e chat flow
         const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
@@ -318,62 +318,9 @@ const handleMessageReadReceipt = async (
   wbot: BaileysClient
 ): Promise<void> => {
   try {
-    // Verificar se mensagem ainda não foi lida
-    const freshMessage = await Message.findOne({
-      where: { id: message.id, read: false }
-    });
-
-    if (!freshMessage) {
-      return;
-    }
-
-    const jid = msg.key.remoteJid || "";
-    const sessionState = (wbot as any)?.connection;
-    const wsExists = !!(wbot as any)?.ws;
-
-    if (sessionState === 'open' && wsExists) {
-      // Tentar marcar como lida usando readMessages
-      try {
-        await wbot.readMessages([{
-          remoteJid: jid,
-          id: msg.key.id,
-          fromMe: false
-        }]);
-      } catch (readErr) {
-        logger.warn(`[HandleBaileysMessage] readMessages failed: ${readErr}`);
-        
-        // Fallback: usar presença
-        try {
-          await wbot.sendPresenceUpdate('available', jid);
-          await wbot.sendPresenceUpdate('composing', jid);
-          await wbot.sendPresenceUpdate('paused', jid);
-        } catch (presenceErr) {
-          logger.warn(`[HandleBaileysMessage] Presence fallback failed: ${presenceErr}`);
-        }
-      }
-    }
-
-    // Atualizar no banco de dados
-    await freshMessage.update({ read: true });
-    
-    // Atualizar contador do ticket
-    const currentUnread = await Message.count({
-      where: { ticketId: ticket.id, read: false, fromMe: false }
-    });
-    
-    await ticket.update({ unreadMessages: currentUnread });
-
-    // Notificar frontend
-    socketEmit({
-      tenantId: ticket.tenantId,
-      type: "chat:update",
-      payload: {
-        ticketId: ticket.id,
-        messageId: freshMessage.id,
-        read: true
-      }
-    });
-
+    // Removida a marcação automática de mensagens como lidas
+    // para permitir que o usuário controle manualmente
+    logger.info(`[HandleBaileysMessage] Read receipt received but automatic marking disabled for message ${message.id}`);
   } catch (err) {
     logger.error(`[HandleBaileysMessage] Error processing read receipt: ${err}`);
   }

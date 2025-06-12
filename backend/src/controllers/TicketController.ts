@@ -15,6 +15,8 @@ import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
 import { pupa } from "../utils/pupa";
+import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
+import { logger } from "../utils/logger";
 
 type IndexQuery = {
   searchParam: string;
@@ -219,4 +221,28 @@ export const showLogsTicket = async (
   const logsTicket = await ShowLogTicketService({ ticketId });
 
   return res.status(200).json(logsTicket);
+};
+
+export const markAllAsRead = async (req: Request, res: Response): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+
+  logger.info(`[markAllAsRead] Iniciando marcação de todas as mensagens como lidas. TicketId: ${ticketId}, TenantId: ${tenantId}`);
+
+  try {
+    const ticket = await ShowTicketService({ id: ticketId, tenantId });
+    if (!ticket) {
+      logger.warn(`[markAllAsRead] Ticket não encontrado. TicketId: ${ticketId}`);
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    logger.info(`[markAllAsRead] Ticket encontrado, marcando mensagens como lidas`);
+    await SetTicketMessagesAsRead(ticket, true);
+    logger.info(`[markAllAsRead] Mensagens marcadas como lidas com sucesso`);
+
+    return res.status(200).json({ message: "All messages marked as read" });
+  } catch (error) {
+    logger.error(`[markAllAsRead] Erro ao marcar mensagens como lidas:`, error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };

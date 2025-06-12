@@ -25,6 +25,16 @@ socket.on(`tokenInvalid:${socket.id}`, () => {
 })
 
 export default {
+  data () {
+    return {
+      processingMessages: new Set() // Set para controlar mensagens em processamento
+    }
+  },
+  computed: {
+    isMessageProcessing () {
+      return messageId => this.$store.getters['atendimentoTicket/isMessageProcessing'](messageId)
+    }
+  },
   methods: {
     scrollToBottom () {
       setTimeout(() => {
@@ -56,17 +66,8 @@ export default {
     },
     socketTicketList () {
       this.socketTicketListNew()
-      // const searchParam = null
     },
     socketTicketListNew () {
-      // // if (status) {
-      // socket.emit(`${usuario.tenantId}:joinTickets`, 'open')
-      // socket.emit(`${usuario.tenantId}:joinTickets`, 'pending')
-      // socket.emit(`${usuario.tenantId}:joinTickets`, 'closed')
-      // // } else {
-      // socket.emit(`${usuario.tenantId}:joinNotification`)
-      // }
-
       socket.on('connect', () => {
         socket.on(`${usuario.tenantId}:ticketList`, async data => {
           if (data.type === 'chat:create') {
@@ -92,12 +93,10 @@ export default {
               withUnreadMessages: true,
               isNotAssignedUser: false,
               includeNotQueueDefined: true
-              // date: new Date(),
             }
             try {
               const { data } = await ConsultarTickets(params)
-              this.countTickets = data.count // count total de tickets no status
-              // this.ticketsList = data.tickets
+              this.countTickets = data.count
               this.$store.commit('UPDATE_NOTIFICATIONS', data)
             } catch (err) {
               this.$notificarErro('Algum problema', err)
@@ -105,14 +104,43 @@ export default {
             }
           }
 
-          if (data.type === 'chat:ack' || data.type === 'chat:delete') {
-            this.$store.commit('UPDATE_MESSAGE_STATUS', data.payload)
+          if (data.type === 'chat:update') {
+            // Verificar se a mensagem está em processamento
+            if (this.isMessageProcessing(data.payload.messageId)) {
+              return
+            }
+            this.$store.commit('UPDATE_MESSAGE_STATUS', {
+              ticketId: data.payload.ticketId,
+              messageId: data.payload.messageId,
+              read: data.payload.read,
+              ticket: data.payload.ticket
+            })
           }
 
-          if (data.type === 'ticket:update') {
-            this.$store.commit('UPDATE_TICKET', data.payload)
+          if (data.type === 'chat:ack') {
+            // Verificar se a mensagem está em processamento
+            if (this.isMessageProcessing(data.payload.messageId)) {
+              return
+            }
+            this.$store.commit('UPDATE_MESSAGE_STATUS', {
+              ticketId: data.payload.ticketId,
+              messageId: data.payload.messageId,
+              ack: data.payload.ack,
+              ticket: data.payload.ticket
+            })
+          }
+
+          if (data.type === 'chat:messagesRead') {
+            this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+              type: this.status,
+              ticket: {
+                id: data.payload.ticketId,
+                unreadMessages: data.payload.unreadMessages
+              }
+            })
           }
         })
+
         socket.on(`${usuario.tenantId}:ticketList`, async data => {
           var verify = []
           if (data.type === 'notification:new') {
@@ -126,7 +154,6 @@ export default {
               withUnreadMessages: false,
               isNotAssignedUser: false,
               includeNotQueueDefined: true
-              // date: new Date(),
             }
             try {
               const data_noti = await ConsultarTickets(params)

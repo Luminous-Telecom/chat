@@ -18,7 +18,7 @@
             :key="`ref-${mensagem.createdAt}`"
             ref="lastMessageRef"
             id="lastMessageRef"
-            style="float: 'left', background: 'black', clear: 'both'"
+            style="float: left; background: black; clear: both;"
           />
         </template>
         <div
@@ -102,7 +102,7 @@
             <div
               v-if="isGroupLabel(mensagem)"
               class="q-mb-sm"
-              style="display: flex; color: rgb(59 23 251); fontWeight: 500;"
+              style="display: flex; color: rgb(59 23 251); font-weight: 500;"
             >
               {{ isGroupLabel(mensagem) }}
             </div>
@@ -113,8 +113,7 @@
               <MensagemRespondida
                 style="max-width: 240px; max-height: 150px"
                 class="row justify-center"
-                @mensagem-respondida:focar-mensagem="f
-                                                                                                                carMensagem"
+                @mensagem-respondida:focar-mensagem="focarMensagem"
                 :mensagem="mensagem.quotedMsg"
               />
             </div>
@@ -186,7 +185,7 @@
               :color=" mensagem.ack >= 3 ? 'blue-12' : '' "
             />
             <template v-if=" mensagem.mediaType === 'audio' ">
-              <div style="width: 330px; heigth: 300px">
+              <div style="width: 330px; height: 300px">
                 <audio
                   class="q-mt-md full-width"
                   controls
@@ -237,13 +236,13 @@
                 :src=" mensagem.mediaUrl "
                 controls
                 class="q-mt-md"
-                style="objectFit: cover;
+                style="object-fit: cover;
                   width: 330px;
                   height: 150px;
-                  borderTopLeftRadius: 8px;
-                  borderTopRightRadius: 8px;
-                  borderBottomLeftRadius: 8px;
-                  borderBottomRightRadius: 8px;
+                  border-top-left-radius: 8px;
+                  border-top-right-radius: 8px;
+                  border-bottom-left-radius: 8px;
+                  border-bottom-right-radius: 8px;
                 "
               >
               </video>
@@ -326,6 +325,7 @@
 </template>
 
 <script>
+import { mapGetters, mapMutations } from 'vuex'
 import mixinCommon from './mixinCommon'
 import axios from 'axios'
 import VueEasyLightbox from 'vue-easy-lightbox'
@@ -350,6 +350,10 @@ export default {
     mensagensParaEncaminhar: {
       type: Array,
       default: () => []
+    },
+    ticketFocado: {
+      type: Object,
+      required: true
     },
     size: {
       type: [String, Number],
@@ -377,7 +381,8 @@ export default {
       abrirModalImagem: false,
       urlMedia: '',
       identificarMensagem: null,
-      ackIcons: { // Se ACK == 3 ou 4 entao color green
+      loading: false,
+      localAckIcons: {
         0: 'mdi-clock-outline',
         1: 'mdi-check',
         2: 'mdi-check-all',
@@ -386,11 +391,26 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapGetters({
+      isMessageProcessing: 'atendimentoTicket/isMessageProcessing'
+    }),
+    unreadMessages () {
+      return this.mensagens.filter(m => !m.fromMe && !m.read)
+    },
+    ackIcons () {
+      // Fallback para o estado local se o Vuex não estiver disponível
+      return this.$store.state.chat?.ackIcons || this.localAckIcons
+    }
+  },
   components: {
     VueEasyLightbox,
     MensagemRespondida
   },
   methods: {
+    ...mapMutations({
+      updateTicketUnreadMessages: 'UPDATE_TICKET_UNREAD_MESSAGES'
+    }),
     verificarEncaminharMensagem (mensagem) {
       const mensagens = [...this.mensagensParaEncaminhar]
       const msgIdx = mensagens.findIndex(m => m.id === mensagem.id)
@@ -510,13 +530,55 @@ export default {
       setTimeout(() => {
         this.identificarMensagem = null
       }, 5000)
+    },
+    async markUnreadMessagesAsRead () {
+      if (!this.ticketFocado || !this.ticketFocado.id) return
+      if (this.unreadMessages.length === 0) return
+      if (this.loading) return
+
+      this.loading = true
+      try {
+        await this.$axios.post(`/tickets/${this.ticketFocado.id}/read`)
+
+        // Atualiza o estado através da mutation
+        this.updateTicketUnreadMessages({
+          ticket: {
+            ...this.ticketFocado,
+            unreadMessages: 0
+          }
+        })
+      } catch (err) {
+        console.error('[markUnreadMessagesAsRead] Erro ao marcar mensagens como lidas:', err)
+        this.$notificarErro('Erro ao marcar mensagens como lidas', err)
+      } finally {
+        this.loading = false
+      }
+    }
+  },
+  watch: {
+    ticketFocado: {
+      handler (newTicket) {
+        if (newTicket) {
+          this.markUnreadMessagesAsRead()
+        }
+      },
+      immediate: true
+    },
+    mensagens: {
+      handler (newMessages) {
+        if (newMessages.length > 0) {
+          this.markUnreadMessagesAsRead()
+        }
+      },
+      deep: true
     }
   },
   mounted () {
     this.scrollToBottom()
-    // this.$refs.audioMessage.forEach(element => {
-    //   element.playbackRate = 2
-    // })
+    // Marca mensagens como lidas ao montar o componente
+    this.$nextTick(() => {
+      this.markUnreadMessagesAsRead()
+    })
   },
   destroyed () {
   }

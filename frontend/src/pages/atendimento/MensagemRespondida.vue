@@ -232,8 +232,14 @@ export default {
 </script>
 
 <style lang="scss">
-// .q-message-text {
-//   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 1px rgba(0, 0, 0, 0.14),
-//     0 2px 1px -1px rgba(0, 0, 0, 0.12);
-// }
+.message-image {
+  cursor: pointer;
+  max-width: 240px;
+  max-height: 150px;
+  object-fit: cover;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
 </style>

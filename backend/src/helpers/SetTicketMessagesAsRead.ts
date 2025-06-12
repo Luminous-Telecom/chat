@@ -7,9 +7,11 @@ import GetTicketWbot from "./GetTicketWbot";
 import socketEmit from "./socketEmit";
 import Whatsapp from "../models/Whatsapp";
 import { StartWhatsAppSessionVerify } from "../services/WbotServices/StartWhatsAppSessionVerify";
+import { getIO } from "../libs/socket";
 
 const SetTicketMessagesAsRead = async (ticket: Ticket, force = false): Promise<void> => {
   try {
+    logger.info(`[SetTicketMessagesAsRead] Starting process for ticket ${ticket.id}, tenantId: ${ticket.tenantId}, force: ${force}`);
 
     // Verificar se há mensagens não lidas
     const unreadCount = await Message.count({
@@ -20,7 +22,10 @@ const SetTicketMessagesAsRead = async (ticket: Ticket, force = false): Promise<v
       }
     });
 
+    logger.info(`[SetTicketMessagesAsRead] Found ${unreadCount} unread messages for ticket ${ticket.id}`);
+
     if (unreadCount === 0 && !force) {
+      logger.info(`[SetTicketMessagesAsRead] No unread messages and force=false, skipping ticket ${ticket.id}`);
       return;
     }
 
@@ -38,7 +43,7 @@ const SetTicketMessagesAsRead = async (ticket: Ticket, force = false): Promise<v
       limit: 20 // Aumentar limite
     });
 
-    logger.info(`[SetTicketMessagesAsRead] Processing ${unreadMessages.length} messages with valid messageId`);
+    logger.info(`[SetTicketMessagesAsRead] Processing ${unreadMessages.length} messages with valid messageId for ticket ${ticket.id}`);
 
     // Atualizar mensagens no banco primeiro
     const [updatedCount] = await Message.update(
@@ -52,25 +57,31 @@ const SetTicketMessagesAsRead = async (ticket: Ticket, force = false): Promise<v
       }
     );
 
-    logger.info(`[SetTicketMessagesAsRead] Updated ${updatedCount} messages in database`);
+    logger.info(`[SetTicketMessagesAsRead] Updated ${updatedCount} messages in database for ticket ${ticket.id}`);
 
     // Atualizar contador do ticket
     await ticket.update({ unreadMessages: 0 });
+    logger.info(`[SetTicketMessagesAsRead] Updated ticket unreadMessages counter to 0 for ticket ${ticket.id}`);
 
     // Processar por canal
+    logger.info(`[SetTicketMessagesAsRead] Processing channel ${ticket.channel} for ticket ${ticket.id}`);
     if (ticket.channel === "whatsapp") {
       await handleWhatsAppReadReceipt(ticket, unreadMessages);
     } else if (ticket.channel === "messenger") {
       await handleMessengerReadReceipt(ticket);
+    } else {
+      logger.info(`[SetTicketMessagesAsRead] Channel ${ticket.channel} does not require read receipt processing for ticket ${ticket.id}`);
     }
 
     // Notificar frontend
+    logger.info(`[SetTicketMessagesAsRead] Notifying frontend for ticket ${ticket.id}`);
     await notifyFrontend(ticket);
 
-    logger.info(`[SetTicketMessagesAsRead] Completed for ticket ${ticket.id}`);
+    logger.info(`[SetTicketMessagesAsRead] Successfully completed for ticket ${ticket.id}`);
 
   } catch (err: any) {
     logger.error(`[SetTicketMessagesAsRead] Error for ticket ${ticket.id}: ${err?.message || err}`);
+    logger.error(`[SetTicketMessagesAsRead] Error stack: ${err?.stack}`);
     throw err;
   }
 };
@@ -214,29 +225,39 @@ const attemptReconnection = async (whatsappId: number, reason: string): Promise<
 
 const notifyFrontend = async (ticket: Ticket): Promise<void> => {
   try {
+    logger.info(`[SetTicketMessagesAsRead] Starting frontend notification for ticket ${ticket.id}, tenantId: ${ticket.tenantId}`);
+    
     const ticketReload = await ShowTicketService({
       id: ticket.id,
       tenantId: ticket.tenantId
     });
+    
+    logger.info(`[SetTicketMessagesAsRead] Ticket reloaded successfully for notification, ticket ${ticket.id}`);
 
     // Emitir múltiplos eventos para garantir atualização
+    logger.info(`[SetTicketMessagesAsRead] Emitting ticket:update event for ticket ${ticket.id}`);
     socketEmit({
       tenantId: ticket.tenantId,
       type: "ticket:update",
       payload: ticketReload
     });
 
-    socketEmit({
-      tenantId: ticket.tenantId,
+    // Emitir evento chat:messagesRead no canal ticketList
+    logger.info(`[SetTicketMessagesAsRead] Emitting chat:messagesRead event for ticket ${ticket.id}`);
+    const io = getIO();
+    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, {
       type: "chat:messagesRead",
       payload: {
         ticketId: ticket.id,
         unreadMessages: 0
       }
     });
+    
+    logger.info(`[SetTicketMessagesAsRead] Frontend notification completed successfully for ticket ${ticket.id}`);
 
   } catch (err: any) {
-    logger.warn(`[SetTicketMessagesAsRead] Frontend notification error: ${err?.message || err}`);
+    logger.error(`[SetTicketMessagesAsRead] Frontend notification error for ticket ${ticket.id}: ${err?.message || err}`);
+    logger.error(`[SetTicketMessagesAsRead] Frontend notification error stack: ${err?.stack}`);
   }
 };
 
