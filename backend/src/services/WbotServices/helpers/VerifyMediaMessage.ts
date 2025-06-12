@@ -226,10 +226,19 @@ const VerifyMediaMessage = async (
     const message = await CreateMessageService({ messageData, tenantId: ticket.tenantId });
 
 
+    // Calcular contador de mensagens não lidas
+    const currentUnread = await Message.count({
+      where: { ticketId: ticket.id, read: false, fromMe: false }
+    });
+    
+    // Incrementar contador se mensagem não for própria
+    const newUnreadCount = msg.fromMe ? currentUnread : currentUnread + 1;
+    
     await ticket.update({
       lastMessage: msg.body || filename,
       lastMessageAt: new Date().getTime(),
-      answered: msg.fromMe || false
+      answered: msg.fromMe || false,
+      unreadMessages: newUnreadCount
     });
 
 

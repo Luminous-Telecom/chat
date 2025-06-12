@@ -1,6 +1,7 @@
 // import { WbotMessage } from "../../../types/wbot";
 import Contact from "../../../models/Contact";
 import Ticket from "../../../models/Ticket";
+import Message from "../../../models/Message";
 import CreateMessageService from "../../MessageServices/CreateMessageService";
 import VerifyQuotedMessage from "./VerifyQuotedMessage";
 import { logger } from "../../../utils/logger";
@@ -31,10 +32,19 @@ const VerifyMessage = async (
     
 
 
+    // Calcular contador de mensagens não lidas
+    const currentUnread = await Message.count({
+      where: { ticketId: ticket.id, read: false, fromMe: false }
+    });
+    
+    // Incrementar contador se mensagem não for própria
+    const newUnreadCount = msg.fromMe ? currentUnread : currentUnread + 1;
+    
     await ticket.update({
       lastMessage: msg.body,
       lastMessageAt: new Date().getTime(),
-      answered: msg.fromMe || false
+      answered: msg.fromMe || false,
+      unreadMessages: newUnreadCount
     });
 
     

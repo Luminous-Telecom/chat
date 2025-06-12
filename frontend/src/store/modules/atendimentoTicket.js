@@ -192,9 +192,10 @@ const atendimentoTicket = {
       const ticketIndex = tickets.findIndex(t => t.id === ticketId)
       if (ticketIndex !== -1) {
         tickets[ticketIndex] = payload
-        tickets[ticketIndex].unreadMessages = 0
+        // Manter o valor de unreadMessages do payload ao invés de zerar
+        tickets[ticketIndex].unreadMessages = payload.unreadMessages || 0
       }
-      state.ticket = tickets
+      state.tickets = tickets
     },
     // OK
     UPDATE_TICKET (state, payload) {
@@ -328,7 +329,8 @@ const atendimentoTicket = {
       const TicketIndexUpdate = state.tickets.findIndex(t => t.id == payload.ticket.id)
       if (TicketIndexUpdate !== -1) {
         const tickets = [...state.tickets]
-        const unreadMessages = state.ticketFocado.id == payload.ticket.id ? 0 : payload.ticket.unreadMessages
+        // Usar sempre o valor real do backend para unreadMessages
+        const unreadMessages = payload.ticket.unreadMessages
         tickets[TicketIndexUpdate] = {
           ...state.tickets[TicketIndexUpdate],
           answered: payload.ticket.answered,
