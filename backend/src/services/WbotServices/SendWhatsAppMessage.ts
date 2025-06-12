@@ -30,18 +30,17 @@ export const SendWhatsAppMessage = async (
     const number = `${contact.number}@${ticket.isGroup ? "g.us" : "s.whatsapp.net"}`;
 
     // Primeiro, verifica se já existe uma mensagem pendente nos últimos 5 segundos
-    // Usamos FOR UPDATE para garantir que ninguém mais pode criar/atualizar mensagens nesse período
     const existingMessage = await Message.findOne({
       where: {
         ticketId: ticket.id,
         fromMe: true,
         body: body,
         createdAt: {
-          [Op.gte]: new Date(Date.now() - 5000) // Últimos 5 segundos
+          [Op.gte]: new Date(Date.now() - 5000)
         },
         isDeleted: false
       },
-      order: [['createdAt', 'DESC']], // Pegamos a mais recente
+      order: [['createdAt', 'DESC']],
       lock: true,
       transaction: t
     });
@@ -50,7 +49,6 @@ export const SendWhatsAppMessage = async (
 
     if (existingMessage) {
       logger.info(`[SendWhatsAppMessage] Found existing message ${existingMessage.id} from ${existingMessage.createdAt.toISOString()}, reusing it`);
-      // Se a mensagem existente estava com erro, atualiza para pending
       if (existingMessage.status === 'error') {
         await existingMessage.update({
           status: 'pending',
@@ -65,9 +63,9 @@ export const SendWhatsAppMessage = async (
         contactId: contact.id,
         fromMe: true,
         read: true,
-        mediaType: media ? "document" : "chat", // Simplificando o tipo de mídia
+        mediaType: media ? "document" : "chat",
         timestamp: Date.now(),
-        quotedMsg: quotedMsg ? { id: quotedMsg.id } : {},
+        quotedMsgId: quotedMsg?.id || null,
         status: "pending",
         ack: 0,
         messageId: null,
@@ -80,53 +78,63 @@ export const SendWhatsAppMessage = async (
         contactId: contact.id,
         fromMe: true,
         read: true,
-        mediaType: media ? "document" : "chat", // Simplificando o tipo de mídia
+        mediaType: media ? "document" : "chat",
         timestamp: Date.now(),
-        quotedMsg: quotedMsg ? { id: quotedMsg.id } : {},
+        quotedMsgId: quotedMsg?.id || null,
         status: "pending",
         ack: 0,
         messageId: null,
         tenantId: ticket.tenantId
       }, { transaction: t });
 
-      logger.info(`[SendWhatsAppMessage] Message created in database with ID: ${messageToUpdate.id}`);
+      logger.info(`[SendWhatsAppMessage] Message created in database with ID: ${messageToUpdate.id}, quotedMsgId: ${messageToUpdate.quotedMsgId}`);
+    }
+
+    // Prepara as opções da mensagem incluindo a citação se houver
+    const messageOptions: any = {
+      linkPreview: false
+    };
+
+    if (quotedMsg?.messageId) {
+      logger.info(`[SendWhatsAppMessage] Adding quote to message. Quoted message ID: ${quotedMsg.messageId}`);
+      messageOptions.quoted = {
+        key: {
+          remoteJid: number,
+          id: quotedMsg.messageId,
+          fromMe: quotedMsg.fromMe
+        },
+        message: {
+          conversation: quotedMsg.body
+        }
+      };
     }
 
     // Envia a mensagem
     logger.info(`[SendWhatsAppMessage] Preparing to send message to chatId: ${number}`);
     const sentMessage = await wbot.sendMessage(number, {
-      text: body,
-      linkPreview: false
-    });
+      text: body
+    }, messageOptions);
 
     // Extrai o ID da mensagem e status da resposta
     const messageId = sentMessage.key.id;
-    const status = sentMessage.status || 1; // 1 = PENDING
+    const status = sentMessage.status || 1;
 
-    logger.info(`[SendWhatsAppMessage] Message sent successfully. Raw response: ${JSON.stringify(sentMessage)}`);
-    logger.info(`[SendWhatsAppMessage] Extracted message ID: ${messageId}, Status: ${status}`);
-
-    // Atualiza a mensagem com o ID do WhatsApp e status
-    logger.info(`[SendWhatsAppMessage] Updating message in database: ${JSON.stringify({
-      messageId,
-      status: 'pending',
-      ack: status
-    })}`);
-
+    // Atualiza a mensagem com o ID e status
     await messageToUpdate.update({
       messageId,
-      status: 'pending',
+      status: "sended",
       ack: status
     }, { transaction: t });
 
-    logger.info(`[SendWhatsAppMessage] Message ${messageToUpdate.id} updated in database. Status: pending`);
-
     await t.commit();
+
+    logger.info(`[SendWhatsAppMessage] Message sent successfully. ID: ${messageId}, Status: ${status}`);
     return messageToUpdate;
-  } catch (err) {
+
+  } catch (error) {
     await t.rollback();
-    logger.error(`[SendWhatsAppMessage] Error sending message: ${err}`);
-    throw new AppError("ERR_SENDING_WAPP_MSG", 500);
+    logger.error(`[SendWhatsAppMessage] Error: ${error}`);
+    throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };
 

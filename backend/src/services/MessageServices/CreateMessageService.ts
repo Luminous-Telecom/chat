@@ -50,7 +50,14 @@ const CreateMessageService = async ({
         {
           model: Message,
           as: "quotedMsg",
-          include: ["contact"]
+          required: false, // LEFT JOIN - não é obrigatório
+          include: [
+            {
+              model: require("../../models/Contact").default,
+              as: "contact",
+              attributes: ["id", "name", "number", "profilePicUrl"]
+            }
+          ]
         }
       ]
     });

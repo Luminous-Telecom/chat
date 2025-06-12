@@ -604,6 +604,9 @@ export default {
       const formData = new FormData()
       formData.append('fromMe', true)
       formData.append('id', uid())
+      if (this.replyingMessage?.id) {
+        formData.append('quotedMsgId', this.replyingMessage.id)
+      }
       this.arquivos.forEach(media => {
         formData.append('medias', media)
         formData.append('body', media.name)
@@ -645,6 +648,7 @@ export default {
         body: mensagem,
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
+        quotedMsgId: this.replyingMessage?.id || null,
         id: uid()
       }
       if (this.isScheduleDate) {
@@ -664,6 +668,7 @@ export default {
         : this.prepararUploadMedia()
       try {
         if (!this.cMostrarEnvioArquivo && !this.textChat) return
+        console.log('[DEBUG] Mensagem enviada:', message)
         await EnviarMensagemTexto(ticketId, message)
         this.arquivos = []
         this.textChat = ''
@@ -698,6 +703,7 @@ export default {
         body: mensagem,
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
+        quotedMsgId: this.replyingMessage?.id || null,
         id: uid()
       }
 
