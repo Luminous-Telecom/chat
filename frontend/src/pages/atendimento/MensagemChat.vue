@@ -395,8 +395,19 @@ export default {
     ...mapGetters({
       isMessageProcessing: 'atendimentoTicket/isMessageProcessing'
     }),
+    messagesByTicket () {
+      return this.$store.state.atendimentoTicket.messagesByTicket || {}
+    },
     unreadMessages () {
-      return this.mensagens.filter(m => !m.fromMe && !m.read)
+      if (!this.ticketFocado?.id) return []
+      const ticketId = this.ticketFocado.id
+      const messages = this.messagesByTicket[ticketId] || []
+      return messages.filter(m => !m.fromMe && !m.read)
+    },
+    displayMessages () {
+      if (!this.ticketFocado?.id) return []
+      const ticketId = this.ticketFocado.id
+      return this.messagesByTicket[ticketId] || []
     },
     ackIcons () {
       // Fallback para o estado local se o Vuex não estiver disponível
