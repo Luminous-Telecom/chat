@@ -31,7 +31,7 @@ export class BaileysMessageAdapter {
       timestamp: Number(msg.messageTimestamp) || 0,
       downloadMedia: async () => {
         if (!wbot || !msg.message) {
-          console.log('[BaileysMessageAdapter] No wbot or message available for download');
+          //console.log('[BaileysMessageAdapter] No wbot or message available for download');
           return null;
         }
 
@@ -41,8 +41,8 @@ export class BaileysMessageAdapter {
                        msg.message.documentMessage;
 
         if (!content || typeof content !== 'object' || !('url' in content)) {
-          console.log('[BaileysMessageAdapter] No valid media content found. Message type:', messageType);
-          console.log('[BaileysMessageAdapter] Available message keys:', Object.keys(msg.message || {}));
+          //console.log('[BaileysMessageAdapter] No valid media content found. Message type:', messageType);
+          //console.log('[BaileysMessageAdapter] Available message keys:', Object.keys(msg.message || {}));
           return null;
         }
 
@@ -52,16 +52,16 @@ export class BaileysMessageAdapter {
         
         while (retryCount <= maxRetries) {
           try {
-            console.log(`[BaileysMessageAdapter] Attempting to download media (attempt ${retryCount + 1}/${maxRetries + 1}) for message type:`, messageType);
+            //console.log(`[BaileysMessageAdapter] Attempting to download media (attempt ${retryCount + 1}/${maxRetries + 1}) for message type:`, messageType);
             
             // Use the imported downloadMediaMessage function
             const buffer = await downloadMediaMessage(msg, 'buffer', {});
             
             if (buffer && buffer.length > 0) {
-              console.log('[BaileysMessageAdapter] Successfully downloaded media, buffer size:', buffer.length);
+              //console.log('[BaileysMessageAdapter] Successfully downloaded media, buffer size:', buffer.length);
               return buffer as Buffer;
             } else {
-              console.log('[BaileysMessageAdapter] Download returned null/empty buffer');
+              //console.log('[BaileysMessageAdapter] Download returned null/empty buffer');
               if (retryCount === maxRetries) {
                 return null;
               }

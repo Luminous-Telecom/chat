@@ -3385,7 +3385,7 @@ copyright 2016 jsPlumb
     if (jsPlumbUtil.logEnabled && typeof console !== "undefined") {
       try {
         var msg = arguments[arguments.length - 1];
-        console.log(msg);
+        //console.log(msg);
       }
       catch (e) {
       }
@@ -11554,9 +11554,9 @@ copyright 2016 jsPlumb
     };
 
     var dumpSegmentsToConsole = function () {
-      console.log("SEGMENTS:");
+      //console.log("SEGMENTS:");
       for (var i = 0; i < segments.length; i++) {
-        console.log(segments[i].type, segments[i].getLength(), segmentProportions[i]);
+        //console.log(segments[i].type, segments[i].getLength(), segmentProportions[i]);
       }
     };
 

@@ -195,9 +195,9 @@ const CreateMessageSystemService = async ({
     }
 
   } catch (error) {
-    logger.error(`[CreateMessageSystemService] Error:`, error.message || 'Unknown error');
-    logger.error(`[CreateMessageSystemService] Error stack:`, error.stack);
-    throw error;
+    logger.error(`[CreateMessageSystemService] Erro ao criar mensagem:`, error.message || 'Erro desconhecido');
+    logger.error(`[CreateMessageSystemService] Stack trace:`, error.stack);
+    throw new Error(`Erro ao criar mensagem: ${error.message || 'Erro desconhecido'}`);
   }
 };
 

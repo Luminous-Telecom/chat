@@ -269,8 +269,8 @@ const onChatMessage = (socket: Socket) => {
     if (dataTenant) {
       const { to } = data;
       const { from } = data;
-      console.log("TO", to);
-      console.log("FROM", from);
+      //console.log("TO", to);
+      //console.log("FROM", from);
       const od = data.type;
       if (data.type === "s") {
         data.type = "r";

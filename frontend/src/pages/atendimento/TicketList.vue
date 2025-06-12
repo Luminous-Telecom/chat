@@ -100,9 +100,9 @@ export default {
   watch: {
     'ticketFocado.id': {
       handler (newVal, oldVal) {
-        console.log('DEBUG: ticketFocado.id changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
+        //console.log('DEBUG: ticketFocado.id changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
         if (this.socket && this.ticketFocado?.id) {
-          console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          //console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
         }
       },
@@ -110,9 +110,9 @@ export default {
     },
     socket: {
       handler (newVal, oldVal) {
-        console.log('DEBUG: socket changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
+        //console.log('DEBUG: socket changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
         if (this.socket && this.ticketFocado?.id) {
-          console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          //console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
         }
       },
@@ -183,11 +183,11 @@ export default {
       }, 200)
     },
     ticketListSocket () {
-      console.log('DEBUG: ticketListSocket called')
+      //console.log('DEBUG: ticketListSocket called')
       this.socket = socketIO()
-      console.log('DEBUG: socket created:', this.socket)
+      //console.log('DEBUG: socket created:', this.socket)
       const usuario = JSON.parse(localStorage.getItem('usuario'))
-      console.log('DEBUG: usuario from localStorage:', usuario)
+      //console.log('DEBUG: usuario from localStorage:', usuario)
 
       const shouldUpdateTicket = (ticket) =>
         (!ticket.userId || ticket.userId === usuario?.userId || this.showAll) &&
@@ -197,12 +197,12 @@ export default {
         ticket.queueId && this.queuesIds.indexOf(ticket.queueId) === -1
 
       this.socket.on('connect', () => {
-        console.log('DEBUG: socket connected')
+        //console.log('DEBUG: socket connected')
         if (this.status) {
-          console.log('DEBUG: emitting joinTickets with status:', this.status)
+          //console.log('DEBUG: emitting joinTickets with status:', this.status)
           this.socket.emit(`tenant:${usuario.tenantId}:joinTickets`, this.status)
         } else {
-          console.log('DEBUG: emitting joinNotification')
+          //console.log('DEBUG: emitting joinNotification')
           this.socket.emit(`tenant:${usuario.tenantId}:joinNotification`)
         }
       })
@@ -258,8 +258,8 @@ export default {
     }
   },
   mounted () {
-    console.log('DEBUG: TicketList mounted - ticketFocado:', this.ticketFocado)
-    console.log('DEBUG: TicketList mounted - socket:', this.socket)
+    //console.log('DEBUG: TicketList mounted - ticketFocado:', this.ticketFocado)
+    //console.log('DEBUG: TicketList mounted - socket:', this.socket)
     // this.consultarTickets()
     this.ticketListSocket()
     this.registerPropWatchers([

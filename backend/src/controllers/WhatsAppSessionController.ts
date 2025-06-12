@@ -55,48 +55,48 @@ export const update = async (req: UserRequest, res: Response): Promise<Response>
 };
 
 export const remove = async (req: Request, res: Response): Promise<Response> => {
-  console.log('=== WhatsAppSessionController.remove ===');
-  console.log('Request params:', req.params);
-  console.log('Request headers:', req.headers);
-  console.log('Request body:', req.body);
-  console.log('User from token:', req.user);
+  //console.log('=== WhatsAppSessionController.remove ===');
+  //console.log('Request params:', req.params);
+  //console.log('Request headers:', req.headers);
+  //console.log('Request body:', req.body);
+  //console.log('User from token:', req.user);
   
   const { whatsappId } = req.params;
-  console.log('WhatsApp ID to remove:', whatsappId);
+  //console.log('WhatsApp ID to remove:', whatsappId);
   
   const { tenantId } = req.user;
-  console.log('Tenant ID:', tenantId);
+  //console.log('Tenant ID:', tenantId);
   
   const channel = await ShowWhatsAppService({ id: whatsappId, tenantId });
-  console.log('Channel found:', channel ? channel.id : 'null');
+  //console.log('Channel found:', channel ? channel.id : 'null');
 
   const io = getIO();
-  console.log('IO instance obtained');
+  //console.log('IO instance obtained');
 
   try {
-    console.log('Channel type:', channel.type);
+    //console.log('Channel type:', channel.type);
     
     if (channel.type === "whatsapp") {
-      console.log('Processing WhatsApp channel');
+      //console.log('Processing WhatsApp channel');
       
       try {
         const wbot = getWbot(channel.id);
-        console.log('WhatsApp bot obtained:', wbot ? 'yes' : 'no');
+        //console.log('WhatsApp bot obtained:', wbot ? 'yes' : 'no');
         
         await setValue(`${channel.id}-retryQrCode`, 0);
-        console.log('Redis retry QR code value set to 0');
+        //console.log('Redis retry QR code value set to 0');
         
         await (wbot as any).logout()
           .catch(error => {
             console.error('Error during WhatsApp logout:', error);
             logger.error("Erro ao fazer logout da conexão", error);
           });
-        console.log('WhatsApp logout completed');
+        //console.log('WhatsApp logout completed');
         
         removeWbot(channel.id);
-        console.log('WhatsApp bot removed from memory');
+        //console.log('WhatsApp bot removed from memory');
       } catch (wbotError) {
-        console.log('WhatsApp bot not initialized, skipping logout');
+        //console.log('WhatsApp bot not initialized, skipping logout');
         // Se o bot não está inicializado, apenas remove da memória
         await setValue(`${channel.id}-retryQrCode`, 0);
         removeWbot(channel.id);
@@ -104,7 +104,7 @@ export const remove = async (req: Request, res: Response): Promise<Response> => 
     }
 
     if (channel.type === "telegram") {
-      console.log('Processing Telegram channel');
+      //console.log('Processing Telegram channel');
       const tbot = getTbot(channel.id);
       await tbot.telegram
         .logOut()
@@ -113,31 +113,31 @@ export const remove = async (req: Request, res: Response): Promise<Response> => 
           logger.error("Erro ao fazer logout da conexão", error);
         });
       removeTbot(channel.id);
-      console.log('Telegram bot removed');
+      //console.log('Telegram bot removed');
     }
 
     if (channel.type === "instagram") {
-      console.log('Processing Instagram channel');
+      //console.log('Processing Instagram channel');
       const instaBot = getInstaBot(channel.id);
       await instaBot.destroy();
       removeInstaBot(channel);
-      console.log('Instagram bot removed');
+      //console.log('Instagram bot removed');
     }
 
-    console.log('Updating channel status to DISCONNECTED');
+    //console.log('Updating channel status to DISCONNECTED');
     await channel.update({
       status: "DISCONNECTED",
       session: "",
       qrcode: null,
       retries: 0
     });
-    console.log('Channel status updated successfully');
+    //console.log('Channel status updated successfully');
     
   } catch (error) {
     console.error('Error in remove method:', error);
     logger.error(error);
     
-    console.log('Updating channel status to DISCONNECTED due to error');
+    //console.log('Updating channel status to DISCONNECTED due to error');
     await channel.update({
       status: "DISCONNECTED",
       session: "",
@@ -145,17 +145,17 @@ export const remove = async (req: Request, res: Response): Promise<Response> => 
       retries: 0
     });
 
-    console.log('Emitting socket event for error case');
+    //console.log('Emitting socket event for error case');
     io.emit(`${channel.tenantId}:whatsappSession`, {
       action: "update",
       session: channel
     });
     
     // Não lança erro, apenas retorna sucesso pois o objetivo foi alcançado
-    console.log('Session disconnected despite errors');
+    //console.log('Session disconnected despite errors');
   }
   
-  console.log('Remove method completed successfully');
+  //console.log('Remove method completed successfully');
   return res.status(200).json({ message: "Session disconnected." });
 };
 

@@ -306,17 +306,13 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
-      console.log('[UPDATE_MESSAGES] Atualizando mensagens:', payload)
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id === payload.ticket.id) {
-        console.log('[UPDATE_MESSAGES] Ticket focado corresponde')
         const messageIndex = state.mensagens.findIndex(m => m.id === payload.id)
         const mensagens = [...state.mensagens]
         if (messageIndex !== -1) {
-          console.log('[UPDATE_MESSAGES] Atualizando mensagem existente')
           mensagens[messageIndex] = payload
         } else {
-          console.log('[UPDATE_MESSAGES] Adicionando nova mensagem')
           mensagens.push(payload)
         }
         state.mensagens = mensagens
@@ -330,7 +326,6 @@ const atendimentoTicket = {
 
       const TicketIndexUpdate = state.tickets.findIndex(t => t.id == payload.ticket.id)
       if (TicketIndexUpdate !== -1) {
-        console.log('[UPDATE_MESSAGES] Atualizando ticket na lista')
         const tickets = [...state.tickets]
         // Usar sempre o valor real do backend para unreadMessages
         const unreadMessages = payload.ticket.unreadMessages
@@ -345,16 +340,13 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGE_STATUS (state, payload) {
-      console.log('[UPDATE_MESSAGE_STATUS] Atualizando status da mensagem:', payload)
       // Se ticket não for o focado, não atualizar.
       if (state.ticketFocado.id != payload.ticket.id) {
-        console.log('[UPDATE_MESSAGE_STATUS] Ticket não corresponde ao focado')
         return
       }
       const messageIndex = state.mensagens.findIndex(m => m.id === payload.id)
       const mensagens = [...state.mensagens]
       if (messageIndex !== -1) {
-        console.log('[UPDATE_MESSAGE_STATUS] Atualizando mensagem')
         // Preservar o campo fromMe ao atualizar a mensagem
         mensagens[messageIndex] = {
           ...mensagens[messageIndex],
@@ -378,10 +370,8 @@ const atendimentoTicket = {
       // return state.mensagens
     },
     UPDATE_TICKET_UNREAD_MESSAGES (state, payload) {
-      console.log('[UPDATE_TICKET_UNREAD_MESSAGES] Atualizando contador de mensagens não lidas:', payload)
       const ticketIndex = state.tickets.findIndex(t => t.id === payload.ticket.id)
       if (ticketIndex !== -1) {
-        console.log('[UPDATE_TICKET_UNREAD_MESSAGES] Ticket encontrado, atualizando contador')
         const tickets = [...state.tickets]
         tickets[ticketIndex] = {
           ...tickets[ticketIndex],

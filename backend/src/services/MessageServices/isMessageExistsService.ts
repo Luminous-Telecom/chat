@@ -6,11 +6,11 @@ const isMessageExistsService = async (msg: WbotMessage): Promise<boolean> => {
   });
 
   if (!message) {
-    console.log("Mensagem não existe", msg.id.id);
+    //console.log("Mensagem não existe", msg.id.id);
 
     return false;
   }
-  console.log("Mensagem existente", msg.id.id);
+  //console.log("Mensagem existente", msg.id.id);
 
   return true;
 };

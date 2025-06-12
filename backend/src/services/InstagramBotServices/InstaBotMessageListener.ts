@@ -24,15 +24,15 @@ const InstaBotMessageListener = (instaBot: Session): void => {
   });
 
   instaBot.realtime.on("direct", ev => {
-    console.log("direct ev", ev);
+    //console.log("direct ev", ev);
   });
 
   instaBot.realtime.on("realtimeSub", ev => {
-    console.log("realtimeSub ev", ev);
+    //console.log("realtimeSub ev", ev);
   });
 
   instaBot.realtime.on("iris", ev => {
-    console.log("iris ev", ev);
+    //console.log("iris ev", ev);
   });
 
   instaBot.realtime.on("error", console.error);
