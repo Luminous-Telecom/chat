@@ -49,7 +49,21 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
       tenantId
     });
 
-  return res.json({ count, messages, messagesOffLine, ticket, hasMore });
+  // Serialização manual para garantir que todos os campos venham completos
+  const serializedMessages = messages.map(msg => {
+    const plain = msg.get({ plain: true }) as any;
+    if (plain.quotedMsg) {
+      if (typeof plain.quotedMsg.get === 'function') {
+        plain.quotedMsg = plain.quotedMsg.get({ plain: true });
+      }
+      if (plain.quotedMsg.contact && typeof plain.quotedMsg.contact.get === 'function') {
+        plain.quotedMsg.contact = plain.quotedMsg.contact.get({ plain: true });
+      }
+    }
+    return plain;
+  });
+
+  return res.json({ count, messages: serializedMessages, messagesOffLine, ticket, hasMore });
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {

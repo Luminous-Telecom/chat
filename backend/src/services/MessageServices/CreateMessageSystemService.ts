@@ -162,13 +162,21 @@ const CreateMessageSystemService = async ({
   idFront
 }: Request): Promise<void> => {
   try {
+    // Log do payload recebido
+    logger.info('[DEBUG] CreateMessageSystemService - Payload recebido:', {
+      quotedMsgId: msg.quotedMsgId,
+      quotedMsg: msg.quotedMsg,
+      body: msg.body,
+      type: msg.type
+    });
+
     // Buscar a mensagem citada para obter o messageId do WhatsApp
     let quotedMsgMessageId: string | undefined;
     if (msg.quotedMsg?.id) {
       const quotedMessage = await Message.findByPk(msg.quotedMsg.id);
       if (quotedMessage) {
         quotedMsgMessageId = quotedMessage.messageId;
-        logger.info(`[CreateMessageSystemService] Found quoted message WhatsApp ID: ${quotedMsgMessageId}`);
+        logger.info(`[DEBUG] CreateMessageSystemService - Found quoted message WhatsApp ID: ${quotedMsgMessageId}`);
       }
     }
 
@@ -181,8 +189,7 @@ const CreateMessageSystemService = async ({
       mediaType: "chat",
       mediaUrl: undefined,
       timestamp: new Date().getTime(),
-      quotedMsgId: msg.quotedMsg?.id,  // Manter o ID interno para referência
-      quotedMsg: { ...msg.quotedMsg, messageId: quotedMsgMessageId },  // Incluir o messageId do WhatsApp
+      quotedMsgId: msg.quotedMsgId || msg.quotedMsg?.id,
       userId,
       scheduleDate,
       sendType,
@@ -192,6 +199,13 @@ const CreateMessageSystemService = async ({
       ack: 0,
       messageId: msg.messageId || null
     };
+
+    // Log do messageData antes de processar
+    logger.info('[DEBUG] CreateMessageSystemService - baseMessageData:', {
+      quotedMsgId: baseMessageData.quotedMsgId,
+      body: baseMessageData.body,
+      type: baseMessageData.mediaType
+    });
 
     if (medias && medias.length > 0) {
       await processMediaMessages(medias, baseMessageData, ticket, tenantId, userId);
@@ -280,6 +294,12 @@ const processTextMessage = async (
   userId?: string | number
 ): Promise<void> => {
   try {
+    // Log antes de enviar mensagem
+    logger.info('[DEBUG] processTextMessage - Enviando mensagem:', {
+      quotedMsgId: messageData.quotedMsgId,
+      body: messageData.body
+    });
+
     // Verificar se o ticket tem whatsappId
     if (!ticket.whatsappId) {
       logger.error(`[CreateMessageSystemService] Ticket ${ticket.id} has no whatsappId`);
@@ -296,9 +316,12 @@ const processTextMessage = async (
     // Enviar mensagem e obter a mensagem criada
     let sentMessage: any = {};
     if (!messageData.scheduleDate) {
-      const quotedMsg = messageData?.quotedMsg?.id ? 
-        (await Message.findByPk(messageData.quotedMsg.id)) as Message | undefined : 
-        undefined;
+      // Buscar o objeto da mensagem citada usando quotedMsgId
+      let quotedMsg: Message | undefined = undefined;
+      if (messageData.quotedMsgId) {
+        const found = await Message.findByPk(messageData.quotedMsgId);
+        if (found) quotedMsg = found;
+      }
 
       sentMessage = await SendWhatsAppMessage(
         contact,
@@ -317,6 +340,13 @@ const processTextMessage = async (
         userId
       });
     }
+
+    // Log após criar mensagem
+    logger.info('[DEBUG] processTextMessage - Mensagem criada:', {
+      id: sentMessage.id,
+      quotedMsgId: sentMessage.quotedMsgId,
+      messageId: sentMessage.messageId
+    });
 
     // Buscar mensagem completa e notificar
     await finalizeMessage(sentMessage.id, ticket, tenantId);
@@ -355,6 +385,9 @@ const finalizeMessage = async (
   tenantId: string | number
 ): Promise<void> => {
   try {
+    // Log antes de buscar mensagem
+    logger.info('[DEBUG] finalizeMessage - Buscando mensagem:', { messageId });
+
     // Buscar mensagem completa
     const messageCreated = await Message.findByPk(messageId, {
       include: [
@@ -370,6 +403,13 @@ const finalizeMessage = async (
           include: ["contact"]
         }
       ]
+    });
+
+    // Log após buscar mensagem
+    logger.info('[DEBUG] finalizeMessage - Mensagem encontrada:', {
+      id: messageCreated?.id,
+      quotedMsgId: messageCreated?.quotedMsgId,
+      quotedMsg: messageCreated?.quotedMsg ? 'present' : 'missing'
     });
 
     if (!messageCreated) {

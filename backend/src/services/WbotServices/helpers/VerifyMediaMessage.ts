@@ -64,7 +64,13 @@ const VerifyMediaMessage = async (
       return existingMessage;
     }
 
-    const quotedMsg = await VerifyQuotedMessage(msg);
+    const quotedMsg = await VerifyQuotedMessage(msg, ticket);
+
+    if (quotedMsg) {
+      logger.info(`[VerifyMediaMessage] Mensagem citada encontrada: ${quotedMsg.id}`);
+    } else {
+      logger.info(`[VerifyMediaMessage] Nenhuma mensagem citada encontrada`);
+    }
 
     // Verificar se a mensagem tem mídia antes de tentar baixar
     // Permitir tentativa de download mesmo se hasMedia for false para alguns tipos de mensagem

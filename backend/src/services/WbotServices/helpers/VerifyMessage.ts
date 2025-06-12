@@ -12,10 +12,15 @@ const VerifyMessage = async (
   contact: Contact
 ) => {
   try {
-
+    // Verificar se há mensagem citada e obter referência
+    logger.info(`[VerifyMessage] Verificando mensagem citada para mensagem ${msg.id?.id || 'sem ID'}`);
+    const quotedMsg = await VerifyQuotedMessage(msg, ticket);
     
-    const quotedMsg = await VerifyQuotedMessage(msg);
-
+    if (quotedMsg) {
+      logger.info(`[VerifyMessage] Mensagem citada encontrada: ${quotedMsg.id}`);
+    } else {
+      logger.info(`[VerifyMessage] Nenhuma mensagem citada encontrada`);
+    }
 
     const messageData = {
       messageId: msg.id.id,
@@ -30,7 +35,12 @@ const VerifyMessage = async (
       status: "received"
     };
     
-
+    logger.debug(`[VerifyMessage] Dados da mensagem: ${JSON.stringify({
+      messageId: messageData.messageId,
+      ticketId: messageData.ticketId,
+      fromMe: messageData.fromMe,
+      quotedMsgId: messageData.quotedMsgId
+    })}`);
 
     // Calcular contador de mensagens não lidas
     const currentUnread = await Message.count({
@@ -47,14 +57,13 @@ const VerifyMessage = async (
       unreadMessages: newUnreadCount
     });
 
-    
     const createdMessage = await CreateMessageService({ messageData, tenantId: ticket.tenantId });
-
+    logger.info(`[VerifyMessage] Mensagem criada com sucesso: ${createdMessage.id}`);
     
     return createdMessage;
   } catch (err) {
-    logger.error(`[VerifyMessage] Error in VerifyMessage for ticket ${ticket.id}: ${err}`);
-    logger.error(`[VerifyMessage] Error stack: ${err.stack}`);
+    logger.error(`[VerifyMessage] Erro em VerifyMessage para ticket ${ticket.id}: ${err}`);
+    logger.error(`[VerifyMessage] Stack de erro: ${err.stack}`);
     throw err;
   }
 };
