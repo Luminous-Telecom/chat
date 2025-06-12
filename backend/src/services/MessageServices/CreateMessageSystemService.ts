@@ -157,6 +157,15 @@ const CreateMessageSystemService = async ({
   idFront
 }: Request): Promise<void> => {
   try {
+    // Buscar a mensagem citada para obter o messageId do WhatsApp
+    let quotedMsgMessageId: string | undefined;
+    if (msg.quotedMsg?.id) {
+      const quotedMessage = await Message.findByPk(msg.quotedMsg.id);
+      if (quotedMessage) {
+        quotedMsgMessageId = quotedMessage.messageId;
+        logger.info(`[CreateMessageSystemService] Found quoted message WhatsApp ID: ${quotedMsgMessageId}`);
+      }
+    }
 
     const baseMessageData: MessageData = {
       ticketId: ticket.id,
@@ -167,24 +176,23 @@ const CreateMessageSystemService = async ({
       mediaType: "chat",
       mediaUrl: undefined,
       timestamp: new Date().getTime(),
-      quotedMsgId: msg.quotedMsg?.id,
+      quotedMsgId: msg.quotedMsg?.id,  // Manter o ID interno para referência
+      quotedMsg: { ...msg.quotedMsg, messageId: quotedMsgMessageId },  // Incluir o messageId do WhatsApp
       userId,
       scheduleDate,
       sendType,
       status: status || "pending",
       idFront,
       tenantId,
-      ack: 0, // Iniciar com ACK 0 (pending)
+      ack: 0,
       messageId: msg.messageId || null
     };
-
 
     if (medias && medias.length > 0) {
       await processMediaMessages(medias, baseMessageData, ticket, tenantId, userId);
     } else {
       await processTextMessage(baseMessageData, ticket, tenantId, userId);
     }
-
 
   } catch (error) {
     logger.error(`[CreateMessageSystemService] Error:`, error.message || 'Unknown error');
