@@ -41,6 +41,9 @@
       <MensagemChat
         :replyingMessage.sync="replyingMessage"
         :mensagens="cMessages"
+        :ticketFocado="ticketFocado"
+        :status="ticketFocado?.status"
+        :isLineDate="true"
         v-if="cMessages.length && ticketFocado.id"
         @mensagem-chat:encaminhar-mensagem="abrirModalEncaminharMensagem"
         :ativarMultiEncaminhamento.sync="ativarMultiEncaminhamento"
@@ -275,6 +278,9 @@
             :isShowOptions="false"
             :replyingMessage.sync="replyingMessage"
             :mensagens="[mensagemEncaminhamento]"
+            :ticketFocado="ticketFocado"
+            :status="ticketFocado?.status"
+            :isLineDate="false"
           />
         </q-card-section>
         <q-card-section>
@@ -342,6 +348,7 @@ import mixinSockets from './mixinSockets'
 import InfiniteLoading from 'vue-infinite-loading'
 import { ListarContatos } from 'src/service/contatos'
 import { EncaminharMensagem } from 'src/service/tickets'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'Chat',
@@ -382,6 +389,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['ticketFocado']),
     cMessages () {
       // eslint-disable-next-line vue/no-side-effects-in-computed-properties
       this.replyingMessage = null

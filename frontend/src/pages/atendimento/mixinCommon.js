@@ -4,7 +4,7 @@ import { mapGetters } from 'vuex'
 
 export default {
   computed: {
-    ...mapGetters(['mensagensTicket', 'ticketFocado', 'hasMore'])
+    ...mapGetters(['mensagensTicket', 'hasMore'])
   },
   data () {
     return {
