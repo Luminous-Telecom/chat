@@ -6,6 +6,8 @@ import decodeTokenSocket from "./decodeTokenSocket";
 import { logger } from "../utils/logger";
 import User from "../models/User";
 import Chat from "./socketChat/Chat";
+import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
+import Ticket from "../models/Ticket";
 
 let io: SocketIO;
 
@@ -76,9 +78,20 @@ export const initIO = (httpServer: Server): SocketIO => {
       // create room to tenant
       socket.join(tenantId.toString());
 
-      socket.on(`${tenantId}:joinChatBox`, ticketId => {
+      socket.on(`${tenantId}:joinChatBox`, async ticketId => {
         logger.info(`Client joined a ticket channel ${tenantId}:${ticketId}`);
         socket.join(`${tenantId}:${ticketId}`);
+        
+        try {
+          // Buscar o ticket e marcar mensagens como lidas
+          const ticket = await Ticket.findByPk(ticketId);
+          if (ticket && ticket.tenantId === tenantId) {
+            await SetTicketMessagesAsRead(ticket);
+            logger.info(`Messages marked as read for ticket ${ticketId}`);
+          }
+        } catch (error) {
+          logger.error(`Error marking messages as read for ticket ${ticketId}: ${error}`);
+        }
       });
 
       socket.on(`${tenantId}:joinNotification`, () => {
