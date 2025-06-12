@@ -12,6 +12,9 @@ import VerifyQuotedMessage from "./VerifyQuotedMessage";
 import CreateMessageService from "../../MessageServices/CreateMessageService";
 import { logger } from "../../../utils/logger";
 
+// Cache para mensagens em processamento
+const processingMessages = new Set<string>();
+
 const writeFileAsync = promisify(writeFile);
 
 const getMediaType = (mimetype: string | undefined): string => {
@@ -41,11 +44,28 @@ const VerifyMediaMessage = async (
   contact: Contact
 ): Promise<Message | void> => {
   try {
+    // Verificar se a mensagem já está sendo processada
+    if (processingMessages.has(msg.id.id)) {
+      logger.warn(`[VerifyMediaMessage] Message ${msg.id.id} is already being processed, skipping`);
+      return;
+    }
 
-    
+    // Adicionar mensagem ao cache de processamento
+    processingMessages.add(msg.id.id);
+
+    // Verificar se a mensagem já existe no banco
+    const existingMessage = await Message.findOne({
+      where: { messageId: msg.id.id }
+    });
+
+    if (existingMessage) {
+      logger.info(`[VerifyMediaMessage] Message ${msg.id.id} already exists in database, skipping`);
+      processingMessages.delete(msg.id.id);
+      return existingMessage;
+    }
+
     const quotedMsg = await VerifyQuotedMessage(msg);
 
-    
     // Verificar se a mensagem tem mídia antes de tentar baixar
     // Permitir tentativa de download mesmo se hasMedia for false para alguns tipos de mensagem
     const mediaTypes = ['image', 'video', 'audio', 'document', 'sticker'];
@@ -128,11 +148,23 @@ const VerifyMediaMessage = async (
         
         if (retryCount === maxRetries) {
           logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Failed after ${maxRetries} attempts for message ID: ${msg.id.id}. Last error: ${lastError?.message || 'Unknown error'}`);
-          // Tentar registrar mais informações sobre o erro
-          if (lastError?.response) {
-            logger.error(`Error response status: ${lastError.response.status}, data: ${JSON.stringify(lastError.response.data)}`);
-          }
-          return;
+          // Criar mensagem mesmo sem mídia para evitar reprocessamento
+          const messageData = {
+            messageId: msg.id.id,
+            ticketId: ticket.id,
+            contactId: msg.fromMe ? undefined : contact.id,
+            body: msg.body || "Mídia não disponível",
+            fromMe: msg.fromMe,
+            read: msg.fromMe,
+            mediaType: msg.type,
+            quotedMsgId: quotedMsg?.id,
+            timestamp: msg.timestamp,
+            status: msg.fromMe ? "sended" : "received"
+          };
+          
+          const message = await CreateMessageService({ messageData, tenantId: ticket.tenantId });
+          processingMessages.delete(msg.id.id);
+          return message;
         }
         
         // Esperar um pouco antes de tentar novamente, com tempo crescente
@@ -221,10 +253,7 @@ const VerifyMediaMessage = async (
       status: msg.fromMe ? "sended" : "received"
     };
 
-
-
     const message = await CreateMessageService({ messageData, tenantId: ticket.tenantId });
-
 
     // Calcular contador de mensagens não lidas
     const currentUnread = await Message.count({
@@ -241,11 +270,12 @@ const VerifyMediaMessage = async (
       unreadMessages: newUnreadCount
     });
 
-
+    processingMessages.delete(msg.id.id);
     return message;
   } catch (err) {
     logger.error(`[VerifyMediaMessage] Unexpected error processing media for ticket ${ticket.id}, message ID: ${msg.id.id}: ${err}`);
     logger.error(`[VerifyMediaMessage] Error stack: ${err.stack}`);
+    processingMessages.delete(msg.id.id);
     return;
   }
 };
