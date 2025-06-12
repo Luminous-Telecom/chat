@@ -163,31 +163,31 @@ const atendimentoTicket = {
     },
     // OK
     LOAD_TICKETS (state, payload) {
-      console.log('[DEBUG] LOAD_TICKETS mutation chamada:', {
-        ticketsCount: payload.length,
-        payload: payload
-      })
+      // console.log('[DEBUG] LOAD_TICKETS mutation chamada:', {
+      //  ticketsCount: payload.length,
+      //  payload: payload
+      // })
       const tickets = payload
       if (payload.length) {
         tickets.forEach(ticket => {
           const ticketIndex = state.tickets.findIndex(t => t.id === ticket.id)
           if (ticketIndex !== -1) {
             if (checkTicketFilter(ticket)) {
-              console.log('[DEBUG] Atualizando ticket existente:', ticket.id)
+              // console.log('[DEBUG] Atualizando ticket existente:', ticket.id)
               state.tickets[ticketIndex] = ticket
               if (ticket.unreadMessages > 0) {
                 state.tickets[ticketIndex].unreadMessages = ticket.unreadMessages
               }
             } else {
-              console.log('[DEBUG] Removendo ticket que não passou no filtro:', ticket.id)
+              // console.log('[DEBUG] Removendo ticket que não passou no filtro:', ticket.id)
               state.tickets.splice(ticketIndex, 1)
             }
           } else {
             if (checkTicketFilter(ticket)) {
-              console.log('[DEBUG] Adicionando novo ticket:', ticket.id)
+              // console.log('[DEBUG] Adicionando novo ticket:', ticket.id)
               state.tickets.push(ticket)
             } else {
-              console.log('[DEBUG] Ticket não passou no filtro, não adicionado:', ticket.id)
+              // console.log('[DEBUG] Ticket não passou no filtro, não adicionado:', ticket.id)
             }
           }
         })
@@ -218,7 +218,7 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_TICKET (state, payload) {
-      console.log('[DEBUG] UPDATE_TICKET mutation chamada:', payload.id)
+      // console.log('[DEBUG] UPDATE_TICKET mutation chamada:', payload.id)
       const ticketIndex = state.tickets.findIndex(t => t.id === payload.id)
       if (ticketIndex !== -1) {
         // atualizar ticket se encontrado
@@ -232,10 +232,10 @@ const atendimentoTicket = {
           name: payload?.contact?.name || payload?.name || tickets[ticketIndex].name
         }
         if (checkTicketFilter(tickets[ticketIndex])) {
-          console.log('[DEBUG] Atualizando ticket existente no UPDATE_TICKET:', payload.id)
+          // console.log('[DEBUG] Atualizando ticket existente no UPDATE_TICKET:', payload.id)
           state.tickets = tickets
         } else {
-          console.log('[DEBUG] Removendo ticket no UPDATE_TICKET (não passou no filtro):', payload.id)
+          // console.log('[DEBUG] Removendo ticket no UPDATE_TICKET (não passou no filtro):', payload.id)
           tickets.splice(ticketIndex, 1)
           state.tickets = tickets
         }
@@ -251,7 +251,7 @@ const atendimentoTicket = {
         }
       } else {
         if (checkTicketFilter(payload)) {
-          console.log('[DEBUG] Adicionando novo ticket no UPDATE_TICKET:', payload.id)
+          // console.log('[DEBUG] Adicionando novo ticket no UPDATE_TICKET:', payload.id)
           const tickets = [...state.tickets]
           tickets.unshift({
             ...payload,
@@ -262,7 +262,7 @@ const atendimentoTicket = {
           })
           state.tickets = tickets
         } else {
-          console.log('[DEBUG] Ticket não adicionado no UPDATE_TICKET (não passou no filtro):', payload.id)
+          // console.log('[DEBUG] Ticket não adicionado no UPDATE_TICKET (não passou no filtro):', payload.id)
         }
       }
     },
@@ -338,8 +338,8 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
-      console.log('[DEBUG] UPDATE_MESSAGES mutation called with payload:', payload)
-      console.log('[DEBUG] Current ticketFocado:', state.ticketFocado)
+      // console.log('[DEBUG] UPDATE_MESSAGES mutation called with payload:', payload)
+      // console.log('[DEBUG] Current ticketFocado:', state.ticketFocado)
 
       // Criar um cache de mensagens por ticket se não existir
       if (!state.messagesByTicket) {
@@ -356,16 +356,16 @@ const atendimentoTicket = {
       // Atualizar mensagens no cache do ticket
       const messageIndex = state.messagesByTicket[ticketId].findIndex(m => m.id === payload.id)
       if (messageIndex !== -1) {
-        console.log('[DEBUG] Atualizando mensagem existente no cache do ticket:', ticketId)
+        // console.log('[DEBUG] Atualizando mensagem existente no cache do ticket:', ticketId)
         state.messagesByTicket[ticketId][messageIndex] = payload
       } else {
-        console.log('[DEBUG] Adicionando nova mensagem ao cache do ticket:', ticketId)
+        // console.log('[DEBUG] Adicionando nova mensagem ao cache do ticket:', ticketId)
         state.messagesByTicket[ticketId].push(payload)
       }
 
       // Se o ticket estiver focado, atualizar também o array de mensagens visível
       if (state.ticketFocado.id === ticketId) {
-        console.log('[DEBUG] Atualizando mensagens do ticket focado')
+        // console.log('[DEBUG] Atualizando mensagens do ticket focado')
         state.mensagens = [...state.messagesByTicket[ticketId]]
 
         if (payload.scheduleDate && payload.status == 'pending') {
@@ -379,7 +379,7 @@ const atendimentoTicket = {
       // Atualizar informações do ticket na lista
       const TicketIndexUpdate = state.tickets.findIndex(t => t.id == ticketId)
       if (TicketIndexUpdate !== -1) {
-        console.log('[DEBUG] Atualizando ticket na lista')
+        // console.log('[DEBUG] Atualizando ticket na lista')
         const tickets = [...state.tickets]
         const unreadMessages = payload.ticket.unreadMessages
         tickets[TicketIndexUpdate] = {
@@ -389,7 +389,7 @@ const atendimentoTicket = {
           lastMessage: payload.mediaName || payload.body
         }
         state.tickets = tickets
-        console.log('[DEBUG] Ticket atualizado na lista:', tickets[TicketIndexUpdate])
+        // console.log('[DEBUG] Ticket atualizado na lista:', tickets[TicketIndexUpdate])
       }
     },
     // OK

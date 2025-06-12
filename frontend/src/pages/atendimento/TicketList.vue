@@ -100,9 +100,9 @@ export default {
   watch: {
     'ticketFocado.id': {
       handler (newVal, oldVal) {
-        // console.log('DEBUG: ticketFocado.id changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
+        // //console.log('DEBUG: ticketFocado.id changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
         if (this.socket && this.ticketFocado?.id) {
-          // console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          // //console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
         }
       },
@@ -110,9 +110,9 @@ export default {
     },
     socket: {
       handler (newVal, oldVal) {
-        // console.log('DEBUG: socket changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
+        // //console.log('DEBUG: socket changed:', { newVal, oldVal, ticketFocado: this.ticketFocado })
         if (this.socket && this.ticketFocado?.id) {
-          // console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
+          // //console.log('DEBUG: Emitting joinChatBox with tenantId:', this.ticketFocado.tenantId, 'ticketId:', this.ticketFocado.id)
           this.socket.emit(`tenant:${this.ticketFocado.tenantId}:joinChatBox`, `${this.ticketFocado.id}`)
         }
       },
@@ -183,10 +183,10 @@ export default {
       }, 200)
     },
     ticketListSocket () {
-      console.log('[DEBUG] Initializing ticketListSocket')
+      // console.log('[DEBUG] Initializing ticketListSocket')
       this.socket = socketIO()
       const usuario = JSON.parse(localStorage.getItem('usuario'))
-      console.log('[DEBUG] Socket created with tenantId:', usuario?.tenantId)
+      // console.log('[DEBUG] Socket created with tenantId:', usuario?.tenantId)
 
       const shouldUpdateTicket = (ticket) =>
         (!ticket.userId || ticket.userId === usuario?.userId || this.showAll) &&
@@ -196,18 +196,18 @@ export default {
         ticket.queueId && this.queuesIds.indexOf(ticket.queueId) === -1
 
       this.socket.on('connect', () => {
-        console.log('[DEBUG] Socket connected successfully')
+        // console.log('[DEBUG] Socket connected successfully')
         if (this.status) {
-          console.log('[DEBUG] Joining tickets room:', `tenant:${usuario.tenantId}:joinTickets`, this.status)
+          // console.log('[DEBUG] Joining tickets room:', `tenant:${usuario.tenantId}:joinTickets`, this.status)
           this.socket.emit(`tenant:${usuario.tenantId}:joinTickets`, this.status)
         } else {
-          console.log('[DEBUG] Joining notification room:', `tenant:${usuario.tenantId}:joinNotification`)
+          // console.log('[DEBUG] Joining notification room:', `tenant:${usuario.tenantId}:joinNotification`)
           this.socket.emit(`tenant:${usuario.tenantId}:joinNotification`)
         }
       })
 
       this.socket.on('disconnect', (reason) => {
-        console.log('[DEBUG] Socket disconnected:', reason)
+        // console.log('[DEBUG] Socket disconnected:', reason)
       })
 
       this.socket.on('connect_error', (error) => {
@@ -215,14 +215,14 @@ export default {
       })
 
       this.socket.on(`tenant:${usuario.tenantId}:ticket`, (data) => {
-        console.log('[DEBUG] Evento ticket recebido:', data)
+        // console.log('[DEBUG] Evento ticket recebido:', data)
         if (data.action === 'updateUnread') {
-          console.log('[DEBUG] Atualizando mensagens não lidas:', data)
+          // console.log('[DEBUG] Atualizando mensagens não lidas:', data)
           this.$store.commit('RESET_UNREAD', { type: this.status, ticketId: data.ticketId })
         }
 
         if (data.action === 'update' && shouldUpdateTicket(data.ticket)) {
-          console.log('[DEBUG] Atualizando ticket:', data.ticket)
+          // console.log('[DEBUG] Atualizando ticket:', data.ticket)
           this.$store.commit('UPDATE_TICKET', { type: this.status, ticket: data.ticket })
         }
 
@@ -231,30 +231,30 @@ export default {
         }
 
         if (data.action === 'delete') {
-          console.log('[DEBUG] Deletando ticket:', data.ticket)
+          // console.log('[DEBUG] Deletando ticket:', data.ticket)
           this.$store.commit('DELETE_TICKET', { type: this.status, ticketId: data.ticketId })
         }
       })
 
       this.socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
-        console.log('[DEBUG] Evento appMessage recebido:', data)
+        // console.log('[DEBUG] Evento appMessage recebido:', data)
         if (data.action === 'create' && shouldUpdateTicket(data.ticket)) {
           if (this.ticketFocado.id !== data.ticket.id && this.status !== 'closed' && !data.message.fromMe && !data.ticket.chatFlowId) {
             this.$root.$emit('handlerNotifications', data.message)
           }
-          console.log('[DEBUG] Criando mensagem de app, atualizando contagem não lidas:', {
-            type: this.status,
-            ticket: data.ticket
-          })
+          // console.log('[DEBUG] Criando mensagem de app, atualizando contagem não lidas:', {
+          //  type: this.status,
+          //  ticket: data.ticket
+          // })
           this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', { type: this.status, ticket: data.ticket })
         }
       })
 
       // Add listener for chat:create events
       this.socket.on(`tenant:${usuario.tenantId}:ticketList`, (data) => {
-        console.log('[DEBUG] Evento ticketList recebido:', data)
+        // console.log('[DEBUG] Evento ticketList recebido:', data)
         if (data.type === 'chat:create') {
-          console.log('[DEBUG] Processando chat:create no ticketList:', data.payload)
+          // console.log('[DEBUG] Processando chat:create no ticketList:', data.payload)
         }
       })
     },
@@ -273,8 +273,8 @@ export default {
     }
   },
   mounted () {
-    // console.log('DEBUG: TicketList mounted - ticketFocado:', this.ticketFocado)
-    // console.log('DEBUG: TicketList mounted - socket:', this.socket)
+    // //console.log('DEBUG: TicketList mounted - ticketFocado:', this.ticketFocado)
+    // //console.log('DEBUG: TicketList mounted - socket:', this.socket)
     // this.consultarTickets()
     this.ticketListSocket()
     this.registerPropWatchers([
