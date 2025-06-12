@@ -668,7 +668,6 @@ export default {
         : this.prepararUploadMedia()
       try {
         if (!this.cMostrarEnvioArquivo && !this.textChat) return
-        console.log('[DEBUG] Mensagem enviada:', message)
         await EnviarMensagemTexto(ticketId, message)
         this.arquivos = []
         this.textChat = ''
