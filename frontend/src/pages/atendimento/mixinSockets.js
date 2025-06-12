@@ -312,7 +312,7 @@ export default {
         case 3:
           return 'received'
         case 2:
-          return 'delivered'
+          return 'delivered' // Keep as 'delivered' for display purposes
         default:
           return 'sended'
       }

@@ -3,6 +3,7 @@ import Ticket from "../models/Ticket";
 import GetTicketWbot from "./GetTicketWbot";
 import AppError from "../errors/AppError";
 import { logger } from "../utils/logger";
+import { proto } from "@whiskeysockets/baileys";
 
 export const GetWbotMessage = async (
   ticket: Ticket,
@@ -12,38 +13,42 @@ export const GetWbotMessage = async (
   const wbot = await GetTicketWbot(ticket);
   const chatId = `${ticket.contact.number}@${ticket.isGroup ? "g" : "c"}.us`;
 
-  const fetchWbotMessagesGradually = async (): Promise<BaileysMessage | undefined> => {
-    try {
-      // Buscar mensagens do histórico usando o método fetchMessages do Baileys
-      const messages = await (wbot as any).fetchMessages(chatId, totalMessages);
-      
-      // Procurar a mensagem específica pelo ID
-      const msgFound = messages.find((msg: BaileysMessage) => msg.key.id === messageId);
-      
-      if (msgFound) {
-        logger.info(`[GetWbotMessage] Message found in history: ${messageId}`);
-        return msgFound;
-      }
-
-      logger.warn(`[GetWbotMessage] Message not found in history: ${messageId}`);
-      return undefined;
-    } catch (error) {
-      logger.error('[GetWbotMessage] Error fetching message:', error);
-      return undefined;
-    }
-  };
-
   try {
-    const msgFound = await fetchWbotMessagesGradually();
-
-    if (!msgFound) {
-      logger.warn(`[GetWbotMessage] Cannot find message within ${totalMessages} last messages`);
+    // Get message from Baileys' message store
+    const messageStore = (wbot as any).store?.messages?.get(chatId);
+    if (!messageStore) {
+      logger.warn(`[GetWbotMessage] No message store found for chat ${chatId}`);
       return undefined;
     }
 
-    return msgFound;
+    // Try to get the specific message
+    const message = messageStore.get(messageId) as BaileysMessage | undefined;
+    if (message) {
+      logger.info(`[GetWbotMessage] Message found in store: ${messageId}`);
+      return message;
+    }
+
+    // If not found directly, search in recent messages
+    const messages = Array.from(messageStore.values()) as BaileysMessage[];
+    const sortedMessages = messages
+      .sort((a, b) => {
+        const timestampA = Number(a.messageTimestamp) || 0;
+        const timestampB = Number(b.messageTimestamp) || 0;
+        return timestampB - timestampA;
+      })
+      .slice(0, totalMessages);
+
+    const msgFound = sortedMessages.find(msg => msg.key.id === messageId);
+    
+    if (msgFound) {
+      logger.info(`[GetWbotMessage] Message found in recent messages: ${messageId}`);
+      return msgFound;
+    }
+
+    logger.warn(`[GetWbotMessage] Cannot find message ${messageId} in store or recent messages`);
+    return undefined;
   } catch (err) {
-    logger.error('[GetWbotMessage] Error:', err);
+    logger.error(`[GetWbotMessage] Error: ${err}`);
     throw new AppError("ERR_FETCH_WAPP_MSG");
   }
 };

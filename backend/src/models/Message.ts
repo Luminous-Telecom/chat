@@ -35,7 +35,7 @@ class Message extends Model<Message> {
 
   @Default(null)
   @AllowNull
-  @Column(DataType.ENUM("pending", "sended", "received"))
+  @Column(DataType.ENUM("pending", "sended", "delivered", "received"))
   status: string;
 
   @Default(null)

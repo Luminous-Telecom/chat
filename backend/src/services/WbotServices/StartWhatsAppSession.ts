@@ -6,6 +6,7 @@ import { BaileysClient } from "../../types/baileys";
 import { getIO } from "../../libs/socket";
 import AppError from "../../errors/AppError";
 import HandleMsgAck from "./helpers/HandleMsgAck";
+import Message from "../../models/Message";
 
 export const StartWhatsAppSession = async (
   whatsapp: Whatsapp,
@@ -74,23 +75,44 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
       }
 
       for (const update of messageUpdate) {
-
         if (update.key && typeof update.update === 'object') {
           const messageId = update.key.id;
           const messageUpdate = update.update;
 
+          // Busca a mensagem atual para verificar o ACK
+          const currentMessage = await Message.findOne({
+            where: {
+              messageId: messageId,
+              fromMe: true
+            },
+            order: [['createdAt', 'DESC']],
+            lock: true
+          });
+
+          if (!currentMessage) {
+            logger.info(`[messages.update] No message found for ID ${messageId}, ignoring update`);
+            continue;
+          }
+
           // Processa ACK se presente
           if (messageUpdate.ack !== undefined) {
+            // Ignora se o novo ACK for menor que o atual
+            if (currentMessage.ack >= messageUpdate.ack) {
+              logger.info(`[messages.update] Ignoring ack ${messageUpdate.ack} for message ${messageId} as current ack ${currentMessage.ack} is higher or equal`);
+              continue;
+            }
+
+            logger.info(`[messages.update] Processing ack ${messageUpdate.ack} for message ${messageId}`);
             await HandleMsgAck({
-              id: { id: messageId, _serialized: messageId },
+              key: update.key,
               ...update
             }, messageUpdate.ack);
+            continue; // Pula o processamento de status se já processou o ACK
           }
           
-          // Processa status se presente
+          // Processa status apenas se não houver ACK
           if (messageUpdate.status !== undefined) {
-            
-            // Mapeia status para ACK
+            // Ignora status duplicados ou regressivos
             const statusToAck = {
               1: 0,  // Pending -> ACK 0
               2: 1,  // Sent -> ACK 1
@@ -98,41 +120,23 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
               4: 3   // Read -> ACK 3
             };
             
-            const ack = statusToAck[messageUpdate.status] ?? messageUpdate.status;
+            const newAck = statusToAck[messageUpdate.status] ?? messageUpdate.status;
             
+            if (currentMessage.ack >= newAck) {
+              logger.info(`[messages.update] Ignoring status ${messageUpdate.status} (ack ${newAck}) for message ${messageId} as current ack ${currentMessage.ack} is higher or equal`);
+              continue;
+            }
+
+            logger.info(`[messages.update] Processing status ${messageUpdate.status} (ack ${newAck}) for message ${messageId}`);
             await HandleMsgAck({
-              id: { id: messageId, _serialized: messageId },
+              key: update.key,
               ...update
-            }, ack);
+            }, newAck);
           }
         }
       }
     } catch (err) {
-      logger.error(`[ERROR] Error handling message update for ${whatsapp.name}:`, err);
-    }
-  });
-
-  // Handler para recibos de mensagem
-  wbot.ev.on('message-receipt.update', async (receiptUpdate: any) => {
-    try {
-      if (!Array.isArray(receiptUpdate)) {
-        return;
-      }
-
-      for (const receipt of receiptUpdate) {
-        if (receipt.key && receipt.receipt) {
-
-          // Se o recibo indica leitura, atualiza o ACK
-          if (receipt.receipt.readTimestamp) {
-            await HandleMsgAck({
-              id: { id: receipt.key.id },
-              ...receipt
-            }, 3); // ACK 3 = lido
-          }
-        }
-      }
-    } catch (err) {
-      logger.error(`[ERROR] Error handling receipt update for ${whatsapp.name}:`, err);
+      logger.error(`[messages.update] Error processing update: ${err}`);
     }
   });
 
