@@ -428,7 +428,7 @@ export default {
         }
         await ImportarArquivoContato(formData)
         this.$notificarSucesso('Contatos importados com sucesso!')
-        this.$router.go(0)
+        await this.listarContatos()
       } catch (err) {
         this.$notificarErro(err)
       }

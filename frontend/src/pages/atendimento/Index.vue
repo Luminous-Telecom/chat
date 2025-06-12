@@ -227,7 +227,7 @@
               style="width: 100%"
               bordered
               flat
-              :key="ticketFocado.id + $uuid()"
+              :key="'etiquetas-' + ticketFocado.id"
             >
               <q-card-section class="text-bold q-pb-none">
                 Etiquetas
@@ -305,7 +305,7 @@
               style="width: 100%"
               bordered
               flat
-              :key="ticketFocado.id + $uuid()"
+              :key="'contato-' + ticketFocado.id"
             >
               <q-card-section class="text-bold q-pb-none">
                 Carteira
@@ -375,7 +375,7 @@
               style="width: 100%"
               bordered
               flat
-              :key="ticketFocado.id + $uuid()"
+              :key="'informacoes-' + ticketFocado.id"
             >
               <q-card-section class="text-bold q-pb-none">
                 Mensagens Agendadas
@@ -421,7 +421,7 @@
               style="width: 100%"
               bordered
               flat
-              :key="ticketFocado.id + $uuid()"
+              :key="'historico-' + ticketFocado.id"
             >
               <q-card-section class="text-bold q-pb-none">
                 Outras Informações
@@ -876,7 +876,7 @@ export default {
         localStorage.removeItem('usuario')
         localStorage.removeItem('filtrosAtendimento')
 
-        this.$router.go({ name: 'login', replace: true })
+        this.$router.push({ name: 'login', replace: true })
       } catch (error) {
         this.$notificarErro(
           'Não foi possível realizar logout',

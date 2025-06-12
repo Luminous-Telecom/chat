@@ -1,6 +1,7 @@
 import axios from 'axios'
-import loading from '../utils/loading.js'
-import { Notify, Loading } from 'quasar'
+// import loading from '../utils/loading' // Removido - não utilizado
+import { Notify } from 'quasar'
+import router from '../router'
 
 import backendErrors from './erros.js'
 
@@ -46,11 +47,12 @@ const handlerError = err => {
 // Interceptor de requisição
 service.interceptors.request.use(
   config => {
-    try {
-      Loading.show()
-    } catch (error) {
-      // Error showing loading
-    }
+    // Removido loading automático para evitar reloads desnecessários
+    // try {
+    //   Loading.show()
+    // } catch (error) {
+    //   // Error showing loading
+    // }
 
     const token = localStorage.getItem('token')
 
@@ -68,11 +70,11 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   response => {
-    loading.hide(response.config)
+    // loading.hide(response.config) // Removido para evitar loading desnecessário
     return response
   },
   error => {
-    loading.hide(error.config)
+    // loading.hide(error.config) // Removido para evitar loading desnecessário
 
     if (error.response?.status === 403 || error.response?.status === 401) {
       const isLogged = localStorage.getItem('token')
@@ -84,7 +86,8 @@ service.interceptors.response.use(
         localStorage.removeItem('userId')
         localStorage.removeItem('usuario')
 
-        window.location.href = '/login'
+        // Use router navigation instead of window.location
+        router.push('/login')
       }
     } else {
       handlerError(error)

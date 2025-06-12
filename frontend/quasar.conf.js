@@ -49,7 +49,7 @@ module.exports = function (ctx) {
         VUE_URL_API: process.env.VUE_URL_API,
         VUE_FACEBOOK_APP_ID: process.env.VUE_FACEBOOK_APP_ID
       },
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
+      vueRouterMode: 'history', // available values: 'hash', 'history'
 
       // transpile: false,
 
@@ -87,7 +87,9 @@ module.exports = function (ctx) {
     devServer: {
       https: false,
       // port: 8080,
-      open: true // opens browser window automatically
+      open: true, // opens browser window automatically
+      hot: false, // disable hot reload
+      liveReload: false // disable live reload
     },
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-framework

@@ -642,7 +642,10 @@ export default {
   watch: {
     '$q.dark.isActive' () {
       // necessário para carregar os gráficos com a alterçaão do mode (dark/light)
-      this.$router.go()
+      this.$nextTick(() => {
+        // Force re-render of charts without page reload
+        this.$forceUpdate()
+      })
     },
     '$q.screen.width' () {
       // necessário para carregar os gráficos com a alterçaão do mode (dark/light)

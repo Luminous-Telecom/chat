@@ -454,7 +454,7 @@ export default {
         localStorage.removeItem('usuario')
         localStorage.removeItem('filtrosAtendimento')
 
-        this.$router.go({ name: 'login', replace: true })
+        this.$router.push({ name: 'login', replace: true })
       } catch (error) {
         this.$notificarErro('Não foi possível realizar logout', error)
       }
