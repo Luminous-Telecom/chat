@@ -49,7 +49,12 @@ const SendMessageSystemProxy = async ({
         break;
 
       default:
-        message = await SendWhatsAppMedia({ media, ticket, userId });
+        message = await SendWhatsAppMedia(
+          media,
+          contact.number,
+          ticket,
+          messageData.body
+        );
         break;
     }
   }
@@ -73,11 +78,14 @@ const SendMessageSystemProxy = async ({
         break;
 
       default:
+        const quotedMessage = messageData?.quotedMsg?.id 
+          ? await Message.findByPk(messageData.quotedMsg.id) 
+          : undefined;
         message = await SendWhatsAppMessage(
           contact,
           ticket,
           messageData.body,
-          messageData?.quotedMsg ? await Message.findByPk(messageData.quotedMsg.id) : undefined
+          quotedMessage || undefined
         );
         break;
     }

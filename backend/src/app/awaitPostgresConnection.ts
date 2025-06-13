@@ -14,29 +14,36 @@ const waitForPostgresConnection = async function () {
 
   while (true) {
     try {
-      // eslint-disable-next-line no-await-in-loop
       await sequelize.authenticate();
       logger.info("Conexão com o PostgreSQL estabelecida com sucesso!");
 
-      if (process.env.NODE_ENV === "production") {
-        logger.info("Iniciando a execução das migrations...");
-        // eslint-disable-next-line no-await-in-loop
-        const { stdout, stderr } = await execAsync(
-          "npm run copy-templates-files && npx sequelize db:migrate"
-        );
-        logger.info(`Saída do comando: ${stdout}`);
-        if (stderr) {
-          logger.error(`Erro ao executar o comando: ${stderr}`);
-          throw new Error(`Erro ao executar o comando: ${stderr}`);
+      // Verifica se é produção e se é a instância principal (process.env.pm_id === '0')
+      if (process.env.NODE_ENV === "production" && process.env.pm_id === '0') {
+        logger.info("Instância principal detectada. Iniciando execução das migrations...");
+        try {
+          const { stdout, stderr } = await execAsync(
+            "npm run copy-templates-files && npx sequelize db:migrate"
+          );
+          logger.info(`Saída do comando: ${stdout}`);
+          if (stderr) {
+            logger.error(`Erro ao executar o comando: ${stderr}`);
+            throw new Error(`Erro ao executar o comando: ${stderr}`);
+          }
+          logger.info("Migrations executadas com sucesso!");
+        } catch (migrationError) {
+          logger.error("Erro ao executar migrations:", migrationError);
+          // Não encerra a aplicação em caso de erro nas migrations
         }
-        logger.info("Migrations executadas com sucesso!");
+      } else if (process.env.NODE_ENV === "production") {
+        logger.info("Instância secundária detectada. Aguardando migrations...");
+        // Aguarda um tempo para garantir que as migrations foram executadas
+        await new Promise(resolve => setTimeout(resolve, 10000));
       }
       break;
     } catch (error) {
       logger.info(
         "Falha ao conectar ao PostgreSQL. Tentando novamente em 5 segundos..."
       );
-      // eslint-disable-next-line no-await-in-loop
       await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
