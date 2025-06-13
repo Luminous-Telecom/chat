@@ -82,7 +82,7 @@ const InstagramSendMessagesSystem = async (
       timestamp: message.timestamp,
       messageId: sendedMessage.item_id,
       status: "sended",
-      ack: 2
+      ack: 1
     };
 
     logger.info("Message Update ok");

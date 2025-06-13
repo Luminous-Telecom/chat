@@ -70,14 +70,21 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
   // Handler para atualizações de mensagens (leitura, entrega, etc.)
   wbot.ev.on('messages.update', async (messageUpdate: any) => {
     try {
+      logger.info(`[messages.update] Received update: ${JSON.stringify(messageUpdate, null, 2)}`);
+      
       if (!Array.isArray(messageUpdate)) {
+        logger.info(`[messages.update] Update is not an array, ignoring`);
         return;
       }
 
       for (const update of messageUpdate) {
+        logger.info(`[messages.update] Processing update: ${JSON.stringify(update, null, 2)}`);
+        
         if (update.key && typeof update.update === 'object') {
           const messageId = update.key.id;
           const messageUpdate = update.update;
+          
+          logger.info(`[messages.update] Message ID: ${messageId}, Update: ${JSON.stringify(messageUpdate, null, 2)}`);
 
           // Busca a mensagem atual para verificar o ACK
           const currentMessage = await Message.findOne({
@@ -94,8 +101,12 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
             continue;
           }
 
+          logger.info(`[messages.update] Found message ${currentMessage.id} with current ack ${currentMessage.ack}`);
+
           // Processa ACK se presente
           if (messageUpdate.ack !== undefined) {
+            logger.info(`[messages.update] Processing ack update: ${messageUpdate.ack}`);
+            
             // Ignora se o novo ACK for menor que o atual
             if (currentMessage.ack >= messageUpdate.ack) {
               logger.info(`[messages.update] Ignoring ack ${messageUpdate.ack} for message ${messageId} as current ack ${currentMessage.ack} is higher or equal`);
@@ -112,6 +123,8 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
           
           // Processa status apenas se não houver ACK
           if (messageUpdate.status !== undefined) {
+            logger.info(`[messages.update] Processing status update: ${messageUpdate.status}`);
+            
             // Ignora status duplicados ou regressivos
             const statusToAck = {
               1: 0,  // Pending -> ACK 0
@@ -121,6 +134,7 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
             };
             
             const newAck = statusToAck[messageUpdate.status] ?? messageUpdate.status;
+            logger.info(`[messages.update] Converted status ${messageUpdate.status} to ack ${newAck}`);
             
             if (currentMessage.ack >= newAck) {
               logger.info(`[messages.update] Ignoring status ${messageUpdate.status} (ack ${newAck}) for message ${messageId} as current ack ${currentMessage.ack} is higher or equal`);
@@ -137,6 +151,7 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
       }
     } catch (err) {
       logger.error(`[messages.update] Error processing update: ${err}`);
+      logger.error(`[messages.update] Error stack: ${err.stack}`);
     }
   });
 

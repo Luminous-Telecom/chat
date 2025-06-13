@@ -69,7 +69,7 @@ const SendMessagesSchenduleWbot = async (): Promise<void> => {
         message.update({
           messageId: sent.id?.id || sent.messageId,
           status: "sended",
-          ack: 2,
+          ack: 1,
           userId: message.userId
         });
       } catch (error) {

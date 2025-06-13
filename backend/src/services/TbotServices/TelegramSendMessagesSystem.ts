@@ -79,10 +79,10 @@ const TelegramSendMessagesSystem = async (
       ...message,
       ...sendedMessage,
       id: message.id,
-      timestamp: sendedMessage.date * 1000, // compatibilizar JS
+      timestamp: message.timestamp,
       messageId: sendedMessage.message_id,
       status: "sended",
-      ack: 2
+      ack: 1
     };
 
     logger.info("Message Update ok");

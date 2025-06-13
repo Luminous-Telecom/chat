@@ -138,7 +138,7 @@ const Waba360SendMessagesSystem = async (
       ...messageItem,
       messageId: sendedMessage.messages[0].id,
       status: "sended",
-      ack: 2
+      ack: 1
     };
 
     await Message.update(
@@ -151,10 +151,10 @@ const Waba360SendMessagesSystem = async (
       type: "chat:ack",
       payload: {
         ...messageToUpdate.dataValues,
-        mediaUrl: messageItem.mediaUrl, // necessário para enviar error no envio do socket - call size
+        mediaUrl: messageItem.mediaUrl,
         messageId: messageToUpdate.messageId,
         status: "sended",
-        ack: 2,
+        ack: 1,
         fromMe: messageItem.fromMe
       }
     });

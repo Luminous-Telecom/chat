@@ -131,7 +131,7 @@ const MessengerSendMessagesSystem = async (
         timestamp: message.timestamp,
         messageId: sendedMessage.messageId,
         status: "sended",
-        ack: 2
+        ack: 1
       };
 
       await Message.update(
@@ -144,12 +144,12 @@ const MessengerSendMessagesSystem = async (
         type: "chat:ack",
         payload: {
           ...message.dataValues,
-          mediaUrl: message.mediaUrl, // necessário para enviar error no envio do socket - call size
+          mediaUrl: message.mediaUrl,
           id: message.id,
           timestamp: message.timestamp,
           messageId: sendedMessage.messageId,
           status: "sended",
-          ack: 2,
+          ack: 1,
           fromMe: message.fromMe
         }
       });
