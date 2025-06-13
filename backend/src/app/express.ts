@@ -16,7 +16,13 @@ export default async function express(app: Application): Promise<void> {
   );
 
   if (process.env.NODE_ENV !== "dev") {
-    app.use(helmet());
+    const frontendUrl = process.env.FRONTEND_URL || "'self'";
+    
+    app.use(helmet({
+      crossOriginResourcePolicy: false,
+      frameguard: false
+    }));
+
     // Sets all of the defaults, but overrides script-src
     app.use(
       helmet.contentSecurityPolicy({
@@ -30,24 +36,20 @@ export default async function express(app: Application): Promise<void> {
           "script-src-attr": ["'none'"],
           "style-src": ["'self'", "https:", "'unsafe-inline'"],
           "upgrade-insecure-requests": [],
-          // ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-          scriptSrc: [
+          "script-src": [
             "'self'",
-            `*${process.env.FRONTEND_URL || "localhost: 3101"}`
-            // "localhost"
+            frontendUrl
           ],
-          frameAncestors: [
+          "frame-ancestors": [
             "'self'",
-            `* ${process.env.FRONTEND_URL || "localhost: 3101"}`
+            frontendUrl
+          ],
+          "connect-src": [
+            "'self'",
+            frontendUrl
           ]
         }
       })
-    );
-    app.use(
-      helmet({
-        crossOriginResourcePolicy: { policy: "cross-origin" },
-        crossOriginEmbedderPolicy: { policy: "credentialless" }
-      } as any)
     );
   }
 
