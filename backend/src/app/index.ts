@@ -3,7 +3,9 @@
 import "reflect-metadata";
 import "express-async-errors";
 import "./config-env";
-import { createServer } from "http";
+import { createServer as createHttpServer } from "http";
+import { createServer as createHttpsServer } from "https";
+import { readFileSync } from "fs";
 import { env } from "process";
 import express from "express";
 import GracefulShutdown from "http-graceful-shutdown";
@@ -15,7 +17,26 @@ import startMonitoring from "../services/WbotServices/wbotMonitor";
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export default async function application() {
   const app: any = express();
-  const httpServer: any = createServer(app);
+  let httpServer: any;
+
+  // Configuração do servidor HTTPS
+  if (process.env.NODE_ENV === 'production' || process.env.USE_HTTPS === 'true') {
+    try {
+      const options = {
+        key: readFileSync(process.env.SSL_KEY_PATH || '/etc/letsencrypt/live/devback.fenixnetcom.com.br/privkey.pem'),
+        cert: readFileSync(process.env.SSL_CERT_PATH || '/etc/letsencrypt/live/devback.fenixnetcom.com.br/fullchain.pem')
+      };
+      httpServer = createHttpsServer(options, app);
+      console.info('HTTPS server configured');
+    } catch (error) {
+      console.error('Error loading SSL certificates:', error);
+      console.info('Falling back to HTTP server');
+      httpServer = createHttpServer(app);
+    }
+  } else {
+    httpServer = createHttpServer(app);
+  }
+
   const port = app.get("port") || env.PORT || 3100;
 
   await bootstrap(app);
@@ -23,7 +44,8 @@ export default async function application() {
   async function start() {
     const host = app.get("host") || "0.0.0.0";
     app.server = httpServer.listen(port, host, async () => {
-      console.info(`Web server listening at: http://${host}:${port}/`);
+      const protocol = httpServer instanceof createHttpsServer ? 'https' : 'http';
+      console.info(`Web server listening at: ${protocol}://${host}:${port}/`);
     });
 
     initIO(app.server);
