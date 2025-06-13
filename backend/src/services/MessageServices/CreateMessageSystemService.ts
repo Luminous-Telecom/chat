@@ -16,8 +16,11 @@ import UserMessagesLog from "../../models/UserMessagesLog";
 import AppError from "../../errors/AppError";
 import SendWhatsAppMessage from "../WbotServices/SendWhatsAppMessage";
 import SendWhatsAppMedia from "../WbotServices/SendWhatsAppMedia";
+import { GetSessionStatus } from "../WbotServices/StartWhatsAppSession";
+import GetTicketWbot from "../../helpers/GetTicketWbot";
 
 const writeFileAsync = promisify(fs.writeFile);
+const mkdirAsync = promisify(fs.mkdir);
 
 interface MessageData {
   ticketId: number;
@@ -236,11 +239,24 @@ const processMediaMessages = async (
           media.filename = `${new Date().getTime()}_${index}.${ext}`;
         }
 
-        await writeFileAsync(
-          join(__dirname, "..", "..", "..", "..", "public", media.filename),
-          media.buffer,
-          "base64"
-        );
+        // Garantir que o diretório public existe
+        const publicDir = join(__dirname, "..", "..", "..", "..", "public");
+        try {
+          await mkdirAsync(publicDir, { recursive: true });
+        } catch (err) {
+          logger.error(`[CreateMessageSystemService] Error creating public directory:`, err);
+          // Se não conseguir criar o diretório, tentar usar o diretório temporário
+          const tempDir = join(process.cwd(), "public");
+          await mkdirAsync(tempDir, { recursive: true });
+          media.path = join(tempDir, media.filename);
+        }
+
+        // Só salvar o arquivo se não tivermos o buffer
+        if (!media.buffer && media.path) {
+          const filePath = join(publicDir, media.filename);
+          await writeFileAsync(filePath, fs.readFileSync(media.path), "binary");
+          media.path = filePath; // Atualizar o path para o novo local
+        }
 
         // Preparar dados da mensagem de mídia
         const mediaMessageData = {
@@ -256,7 +272,16 @@ const processMediaMessages = async (
         // Enviar mensagem e obter a mensagem criada
         let sentMessage: any = {};
         if (!mediaMessageData.scheduleDate) {
-          sentMessage = await SendWhatsAppMedia({ media, ticket, userId });
+          const contact = await Contact.findByPk(ticket.contactId);
+          if (!contact) {
+            throw new AppError("ERR_CONTACT_NOT_FOUND");
+          }
+          sentMessage = await SendWhatsAppMedia(
+            media,
+            contact.number,
+            ticket,
+            mediaMessageData.body
+          );
         } else {
           // Se for mensagem agendada, criar sem enviar
           sentMessage = await Message.create({
@@ -267,13 +292,19 @@ const processMediaMessages = async (
           });
         }
 
+        // Extrair o ID da mensagem
+        const messageId = sentMessage.id?.id || sentMessage.id;
+        if (!messageId) {
+          throw new Error("ERR_MESSAGE_ID_NOT_FOUND");
+        }
+
         // Buscar mensagem completa e notificar
-        await finalizeMessage(sentMessage.id, ticket, tenantId);
+        await finalizeMessage(messageId, ticket, tenantId);
 
         // Registrar atividade do usuário se houver userId
         if (userId) {
           await UserMessagesLog.create({
-            messageId: sentMessage.id,
+            messageId: messageId,
             userId,
             tenantId
           });
@@ -299,12 +330,6 @@ const processTextMessage = async (
       quotedMsgId: messageData.quotedMsgId,
       body: messageData.body
     });
-
-    // Verificar se o ticket tem whatsappId
-    if (!ticket.whatsappId) {
-      logger.error(`[CreateMessageSystemService] Ticket ${ticket.id} has no whatsappId`);
-      throw new AppError("ERR_TICKET_NO_WHATSAPP_ID");
-    }
 
     // Buscar o contato
     const contact = await Contact.findByPk(ticket.contactId);
@@ -341,20 +366,19 @@ const processTextMessage = async (
       });
     }
 
-    // Log após criar mensagem
-    logger.info('[DEBUG] processTextMessage - Mensagem criada:', {
-      id: sentMessage.id,
-      quotedMsgId: sentMessage.quotedMsgId,
-      messageId: sentMessage.messageId
-    });
+    // Extrair o ID da mensagem
+    const messageId = sentMessage.id?.id || sentMessage.id;
+    if (!messageId) {
+      throw new Error("ERR_MESSAGE_ID_NOT_FOUND");
+    }
 
     // Buscar mensagem completa e notificar
-    await finalizeMessage(sentMessage.id, ticket, tenantId);
+    await finalizeMessage(messageId, ticket, tenantId);
 
     // Registrar atividade do usuário se houver userId
     if (userId) {
       await UserMessagesLog.create({
-        messageId: sentMessage.id,
+        messageId: messageId,
         userId,
         tenantId
       });
@@ -367,20 +391,8 @@ const processTextMessage = async (
   }
 };
 
-const extractMessageId = (sentMessage: any, fallbackId?: string): string | null => {
-  // Tentar extrair messageId de diferentes estruturas de retorno
-  const messageId = sentMessage?.id?.id || 
-                   sentMessage?.messageId || 
-                   sentMessage?.key?.id ||
-                   sentMessage?.id ||
-                   fallbackId ||
-                   null;
-
-  return messageId;
-};
-
 const finalizeMessage = async (
-  messageId: string,
+  messageId: string | number,
   ticket: Ticket,
   tenantId: string | number
 ): Promise<void> => {
@@ -388,8 +400,11 @@ const finalizeMessage = async (
     // Log antes de buscar mensagem
     logger.info('[DEBUG] finalizeMessage - Buscando mensagem:', { messageId });
 
+    // Garantir que messageId é uma string ou número
+    const id = String(messageId);
+
     // Buscar mensagem completa
-    const messageCreated = await Message.findByPk(messageId, {
+    const messageCreated = await Message.findByPk(id, {
       include: [
         {
           model: Ticket,
