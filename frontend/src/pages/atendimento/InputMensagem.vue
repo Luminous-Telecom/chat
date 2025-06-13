@@ -278,7 +278,7 @@
             :max-files="5"
             :max-file-size="15485760"
             :max-total-size="15485760"
-            accept=".txt, .xml, .jpg, .png, image/jpeg, .pdf, .doc, .docx, .mp4, .xls, .xlsx, .jpeg, .zip, .ppt, .pptx, image/*"
+            accept=".txt, .xml, .jpg, .png, image/jpeg, .pdf, .doc, .docx, .mp4, .xls, .xlsx, .jpeg, .zip, .ppt, .pptx, .mp3, .wav, .ogg, .m4a, audio/*, image/*"
             @rejected="onRejectedFiles"
           />
           <q-btn
@@ -305,7 +305,7 @@
             :color="$q.dark.isActive ? 'white' : ''"
           >
             <q-tooltip content-class="text-bold">
-              Enviar Áudio
+              Gravar Áudio
             </q-tooltip>
           </q-btn>
         </template>
@@ -322,22 +322,30 @@
               v-if="isRecordingAudio"
             >
               <q-btn
+                @click="handleStopRecordingAudio"
                 flat
-                icon="mdi-close"
-                color="negative"
+                icon="mdi-stop-circle"
+                class="bg-negative btn-rounded q-mx-xs"
+                color="white"
+              >
+                <q-tooltip content-class="text-bold">
+                  Parar Gravação
+                </q-tooltip>
+              </q-btn>
+              <q-btn
                 @click="handleCancelRecordingAudio"
-                class="bg-padrao btn-rounded q-mx-xs"
-              />
+                flat
+                icon="mdi-close-circle"
+                class="bg-grey-7 btn-rounded q-mx-xs"
+                color="white"
+              >
+                <q-tooltip content-class="text-bold">
+                  Cancelar Gravação
+                </q-tooltip>
+              </q-btn>
               <RecordingTimer
                 class="text-bold"
                 :class="{ 'text-white': $q.dark.isActive }"
-              />
-              <q-btn
-                flat
-                icon="mdi-send-circle-outline"
-                color="positive"
-                @click="handleStopRecordingAudio"
-                class="bg-padrao btn-rounded q-mx-xs"
               />
             </div>
           </div>
@@ -413,7 +421,10 @@ import { VEmojiPicker } from 'v-emoji-picker'
 import { mapGetters } from 'vuex'
 import RecordingTimer from './RecordingTimer'
 import MicRecorder from 'mic-recorder-to-mp3'
-const Mp3Recorder = new MicRecorder({ bitRate: 128 })
+const Mp3Recorder = new MicRecorder({
+  bitRate: 128,
+  sampleRate: 44100
+})
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 
 export default {
@@ -443,6 +454,7 @@ export default {
       abrirFilePicker: false,
       abrirModalPreviewImagem: false,
       isRecordingAudio: false,
+      hasMicrophonePermission: false,
       urlMediaPreview: {
         title: '',
         src: ''
@@ -543,12 +555,42 @@ export default {
       this.$refs.PickerFileMessage.pickFiles(event)
     },
     async handleSartRecordingAudio () {
+      if (!this.hasMicrophonePermission) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+          this.hasMicrophonePermission = true
+          // Parar o stream imediatamente após obter a permissão
+          stream.getTracks().forEach(track => track.stop())
+        } catch (error) {
+          console.error('Erro ao acessar microfone:', error)
+          this.$q.notify({
+            type: 'negative',
+            message: 'Não foi possível acessar o microfone. Verifique se o microfone está conectado e se as permissões foram concedidas.',
+            position: 'top',
+            timeout: 5000
+          })
+          return
+        }
+      }
+
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true })
         await Mp3Recorder.start()
         this.isRecordingAudio = true
+        this.$q.notify({
+          type: 'positive',
+          message: 'Gravação iniciada',
+          position: 'top',
+          timeout: 1000
+        })
       } catch (error) {
+        console.error('Erro ao iniciar gravação:', error)
         this.isRecordingAudio = false
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao iniciar a gravação. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
     },
     async handleStopRecordingAudio () {
@@ -760,7 +802,78 @@ export default {
       LocalStorage.set('sign', this.sign)
     }
   },
-  mounted () {
+  async mounted () {
+    // Verificar permissão do microfone ao iniciar o componente
+    try {
+      // Verificar se o navegador suporta mediaDevices
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        // Fallback para navegadores mais antigos
+        navigator.mediaDevices = {}
+        navigator.mediaDevices.getUserMedia = function (constraints) {
+          const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+          if (!getUserMedia) {
+            return Promise.reject(new Error('getUserMedia não é suportado neste navegador'))
+          }
+          return new Promise((resolve, reject) => {
+            getUserMedia.call(navigator, constraints, resolve, reject)
+          })
+        }
+      }
+
+      // Verificar se o navegador suporta enumerateDevices
+      if (!navigator.mediaDevices.enumerateDevices) {
+        navigator.mediaDevices.enumerateDevices = function () {
+          return Promise.resolve([])
+        }
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const hasAudioInput = devices.some(device => device.kind === 'audioinput')
+
+      if (!hasAudioInput) {
+        // Se não conseguir enumerar dispositivos, tenta solicitar permissão diretamente
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+          this.hasMicrophonePermission = true
+          stream.getTracks().forEach(track => track.stop())
+        } catch (err) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Nenhum microfone detectado ou permissão não concedida',
+            position: 'top',
+            timeout: 5000
+          })
+          return
+        }
+      } else {
+        // Se conseguiu enumerar dispositivos, solicita permissão
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+          this.hasMicrophonePermission = true
+          stream.getTracks().forEach(track => track.stop())
+        } catch (err) {
+          console.error('Erro ao solicitar permissão do microfone:', err)
+          this.hasMicrophonePermission = false
+          this.$q.notify({
+            type: 'warning',
+            message: 'Permissão do microfone não concedida. Por favor, verifique as configurações do seu navegador.',
+            position: 'top',
+            timeout: 5000
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar microfone:', error)
+      this.hasMicrophonePermission = false
+      this.$q.notify({
+        type: 'warning',
+        message: 'Não foi possível acessar o microfone. Verifique se o navegador suporta esta funcionalidade.',
+        position: 'top',
+        timeout: 5000
+      })
+    }
+
+    // Restaurar o código original do mounted
     this.$root.$on('mensagem-chat:focar-input-mensagem', () => this.$refs.inputEnvioMensagem.focus())
     const self = this
     window.addEventListener('paste', self.handleInputPaste)
