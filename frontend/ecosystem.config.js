@@ -14,15 +14,13 @@ module.exports = {
       out_file: './logs/pm2-out-dev.log',
       log_file: './logs/pm2-combined-dev.log',
       time: true
-    }
-  ],
-  deploy: {
-    production: {
+    },
+    {
       name: 'izing-frontend-prod',
       script: 'npm',
       args: 'run start',
       exec_mode: 'cluster',
-      instances: 'max',
+      instances: 1,
       watch: false,
       env: {
         NODE_ENV: 'production'
@@ -33,5 +31,5 @@ module.exports = {
       time: true,
       cron_restart: '00 00 * * *'
     }
-  }
+  ]
 }
