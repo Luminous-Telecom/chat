@@ -78,32 +78,39 @@ const SendWhatsAppMedia = async (
         logger.info("[SendWhatsAppMedia] Enviado como áudio de voz");
         
         // Log detalhado da resposta
-        logger.info("[SendWhatsAppMedia] Resposta do WhatsApp:", {
-          hasMessage: !!sentMessage,
-          hasId: !!sentMessage?.id,
-          messageId: sentMessage?.id?.id,
-          messageType: sentMessage?.type,
-          messageBody: sentMessage?.body,
-          messageTimestamp: sentMessage?.timestamp,
-          messageStatus: sentMessage?.status
-        });
+        logger.info("[SendWhatsAppMedia] Resposta completa do WhatsApp:", JSON.stringify(sentMessage, null, 2));
+
+        // Tentar extrair o ID da mensagem de diferentes formas
+        let messageId: string | null = null;
+        if (sentMessage) {
+          if (typeof sentMessage === 'string') {
+            messageId = sentMessage;
+          } else if (sentMessage.id) {
+            if (typeof sentMessage.id === 'string') {
+              messageId = sentMessage.id;
+            } else if (sentMessage.id.id) {
+              messageId = sentMessage.id.id;
+            } else if (sentMessage.id._serialized) {
+              messageId = sentMessage.id._serialized;
+            }
+          } else if (sentMessage.key && sentMessage.key.id) {
+            messageId = sentMessage.key.id;
+          }
+        }
+
+        logger.info("[SendWhatsAppMedia] ID extraído da mensagem:", messageId);
 
         // Atualizar a mensagem no banco com o ID do WhatsApp
-        if (sentMessage?.id?.id) {
+        if (messageId) {
           await dbMessage.update({
-            messageId: sentMessage.id.id,
+            messageId,
             status: "sended",
-            ack: 2
+            ack: 1
           });
-          logger.info(`[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${sentMessage.id.id}`);
+          logger.info(`[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`);
         } else {
-          // Se não tiver ID do WhatsApp, usar o ID do banco
-          await dbMessage.update({
-            messageId: `temp_${dbMessage.id}`,
-            status: "sended",
-            ack: 2
-          });
-          logger.info(`[SendWhatsAppMedia] Mensagem atualizada com ID temporário: temp_${dbMessage.id}`);
+          logger.error("[SendWhatsAppMedia] WhatsApp não retornou ID da mensagem!");
+          throw new AppError("ERR_WAPP_MESSAGE_ID_NOT_FOUND");
         }
       } catch (voiceError) {
         logger.warn(`[SendWhatsAppMedia] Falha ao enviar como áudio de voz: ${voiceError.message}`);
@@ -117,24 +124,41 @@ const SendWhatsAppMedia = async (
         });
         logger.info("[SendWhatsAppMedia] Enviado como documento");
 
+        // Log detalhado da resposta
+        logger.info("[SendWhatsAppMedia] Resposta completa do WhatsApp:", JSON.stringify(sentMessage, null, 2));
+
+        // Tentar extrair o ID da mensagem de diferentes formas
+        let messageId: string | null = null;
+        if (sentMessage) {
+          if (typeof sentMessage === 'string') {
+            messageId = sentMessage;
+          } else if (sentMessage.id) {
+            if (typeof sentMessage.id === 'string') {
+              messageId = sentMessage.id;
+            } else if (sentMessage.id.id) {
+              messageId = sentMessage.id.id;
+            } else if (sentMessage.id._serialized) {
+              messageId = sentMessage.id._serialized;
+            }
+          } else if (sentMessage.key && sentMessage.key.id) {
+            messageId = sentMessage.key.id;
+          }
+        }
+
+        logger.info("[SendWhatsAppMedia] ID extraído da mensagem:", messageId);
+
         // Atualizar a mensagem no banco com o ID do WhatsApp
-        if (sentMessage?.id?.id) {
+        if (messageId) {
           await dbMessage.update({
-            messageId: sentMessage.id.id,
+            messageId,
             status: "sended",
-            ack: 2,
+            ack: 1,
             mediaType: "document"
           });
-          logger.info(`[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${sentMessage.id.id}`);
+          logger.info(`[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`);
         } else {
-          // Se não tiver ID do WhatsApp, usar o ID do banco
-          await dbMessage.update({
-            messageId: `temp_${dbMessage.id}`,
-            status: "sended",
-            ack: 2,
-            mediaType: "document"
-          });
-          logger.info(`[SendWhatsAppMedia] Mensagem atualizada com ID temporário: temp_${dbMessage.id}`);
+          logger.error("[SendWhatsAppMedia] WhatsApp não retornou ID da mensagem!");
+          throw new AppError("ERR_WAPP_MESSAGE_ID_NOT_FOUND");
         }
       }
     } else if (mimeType && mimeType.startsWith("image/")) {
@@ -143,11 +167,12 @@ const SendWhatsAppMedia = async (
         caption: body
       });
       // Atualizar a mensagem no banco
-      if (sentMessage?.id?.id) {
+      if (sentMessage?.id) {
+        const messageId = typeof sentMessage.id === 'string' ? sentMessage.id : sentMessage.id.id;
         await dbMessage.update({
-          messageId: sentMessage.id.id,
+          messageId,
           status: "sended",
-          ack: 2
+          ack: 1
         });
       }
     } else if (mimeType && mimeType.startsWith("video/")) {
@@ -156,11 +181,12 @@ const SendWhatsAppMedia = async (
         caption: body
       });
       // Atualizar a mensagem no banco
-      if (sentMessage?.id?.id) {
+      if (sentMessage?.id) {
+        const messageId = typeof sentMessage.id === 'string' ? sentMessage.id : sentMessage.id.id;
         await dbMessage.update({
-          messageId: sentMessage.id.id,
+          messageId,
           status: "sended",
-          ack: 2
+          ack: 1
         });
       }
     } else {
@@ -171,11 +197,12 @@ const SendWhatsAppMedia = async (
         caption: body
       });
       // Atualizar a mensagem no banco
-      if (sentMessage?.id?.id) {
+      if (sentMessage?.id) {
+        const messageId = typeof sentMessage.id === 'string' ? sentMessage.id : sentMessage.id.id;
         await dbMessage.update({
-          messageId: sentMessage.id.id,
+          messageId,
           status: "sended",
-          ack: 2
+          ack: 1
         });
       }
     }
