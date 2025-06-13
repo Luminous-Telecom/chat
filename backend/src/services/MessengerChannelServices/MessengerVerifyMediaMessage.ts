@@ -10,6 +10,7 @@ import CreateMessageService from "../MessageServices/CreateMessageService";
 import Whatsapp from "../../models/Whatsapp";
 import { EventMessage, MessengerRawEvent } from "./MessengerTypes";
 import getQuotedForMessageId from "../../helpers/getQuotedForMessageId";
+import fs from "fs";
 
 interface IMessage extends EventMessage {
   type: string;
@@ -38,7 +39,23 @@ const downloadFile = async (url: string, filename: string): Promise<string> => {
     name = `${filename}-${new Date().getTime()}.${ext}`;
   }
 
-  const pathFile = join(__dirname, "..", "..", "..", "public", name);
+  const publicDir = join(__dirname, "..", "..", "..", "public");
+  const receivedDir = join(publicDir, "received");
+  
+  // Verificar se os diretórios existem
+  try {
+    await fs.promises.access(publicDir);
+    try {
+      await fs.promises.access(receivedDir);
+    } catch (err) {
+      await fs.promises.mkdir(receivedDir, { recursive: true });
+    }
+  } catch (err) {
+    await fs.promises.mkdir(publicDir, { recursive: true });
+    await fs.promises.mkdir(receivedDir, { recursive: true });
+  }
+
+  const pathFile = join(receivedDir, name);
 
   await new Promise((resolve, reject) => {
     request.data
@@ -46,12 +63,11 @@ const downloadFile = async (url: string, filename: string): Promise<string> => {
       .on("finish", async () => resolve(name))
       .on("error", (error: any) => {
         console.error("ERROR DONWLOAD", error);
-        // fs.rmdirSync(mediaDir, { recursive: true });
         reject(new Error(error));
       });
   });
 
-  return name;
+  return `received/${name}`;
 };
 
 const MessengerVerifyMediaMessage = async (
@@ -85,7 +101,7 @@ const MessengerVerifyMediaMessage = async (
         body: msg.message?.text || "",
         fromMe: msg.fromMe,
         read: false,
-        mediaUrl: filename,
+        mediaUrl: msg.fromMe ? `sent/${name}` : `received/${name}`,
         mediaType: msg.type,
         quotedMsgId,
         timestamp: +msg.timestamp,

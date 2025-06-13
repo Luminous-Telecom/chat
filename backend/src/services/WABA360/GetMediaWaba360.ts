@@ -6,6 +6,7 @@ import AppError from "../../errors/AppError";
 import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";
 import { logger } from "../../utils/logger";
+import fs from "fs";
 
 interface Request {
   channel: Whatsapp;
@@ -19,7 +20,24 @@ const downloadFile = async (
   filename: string
 ): Promise<void> => {
   const apiUrl360 = `${process.env.API_URL_360}/v1/media/${wabaMediaId}`;
-  const pathFile = join(__dirname, "..", "..", "public", filename);
+  
+  const publicDir = join(__dirname, "..", "..", "public");
+  const receivedDir = join(publicDir, "received");
+  
+  // Verificar se os diretórios existem
+  try {
+    await fs.promises.access(publicDir);
+    try {
+      await fs.promises.access(receivedDir);
+    } catch (err) {
+      await fs.promises.mkdir(receivedDir, { recursive: true });
+    }
+  } catch (err) {
+    await fs.promises.mkdir(publicDir, { recursive: true });
+    await fs.promises.mkdir(receivedDir, { recursive: true });
+  }
+
+  const pathFile = join(receivedDir, filename);
 
   const request = await axios({
     url: apiUrl360,

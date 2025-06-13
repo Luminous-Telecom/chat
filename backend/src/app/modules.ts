@@ -6,6 +6,7 @@ import routes from "../routes";
 import uploadConfig from "../config/upload";
 import AppError from "../errors/AppError";
 import { logger } from "../utils/logger";
+import path from "path";
 
 export default async function modules(app): Promise<void> {
   const { version } = JSON.parse(readFileSync("./package.json").toString());
@@ -34,7 +35,7 @@ export default async function modules(app): Promise<void> {
   });
   app.use(Sentry.Handlers.requestHandler());
 
-  app.use("/public", expressInstance.static(uploadConfig.directory));
+  app.use("/public", expressInstance.static(path.resolve(__dirname, "..", "..", "public")));
 
   app.use(routes);
   app.use(Sentry.Handlers.errorHandler());

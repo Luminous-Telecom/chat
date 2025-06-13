@@ -34,7 +34,7 @@ const VerifyMediaMessage = async (
     body: msg?.text?.body || filename || "",
     fromMe: msg.fromMe,
     read: msg.fromMe,
-    mediaUrl: filename,
+    mediaUrl: msg.fromMe ? `sent/${filename}` : `received/${filename}`,
     mediaType: msg.type,
     // quotedMsgId: undefind || quotedMsg?.id,
     timestamp: +msg.timestamp,

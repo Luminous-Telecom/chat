@@ -196,10 +196,10 @@ const CreateMessageSystemService = async ({
       userId,
       scheduleDate,
       sendType,
-      status: status || "pending",
+      status: scheduleDate ? "pending" : "sended",
       idFront,
       tenantId,
-      ack: 0,
+      ack: scheduleDate ? 0 : 1,
       messageId: msg.messageId || null
     };
 
@@ -239,21 +239,21 @@ const processMediaMessages = async (
           media.filename = `${new Date().getTime()}_${index}.${ext}`;
         }
 
-        // Garantir que o diretório public existe
-        const publicDir = join(__dirname, "..", "..", "..", "..", "public");
+        // Garantir que o diretório public/sent existe
+        const sentDir = join(__dirname, "..", "..", "..", "public", "sent");
         try {
-          await mkdirAsync(publicDir, { recursive: true });
+          await mkdirAsync(sentDir, { recursive: true });
         } catch (err) {
-          logger.error(`[CreateMessageSystemService] Error creating public directory:`, err);
+          logger.error(`[CreateMessageSystemService] Error creating sent directory:`, err);
           // Se não conseguir criar o diretório, tentar usar o diretório temporário
-          const tempDir = join(process.cwd(), "public");
+          const tempDir = join(process.cwd(), "backend", "public", "sent");
           await mkdirAsync(tempDir, { recursive: true });
           media.path = join(tempDir, media.filename);
         }
 
         // Só salvar o arquivo se não tivermos o buffer
         if (!media.buffer && media.path) {
-          const filePath = join(publicDir, media.filename);
+          const filePath = join(sentDir, media.filename);
           await writeFileAsync(filePath, fs.readFileSync(media.path), "binary");
           media.path = filePath; // Atualizar o path para o novo local
         }

@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 import { join } from "path";
 import { createWriteStream } from "fs";
+import fs from "fs";
 
 import axios from "axios";
 import { MessageSyncMessageWrapper } from "instagram_mqtt";
@@ -75,8 +76,24 @@ const VerifyMediaMessage = async (
   }
 
   const filename = `${ticket.id}_${media.id}_${new Date().getTime()}.${ext}`;
-  const pathFile = join(__dirname, "..", "..", "..", "public", filename);
+  
+  const publicDir = join(__dirname, "..", "..", "..", "public");
+  const receivedDir = join(publicDir, "received");
+  
+  // Verificar se os diretórios existem
+  try {
+    await fs.promises.access(publicDir);
+    try {
+      await fs.promises.access(receivedDir);
+    } catch (err) {
+      await fs.promises.mkdir(receivedDir, { recursive: true });
+    }
+  } catch (err) {
+    await fs.promises.mkdir(publicDir, { recursive: true });
+    await fs.promises.mkdir(receivedDir, { recursive: true });
+  }
 
+  const pathFile = join(receivedDir, filename);
   const linkDownload =
     ctx.message.item_type === "voice_media"
       ? mediaInfo.audio_src
@@ -93,7 +110,7 @@ const VerifyMediaMessage = async (
     body: ctx.message?.text || ctx.message?.caption || type,
     fromMe,
     read: fromMe,
-    mediaUrl: filename,
+    mediaUrl: fromMe ? `sent/${filename}` : `received/${filename}`,
     mediaType,
     quotedMsgId: "",
     timestamp: new Date().getTime(),

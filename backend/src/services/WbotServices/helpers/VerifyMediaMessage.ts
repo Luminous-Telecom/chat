@@ -225,21 +225,31 @@ const VerifyMediaMessage = async (
 
     // Verificar se o diretório existe
     const publicDir = join(__dirname, "..", "..", "..", "..", "public");
+    const receivedDir = join(publicDir, "received");
     try {
       await fs.promises.access(publicDir);
+      // Verificar se o diretório received existe
+      try {
+        await fs.promises.access(receivedDir);
+      } catch (err) {
+        // Se não existir, criar o diretório received
+        await fs.promises.mkdir(receivedDir, { recursive: true });
+      }
     } catch (err) {
       try {
+        // Criar diretório public e received
         await fs.promises.mkdir(publicDir, { recursive: true });
+        await fs.promises.mkdir(receivedDir, { recursive: true });
       } catch (mkdirErr) {
-        logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Could not create public directory: ${mkdirErr}`);
+        logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Could not create directories: ${mkdirErr}`);
         return;
       }
     }
 
     try {
-      const filePath = join(publicDir, filename);
+      const filePath = join(receivedDir, filename);
       await writeFileAsync(filePath, fileData);
-      logger.info(`Media file saved successfully: ${filename}`);
+      logger.info(`Media file saved successfully in received folder: ${filename}`);
     } catch (err) {
       logger.error(`ERR_WAPP_DOWNLOAD_MEDIA:: Error saving media file for message ID: ${msg.id.id}: ${err}`);
       return;
@@ -252,7 +262,7 @@ const VerifyMediaMessage = async (
       body: msg.body || filename,
       fromMe: msg.fromMe,
       read: msg.fromMe,
-      mediaUrl: filename,
+      mediaUrl: `received/${filename}`,
       mediaType: getMediaType(media.mimetype),
       quotedMsgId: quotedMsg?.id,
       timestamp: msg.timestamp,

@@ -7,6 +7,7 @@ import { getIO } from "../../libs/socket";
 import AppError from "../../errors/AppError";
 import HandleMsgAck from "./helpers/HandleMsgAck";
 import Message from "../../models/Message";
+import { Op } from "sequelize";
 
 export const StartWhatsAppSession = async (
   whatsapp: Whatsapp,
@@ -67,94 +68,164 @@ const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void 
     }
   });
 
-  // Handler para atualizações de mensagens (leitura, entrega, etc.)
-  wbot.ev.on('messages.update', async (messageUpdate: any) => {
-    try {
-      logger.info(`[messages.update] Received update: ${JSON.stringify(messageUpdate, null, 2)}`);
+// Handler para atualizações de mensagens (leitura, entrega, etc.)
+wbot.ev.on('messages.update', async (messageUpdate: any) => {
+  try {
+    logger.info(`[messages.update] Received update: ${JSON.stringify(messageUpdate, null, 2)}`);
+    
+    if (!Array.isArray(messageUpdate)) {
+      logger.info(`[messages.update] Update is not an array, ignoring`);
+      return;
+    }
+
+    for (const update of messageUpdate) {
+      logger.info(`[messages.update] Processing update: ${JSON.stringify(update, null, 2)}`);
       
-      if (!Array.isArray(messageUpdate)) {
-        logger.info(`[messages.update] Update is not an array, ignoring`);
-        return;
-      }
-
-      for (const update of messageUpdate) {
-        logger.info(`[messages.update] Processing update: ${JSON.stringify(update, null, 2)}`);
+      if (update.key && typeof update.update === 'object') {
+        const messageId = update.key.id;
+        const updateData = update.update;
         
-        if (update.key && typeof update.update === 'object') {
-          const messageId = update.key.id;
-          const messageUpdate = update.update;
-          
-          logger.info(`[messages.update] Message ID: ${messageId}, Update: ${JSON.stringify(messageUpdate, null, 2)}`);
+        logger.info(`[messages.update] Message ID: ${messageId}, Update: ${JSON.stringify(updateData, null, 2)}`);
 
-          // Busca a mensagem atual para verificar o ACK
-          const currentMessage = await Message.findOne({
+        // Busca a mensagem atual para verificar o ACK
+        let currentMessage = await Message.findOne({
+          where: {
+            [Op.or]: [
+              { messageId: messageId },
+              { messageId: messageId?.toString() },
+              { messageId: messageId?.toLowerCase() },
+              { messageId: messageId?.toUpperCase() }
+            ],
+            fromMe: true,
+            isDeleted: false
+          },
+          order: [['createdAt', 'DESC']],
+          lock: true
+        });
+
+        if (!currentMessage) {
+          logger.warn(`[messages.update] No message found for ID ${messageId}, searching in recent messages...`);
+          
+          // Busca em mensagens recentes (últimas 5 minutos)
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+          const recentMessage = await Message.findOne({
             where: {
-              messageId: messageId,
-              fromMe: true
+              fromMe: true,
+              isDeleted: false,
+              createdAt: {
+                [Op.gte]: fiveMinutesAgo
+              },
+              // Não atualiza se já tiver um messageId e for diferente
+              [Op.or]: [
+                { messageId: null },
+                { messageId: messageId },
+                { messageId: messageId?.toString() },
+                { messageId: messageId?.toLowerCase() },
+                { messageId: messageId?.toUpperCase() }
+              ]
             },
             order: [['createdAt', 'DESC']],
             lock: true
           });
 
-          if (!currentMessage) {
-            logger.info(`[messages.update] No message found for ID ${messageId}, ignoring update`);
+          if (recentMessage) {
+            // Se a mensagem já tem um messageId diferente, ignora a atualização
+            if (recentMessage.messageId && recentMessage.messageId !== messageId) {
+              logger.info(`[messages.update] Ignoring update for ID ${messageId} as message ${recentMessage.id} already has messageId ${recentMessage.messageId}`);
+              continue;
+            }
+
+            logger.info(`[messages.update] Found recent message ${recentMessage.id} with messageId ${recentMessage.messageId}`);
+            // Atualiza o messageId da mensagem recente
+            await recentMessage.update({ messageId });
+            logger.info(`[messages.update] Updated message ${recentMessage.id} with new messageId ${messageId}`);
+            
+            // Atualiza a referência da mensagem atual para continuar o processamento
+            currentMessage = recentMessage;
+            await currentMessage.reload();
+            logger.info(`[messages.update] Message ${currentMessage.id} reloaded with current ACK ${currentMessage.ack}`);
+          } else {
+            logger.info(`[messages.update] No recent message found for ID ${messageId}, ignoring update`);
             continue;
           }
-
-          logger.info(`[messages.update] Found message ${currentMessage.id} with current ack ${currentMessage.ack}`);
-
-          // Processa ACK se presente
-          if (messageUpdate.ack !== undefined) {
-            logger.info(`[messages.update] Processing ack update: ${messageUpdate.ack}`);
-            
-            // Ignora se o novo ACK for menor que o atual
-            if (currentMessage.ack >= messageUpdate.ack) {
-              logger.info(`[messages.update] Ignoring ack ${messageUpdate.ack} for message ${messageId} as current ack ${currentMessage.ack} is higher or equal`);
-              continue;
-            }
-
-            logger.info(`[messages.update] Processing ack ${messageUpdate.ack} for message ${messageId}`);
-            await HandleMsgAck({
-              key: update.key,
-              ...update
-            }, messageUpdate.ack);
-            continue; // Pula o processamento de status se já processou o ACK
-          }
-          
-          // Processa status apenas se não houver ACK
-          if (messageUpdate.status !== undefined) {
-            logger.info(`[messages.update] Processing status update: ${messageUpdate.status}`);
-            
-            // Ignora status duplicados ou regressivos
-            const statusToAck = {
-              1: 0,  // Pending -> ACK 0
-              2: 1,  // Sent -> ACK 1
-              3: 2,  // Delivered -> ACK 2
-              4: 3   // Read -> ACK 3
-            };
-            
-            const newAck = statusToAck[messageUpdate.status] ?? messageUpdate.status;
-            logger.info(`[messages.update] Converted status ${messageUpdate.status} to ack ${newAck}`);
-            
-            if (currentMessage.ack >= newAck) {
-              logger.info(`[messages.update] Ignoring status ${messageUpdate.status} (ack ${newAck}) for message ${messageId} as current ack ${currentMessage.ack} is higher or equal`);
-              continue;
-            }
-
-            logger.info(`[messages.update] Processing status ${messageUpdate.status} (ack ${newAck}) for message ${messageId}`);
-            await HandleMsgAck({
-              key: update.key,
-              ...update
-            }, newAck);
-          }
         }
-      }
-    } catch (err) {
-      logger.error(`[messages.update] Error processing update: ${err}`);
-      logger.error(`[messages.update] Error stack: ${err.stack}`);
-    }
-  });
 
+        logger.info(`[messages.update] Found message ${currentMessage.id} with current ack ${currentMessage.ack} and messageId ${currentMessage.messageId}`);
+
+        // Se a mensagem já tem um messageId diferente, ignora a atualização
+        if (currentMessage.messageId && currentMessage.messageId !== messageId) {
+          logger.info(`[messages.update] Ignoring update for ID ${messageId} as message ${currentMessage.id} already has messageId ${currentMessage.messageId}`);
+          continue;
+        }
+
+        // Determina o novo ACK baseado no update recebido
+        let newAck = null;
+
+        // Processa ACK direto se presente
+        if (updateData.ack !== undefined) {
+          newAck = updateData.ack;
+          logger.info(`[messages.update] Direct ACK received: ${newAck}`);
+        }
+        // Processa status e converte para ACK
+        else if (updateData.status !== undefined) {
+          const statusToAck = {
+            1: 0,  // Pending -> ACK 0
+            2: 1,  // Sent -> ACK 1
+            3: 2,  // Delivered -> ACK 2
+            4: 3   // Read -> ACK 3
+          };
+          
+          newAck = statusToAck[updateData.status] ?? updateData.status;
+          logger.info(`[messages.update] Status ${updateData.status} converted to ACK ${newAck}`);
+        }
+
+        // Se não há ACK para processar, continua
+        if (newAck === null) {
+          logger.info(`[messages.update] No ACK or status to process for message ${messageId}`);
+          continue;
+        }
+
+        // Verifica se o novo ACK é válido (não regressivo)
+        if (currentMessage.ack >= newAck) {
+          logger.info(`[messages.update] Ignoring ACK ${newAck} for message ${messageId} as current ACK ${currentMessage.ack} is higher or equal`);
+          continue;
+        }
+
+        // CORREÇÃO PRINCIPAL: Processa ACKs intermediários para arquivos de mídia
+        // Se pular diretamente de ACK 1 para ACK 3, processa primeiro o ACK 2
+        if (currentMessage.ack === 1 && newAck === 3) {
+          logger.info(`[messages.update] Message ${messageId} jumping from ACK 1 to ACK 3, processing ACK 2 first`);
+          
+          // Primeiro processa ACK 2 (delivered)
+          await HandleMsgAck({
+            key: update.key,
+            ...update
+          }, 2);
+          
+          // Aguarda um pouco para garantir que o frontend processe o ACK 2
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Recarrega a mensagem para ter o ACK atualizado
+          await currentMessage.reload();
+          
+          logger.info(`[messages.update] Processed intermediate ACK 2 for message ${messageId}, current ACK: ${currentMessage.ack}`);
+        }
+
+        // Agora processa o ACK final
+        logger.info(`[messages.update] Processing final ACK ${newAck} for message ${messageId}`);
+        await HandleMsgAck({
+          key: update.key,
+          ...update
+        }, newAck);
+        
+        logger.info(`[messages.update] Successfully processed ACK ${newAck} for message ${messageId}`);
+      }
+    }
+  } catch (err) {
+    logger.error(`[messages.update] Error processing update: ${err}`);
+    logger.error(`[messages.update] Error stack: ${err.stack}`);
+  }
+});
   // Handler para atualizações de contatos
   wbot.ev.on('contacts.update', async (contactUpdate: any) => {
     try {

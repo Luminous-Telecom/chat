@@ -1,13 +1,21 @@
 import path from "path";
 import multer from "multer";
 import { format } from "date-fns";
+import fs from "fs";
 
-const publicFolder = path.resolve(__dirname, "..", "..", "public");
+// Criar pasta para arquivos enviados se não existir
+const sentMediaFolder = path.resolve(__dirname, "..", "..", "public", "sent");
+if (!fs.existsSync(sentMediaFolder)) {
+  fs.mkdirSync(sentMediaFolder, { recursive: true });
+}
+
 export default {
-  directory: publicFolder,
+  directory: sentMediaFolder,
 
   storage: multer.diskStorage({
-    destination: publicFolder,
+    destination: (req, file, cb) => {
+      cb(null, sentMediaFolder);
+    },
     filename(req, file, cb) {
       let fileName;
       if (file.mimetype?.toLocaleLowerCase().endsWith("xml")) {
