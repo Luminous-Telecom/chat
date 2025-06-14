@@ -465,11 +465,6 @@
                 </q-item>
               </q-list>
             </div>
-            <div class="extra-info-title q-mt-md q-mb-sm">
-              <q-icon name="mdi-information-outline" size="18px" class="q-mr-sm" />
-              Outras Informações
-            </div>
-
             <!-- Observações -->
             <div class="observations-container q-mb-md">
               <div class="row items-center q-mb-sm">
@@ -528,20 +523,6 @@
                   </q-item>
                 </q-list>
               </q-scroll-area>
-            </div>
-
-            <div v-if="cIsExtraInfo" class="extra-info-container q-mb-sm">
-              <q-list class="extra-info-list">
-                <q-item
-                  v-for="(info, idx) in ticketFocado.contact.extraInfo"
-                  :key="info.uniqueKey || `extra-info-${info.key || idx}`"
-                  class="extra-info-item"
-                >
-                  <q-item-section>
-                    <q-item-label>{{ info.value }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
             </div>
           </div>
         </q-scroll-area>
@@ -773,9 +754,6 @@ export default {
       if (!showAll && !queuesIds?.length && !withUnreadMessages) return 'meus'
 
       return null
-    },
-    cIsExtraInfo () {
-      return this.ticketFocado?.contact?.extraInfo?.length > 0
     }
   },
   methods: {
