@@ -469,11 +469,15 @@ const atendimentoTicket = {
       if (TicketIndexUpdate !== -1) {
         const tickets = [...state.tickets]
         const unreadMessages = payload.ticket.unreadMessages
+
+        // Só atualizar lastMessage se não for uma mensagem agendada (status pending com scheduleDate)
+        const shouldUpdateLastMessage = !(payload.scheduleDate && payload.status === 'pending')
+
         tickets[TicketIndexUpdate] = {
           ...state.tickets[TicketIndexUpdate],
           answered: payload.ticket.answered,
           unreadMessages,
-          lastMessage: payload.mediaName || payload.body
+          ...(shouldUpdateLastMessage && { lastMessage: payload.mediaName || payload.body })
         }
         state.tickets = tickets
       }

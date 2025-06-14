@@ -17,7 +17,7 @@
         :breakpoint="769"
         bordered
         :width="$q.screen.lt.md ? $q.screen.width : 380"
-        content-class="hide-scrollbar full-width"
+        content-class="full-width"
       >
         <StatusWhatsapp
           v-if="false"
@@ -140,6 +140,8 @@
         <q-separator />
         <q-scroll-area style="height: calc(100vh - 60px)">
           <div class="contact-data-container">
+            <!-- Espaçamento antes das informações do contato -->
+            <div class="q-mt-md"></div>
             <q-card class="contact-info-card">
               <q-card-section class="contact-profile-section">
                 <div class="contact-profile-wrapper">
@@ -254,6 +256,8 @@
               </q-card-section>
             </q-card>
 
+            <!-- Espaçamento antes do botão logs -->
+            <div class="q-mt-md"></div>
             <q-card class="action-card">
               <q-card-section class="action-section">
                 <q-btn
@@ -265,10 +269,8 @@
               </q-card-section>
             </q-card>
 
-            <div class="tags-title q-mt-md q-mb-sm">
-              <q-icon name="mdi-tag-multiple" size="18px" class="q-mr-sm" />
-              Etiquetas
-            </div>
+            <!-- Espaçamento entre botões -->
+            <div class="q-mt-md"></div>
             <!-- Tags selecionadas -->
             <div v-if="ticketFocado.contact.tags && ticketFocado.contact.tags.length > 0" class="selected-tags-container q-mb-sm">
               <q-chip
@@ -301,8 +303,6 @@
               >
                 <q-list style="min-width: 250px">
                   <q-item-label header class="text-primary text-weight-bold">
-                    <q-icon name="mdi-tag-multiple" class="q-mr-sm" />
-                    Etiquetas Disponíveis
                   </q-item-label>
                   <q-separator />
 
@@ -348,10 +348,8 @@
                 </q-list>
               </q-menu>
             </q-btn>
-            <div class="wallet-title q-mt-md q-mb-sm">
-              <q-icon name="person" size="18px" class="q-mr-sm" />
-              Carteira
-            </div>
+            <!-- Espaçamento entre botões -->
+            <div class="q-mt-md"></div>
             <!-- Carteiras selecionadas -->
             <div v-if="ticketFocado.contact.wallets && ticketFocado.contact.wallets.length > 0" class="selected-wallets-container q-mb-sm">
               <q-chip
@@ -391,8 +389,6 @@
               >
                 <q-list style="min-width: 250px">
                   <q-item-label header class="text-primary text-weight-bold">
-                    <q-icon name="person" class="q-mr-sm" />
-                    Carteiras Disponíveis
                   </q-item-label>
                   <q-separator />
 
@@ -427,48 +423,77 @@
                   </q-item>
                 </q-list>
               </q-menu>
+
             </q-btn>
-            <div class="scheduled-messages-title q-mt-md q-mb-sm">
-              <q-icon name="mdi-clock-outline" size="18px" class="q-mr-sm" />
-              Mensagens Agendadas
-            </div>
-            <div v-if="ticketFocado.scheduledMessages && ticketFocado.scheduledMessages.length > 0" class="scheduled-messages-container q-mb-sm">
-              <q-list class="scheduled-messages-list">
-                <q-item
-                  v-for="(message, idx) in ticketFocado.scheduledMessages"
-                  :key="message.uniqueKey || `scheduled-message-${message.id || idx}`"
-                  clickable
-                  class="scheduled-message-item"
+            <!-- Mensagens Agendadas -->
+            <div class="scheduled-messages-container q-mb-md q-mt-md">
+              <div class="row items-center q-mb-sm">
+                <div class="text-body1">Mensagens Agendadas</div>
+                <q-space />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  color="primary"
+                  icon="mdi-eye"
+                  @click="abrirModalListarMensagensAgendadas"
+                  class="q-mr-sm"
                 >
-                  <q-item-section>
-                    <q-item-label caption>
-                      <b>Agendado para:</b> {{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}
+                  <q-tooltip>Ver todas</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  color="primary"
+                  icon="mdi-plus"
+                  @click="abrirModalAgendarMensagem"
+                >
+                  <q-tooltip>Nova Mensagem Agendada</q-tooltip>
+                </q-btn>
+              </div>
+              <q-scroll-area style="height: 200px">
+                <q-list>
+                  <q-item v-for="(message, idx) in ticketFocado.scheduledMessages.slice(0, 3)" :key="message.uniqueKey || `scheduled-message-${message.id || idx}`" class="q-mb-sm">
+                    <q-item-section>
+                      <q-item-label caption>{{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}</q-item-label>
+                      <q-item-label>{{ message.mediaName || message.body }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
                       <q-btn
                         flat
                         round
                         dense
                         icon="mdi-trash-can-outline"
-                        class="absolute-top-right q-mr-sm"
                         size="sm"
+                        color="negative"
                         @click="deletarMensagem(message)"
+                      >
+                        <q-tooltip>Excluir</q-tooltip>
+                      </q-btn>
+                    </q-item-section>
+                    <q-tooltip :delay="500">
+                      <MensagemChat :mensagens="[message]" />
+                    </q-tooltip>
+                  </q-item>
+                  <q-item v-if="ticketFocado.scheduledMessages.length > 3" class="text-center">
+                    <q-item-section>
+                      <q-btn
+                        flat
+                        dense
+                        color="primary"
+                        label="Ver mais..."
+                        @click="abrirModalListarMensagensAgendadas"
                       />
-                    </q-item-label>
-                    <q-item-label
-                      caption
-                      lines="2"
-                    > <b>Msg:</b> {{ message.mediaName || message.body }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-tooltip :delay="500">
-                    <MensagemChat :mensagens="[message]" />
-                  </q-tooltip>
-                </q-item>
-              </q-list>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-scroll-area>
             </div>
             <!-- Observações -->
             <div class="observations-container q-mb-md">
               <div class="row items-center q-mb-sm">
-                <div class="text-subtitle1">Observações</div>
+                <div class="text-body1">Observações</div>
                 <q-space />
                 <q-btn
                   flat
@@ -608,6 +633,20 @@
         :ticket-id="ticketFocado.id || null"
       />
 
+      <ModalListarMensagensAgendadas
+        :value.sync="modalListarMensagensAgendadas"
+        :ticket-id="ticketFocado.id || null"
+        :mensagens-agendadas="ticketFocado.scheduledMessages || []"
+        @nova-mensagem-agendada="abrirModalAgendarMensagem"
+      />
+
+      <ModalAgendarMensagem
+        :value.sync="modalAgendarMensagem"
+        :ticket-id="ticketFocado.id || null"
+        :mensagens-rapidas="mensagensRapidas"
+        @mensagem-agendada="handleMensagemAgendada"
+      />
+
     </q-layout>
     <audio ref="audioNotificationPlay">
       <source
@@ -648,6 +687,8 @@ import { messagesLog } from '../../utils/constants'
 import ModalObservacao from './ModalObservacao.vue'
 import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
+import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
+import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
 
 export default {
   name: 'IndexAtendimento',
@@ -661,7 +702,9 @@ export default {
     ModalUsuario,
     MensagemChat,
     ModalObservacao,
-    ModalListarObservacoes
+    ModalListarObservacoes,
+    ModalListarMensagensAgendadas,
+    ModalAgendarMensagem
   },
   data () {
     const query = this.$route.query
@@ -713,6 +756,8 @@ export default {
       logsTicket: [],
       modalObservacao: false,
       modalListarObservacoes: false,
+      modalListarMensagensAgendadas: false,
+      modalAgendarMensagem: false,
       observacoes: []
     }
   },
@@ -1256,6 +1301,39 @@ export default {
       }
       this.modalListarObservacoes = true
     },
+    abrirModalListarMensagensAgendadas () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para ver as mensagens agendadas',
+          position: 'top'
+        })
+        return
+      }
+      this.modalListarMensagensAgendadas = true
+    },
+    abrirModalAgendarMensagem () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para agendar uma mensagem',
+          position: 'top'
+        })
+        return
+      }
+      this.modalAgendarMensagem = true
+    },
+    handleMensagemAgendada (dadosMensagem) {
+      console.log('handleMensagemAgendada chamado com:', dadosMensagem)
+      this.$q.notify({
+        type: 'positive',
+        message: 'Mensagem agendada com sucesso!',
+        position: 'top'
+      })
+      this.modalAgendarMensagem = false
+      // Aqui você pode adicionar lógica para atualizar a lista de mensagens agendadas
+      // Por exemplo, recarregar o ticket ou fazer uma nova consulta
+    },
     abrirAnexo (anexo) {
       const url = `${process.env.VUE_URL_API}/public/sent/${anexo}`
       window.open(url, '_blank')
@@ -1403,20 +1481,36 @@ export default {
   }
 }
 
+/* Global scroll area styles */
 .q-scroll-area {
   background: transparent;
 
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 5px;
+    height: 5px;
   }
 
   &::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0,0,0,0.05);
+    border-radius: 12px;
+    margin: 2px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.2);
-    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(25, 118, 210, 0.6) 0%, rgba(25, 118, 210, 0.8) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(25, 118, 210, 0.8) 0%, rgba(21, 101, 192, 1) 100%);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }
 
@@ -1647,14 +1741,6 @@ export default {
   color: #495057;
   word-wrap: break-word;
   overflow-wrap: break-word;
-}
-
-.action-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-  margin-top: 8px;
-  border: none;
 }
 
 .action-section {
@@ -1993,92 +2079,412 @@ export default {
   background-color: #424242;
 }
 
+/* Enhanced scroll area customization */
+.observations-container .q-scrollarea__thumb {
+  background: linear-gradient(180deg, #2e7d32 0%, #388e3c 100%);
+  border-radius: 12px;
+  opacity: 0.8;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
+  width: 5px;
+}
+
+.observations-container .q-scrollarea__thumb:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.4);
+}
+
+.observations-container .q-scrollarea__track {
+  background: rgba(46, 125, 50, 0.1);
+  border-radius: 12px;
+  margin: 2px;
+  width: 5px;
+}
+
+.scheduled-messages-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1565c0 0%, #0d47a1 100%);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.4);
+}
+
+.scheduled-messages-container::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Custom scrollbar for ticket list */
+.q-drawer .q-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.q-drawer .q-scroll-area::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+  border-radius: 15px;
+}
+
+.q-drawer .q-scroll-area::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%);
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+
+.q-drawer .q-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%);
+  transform: scale(1.2);
+}
+
+/* Chat area scrollbar */
+.scroll-y::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scroll-y::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05);
+  border-radius: 12px;
+  margin: 4px;
+}
+
+.scroll-y::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(96, 125, 139, 0.6) 0%, rgba(96, 125, 139, 0.8) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s ease;
+}
+
+.scroll-y::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(96, 125, 139, 0.8) 0%, rgba(69, 90, 100, 1) 100%);
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(96, 125, 139, 0.3);
+}
+
+/* Hide scrollbar utility class enhancement */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth scrolling behavior */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Custom overflow styles for containers */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Animation for new items */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.scheduled-message-item,
+.observations-container .q-item {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scheduled-messages-container,
+  .observations-container {
+    border-radius: 8px;
+    margin: 0 8px;
+  }
+
+  .scheduled-message-item,
+  .observations-container .q-item {
+    padding: 8px;
+    margin-bottom: 6px;
+  }
+}
+
 /* Scheduled messages styles */
-.scheduled-messages-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #424242;
-  display: flex;
-  align-items: center;
-}
-
 .scheduled-messages-container {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: #fafafa;
-  max-height: 200px;
-  overflow-y: auto;
+  border: 1px solid #e3f2fd;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f3e5f5 100%);
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
 }
 
-.scheduled-messages-list {
-  padding: 0;
+.scheduled-messages-container:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
 }
 
-.scheduled-message-item {
-  border-bottom: 1px solid #e0e0e0;
-  transition: background-color 0.2s;
-}
-
-.scheduled-message-item:last-child {
-  border-bottom: none;
-}
-
-.scheduled-message-item:hover {
-  background-color: #f5f5f5;
-}
-
-/* Extra info styles */
-.extra-info-title {
-  font-size: 14px;
+.scheduled-messages-container .text-body1 {
+  font-size: 13px;
   font-weight: 600;
-  color: #424242;
+  color: #1976d2;
   display: flex;
   align-items: center;
 }
 
-.extra-info-container {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: #fafafa;
-  max-height: 150px;
-  overflow-y: auto;
+.scheduled-messages-container .q-item-label {
+  font-size: 12px;
 }
 
-.extra-info-list {
-  padding: 0;
+.scheduled-messages-container .q-item-label[caption] {
+  font-size: 10px;
 }
 
-.extra-info-item {
-  border-bottom: 1px solid #e0e0e0;
-  transition: background-color 0.2s;
+.scheduled-messages-container .q-item {
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e3f2fd;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.extra-info-item:last-child {
-  border-bottom: none;
+.scheduled-messages-container .q-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(180deg, #1976d2 0%, #42a5f5 100%);
+  transition: width 0.3s ease;
 }
 
-.extra-info-item:hover {
-  background-color: #f5f5f5;
+.scheduled-messages-container .q-item:hover::before {
+  width: 6px;
 }
 
-/* Dark mode styles for scheduled messages and extra info */
-.body--dark .scheduled-messages-title {
-  color: #ffffff;
+.scheduled-messages-container .q-item:hover {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e3f2fd 100%);
+  border-color: #1976d2;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
 }
 
+.scheduled-messages-container .q-btn {
+  transition: all 0.3s ease;
+}
+
+.scheduled-messages-container .q-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Observations styles */
+.observations-container {
+  border: 1px solid #e8f5e8;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.observations-container:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+}
+
+.observations-container .text-body1 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+}
+
+.observations-container .q-item-label {
+  font-size: 12px;
+}
+
+.observations-container .q-item-label[caption] {
+  font-size: 10px;
+}
+
+.observations-container .q-item {
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e8f5e8;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.observations-container .q-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: linear-gradient(180deg, #2e7d32 0%, #66bb6a 100%);
+  transition: width 0.3s ease;
+}
+
+.observations-container .q-item:hover::before {
+  width: 6px;
+}
+
+.observations-container .q-item:hover {
+  background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+  border-color: #2e7d32;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+}
+
+.observations-container .q-btn {
+  transition: all 0.3s ease;
+}
+
+.observations-container .q-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Dark mode styles for scheduled messages and observations */
 .body--dark .scheduled-messages-container {
   border-color: #424242;
-  background-color: #2d2d2d;
+  background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
 }
 
-.body--dark .scheduled-message-item {
-  border-bottom-color: #424242;
+.body--dark .scheduled-messages-container .text-body1 {
+  color: #90caf9;
+}
+
+.body--dark .scheduled-messages-container .q-item {
+  background: #3d3d3d;
+  border-color: #424242;
   color: #ffffff;
 }
 
-.body--dark .scheduled-message-item:hover {
-  background-color: #424242;
+.body--dark .scheduled-messages-container .q-item::before {
+  background: linear-gradient(180deg, #90caf9 0%, #64b5f6 100%);
 }
+
+.body--dark .scheduled-messages-container .q-item:hover {
+  background: linear-gradient(135deg, #424242 0%, #2d2d2d 100%);
+  border-color: #90caf9;
+}
+
+.body--dark .observations-container {
+  border-color: #424242;
+  background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
+}
+
+.body--dark .observations-container .text-subtitle1 {
+  color: #a5d6a7;
+}
+
+.body--dark .observations-container .q-item {
+  background: #3d3d3d;
+  border-color: #424242;
+  color: #ffffff;
+}
+
+.body--dark .observations-container .q-item::before {
+  background: linear-gradient(180deg, #a5d6a7 0%, #81c784 100%);
+}
+
+.body--dark .observations-container .q-item:hover {
+   background: linear-gradient(135deg, #424242 0%, #2d2d2d 100%);
+   border-color: #a5d6a7;
+ }
+
+ /* Dark mode scrollbar styles */
+ .body--dark .q-scroll-area {
+   &::-webkit-scrollbar-track {
+     background: rgba(255,255,255,0.05);
+   }
+
+   &::-webkit-scrollbar-thumb {
+     background: linear-gradient(180deg, rgba(144, 202, 249, 0.6) 0%, rgba(144, 202, 249, 0.8) 100%);
+     border: 1px solid rgba(0,0,0,0.2);
+   }
+
+   &::-webkit-scrollbar-thumb:hover {
+     background: linear-gradient(180deg, rgba(144, 202, 249, 0.8) 0%, rgba(100, 181, 246, 1) 100%);
+     box-shadow: 0 2px 8px rgba(144, 202, 249, 0.4);
+   }
+ }
+
+ .body--dark .observations-container .q-scrollarea__thumb {
+   background: linear-gradient(180deg, #a5d6a7 0%, #81c784 100%);
+   border: 1px solid rgba(0,0,0,0.2);
+ }
+
+ .body--dark .observations-container .q-scrollarea__thumb:hover {
+   box-shadow: 0 2px 8px rgba(165, 214, 167, 0.4);
+ }
+
+ .body--dark .observations-container .q-scrollarea__track {
+   background: rgba(165, 214, 167, 0.1);
+ }
+
+ .body--dark .scheduled-messages-container::-webkit-scrollbar-track {
+   background: rgba(144, 202, 249, 0.1);
+ }
+
+ .body--dark .scheduled-messages-container::-webkit-scrollbar-thumb {
+   background: linear-gradient(180deg, #90caf9 0%, #64b5f6 100%);
+   border: 1px solid rgba(0,0,0,0.2);
+ }
+
+ .body--dark .scheduled-messages-container::-webkit-scrollbar-thumb:hover {
+   background: linear-gradient(180deg, #64b5f6 0%, #42a5f5 100%);
+   box-shadow: 0 2px 8px rgba(144, 202, 249, 0.4);
+ }
+
+ .body--dark .q-drawer .q-scroll-area::-webkit-scrollbar-track {
+   background: rgba(255,255,255,0.05);
+ }
+
+ .body--dark .q-drawer .q-scroll-area::-webkit-scrollbar-thumb {
+   background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.5) 100%);
+ }
+
+ .body--dark .q-drawer .q-scroll-area::-webkit-scrollbar-thumb:hover {
+   background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.7) 100%);
+ }
+
+ .body--dark .scroll-y::-webkit-scrollbar-track {
+   background: rgba(255,255,255,0.05);
+ }
+
+ .body--dark .scroll-y::-webkit-scrollbar-thumb {
+   background: linear-gradient(180deg, rgba(176, 190, 197, 0.6) 0%, rgba(176, 190, 197, 0.8) 100%);
+   border: 1px solid rgba(0,0,0,0.1);
+ }
+
+ .body--dark .scroll-y::-webkit-scrollbar-thumb:hover {
+   background: linear-gradient(180deg, rgba(176, 190, 197, 0.8) 0%, rgba(144, 164, 174, 1) 100%);
+   box-shadow: 0 2px 6px rgba(176, 190, 197, 0.4);
+ }
 
 .body--dark .extra-info-title {
   color: #ffffff;

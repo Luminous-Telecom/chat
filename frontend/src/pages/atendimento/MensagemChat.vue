@@ -248,7 +248,7 @@
               </video>
             </template>
             <template v-if=" !['audio', 'vcard', 'image', 'video'].includes(mensagem.mediaType) && mensagem.mediaUrl ">
-              <div class="text-center full-width hide-scrollbar no-scroll">
+              <div class="text-center full-width no-scroll">
                 <iframe
                   v-if=" isPDF(mensagem.mediaUrl) "
                   frameBorder="0"
@@ -259,7 +259,7 @@
                     overflow-y: hidden;
                     -ms-overflow-y: hidden;
                   "
-                  class="no-scroll hide-scrollbar"
+                  class="no-scroll"
                   :src=" mensagem.mediaUrl "
                   id="frame-pdf"
                 >

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white no-scroll hide-scrollbar overflow-hidden"
+    class="bg-white no-scroll overflow-hidden"
     :style="style"
   >
     <InforCabecalhoChat
