@@ -99,8 +99,8 @@
         >
           <!-- <q-separator /> -->
           <ItemTicket
-            v-for="(ticket, key) in tickets"
-            :key="key"
+            v-for="ticket in tickets"
+            :key="`ticket-${ticket.id}`"
             :ticket="ticket"
             :filas="filas"
             :buscaTicket="false"
@@ -124,7 +124,7 @@
       <q-page-container>
         <router-view
           :mensagensRapidas="mensagensRapidas"
-          :key="ticketFocado.id"
+          :key="`router-${ticketFocado.id || 'empty'}`"
         ></router-view>
       </q-page-container>
 
@@ -136,314 +136,413 @@
         side="right"
         content-class="bg-grey-1"
       >
-        <div
-          class="bg-white full-width no-border-radius q-pa-sm"
-          style="height:60px;"
-        >
-          <span class="q-ml-md text-h6">
-            Dados Contato
-          </span>
-        </div>
+
         <q-separator />
-        <q-scroll-area style="height: calc(100vh - 70px)">
-          <div class="q-pa-sm">
-            <q-card
-              class="bg-white btn-rounded"
-              style="width: 100%"
-              bordered
-              flat
-            >
-              <q-card-section class="text-center">
-                <q-avatar style="border: 1px solid #9e9e9ea1 !important; width: 100px; height: 100px">
-                  <q-icon
-                    name="mdi-account"
-                    style="width: 100px; height: 100px"
-                    size="6em"
-                    color="grey-5"
-                    v-if="!ticketFocado.contact.profilePicUrl"
-                  />
-                  <q-img
-                    :src="ticketFocado.contact.profilePicUrl"
-                    style="width: 100px; height: 100px"
-                  >
-                    <template v-slot:error>
-                      <q-icon
-                        name="mdi-account"
-                        size="1.5em"
-                        color="grey-5"
-                      />
-                    </template>
-                  </q-img>
-                </q-avatar>
-                <div
-                  class="text-caption q-mt-md"
-                  style="font-size: 14px"
-                >
-                  {{ ticketFocado.contact.name || '' }}
+        <q-scroll-area style="height: calc(100vh - 60px)">
+          <div class="contact-data-container">
+            <q-card class="contact-info-card">
+              <q-card-section class="contact-profile-section">
+                <div class="contact-profile-wrapper">
+                  <div class="contact-avatar-container">
+                    <q-avatar class="contact-profile-avatar">
+                       <q-icon
+                         name="mdi-account"
+                         style="width: 50px; height: 50px"
+                         size="2.5em"
+                         color="grey-4"
+                         v-if="!ticketFocado.contact.profilePicUrl"
+                       />
+                       <q-img
+                         :src="ticketFocado.contact.profilePicUrl"
+                         style="width: 50px; height: 50px"
+                       >
+                         <template v-slot:error>
+                           <q-icon
+                             name="mdi-account"
+                             size="1.5em"
+                             color="grey-4"
+                           />
+                         </template>
+                       </q-img>
+                     </q-avatar>
+                  </div>
+                  <div class="contact-info-details">
+                    <div class="contact-name">
+                      {{ ticketFocado.contact.name || '' }}
+                    </div>
+                    <div
+                      class="contact-number"
+                      id="number"
+                      @click="copyContent(ticketFocado.contact.number || '')"
+                    >
+                      <q-icon name="mdi-whatsapp" size="16px" class="q-mr-xs" />
+                      {{ ticketFocado.contact.number || '' }}
+                      <q-tooltip content-class="modern-tooltip">Clique para copiar</q-tooltip>
+                    </div>
+                  </div>
                 </div>
-                <div
-                  class="text-caption q-mt-sm"
-                  style="font-size: 14px"
-                  id="number"
-                  @click="copyContent(ticketFocado.contact.number || '')"
-                >
-                  {{ ticketFocado.contact.number || '' }}
+              </q-card-section>
+
+              <q-card-section class="contact-details-section">
+                <div class="contact-details-list">
+                  <!-- Informações de atendimento -->
+                  <div v-if="ticketFocado.createdAt" class="contact-detail-item">
+                    <q-icon name="mdi-clock-outline" class="detail-icon" />
+                    <span class="detail-text">
+                      Atendimento aberto em {{ formatDate(ticketFocado.createdAt) }}
+                    </span>
+                  </div>
+
+                  <div v-if="getTempoAtendimento()" class="contact-detail-item">
+                    <q-icon name="mdi-timer-outline" class="detail-icon" />
+                    <span class="detail-text">
+                      Tempo total em atendimento: {{ getTempoAtendimento() }}
+                    </span>
+                  </div>
+
+                  <div v-if="getTempoFila()" class="contact-detail-item">
+                    <q-icon name="mdi-account-clock" class="detail-icon" />
+                    <span class="detail-text">
+                      Nesta fila há {{ getTempoFila() }}
+                    </span>
+                  </div>
+
+                  <div v-if="ticketFocado.whatsapp" class="contact-detail-item">
+                    <q-icon :name="getChannelIcon(ticketFocado.whatsapp)" class="detail-icon" />
+                    <span class="detail-text">
+                      {{ getChannelDisplayName(ticketFocado.whatsapp) }}
+                    </span>
+                  </div>
+
+                  <div v-if="ticketFocado.protocol" class="contact-detail-item clickable-protocol" @click="copyContent(ticketFocado.protocol)">
+                    <q-icon name="mdi-file-document-outline" class="detail-icon" />
+                    <span class="detail-text">
+                      Protocolo: {{ ticketFocado.protocol }}
+                    </span>
+                    <q-tooltip content-class="modern-tooltip">Clique para copiar</q-tooltip>
+                  </div>
+
+                  <!-- Informações de contato -->
+                  <div v-if="ticketFocado.contact.email" class="contact-detail-item">
+                    <q-icon name="mdi-email" class="detail-icon" />
+                    <span class="detail-text">
+                      {{ ticketFocado.contact.email }}
+                    </span>
+                  </div>
+
+                  <div v-if="ticketFocado.contact.telegramId" class="contact-detail-item">
+                    <q-icon name="mdi-telegram" class="detail-icon" />
+                    <span class="detail-text">
+                      {{ ticketFocado.contact.telegramId }}
+                    </span>
+                  </div>
+
+                  <div v-if="ticketFocado.contact.messengerId" class="contact-detail-item">
+                    <q-icon name="mdi-facebook-messenger" class="detail-icon" />
+                    <span class="detail-text">
+                      {{ ticketFocado.contact.messengerId }}
+                    </span>
+                  </div>
+
+                  <div v-if="ticketFocado.contact.instagramPK" class="contact-detail-item">
+                    <q-icon name="mdi-instagram" class="detail-icon" />
+                    <span class="detail-text">
+                      {{ ticketFocado.contact.pushname }}
+                    </span>
+                  </div>
                 </div>
-                <div
-                  class="text-caption q-mt-md"
-                  style="font-size: 14px"
-                  id="email"
-                  @click="copyContent(ticketFocado.contact.email || '')"
-                >
-                  {{ ticketFocado.contact.email || '' }}
-                </div>
-                <q-btn
-                  color="primary"
-                  class="q-mt-sm bg-padrao btn-rounded"
-                  flat
-                  icon="edit"
-                  label="Editar Contato"
-                  @click="editContact(ticketFocado.contact.id)"
-                />
               </q-card-section>
             </q-card>
-            <q-card
-              class="bg-white btn-rounded q-mt-sm"
-              style="width: 100%"
-              bordered
-              flat
-            >
-              <q-card-section class="text-bold q-pa-sm ">
+
+            <q-card class="action-card">
+              <q-card-section class="action-section">
                 <q-btn
                   flat
-                  class="bg-padrao btn-rounded"
-                  :color="!$q.dark.isActive ? 'grey-9' : 'white'"
+                  class="logs-btn"
                   label="Logs"
-                  icon="mdi-timeline-text-outline"
                   @click="abrirModalLogs"
                 />
               </q-card-section>
             </q-card>
-            <q-card
-              class="bg-white q-mt-sm btn-rounded"
-              style="width: 100%"
-              bordered
+
+            <div class="tags-title q-mt-md q-mb-sm">
+              <q-icon name="mdi-tag-multiple" size="18px" class="q-mr-sm" />
+              Etiquetas
+            </div>
+            <!-- Tags selecionadas -->
+            <div v-if="ticketFocado.contact.tags && ticketFocado.contact.tags.length > 0" class="selected-tags-container q-mb-sm">
+              <q-chip
+                v-for="tag in ticketFocado.contact.tags"
+                :key="tag.uniqueKey || `tag-${tag.id || tag}`"
+                dense
+                removable
+                :style="{ backgroundColor: getTagColor(tag), color: getContrastColor(getTagColor(tag)) }"
+                class="q-ma-xs elegant-chip"
+                @remove="removeTagById(tag.id || tag)"
+              >
+                {{ getTagName(tag) }}
+              </q-chip>
+            </div>
+
+            <!-- Botão para adicionar tags -->
+            <q-btn
               flat
-              :key="'etiquetas-' + ticketFocado.id"
+              dense
+              class="custom-tag-selector"
+              style="width: 100%"
+              :label="ticketFocado.contact.tags && ticketFocado.contact.tags.length > 0 ? 'Adicionar mais etiquetas' : 'Selecionar etiquetas'"
+              icon="mdi-tag-plus"
+              color="primary"
             >
-              <q-card-section class="text-bold q-pb-none">
-                Etiquetas
-                <q-separator />
-              </q-card-section>
-              <q-card-section class="q-pa-none">
-                <q-select
-                  square
-                  borderless
-                  :value="ticketFocado.contact.tags"
-                  multiple
-                  :options="etiquetas"
-                  use-chips
-                  option-value="id"
-                  option-label="tag"
-                  emit-value
-                  map-options
-                  dropdown-icon="add"
-                  @input="tagSelecionada"
-                >
-                  <template v-slot:option="{ itemProps, itemEvents, opt, selected, toggleOption }">
-                    <q-item
-                      v-bind="itemProps"
-                      v-on="itemEvents"
-                    >
-                      <q-item-section>
-                        <q-item-label v-html="opt.tag"></q-item-label>
-                      </q-item-section>
-                      <q-item-section side>
-                        <q-checkbox
-                          :value="selected"
-                          @input="toggleOption(opt)"
-                        />
-                      </q-item-section>
-                    </q-item>
-                  </template>
-                  <template v-slot:selected-item="{ opt }">
-                    <q-chip
-                      dense
-                      square
-                      color="white"
-                      text-color="primary"
-                      class="q-ma-xs row col-12 text-body1"
-                    >
-                      <q-icon
-                        :style="`color: ${opt.color}`"
-                        name="mdi-pound-box-outline"
-                        size="28px"
-                        class="q-mr-sm"
+              <q-menu
+                fit
+                class="tag-menu"
+                max-height="300px"
+              >
+                <q-list style="min-width: 250px">
+                  <q-item-label header class="text-primary text-weight-bold">
+                    <q-icon name="mdi-tag-multiple" class="q-mr-sm" />
+                    Etiquetas Disponíveis
+                  </q-item-label>
+                  <q-separator />
+
+                  <q-item
+                    v-for="etiqueta in etiquetas"
+                    :key="etiqueta.id"
+                    clickable
+                    v-close-popup
+                    @click="toggleTag(etiqueta)"
+                    class="tag-option-item"
+                  >
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">
+                        <q-chip
+                          dense
+                          :style="{ backgroundColor: etiqueta.color, color: getContrastColor(etiqueta.color) }"
+                          class="q-mr-sm"
+                          size="sm"
+                        >
+                          <q-icon name="mdi-tag" size="12px" />
+                        </q-chip>
+                        {{ etiqueta.tag }}
+                      </q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-checkbox
+                        :value="isTagSelected(etiqueta.id)"
+                        :color="etiqueta.color"
+                        @click.stop="toggleTag(etiqueta)"
                       />
-                      {{ opt.tag }}
-                    </q-chip>
-                  </template>
-                  <template v-slot:no-option="{ itemProps, itemEvents }">
-                    <q-item
-                      v-bind="itemProps"
-                      v-on="itemEvents"
-                    >
-                      <q-item-section>
-                        <q-item-label class="text-negative text-bold">
-                          Ops... Sem etiquetas criadas!
-                        </q-item-label>
-                        <q-item-label caption>
-                          Cadastre novas etiquetas na administração de sistemas.
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </template>
+                    </q-item-section>
+                  </q-item>
 
-                </q-select>
-              </q-card-section>
-            </q-card>
-            <q-card
-              class="bg-white q-mt-sm btn-rounded"
-              style="width: 100%"
-              bordered
+                  <q-item v-if="etiquetas.length === 0" class="text-grey-6">
+                    <q-item-section>
+                      <q-item-label class="text-center">
+                        <q-icon name="mdi-tag-off" size="24px" class="q-mb-sm" />
+                        <div>Ops... Sem etiquetas criadas!</div>
+                        <div class="text-caption">Cadastre novas etiquetas na administração de sistemas.</div>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
+            <div class="wallet-title q-mt-md q-mb-sm">
+              <q-icon name="person" size="18px" class="q-mr-sm" />
+              Carteira
+            </div>
+            <!-- Carteiras selecionadas -->
+            <div v-if="ticketFocado.contact.wallets && ticketFocado.contact.wallets.length > 0" class="selected-wallets-container q-mb-sm">
+              <q-chip
+                v-for="walletId in ticketFocado.contact.wallets"
+                :key="walletId.uniqueKey || `wallet-${walletId.id}`"
+                dense
+                removable
+                color="primary"
+                text-color="white"
+                class="q-ma-xs elegant-chip"
+                @remove="removeWalletById(walletId.id)"
+              >
+                <q-icon
+                  name="person"
+                  size="14px"
+                  class="q-mr-xs"
+                  style="color: white"
+                />
+                {{ getWalletName(walletId.id) }}
+              </q-chip>
+            </div>
+
+            <!-- Botão para adicionar carteiras -->
+            <q-btn
               flat
-              :key="'contato-' + ticketFocado.id"
+              dense
+              class="custom-wallet-selector"
+              style="width: 100%"
+              :label="ticketFocado.contact.wallets && ticketFocado.contact.wallets.length > 0 ? 'Alterar carteira' : 'Selecionar carteira'"
+              icon="person"
+              color="primary"
             >
-              <q-card-section class="text-bold q-pb-none">
-                Carteira
-                <q-separator />
-              </q-card-section>
-              <q-card-section class="q-pa-none">
-                <q-select
-                  square
-                  borderless
-                  :value="ticketFocado.contact.wallets"
-                  multiple
-                  :max-values="1"
-                  :options="usuarios"
-                  use-chips
-                  option-value="id"
-                  option-label="name"
-                  emit-value
-                  map-options
-                  dropdown-icon="add"
-                  @input="carteiraDefinida"
+              <q-menu
+                fit
+                class="wallet-menu"
+                max-height="300px"
+              >
+                <q-list style="min-width: 250px">
+                  <q-item-label header class="text-primary text-weight-bold">
+                    <q-icon name="person" class="q-mr-sm" />
+                    Carteiras Disponíveis
+                  </q-item-label>
+                  <q-separator />
+
+                  <q-item
+                    v-for="wallet in usuarios"
+                    :key="wallet.id"
+                    clickable
+                    v-close-popup
+                    @click="toggleWallet(wallet.id)"
+                    class="wallet-option-item"
+                  >
+                    <q-item-section>
+                      <q-item-label class="text-weight-medium">{{ wallet.name }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-checkbox
+                        :value="isWalletSelected(wallet.id)"
+                        color="primary"
+                        @click.stop="toggleWallet(wallet.id)"
+                      />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item v-if="usuarios.length === 0" class="text-grey-6">
+                    <q-item-section>
+                      <q-item-label class="text-center">
+                        <q-icon name="person_off" size="24px" class="q-mb-sm" />
+                        <div>Ops... Sem carteiras disponíveis!</div>
+                        <div class="text-caption">Cadastre novas carteiras na administração de sistemas.</div>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
+            <div class="scheduled-messages-title q-mt-md q-mb-sm">
+              <q-icon name="mdi-clock-outline" size="18px" class="q-mr-sm" />
+              Mensagens Agendadas
+            </div>
+            <div v-if="ticketFocado.scheduledMessages && ticketFocado.scheduledMessages.length > 0" class="scheduled-messages-container q-mb-sm">
+              <q-list class="scheduled-messages-list">
+                <q-item
+                  v-for="(message, idx) in ticketFocado.scheduledMessages"
+                  :key="message.uniqueKey || `scheduled-message-${message.id || idx}`"
+                  clickable
+                  class="scheduled-message-item"
                 >
-                  <template v-slot:option="{ itemProps, itemEvents, opt, selected, toggleOption }">
-                    <q-item
-                      v-bind="itemProps"
-                      v-on="itemEvents"
-                    >
-                      <q-item-section>
-                        <q-item-label v-html="opt.name"></q-item-label>
-                      </q-item-section>
-                      <q-item-section side>
-                        <q-checkbox
-                          :value="selected"
-                          @input="toggleOption(opt)"
+                  <q-item-section>
+                    <q-item-label caption>
+                      <b>Agendado para:</b> {{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        icon="mdi-trash-can-outline"
+                        class="absolute-top-right q-mr-sm"
+                        size="sm"
+                        @click="deletarMensagem(message)"
+                      />
+                    </q-item-label>
+                    <q-item-label
+                      caption
+                      lines="2"
+                    > <b>Msg:</b> {{ message.mediaName || message.body }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-tooltip :delay="500">
+                    <MensagemChat :mensagens="[message]" />
+                  </q-tooltip>
+                </q-item>
+              </q-list>
+            </div>
+            <div class="extra-info-title q-mt-md q-mb-sm">
+              <q-icon name="mdi-information-outline" size="18px" class="q-mr-sm" />
+              Outras Informações
+            </div>
+
+            <!-- Observações -->
+            <div class="observations-container q-mb-md">
+              <div class="row items-center q-mb-sm">
+                <div class="text-subtitle1">Observações</div>
+                <q-space />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  color="primary"
+                  icon="mdi-eye"
+                  @click="abrirModalListarObservacoes"
+                  class="q-mr-sm"
+                >
+                  <q-tooltip>Ver todas</q-tooltip>
+                </q-btn>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  color="primary"
+                  icon="mdi-plus"
+                  @click="abrirModalObservacao"
+                >
+                  <q-tooltip>Nova Observação</q-tooltip>
+                </q-btn>
+              </div>
+              <q-scroll-area style="height: 200px">
+                <q-list>
+                  <q-item v-for="obs in observacoes.slice(0, 3)" :key="obs.id" class="q-mb-sm">
+                    <q-item-section>
+                      <q-item-label caption>{{ $formatarData(obs.createdAt, 'dd/MM/yyyy HH:mm') }} - {{ obs.user?.name }}</q-item-label>
+                      <q-item-label>{{ obs.texto }}</q-item-label>
+                      <q-item-label v-if="obs.anexo" caption>
+                        <q-btn
+                          flat
+                          dense
+                          size="sm"
+                          icon="mdi-paperclip"
+                          :label="obs.anexo"
+                          @click="abrirAnexo(obs.anexo)"
                         />
-                      </q-item-section>
-                    </q-item>
-                  </template>
-                  <template v-slot:selected-item="{ opt }">
-                    <q-chip
-                      dense
-                      square
-                      color="white"
-                      text-color="primary"
-                      class="q-ma-xs row col-12 text-body1"
-                    >
-                      {{ opt.name }}
-                    </q-chip>
-                  </template>
-                  <template v-slot:no-option="{ itemProps, itemEvents }">
-                    <q-item
-                      v-bind="itemProps"
-                      v-on="itemEvents"
-                    >
-                      <q-item-section>
-                        <q-item-label class="text-negative text-bold">
-                          Ops... Sem carteiras disponíveis!!
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </template>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item v-if="observacoes.length > 3" class="text-center">
+                    <q-item-section>
+                      <q-btn
+                        flat
+                        dense
+                        color="primary"
+                        label="Ver mais..."
+                        @click="abrirModalListarObservacoes"
+                      />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-scroll-area>
+            </div>
 
-                </q-select>
-              </q-card-section>
-            </q-card>
-            <q-card
-              class="bg-white q-mt-sm btn-rounded"
-              style="width: 100%"
-              bordered
-              flat
-              :key="'informacoes-' + ticketFocado.id"
-            >
-              <q-card-section class="text-bold q-pb-none">
-                Mensagens Agendadas
-                <q-separator />
-              </q-card-section>
-              <q-card-section class="q-pa-none">
-                <template v-if="ticketFocado.scheduledMessages">
-                  <q-list>
-                    <q-item
-                      v-for="(message, idx) in ticketFocado.scheduledMessages"
-                      :key="idx"
-                      clickable
-                    >
-                      <q-item-section>
-                        <q-item-label caption>
-                          <b>Agendado para:</b> {{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}
-                          <q-btn
-                            flat
-                            round
-                            dense
-                            icon="mdi-trash-can-outline"
-                            class="absolute-top-right q-mr-sm"
-                            size="sm"
-                            @click="deletarMensagem(message)"
-                          />
-                        </q-item-label>
-                        <q-item-label
-                          caption
-                          lines="2"
-                        > <b>Msg:</b> {{ message.mediaName || message.body }}
-                        </q-item-label>
-                      </q-item-section>
-                      <q-tooltip :delay="500">
-                        <MensagemChat :mensagens="[message]" />
-                      </q-tooltip>
-                    </q-item>
-                  </q-list>
-                </template>
-              </q-card-section>
-            </q-card>
-            <q-card
-              class="bg-white q-mt-sm btn-rounded"
-              style="width: 100%"
-              bordered
-              flat
-              :key="'historico-' + ticketFocado.id"
-            >
-              <q-card-section class="text-bold q-pb-none">
-                Outras Informações
-              </q-card-section>
-              <q-card-section class="q-pa-none">
-                <template v-if="cIsExtraInfo">
-                  <q-list>
-                    <q-item
-                      v-for="(info, idx) in ticketFocado.contact.extraInfo"
-                      :key="idx"
-                    >
-                      <q-item-section>
-                        <q-item-label>{{ info.value }}</q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </template>
-
-              </q-card-section>
-            </q-card>
+            <div v-if="cIsExtraInfo" class="extra-info-container q-mb-sm">
+              <q-list class="extra-info-list">
+                <q-item
+                  v-for="(info, idx) in ticketFocado.contact.extraInfo"
+                  :key="info.uniqueKey || `extra-info-${info.key || idx}`"
+                  class="extra-info-item"
+                >
+                  <q-item-section>
+                    <q-item-label>{{ info.value }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </div>
           </div>
         </q-scroll-area>
       </q-drawer>
@@ -495,7 +594,7 @@
                 <template>
                   <q-timeline-entry
                     v-for="(log, idx) in logsTicket"
-                    :key="log && log.id || idx"
+                    :key="log.id ? `log-${log.id}` : `idx-${idx}`"
                     :subtitle="$formatarData(log.createdAt, 'dd/MM/yyyy HH:mm')"
                     :color="messagesLog[log.type] && messagesLog[log.type].color || ''"
                     :icon="messagesLog[log.type] && messagesLog[log.type].icon || ''"
@@ -516,6 +615,17 @@
           </q-card-section>
         </q-card>
       </q-dialog>
+
+      <ModalObservacao
+        :value.sync="modalObservacao"
+        :ticket-id="ticketFocado.id || null"
+        @observacao-salva="handleObservacaoSalva"
+      />
+
+      <ModalListarObservacoes
+        :value.sync="modalListarObservacoes"
+        :ticket-id="ticketFocado.id || null"
+      />
 
     </q-layout>
     <audio ref="audioNotificationPlay">
@@ -554,6 +664,10 @@ import { RealizarLogout } from 'src/service/login'
 import { ListarUsuarios } from 'src/service/user'
 import MensagemChat from './MensagemChat.vue'
 import { messagesLog } from '../../utils/constants'
+import ModalObservacao from './ModalObservacao.vue'
+import { ListarObservacoes } from '../../service/observacoes'
+import ModalListarObservacoes from './ModalListarObservacoes.vue'
+
 export default {
   name: 'IndexAtendimento',
 
@@ -564,7 +678,9 @@ export default {
     StatusWhatsapp,
     ContatoModal,
     ModalUsuario,
-    MensagemChat
+    MensagemChat,
+    ModalObservacao,
+    ModalListarObservacoes
   },
   data () {
     const query = this.$route.query
@@ -607,44 +723,16 @@ export default {
         withUnreadMessages: false,
         isNotAssignedUser: initialStatus.includes('pending') || this.$route.query.status === 'pending',
         includeNotQueueDefined: true
-        // date: new Date(),
       },
       filas: [],
       etiquetas: [],
       mensagensRapidas: [],
       modalEtiquestas: false,
       exibirModalLogs: false,
-      logsTicket: []
-    }
-  },
-  watch: {
-    searchTickets: {
-      handler (val) {
-        this.debounce(this.BuscarTicketFiltro(), 500)
-      }
-    },
-    tickets: {
-      handler (tickets) {
-        this.scrollToBottom()
-      },
-      deep: true
-    },
-    $route: {
-      handler (newRoute) {
-        const newStatus = newRoute.query.status
-
-        // Só atualiza o status se estivermos na rota de atendimento
-        if (newRoute.name === 'atendimento') {
-          if (newStatus) {
-            this.pesquisaTickets.status = [newStatus]
-          } else {
-            // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
-            this.pesquisaTickets.status = ['open']
-          }
-          this.BuscarTicketFiltro()
-        }
-      },
-      immediate: true
+      logsTicket: [],
+      modalObservacao: false,
+      modalListarObservacoes: false,
+      observacoes: []
     }
   },
   computed: {
@@ -655,16 +743,6 @@ export default {
       'whatsapps'
     ]),
     cUserQueues () {
-      // try {
-      //   const filasUsuario = JSON.parse(UserQueues).map(q => {
-      //     if (q.isActive) {
-      //       return q.id
-      //     }
-      //   })
-      //   return this.filas.filter(f => filasUsuario.includes(f.id)) || []
-      // } catch (error) {
-      //   return []
-      // }
       return UserQueues
     },
     style () {
@@ -890,11 +968,21 @@ export default {
     copyContent (content) {
       navigator.clipboard.writeText(content)
         .then(() => {
-          // Copiado com sucesso
+          this.$q.notify({
+            type: 'positive',
+            message: 'Conteúdo copiado para a área de transferência',
+            position: 'top',
+            timeout: 2000
+          })
         })
         .catch((error) => {
-          // Ocorreu um erro ao copiar
           console.error('Erro ao copiar o conteúdo: ', error)
+          this.$q.notify({
+            type: 'negative',
+            message: 'Erro ao copiar conteúdo',
+            position: 'top',
+            timeout: 2000
+          })
         })
     },
     deletarMensagem (mensagem) {
@@ -931,9 +1019,104 @@ export default {
       const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, [...tags])
       this.contatoEditado(data)
     },
+    async removeTag (tagToRemove) {
+      const currentTags = this.ticketFocado.contact.tags || []
+      const updatedTags = currentTags.filter(tag => tag.id !== tagToRemove.id)
+      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, updatedTags.map(tag => tag.id))
+      this.contatoEditado(data)
+    },
+    async toggleTag (etiqueta) {
+      const currentTags = this.ticketFocado.contact.tags || []
+      const tagIndex = currentTags.findIndex(tag => tag.id === etiqueta.id)
+
+      let newTagIds
+      if (tagIndex > -1) {
+        // Remove tag se já estiver selecionada
+        newTagIds = currentTags.filter(tag => tag.id !== etiqueta.id).map(tag => tag.id)
+      } else {
+        // Adiciona tag se não estiver selecionada
+        newTagIds = [...currentTags.map(tag => tag.id), etiqueta.id]
+      }
+
+      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, newTagIds)
+      this.contatoEditado(data)
+    },
+    isTagSelected (tagId) {
+      return this.ticketFocado.contact.tags && this.ticketFocado.contact.tags.some(tag => tag.id === tagId)
+    },
+    getTagColor (tag) {
+      const tagId = typeof tag === 'object' ? tag.id : tag
+      const etiqueta = this.etiquetas.find(e => e.id === tagId)
+      return etiqueta ? etiqueta.color : 'primary'
+    },
+    getTagName (tag) {
+      const tagId = typeof tag === 'object' ? tag.id : tag
+      const etiqueta = this.etiquetas.find(e => e.id === tagId)
+      return etiqueta ? etiqueta.tag : 'Tag não encontrada'
+    },
+    async removeTagById (tagId) {
+      const currentTags = this.ticketFocado.contact.tags || []
+      const newTagIds = currentTags.filter(tag => tag.id !== tagId).map(tag => tag.id)
+      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, newTagIds)
+      this.contatoEditado(data)
+    },
     async carteiraDefinida (wallets) {
       const { data } = await EditarCarteiraContato(this.ticketFocado.contact.id, [...wallets])
       this.contatoEditado(data)
+    },
+    async toggleWallet (walletId) {
+      const currentWallets = this.ticketFocado.contact.wallets || []
+      let newWalletIds
+
+      if (currentWallets.includes(walletId)) {
+        // Remove carteira se já estiver selecionada
+        newWalletIds = currentWallets.filter(id => id !== walletId)
+      } else {
+        // Como carteira tem max-values="1", substitui a carteira atual
+        newWalletIds = [walletId]
+      }
+
+      const { data } = await EditarCarteiraContato(this.ticketFocado.contact.id, newWalletIds)
+      this.contatoEditado(data)
+    },
+    isWalletSelected (walletId) {
+      return this.ticketFocado.contact.wallets && this.ticketFocado.contact.wallets.includes(walletId)
+    },
+    getWalletName (walletId) {
+      const wallet = this.usuarios.find(user => user.id === walletId)
+      return wallet ? wallet.name : 'Carteira não encontrada'
+    },
+    async removeWalletById (walletId) {
+      const currentWallets = this.ticketFocado.contact.wallets || []
+      const newWalletIds = currentWallets.filter(id => id !== walletId)
+      const { data } = await EditarCarteiraContato(this.ticketFocado.contact.id, newWalletIds)
+      this.contatoEditado(data)
+    },
+    async carregarObservacoes () {
+      if (!this.ticketFocado?.id) return
+
+      try {
+        this.observacoes = await ListarObservacoes(this.ticketFocado.id)
+      } catch (error) {
+        console.error('Erro ao carregar observações:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao carregar observações',
+          position: 'top'
+        })
+      }
+    },
+    async handleObservacaoSalva (observacao) {
+      try {
+        await this.carregarObservacoes()
+      } catch (error) {
+        console.error('Erro ao atualizar observações:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao atualizar observações',
+          position: 'top'
+        })
+      }
     },
     async listarUsuarios () {
       try {
@@ -954,6 +1137,150 @@ export default {
       const { data } = await ConsultarLogsTicket({ ticketId: this.ticketFocado.id })
       this.logsTicket = data
       this.exibirModalLogs = true
+    },
+    formatDate (dateString) {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      const day = String(date.getDate()).padStart(2, '0')
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear()
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const seconds = String(date.getSeconds()).padStart(2, '0')
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
+    },
+    getTempoAtendimento () {
+      if (!this.ticketFocado?.createdAt) return ''
+      const inicio = new Date(this.ticketFocado.createdAt)
+      const agora = new Date()
+      const diffMs = agora - inicio
+      const diffMinutes = Math.floor(diffMs / (1000 * 60))
+
+      if (diffMinutes < 60) {
+        return `${diffMinutes} minutos`
+      } else {
+        const hours = Math.floor(diffMinutes / 60)
+        const minutes = diffMinutes % 60
+        return `${hours}h ${minutes}min`
+      }
+    },
+    getChannelIcon (whatsapp) {
+      if (!whatsapp) return 'mdi-message'
+
+      const type = whatsapp.type?.toLowerCase()
+      const name = whatsapp.name?.toLowerCase()
+
+      if (type === 'whatsapp' || name?.includes('whatsapp')) {
+        return 'mdi-whatsapp'
+      } else if (type === 'telegram' || name?.includes('telegram')) {
+        return 'mdi-telegram'
+      } else if (type === 'messenger' || name?.includes('messenger')) {
+        return 'mdi-facebook-messenger'
+      } else if (type === 'instagram' || name?.includes('instagram')) {
+        return 'mdi-instagram'
+      } else if (type === 'cloud' || name?.includes('cloud')) {
+        return 'mdi-cloud'
+      } else {
+        return 'mdi-message'
+      }
+    },
+    getChannelDisplayName (whatsapp) {
+      if (!whatsapp) return 'Canal não identificado'
+
+      const name = whatsapp.name || 'Canal'
+      const type = whatsapp.type || ''
+
+      // Se é do tipo Cloud, mostrar informações específicas
+      if (type?.toLowerCase() === 'cloud' || name?.toLowerCase().includes('cloud')) {
+        return `${name} (WhatsApp Cloud)`
+      }
+
+      // Se é WhatsApp Business API
+      if (type?.toLowerCase() === 'whatsapp' || name?.toLowerCase().includes('whatsapp')) {
+        if (name?.toLowerCase().includes('oficial')) {
+          return `${name} (WhatsApp)`
+        }
+        return `${name} (WhatsApp Business)`
+      }
+
+      // Detectar outros tipos de canal pelo nome
+      if (name?.toLowerCase().includes('telegram')) {
+        return `${name} (Telegram)`
+      }
+      if (name?.toLowerCase().includes('instagram')) {
+        return `${name} (Instagram)`
+      }
+      if (name?.toLowerCase().includes('messenger')) {
+        return `${name} (Messenger)`
+      }
+      if (name?.toLowerCase().includes('facebook')) {
+        return `${name} (Facebook)`
+      }
+
+      // Para outros tipos de canal com type definido
+      if (type && type !== name) {
+        return `${name} (${type})`
+      }
+
+      // Se não conseguir identificar o tipo, assumir WhatsApp como padrão
+      return `${name} (WhatsApp)`
+    },
+    getTempoFila () {
+      if (!this.ticketFocado?.updatedAt) return ''
+      const ultimaAtualizacao = new Date(this.ticketFocado.updatedAt)
+      const agora = new Date()
+      const diffMs = agora - ultimaAtualizacao
+      const diffMinutes = Math.floor(diffMs / (1000 * 60))
+
+      if (diffMinutes < 60) {
+        return `${diffMinutes} minutos`
+      } else {
+        const hours = Math.floor(diffMinutes / 60)
+        const minutes = diffMinutes % 60
+        return `${hours}h ${minutes}min`
+      }
+    },
+    getContrastColor (hexcolor) {
+      // Remove o # se existir
+      hexcolor = hexcolor.replace('#', '')
+
+      // Converte para RGB
+      const r = parseInt(hexcolor.substr(0, 2), 16)
+      const g = parseInt(hexcolor.substr(2, 2), 16)
+      const b = parseInt(hexcolor.substr(4, 2), 16)
+
+      // Calcula o brilho usando a fórmula YIQ
+      const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
+
+      // Retorna branco para cores escuras e preto para cores claras
+      return (yiq >= 128) ? '#000000' : '#ffffff'
+    },
+    abrirModalObservacao () {
+      console.log('Index - Abrindo modal, ticketFocado:', this.ticketFocado)
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para adicionar uma observação',
+          position: 'top'
+        })
+        return
+      }
+      this.modalObservacao = true
+    },
+    abrirModalListarObservacoes () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para ver as observações',
+          position: 'top'
+        })
+        return
+      }
+      this.modalListarObservacoes = true
+    },
+    abrirAnexo (anexo) {
+      const url = `${process.env.VUE_URL_API}/public/sent/${anexo}`
+      window.open(url, '_blank')
     }
   },
   beforeMount () {
@@ -1022,6 +1349,46 @@ export default {
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     // this.socketDisconnect()
     this.$store.commit('TICKET_FOCADO', {})
+  },
+  watch: {
+    searchTickets: {
+      handler (val) {
+        this.debounce(this.BuscarTicketFiltro(), 500)
+      }
+    },
+    tickets: {
+      handler (tickets) {
+        this.scrollToBottom()
+      },
+      deep: true
+    },
+    $route: {
+      handler (newRoute) {
+        const newStatus = newRoute.query.status
+
+        // Só atualiza o status se estivermos na rota de atendimento
+        if (newRoute.name === 'atendimento') {
+          if (newStatus) {
+            this.pesquisaTickets.status = [newStatus]
+          } else {
+            // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
+            this.pesquisaTickets.status = ['open']
+          }
+          this.BuscarTicketFiltro()
+        }
+      },
+      immediate: true
+    },
+    ticketFocado: {
+      handler (newVal) {
+        if (newVal?.id) {
+          this.carregarObservacoes()
+        } else {
+          this.observacoes = []
+        }
+      },
+      immediate: true
+    }
   }
 }
 </script>
@@ -1095,6 +1462,303 @@ export default {
   }
 }
 
+/* Modo escuro para seção de dados do contato */
+.body--dark {
+  .contact-info-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .contact-profile-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  }
+
+  .contact-profile-avatar {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  }
+
+  .contact-name {
+    color: #ffffff;
+  }
+
+  .contact-number {
+    color: #4ade80;
+
+    &:hover {
+      background: rgba(74, 222, 128, 0.15);
+    }
+  }
+
+  .contact-detail-item {
+    background: rgba(255, 255, 255, 0.03);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .detail-icon {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .detail-text {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .action-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .tags-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .tags-title {
+    color: #ffffff;
+  }
+
+  .modern-tooltip {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #1a1a1a !important;
+  }
+
+  .clickable-protocol {
+      &:hover {
+        background-color: rgba(144, 202, 249, 0.12) !important;
+
+        .detail-icon {
+          color: #90caf9 !important;
+        }
+
+        .detail-text {
+          color: #90caf9 !important;
+        }
+      }
+
+      &:active {
+        background-color: rgba(144, 202, 249, 0.16) !important;
+      }
+    }
+}
+
+.contact-data-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  height: 50px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.contact-data-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.contact-data-container {
+  padding: 12px;
+}
+
+.contact-info-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: none;
+  overflow: hidden;
+}
+
+.contact-profile-section {
+  padding: 12px;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.contact-profile-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-avatar-container {
+  position: relative;
+}
+
+.contact-profile-avatar {
+  width: 50px;
+  height: 50px;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.contact-info-details {
+  text-align: center;
+}
+
+.contact-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 2px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-number {
+  font-size: 12px;
+  color: #25D366;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    background: rgba(37, 211, 102, 0.1);
+    transform: scale(1.02);
+   }
+ }
+
+.contact-details-section {
+  padding: 8px 12px;
+}
+
+.contact-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contact-detail-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    transform: translateX(1px);
+  }
+}
+
+.detail-icon {
+  color: #6c757d;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.detail-text {
+  font-size: 11px;
+  color: #495057;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.action-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  margin-top: 8px;
+  border: none;
+}
+
+.action-section {
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logs-btn {
+  width: 80px;
+  height: 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-weight: 500;
+  font-size: 10px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+  }
+}
+
+.tags-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  margin-top: 8px;
+  border: none;
+}
+
+.tags-header {
+  padding: 10px 12px 6px;
+}
+
+.tags-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+}
+
+.tags-content {
+  padding: 0 12px 10px;
+}
+
+ .modern-tooltip {
+  background: #2c3e50;
+  color: white;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 12px;
+ }
+
+.clickable-protocol {
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba(25, 118, 210, 0.08) !important;
+      transform: translateX(2px);
+
+      .detail-icon {
+        color: #1976d2 !important;
+      }
+
+      .detail-text {
+        color: #1976d2 !important;
+      }
+    }
+
+    &:active {
+      transform: translateX(1px);
+      background-color: rgba(25, 118, 210, 0.12) !important;
+    }
+  }
+
 .filter-btn {
   border-radius: 4px !important;
 }
@@ -1144,6 +1808,316 @@ export default {
   background-color: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.28);
   color: #ffffff;
+}
+
+/* Estilos elegantes para seleção de etiquetas */
+.elegant-select {
+  border-radius: 8px !important;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.elegant-select:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.elegant-select .q-field__control {
+  border-radius: 8px !important;
+}
+
+.elegant-option {
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  margin: 2px 4px;
+}
+
+.elegant-option:hover {
+  background-color: rgba(25, 118, 210, 0.08) !important;
+  transform: translateX(2px);
+}
+
+.elegant-chip {
+  border-radius: 16px !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.elegant-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+
+.elegant-no-option {
+  text-align: center;
+  padding: 16px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.custom-tag-selector {
+  height: 32px !important;
+  min-height: 32px !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+  justify-content: flex-start;
+  text-transform: none;
+  font-weight: normal;
+  padding: 0 12px;
+}
+
+.custom-tag-selector:hover {
+  background-color: #f5f5f5;
+  border-color: #1976d2;
+}
+
+.selected-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.tag-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tag-option-item {
+  padding: 8px 16px;
+  transition: background-color 0.2s;
+}
+
+.tag-option-item:hover {
+  background-color: #f5f5f5;
+}
+
+.elegant-chip {
+  font-size: 12px;
+  height: 24px;
+}
+
+.elegant-chip .q-icon {
+  font-size: 14px;
+}
+
+/* Dark mode styles */
+.body--dark .custom-tag-selector {
+  border-color: #424242;
+  background-color: #2d2d2d;
+  color: #ffffff;
+}
+
+.body--dark .custom-tag-selector:hover {
+  background-color: #3d3d3d;
+  border-color: #90caf9;
+}
+
+.body--dark .tag-menu {
+  background-color: #2d2d2d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.body--dark .tag-option-item {
+  color: #ffffff;
+}
+
+.body--dark .tag-option-item:hover {
+  background-color: #424242;
+}
+
+.body--dark .elegant-chip {
+  background-color: #424242;
+  color: #ffffff;
+}
+
+.body--dark .elegant-chip .q-icon {
+  color: #ffffff;
+}
+
+/* Wallet selector styles */
+.custom-wallet-selector {
+  height: 32px !important;
+  min-height: 32px !important;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+  justify-content: flex-start;
+  text-transform: none;
+  font-weight: normal;
+  padding: 0 12px;
+}
+
+.custom-wallet-selector:hover {
+  background-color: #f5f5f5;
+  border-color: #1976d2;
+}
+
+.selected-wallets-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.wallet-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wallet-option-item {
+  padding: 8px 16px;
+  transition: background-color 0.2s;
+}
+
+.wallet-option-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Wallet title styles */
+.wallet-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #424242;
+  display: flex;
+  align-items: center;
+}
+
+/* Dark mode styles for wallet selector */
+.body--dark .custom-wallet-selector {
+  border-color: #424242;
+  background-color: #2d2d2d;
+  color: #ffffff;
+}
+
+.body--dark .custom-wallet-selector:hover {
+  background-color: #3d3d3d;
+  border-color: #90caf9;
+}
+
+.body--dark .wallet-title {
+  color: #ffffff;
+}
+
+.body--dark .wallet-menu {
+  background-color: #2d2d2d;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.body--dark .wallet-option-item {
+  color: #ffffff;
+}
+
+.body--dark .wallet-option-item:hover {
+  background-color: #424242;
+}
+
+/* Scheduled messages styles */
+.scheduled-messages-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #424242;
+  display: flex;
+  align-items: center;
+}
+
+.scheduled-messages-container {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.scheduled-messages-list {
+  padding: 0;
+}
+
+.scheduled-message-item {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s;
+}
+
+.scheduled-message-item:last-child {
+  border-bottom: none;
+}
+
+.scheduled-message-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Extra info styles */
+.extra-info-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #424242;
+  display: flex;
+  align-items: center;
+}
+
+.extra-info-container {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.extra-info-list {
+  padding: 0;
+}
+
+.extra-info-item {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s;
+}
+
+.extra-info-item:last-child {
+  border-bottom: none;
+}
+
+.extra-info-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Dark mode styles for scheduled messages and extra info */
+.body--dark .scheduled-messages-title {
+  color: #ffffff;
+}
+
+.body--dark .scheduled-messages-container {
+  border-color: #424242;
+  background-color: #2d2d2d;
+}
+
+.body--dark .scheduled-message-item {
+  border-bottom-color: #424242;
+  color: #ffffff;
+}
+
+.body--dark .scheduled-message-item:hover {
+  background-color: #424242;
+}
+
+.body--dark .extra-info-title {
+  color: #ffffff;
+}
+
+.body--dark .extra-info-container {
+  border-color: #424242;
+  background-color: #2d2d2d;
+}
+
+.body--dark .extra-info-item {
+  border-bottom-color: #424242;
+  color: #ffffff;
+}
+
+.body--dark .extra-info-item:hover {
+  background-color: #424242;
 }
 
 .body--dark .custom-search-input:hover {
