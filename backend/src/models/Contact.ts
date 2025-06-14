@@ -12,7 +12,8 @@ import {
   BeforeCreate,
   ForeignKey,
   BelongsTo,
-  BelongsToMany
+  BelongsToMany,
+  DataType
 } from "sequelize-typescript";
 import Campaign from "./Campaign";
 import CampaignContacts from "./CampaignContacts";
@@ -44,7 +45,7 @@ class Contact extends Model<Contact> {
   @Column
   email: string;
 
-  @Column
+  @Column(DataType.TEXT)
   profilePicUrl: string;
 
   @AllowNull(true)
@@ -117,6 +118,13 @@ class Contact extends Model<Contact> {
 
   @BelongsTo(() => Tenant)
   tenant: Tenant;
+
+  @ForeignKey(() => User)
+  @Column
+  userId: number;
+
+  @BelongsTo(() => User)
+  user: User;
 }
 
 export default Contact;

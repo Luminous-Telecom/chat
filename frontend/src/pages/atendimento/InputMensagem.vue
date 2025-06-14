@@ -28,7 +28,7 @@
       >
         <q-menu
           :target="$refs.menuFast"
-          :key="cMensagensRapidas.length"
+          :key="`menu-${cMensagensRapidas.length}`"
           square
           no-focus
           no-parent-event
@@ -61,8 +61,8 @@
             v-else
           >
             <q-item
-              v-for="resposta in cMensagensRapidas"
-              :key="resposta.key"
+              v-for="(resposta, index) in cMensagensRapidas"
+              :key="`resposta-${index}-${resposta.id || resposta.key}`"
               clickable
               v-close-popup
               @click="mensagemRapidaSelecionada(resposta.message)"

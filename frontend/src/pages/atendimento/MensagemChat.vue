@@ -5,28 +5,28 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <template v-for="(mensagem, index) in       mensagens      ">
+      <template v-for="(mensagem, index) in mensagens">
         <hr
           v-if="isLineDate"
-          :key="'hr-' + index"
+          :key="`hr-${mensagem.id}-${index}`"
           class="hr-text q-mt-lg q-mb-md"
           :data-content="formatarData(mensagem.createdAt)"
           v-show="index === 0 || formatarData(mensagem.createdAt) !== formatarData(mensagens[index - 1].createdAt)"
         >
         <template v-if="mensagens.length && index === mensagens.length - 1">
           <div
-            :key="`ref-${mensagem.createdAt}`"
+            :key="`ref-${mensagem.id}-${mensagem.createdAt}`"
             ref="lastMessageRef"
             id="lastMessageRef"
             style="float: left; background: black; clear: both;"
           />
         </template>
         <div
-          :key="`chat-message-${mensagem.id}`"
+          :key="`chat-message-container-${mensagem.id}`"
           :id="`chat-message-${mensagem.id}`"
         />
         <q-chat-message
-          :key="mensagem.id"
+          :key="`chat-message-${mensagem.id}`"
           :stamp="dataInWords(mensagem.createdAt)"
           :sent="mensagem.fromMe"
           class="text-weight-medium"

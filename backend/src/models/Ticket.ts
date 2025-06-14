@@ -27,6 +27,7 @@ import Queue from "./Queue";
 import Tenant from "./Tenant";
 import MessagesOffLine from "./MessageOffLine";
 import ChatFlow from "./ChatFlow";
+import TicketObservation from "./TicketObservation";
 
 @Table
 class Ticket extends Model<Ticket> {
@@ -170,6 +171,9 @@ class Ticket extends Model<Ticket> {
   @Column(DataType.JSONB)
   // eslint-disable-next-line @typescript-eslint/ban-types
   apiConfig: object;
+
+  @HasMany(() => TicketObservation)
+  observations: TicketObservation[];
 
   @Column(DataType.VIRTUAL)
   get protocol(): string {

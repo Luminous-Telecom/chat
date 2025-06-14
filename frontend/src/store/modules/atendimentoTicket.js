@@ -1,6 +1,6 @@
 import { ConsultarDadosTicket, LocalizarMensagens } from 'src/service/tickets'
 import { Notify } from 'quasar'
-import $router from 'src/router'
+import router from 'src/router'
 import { orderBy } from 'lodash'
 import { parseISO } from 'date-fns'
 
@@ -144,11 +144,12 @@ const atendimentoTicket = {
     tickets: [],
     ticketsLocalizadosBusca: [],
     ticketFocado: {
-      contacts: {
+      contact: {
         tags: [],
         wallets: [],
         extraInfo: []
-      }
+      },
+      scheduledMessages: []
     },
     hasMore: false,
     contatos: [],
@@ -305,12 +306,89 @@ const atendimentoTicket = {
         state.tickets = tickets
       }
     },
-    // OK
+    // OK - CORRIGIDO
     TICKET_FOCADO (state, payload) {
-      // Manter o status original do ticket sem forçar mudança de 'pending' para 'open'
-      // Isso permite que o botão "Iniciar o atendimento" apareça corretamente
-      state.ticketFocado = payload
-      // return state.ticketFocado
+      // Garantir que o payload seja um objeto primitivo
+      if (payload && typeof payload === 'object') {
+        try {
+          // Criar uma cópia profunda do payload para evitar referências
+          const ticketData = JSON.parse(JSON.stringify(payload))
+
+          // Garantir que arrays importantes existam e sejam inicializados corretamente
+          if (!ticketData.contact) {
+            ticketData.contact = {
+              tags: [],
+              wallets: [],
+              extraInfo: []
+            }
+          } else {
+            // Garantir que os arrays dentro de contact existam
+            ticketData.contact.tags = Array.isArray(ticketData.contact.tags) ? ticketData.contact.tags : []
+            ticketData.contact.wallets = Array.isArray(ticketData.contact.wallets) ? ticketData.contact.wallets : []
+            ticketData.contact.extraInfo = Array.isArray(ticketData.contact.extraInfo) ? ticketData.contact.extraInfo : []
+          }
+
+          // Garantir que scheduledMessages seja um array
+          ticketData.scheduledMessages = Array.isArray(ticketData.scheduledMessages) ? ticketData.scheduledMessages : []
+
+          // CORREÇÃO: Garantir IDs únicos e primitivos para scheduledMessages
+          ticketData.scheduledMessages = ticketData.scheduledMessages.map((msg, idx) => ({
+            ...msg,
+            id: msg.id || `scheduled-${ticketData.id || 'unknown'}-${idx}-${Date.now()}`,
+            uniqueKey: `msg-${msg.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Chave única primitiva
+          }))
+
+          // CORREÇÃO: Garantir chaves únicas e primitivas para extraInfo
+          if (ticketData.contact.extraInfo) {
+            ticketData.contact.extraInfo = ticketData.contact.extraInfo.map((info, idx) => ({
+              ...info,
+              key: info.key || `extra-info-${ticketData.id || 'unknown'}-${idx}`,
+              uniqueKey: `info-${info.key || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Chave única primitiva
+            }))
+          }
+
+          // CORREÇÃO: Garantir chaves únicas para tags
+          if (ticketData.contact.tags) {
+            ticketData.contact.tags = ticketData.contact.tags.map((tag, idx) => ({
+              ...tag,
+              id: tag.id || `tag-${ticketData.id || 'unknown'}-${idx}`,
+              uniqueKey: `tag-${tag.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Chave única primitiva
+            }))
+          }
+
+          // CORREÇÃO: Garantir chaves únicas para wallets
+          if (ticketData.contact.wallets) {
+            ticketData.contact.wallets = ticketData.contact.wallets.map((wallet, idx) => ({
+              ...wallet,
+              id: wallet.id || `wallet-${ticketData.id || 'unknown'}-${idx}`,
+              uniqueKey: `wallet-${wallet.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Chave única primitiva
+            }))
+          }
+
+          state.ticketFocado = ticketData
+        } catch (error) {
+          console.error('Erro ao processar ticketFocado:', error)
+          // Em caso de erro, definir um objeto vazio com a estrutura correta
+          state.ticketFocado = {
+            contact: {
+              tags: [],
+              wallets: [],
+              extraInfo: []
+            },
+            scheduledMessages: []
+          }
+        }
+      } else {
+        // Se o payload for vazio ou inválido, definir um objeto vazio com a estrutura correta
+        state.ticketFocado = {
+          contact: {
+            tags: [],
+            wallets: [],
+            extraInfo: []
+          },
+          scheduledMessages: []
+        }
+      }
     },
     // OK
     LOAD_INITIAL_MESSAGES (state, payload) {
@@ -376,7 +454,12 @@ const atendimentoTicket = {
         if (payload.scheduleDate && payload.status == 'pending') {
           const idxScheduledMessages = state.ticketFocado.scheduledMessages.findIndex(m => m.id === payload.id)
           if (idxScheduledMessages === -1) {
-            state.ticketFocado.scheduledMessages.push(payload)
+            // CORREÇÃO: Adicionar chave única para nova mensagem agendada
+            const newScheduledMessage = {
+              ...payload,
+              uniqueKey: `msg-${payload.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            }
+            state.ticketFocado.scheduledMessages.push(newScheduledMessage)
           }
         }
       }
@@ -456,20 +539,81 @@ const atendimentoTicket = {
         commit('LOAD_MORE_MESSAGES', mensagens.data)
       }
     },
+    // CORRIGIDO
     async AbrirChatMensagens ({ commit, dispatch }, data) {
       try {
-        await commit('TICKET_FOCADO', {})
+        // Limpar o ticket focado com um objeto vazio estruturado
+        await commit('TICKET_FOCADO', {
+          contact: {
+            tags: [],
+            wallets: [],
+            extraInfo: []
+          },
+          scheduledMessages: []
+        })
         await commit('RESET_MESSAGE')
         const ticket = await ConsultarDadosTicket(data)
-        await commit('TICKET_FOCADO', ticket.data)
-        // commit('SET_HAS_MORE', true)
+
+        // Garantir que o ticket seja um objeto primitivo e tenha a estrutura correta
+        const ticketData = JSON.parse(JSON.stringify(ticket.data))
+
+        // Garantir que arrays importantes existam e sejam inicializados corretamente
+        if (!ticketData.contact) {
+          ticketData.contact = {
+            tags: [],
+            wallets: [],
+            extraInfo: []
+          }
+        } else {
+          // Garantir que os arrays dentro de contact existam
+          ticketData.contact.tags = Array.isArray(ticketData.contact.tags) ? ticketData.contact.tags : []
+          ticketData.contact.wallets = Array.isArray(ticketData.contact.wallets) ? ticketData.contact.wallets : []
+          ticketData.contact.extraInfo = Array.isArray(ticketData.contact.extraInfo) ? ticketData.contact.extraInfo : []
+        }
+
+        // Garantir que scheduledMessages seja um array
+        ticketData.scheduledMessages = Array.isArray(ticketData.scheduledMessages) ? ticketData.scheduledMessages : []
+
+        // CORREÇÃO: Aplicar as mesmas correções de chaves únicas
+        ticketData.scheduledMessages = ticketData.scheduledMessages.map((msg, idx) => ({
+          ...msg,
+          id: msg.id || `scheduled-${ticketData.id || 'unknown'}-${idx}-${Date.now()}`,
+          uniqueKey: `msg-${msg.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        }))
+
+        if (ticketData.contact.extraInfo) {
+          ticketData.contact.extraInfo = ticketData.contact.extraInfo.map((info, idx) => ({
+            ...info,
+            key: info.key || `extra-info-${ticketData.id || 'unknown'}-${idx}`,
+            uniqueKey: `info-${info.key || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          }))
+        }
+
+        if (ticketData.contact.tags) {
+          ticketData.contact.tags = ticketData.contact.tags.map((tag, idx) => ({
+            ...tag,
+            id: tag.id || `tag-${ticketData.id || 'unknown'}-${idx}`,
+            uniqueKey: `tag-${tag.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          }))
+        }
+
+        if (ticketData.contact.wallets) {
+          ticketData.contact.wallets = ticketData.contact.wallets.map((wallet, idx) => ({
+            ...wallet,
+            id: wallet.id || `wallet-${ticketData.id || 'unknown'}-${idx}`,
+            uniqueKey: `wallet-${wallet.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          }))
+        }
+
+        await commit('TICKET_FOCADO', ticketData)
+
         const params = {
           ticketId: data.id,
           pageNumber: 1
         }
         await dispatch('LocalizarMensagensTicket', params)
 
-        await $router.push({ name: 'chat', params, query: { t: new Date().getTime() } })
+        await router.push({ name: 'chat', params, query: { t: new Date().getTime() } })
       } catch (error) {
         // posteriormente é necessário investigar o motivo de está caindo em erro
         if (!error) return

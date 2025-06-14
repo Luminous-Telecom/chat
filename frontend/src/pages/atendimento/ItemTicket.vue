@@ -97,7 +97,7 @@
               text-color="grey-10"
               color="secondary"
               :label="dataInWords(ticket.lastMessageAt, ticket.updatedAt)"
-              :key="recalcularHora"
+              :key="`hora-${recalcularHora}`"
             />
           </span>
         </q-item-label>

@@ -8,7 +8,7 @@
       <!-- <q-separator /> -->
       <ItemTicket
         v-for="(ticket, key) in cTickets"
-        :key="key"
+        :key="`ticket-list-${key}`"
         :ticket="ticket"
         :filas="filas"
       />
