@@ -71,3 +71,18 @@ export function GetDashTicketsQueue (params) {
     params
   })
 }
+
+export function GetDashTicketsInstances (params) {
+  console.log('Parâmetros enviados para instâncias:', params)
+  return request({
+    url: '/statistics/statistics-tickets-instances',
+    method: 'get',
+    params
+  }).then(response => {
+    console.log('Resposta completa das instâncias:', response)
+    return response.data
+  }).catch(error => {
+    console.error('Erro ao buscar dados das instâncias:', error)
+    throw error
+  })
+}

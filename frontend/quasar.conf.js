@@ -90,7 +90,16 @@ module.exports = function (ctx) {
       // port: 8080,
       open: true, // opens browser window automatically
       hot: false, // disable hot reload
-      liveReload: false // disable live reload
+      liveReload: false, // disable live reload
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+          pathRewrite: {
+            '^/api': ''
+          }
+        }
+      }
     },
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-framework

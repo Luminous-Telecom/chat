@@ -73,7 +73,7 @@
               color="primary"
               icon="mdi-refresh"
               label="Atualizar"
-              @click="getDashData"
+              @click="loadData"
             />
           </div>
         </div>
@@ -185,6 +185,32 @@
           <div class="chart-card">
             <div class="chart-header">
               <h3 class="chart-title">
+                <q-icon name="mdi-chart-donut" />
+                Atendimentos por Instância
+              </h3>
+            </div>
+            <div class="chart-content">
+              <ApexChart
+                v-if="ticketsInstancesOptions.series && ticketsInstancesOptions.series.length > 0"
+                ref="ChartTicketsInstances"
+                type="donut"
+                height="280"
+                width="100%"
+                :options="ticketsInstancesOptions"
+                :series="ticketsInstancesOptions.series"
+              />
+              <div v-else class="loading-state">
+                <q-spinner-dots size="2rem" color="primary" />
+                <p>Carregando dados...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3 class="chart-title">
                 <q-icon name="mdi-chart-pie" />
                 Distribuição por Fila
               </h3>
@@ -196,7 +222,7 @@
                 type="donut"
                 height="280"
                 width="100%"
-                :options="chartOptions"
+                :options="ticketsQueueOptions"
                 :series="ticketsQueueOptions.series"
               />
               <div v-else class="loading-state">
@@ -339,17 +365,134 @@ import {
   GetDashTicketsEvolutionByPeriod,
   GetDashTicketsPerUsersDetail
 } from 'src/service/estatisticas'
-import { subDays, format, formatDuration } from 'date-fns'
+import { formatDuration } from 'date-fns'
 import ApexChart from 'vue-apexcharts'
+import { GetDashTicketsInstances } from 'src/service/dashboard'
 
 export default {
-  name: 'ModernDashboard',
-  components: { ApexChart },
+  name: 'Dashboard',
+  components: {
+    ApexChart
+  },
   data () {
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setHours(0, 0, 0, 0)
+    const endDate = new Date(today)
+    endDate.setHours(23, 59, 59, 999)
+
+    const baseChartOptions = {
+      chart: {
+        type: 'donut',
+        fontFamily: 'Roboto, sans-serif',
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        },
+        toolbar: {
+          show: false
+        }
+      },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            background: 'transparent',
+            labels: {
+              show: true,
+              name: {
+                show: true,
+                fontSize: '16px',
+                fontFamily: 'Roboto, sans-serif',
+                fontWeight: 600,
+                color: '#666',
+                offsetY: -10
+              },
+              value: {
+                show: true,
+                fontSize: '24px',
+                fontFamily: 'Roboto, sans-serif',
+                fontWeight: 700,
+                color: '#1976d2',
+                offsetY: 5
+              },
+              total: {
+                show: true,
+                label: 'Total',
+                fontSize: '14px',
+                fontFamily: 'Roboto, sans-serif',
+                fontWeight: 600,
+                color: '#666'
+              }
+            }
+          }
+        }
+      },
+      legend: {
+        position: 'bottom',
+        horizontalAlign: 'center',
+        floating: false,
+        fontSize: '13px',
+        fontFamily: 'Roboto, sans-serif',
+        fontWeight: 500,
+        markers: {
+          width: 12,
+          height: 12,
+          radius: 6
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5
+        }
+      },
+      stroke: {
+        width: 0,
+        show: true
+      },
+      dataLabels: {
+        enabled: false
+      },
+      tooltip: {
+        enabled: true,
+        theme: 'light',
+        style: {
+          fontSize: '13px',
+          fontFamily: 'Roboto, sans-serif'
+        },
+        y: {
+          formatter: function (value) {
+            return value + ' atendimentos'
+          }
+        }
+      },
+      colors: ['#1976d2', '#2196f3', '#42a5f5', '#64b5f6', '#90caf9', '#bbdefb'],
+      responsive: [{
+        breakpoint: 480,
+        options: {
+          chart: {
+            height: 280
+          },
+          legend: {
+            position: 'bottom',
+            offsetY: 0
+          }
+        }
+      }]
+    }
+
     return {
       params: {
-        startDate: format(subDays(new Date(), 6), 'yyyy-MM-dd'),
-        endDate: format(new Date(), 'yyyy-MM-dd'),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
         queuesIds: []
       },
       paginationTableUser: {
@@ -360,45 +503,13 @@ export default {
       filas: [],
       ticketsChannels: [],
       ticketsChannelsOptions: {
-        chart: {
-          type: 'donut',
-          toolbar: { show: false }
-        },
-        legend: {
-          position: 'bottom',
-          fontSize: '12px'
-        },
-
-        plotOptions: {
-          pie: {
-            donut: {
-              size: '70%'
-            }
-          }
-        },
-        dataLabels: {
-          enabled: true,
-          style: {
-            fontSize: '12px',
-            fontWeight: 'bold'
-          }
-        },
-        series: [0],
-        labels: ['Carregando...']
+        ...baseChartOptions,
+        labels: []
       },
       ticketsQueue: [],
       ticketsQueueOptions: {
-        series: [0],
-        labels: ['Carregando...'],
-        chart: {
-          type: 'donut',
-          toolbar: { show: false }
-        },
-        legend: {
-          position: 'bottom',
-          fontSize: '12px'
-        }
-
+        ...baseChartOptions,
+        labels: []
       },
       ticketsEvolutionChannels: [],
       ticketsEvolutionChannelsOptions: {
@@ -530,7 +641,20 @@ export default {
             text: 'Atendimentos'
           }
         }
-      }
+      },
+      ticketsInstances: [],
+      ticketsInstancesOptions: {
+        ...baseChartOptions,
+        labels: [],
+        series: [],
+        chart: {
+          ...baseChartOptions.chart,
+          type: 'donut',
+          height: 280,
+          width: '100%'
+        }
+      },
+      loadingInstances: false
     }
   },
   computed: {
@@ -541,13 +665,6 @@ export default {
     cTmeFormat () {
       const tme = this.ticketsAndTimes.tme || {}
       return formatDuration(tme) || '0min'
-    },
-    chartOptions () {
-      return {
-        ...this.ticketsQueueOptions,
-        labels: this.ticketsQueueOptions.labels || ['Carregando...'],
-        series: this.ticketsQueueOptions.series || [0]
-      }
     }
   },
   methods: {
@@ -742,18 +859,79 @@ export default {
         console.error('Erro ao carregar detalhes dos usuários:', _error)
       })
     },
-    getDashData () {
-      this.getDashTicketsAndTimes()
-      this.getDashTicketsChannels()
-      this.getDashTicketsEvolutionChannels()
-      this.getDashTicketsQueue()
-      this.getDashTicketsEvolutionByPeriod()
-      this.getDashTicketsPerUsersDetail()
+    async getDashTicketsInstances () {
+      this.loadingInstances = true
+      try {
+        const { data } = await GetDashTicketsInstances(this.params)
+        const series = []
+        const labels = []
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          data.forEach(item => {
+            if (item?.qtd != null && item?.whatsapp) {
+              series.push(Number(item.qtd) || 0)
+              labels.push(String(item.whatsapp) || 'Não informado')
+            }
+          })
+        }
+
+        if (series.length === 0) {
+          series.push(0)
+          labels.push('Sem dados')
+        }
+
+        this.ticketsInstancesOptions = {
+          ...this.ticketsInstancesOptions,
+          series,
+          labels
+        }
+
+        if (this.$refs.ChartTicketsInstances) {
+          await this.$nextTick()
+          this.$refs.ChartTicketsInstances.updateOptions(this.ticketsInstancesOptions)
+          this.$refs.ChartTicketsInstances.updateSeries(series, true)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados das instâncias:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao carregar dados das instâncias'
+        })
+      } finally {
+        this.loadingInstances = false
+      }
+    },
+    async loadData () {
+      try {
+        await Promise.all([
+          this.listarFilas(),
+          this.getDashTicketsAndTimes(),
+          this.getDashTicketsQueue(),
+          this.getDashTicketsChannels(),
+          this.getDashTicketsEvolutionChannels(),
+          this.getDashTicketsEvolutionByPeriod(),
+          this.getDashTicketsPerUsersDetail(),
+          this.getDashTicketsInstances()
+        ])
+      } catch (error) {
+        console.error('Erro ao carregar dados do dashboard:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao carregar dados do dashboard'
+        })
+      }
     }
   },
   mounted () {
-    this.listarFilas()
-    this.getDashData()
+    this.loadData()
+  },
+  watch: {
+    params: {
+      handler () {
+        this.loadData()
+      },
+      deep: true
+    }
   }
 }
 </script>
@@ -991,13 +1169,10 @@ export default {
 
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
+  margin: 1rem 0;
+  padding: 0 1rem;
 }
 
 .chart-container,

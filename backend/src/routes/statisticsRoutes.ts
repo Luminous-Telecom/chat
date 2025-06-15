@@ -61,4 +61,10 @@ statisticsRoutes.get(
   DashController.getDashTicketsQueue
 );
 
+statisticsRoutes.get(
+  "/statistics-tickets-instances",
+  isAuth,
+  DashController.getDashTicketsInstances
+);
+
 export default statisticsRoutes;
