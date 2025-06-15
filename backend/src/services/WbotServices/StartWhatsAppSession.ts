@@ -47,7 +47,7 @@ export const StartWhatsAppSession = async (
 };
 
 // Função para configurar handlers adicionais que não estão no initBaileys
-const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void => {
+export const setupAdditionalHandlers = (wbot: BaileysClient, whatsapp: Whatsapp): void => {
   // Remove listeners existentes para evitar duplicação
   wbot.ev.removeAllListeners('messages.upsert');
   wbot.ev.removeAllListeners('messages.update');

@@ -632,6 +632,15 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
           retries: 0
         });
         
+        // Configurar handlers de mensagem após conexão bem-sucedida
+        try {
+          const { setupAdditionalHandlers } = require('../services/WbotServices/StartWhatsAppSession');
+          setupAdditionalHandlers(wbot, whatsapp);
+          baseLogger.info(`Message handlers configured for ${whatsapp.name}`);
+        } catch (err) {
+          baseLogger.error(`Error setting up message handlers: ${err}`);
+        }
+        
         // Emitir evento para o frontend quando conectado com sucesso
         const io = require('../libs/socket').getIO();
         io.emit(`${whatsapp.tenantId}:whatsappSession`, {
