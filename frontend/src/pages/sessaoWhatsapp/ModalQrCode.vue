@@ -203,7 +203,7 @@ export default {
   }
 
   &.dark-theme {
-    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(145deg, $dark-secondary 0%, $dark-primary 100%);
   }
 }
 
@@ -522,28 +522,28 @@ export default {
 // Dark Theme Adjustments
 .dark-theme {
   .instruction-panel {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(145deg, rgba(45, 55, 72, 0.8) 0%, rgba(26, 32, 44, 0.8) 100%);
+    border: 1px solid rgba(74, 85, 104, 0.3);
   }
 
   .step-text .step-title {
-    color: #f1f5f9;
+    color: $dark-text-secondary;
   }
 
   .step-text .step-desc {
-    color: #94a3b8;
+    color: $dark-text-primary;
   }
 
   .help-text {
-    color: #94a3b8;
+    color: $dark-text-primary;
   }
 
   .loading-text {
-    color: #94a3b8;
+    color: $dark-text-primary;
   }
 
   .logo-badge {
-    background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+    background: linear-gradient(145deg, $dark-secondary 0%, $dark-tertiary 100%);
   }
 }
 

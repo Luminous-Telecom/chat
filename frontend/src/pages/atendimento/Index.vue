@@ -1526,7 +1526,7 @@ export default {
 
 .dark-mode {
   .WAL {
-    background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: linear-gradient(145deg, $dark-primary 0%, $dark-secondary 100%);
   }
 
   .q-drawer {
@@ -1602,11 +1602,11 @@ export default {
         background-color: rgba(144, 202, 249, 0.12) !important;
 
         .detail-icon {
-          color: #90caf9 !important;
+          color: $dark-accent !important;
         }
 
         .detail-text {
-          color: #90caf9 !important;
+          color: $dark-accent !important;
         }
       }
 
@@ -1969,18 +1969,18 @@ export default {
 
 /* Dark mode styles */
 .body--dark .custom-tag-selector {
-  border-color: #424242;
-  background-color: #2d2d2d;
+  border-color: $dark-border;
+  background-color: $dark-secondary;
   color: #ffffff;
 }
 
 .body--dark .custom-tag-selector:hover {
-  background-color: #3d3d3d;
-  border-color: #90caf9;
+  background-color: $dark-hover;
+  border-color: $dark-accent;
 }
 
 .body--dark .tag-menu {
-  background-color: #2d2d2d;
+  background-color: $dark-secondary;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -1989,11 +1989,11 @@ export default {
 }
 
 .body--dark .tag-option-item:hover {
-  background-color: #424242;
+  background-color: $dark-hover;
 }
 
 .body--dark .elegant-chip {
-  background-color: #424242;
+  background-color: $dark-tertiary;
   color: #ffffff;
 }
 
@@ -2045,21 +2045,21 @@ export default {
 .wallet-title {
   font-size: 14px;
   font-weight: 600;
-  color: #424242;
+  color: $dark-tertiary;
   display: flex;
   align-items: center;
 }
 
 /* Dark mode styles for wallet selector */
 .body--dark .custom-wallet-selector {
-  border-color: #424242;
-  background-color: #2d2d2d;
+  border-color: $dark-border;
+  background-color: $dark-secondary;
   color: #ffffff;
 }
 
 .body--dark .custom-wallet-selector:hover {
-  background-color: #3d3d3d;
-  border-color: #90caf9;
+  background-color: $dark-hover;
+  border-color: $dark-accent;
 }
 
 .body--dark .wallet-title {
@@ -2067,7 +2067,7 @@ export default {
 }
 
 .body--dark .wallet-menu {
-  background-color: #2d2d2d;
+  background-color: $dark-secondary;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
@@ -2076,7 +2076,7 @@ export default {
 }
 
 .body--dark .wallet-option-item:hover {
-  background-color: #424242;
+  background-color: #4a5568;
 }
 
 /* Enhanced scroll area customization */
@@ -2369,51 +2369,51 @@ export default {
 
 /* Dark mode styles for scheduled messages and observations */
 .body--dark .scheduled-messages-container {
-  border-color: #424242;
-  background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
+  border-color: $dark-border;
+  background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
 }
 
 .body--dark .scheduled-messages-container .text-body1 {
-  color: #90caf9;
+  color: $dark-accent;
 }
 
 .body--dark .scheduled-messages-container .q-item {
-  background: #3d3d3d;
-  border-color: #424242;
+  background: $dark-tertiary;
+  border-color: $dark-border;
   color: #ffffff;
 }
 
 .body--dark .scheduled-messages-container .q-item::before {
-  background: linear-gradient(180deg, #90caf9 0%, #64b5f6 100%);
+  background: linear-gradient(180deg, $dark-accent 0%, #64b5f6 100%);
 }
 
 .body--dark .scheduled-messages-container .q-item:hover {
-  background: linear-gradient(135deg, #424242 0%, #2d2d2d 100%);
-  border-color: #90caf9;
+  background: linear-gradient(135deg, $dark-tertiary 0%, $dark-secondary 100%);
+  border-color: $dark-accent;
 }
 
 .body--dark .observations-container {
-  border-color: #424242;
-  background: linear-gradient(135deg, #2d2d2d 0%, #1e1e1e 100%);
+  border-color: $dark-border;
+  background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
 }
 
 .body--dark .observations-container .text-subtitle1 {
-  color: #a5d6a7;
+  color: $dark-success;
 }
 
 .body--dark .observations-container .q-item {
-  background: #3d3d3d;
-  border-color: #424242;
+  background: $dark-tertiary;
+  border-color: $dark-border;
   color: #ffffff;
 }
 
 .body--dark .observations-container .q-item::before {
-  background: linear-gradient(180deg, #a5d6a7 0%, #81c784 100%);
+  background: linear-gradient(180deg, $dark-success 0%, #81c784 100%);
 }
 
 .body--dark .observations-container .q-item:hover {
-   background: linear-gradient(135deg, #424242 0%, #2d2d2d 100%);
-   border-color: #a5d6a7;
+   background: linear-gradient(135deg, $dark-tertiary 0%, $dark-secondary 100%);
+   border-color: $dark-success;
  }
 
  /* Dark mode scrollbar styles */
@@ -2491,17 +2491,17 @@ export default {
 }
 
 .body--dark .extra-info-container {
-  border-color: #424242;
-  background-color: #2d2d2d;
+  border-color: $dark-border;
+  background-color: $dark-secondary;
 }
 
 .body--dark .extra-info-item {
-  border-bottom-color: #424242;
+  border-bottom-color: $dark-border;
   color: #ffffff;
 }
 
 .body--dark .extra-info-item:hover {
-  background-color: #424242;
+  background-color: $dark-hover;
 }
 
 .body--dark .custom-search-input:hover {
@@ -2509,7 +2509,7 @@ export default {
 }
 
 .body--dark .custom-search-input:focus {
-  border-color: #90caf9;
+  border-color: $dark-accent;
   background-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 0 0 2px rgba(144, 202, 249, 0.3);
 }
@@ -2546,12 +2546,12 @@ export default {
 /* Modo escuro para o botão de contatos */
 .body--dark .contacts-btn {
   background-color: rgba(255, 255, 255, 0.1);
-  color: #90caf9;
+  color: $dark-accent;
   border-color: rgba(144, 202, 249, 0.3);
 }
 
 .body--dark .contacts-btn:hover {
-  background-color: #90caf9;
+  background-color: $dark-accent;
   color: #121212;
 }
 </style>

@@ -91,6 +91,14 @@ input[type="date"]::-webkit-input-placeholder
 .bg-light
   background: #8DB1DD !important
 
+// Dark mode versions
+body.body--dark
+  .bg-padrao
+    background: linear-gradient(180deg, $dark-secondary, $dark-primary 50%, $dark-tertiary 51%, $dark-secondary) !important
+
+  .mainWrapper
+    background: $dark-primary
+
 .mainWrapper
   background: #eee
   display: flex

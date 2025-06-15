@@ -453,8 +453,8 @@ export default {
 .body--dark {
   .modal-listar-mensagens {
     .modal-header {
-      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-      border-bottom-color: #4a5568;
+      background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+      border-bottom-color: $dark-border;
 
       .close-btn:hover {
         background-color: rgba(255, 255, 255, 0.1);
@@ -463,7 +463,7 @@ export default {
 
     .counter-badge {
       background: rgba(66, 165, 245, 0.2);
-      color: #90caf9;
+      color: $dark-accent;
     }
   }
 
@@ -476,8 +476,8 @@ export default {
   }
 
   .message-preview {
-    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-    color: #e2e8f0;
+    background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+    color: $dark-text-primary;
     border-left-color: #42a5f5;
   }
 

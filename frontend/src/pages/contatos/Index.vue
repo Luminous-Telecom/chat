@@ -738,6 +738,13 @@ export default {
   thead tr:first-child th /* bg color is important for th; just specify one */
     background-color: #fff
 
+  /* Dark mode styles */
+  body.body--dark .q-table__top,
+  body.body--dark .q-table__bottom,
+  body.body--dark thead tr:first-child th
+    background-color: $dark-secondary !important
+    color: $dark-text-primary !important
+
   thead tr th
     position: sticky
     z-index: 1

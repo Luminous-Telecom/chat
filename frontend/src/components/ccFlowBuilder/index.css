@@ -47,6 +47,50 @@
     padding-left: 8px;
 }
 
+/* Dark mode styles */
+body.body--dark .ef-node-header {
+  border-bottom: 1px solid var(--dark-border);
+}
+
+body.body--dark .jtk-overlay {
+  color: var(--dark-text-primary);
+}
+
+body.body--dark .ef-node-pmenu {
+  color: var(--dark-text-primary);
+}
+
+body.body--dark .ef-node-pmenu:hover {
+  background-color: var(--dark-hover);
+}
+
+body.body--dark .ef-node-menu-li {
+  color: var(--dark-text-primary);
+  border: 1px dashed var(--dark-border);
+  background-color: var(--dark-secondary);
+}
+
+body.body--dark .ef-node-menu-li:hover {
+  background-color: var(--dark-hover);
+  border: 1px dashed var(--dark-accent);
+  border-left: 4px solid var(--dark-accent);
+}
+
+body.body--dark .ef-node-container {
+  border: 1px solid var(--dark-border);
+  background-color: var(--dark-secondary);
+}
+
+body.body--dark .ef-node-container:hover {
+  background-color: var(--dark-hover);
+  border: 1px dashed var(--dark-accent);
+}
+
+body.body--dark .ef-node-active {
+  background-color: var(--dark-tertiary);
+  border: 1px solid var(--dark-accent);
+}
+
 .ef-node-menu-li:hover {
     /* 设置移动样式*/
     cursor: move;
@@ -90,11 +134,11 @@
 }
 
 /*节点左侧的竖线*/
-.ef-node-left {
-    /* width: 6px;
+/* .ef-node-left {
+    width: 6px;
     background-color: #0288d1;
-    border-radius: 4px 0 0 4px; */
-}
+    border-radius: 4px 0 0 4px;
+} */
 
 /*节点左侧的图标*/
 .ef-node-left-ico {
@@ -200,8 +244,8 @@
 }
 
 /* label 为空的样式 */
-.emptyFlowLabel {
-}
+/* .emptyFlowLabel {
+} */
 
 
 .ef-dot {
@@ -221,11 +265,11 @@
     background-color: red;
 }
 
-.ef-img {
+/* .ef-img {
 }
 
 .ef-img-hover {
-}
+} */
 
 
 .ef-drop-hover{

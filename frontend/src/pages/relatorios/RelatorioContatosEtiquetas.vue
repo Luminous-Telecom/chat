@@ -138,6 +138,8 @@
       #tableReport tr td { border:1px solid #DDD; padding-left: 10px; padding-right: 10px;  }
       #tableReport thead tr:nth-child(1) td { text-align: center; padding: 5px; font-weight: bold; color: #000; background: lightgrey; opacity: 1; }
       #lineGroup { background: #f8f8f8; line-height: 30px; }
+
+      /* Dark mode styles - agora centralizados em quasar.variables.sass */
       #quebraAgrupamentoRelatorio { border-bottom: 1px solid black !important; }
       #st_nome, #st_tipo_atendimento, #st_status_faturamento, #st_convenio, #st_nome_profissional, #st_status, #st_nome_unidade, #st_nome_profissional { width: 200px; word-wrap: normal !important; white-space: normal !important; }
       #dt_atendimento_unidade { width: 100px; text-align: center }

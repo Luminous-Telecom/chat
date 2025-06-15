@@ -37,6 +37,7 @@
                 size="32px"
                 class="bg-grey-2"
                 style="border: 1px solid #e0e0e0;"
+                :class="{ 'dark-avatar-border': $q.dark.isActive }"
               >
                 <q-img
                   :src="Value(cticket.contact, 'profilePicUrl')"
@@ -374,4 +375,7 @@ export default {
 #InfoCabecalhoChat
   .q-item__label + .q-item__label
     margin-top: 1.5px
+
+.dark-avatar-border
+  border: 1px solid $dark-border !important
 </style>

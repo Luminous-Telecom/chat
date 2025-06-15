@@ -464,8 +464,8 @@ export default {
 .body--dark {
   .modal-agendar-mensagem {
     .modal-header {
-      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-      border-bottom-color: #4a5568;
+      background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+      border-bottom-color: $dark-border;
 
       .close-btn:hover {
         background-color: rgba(255, 255, 255, 0.1);
@@ -474,8 +474,8 @@ export default {
   }
 
   .q-expansion-item {
-    border-color: #4a5568;
-    background-color: #2d3748;
+    border-color: $dark-border;
+    background-color: $dark-secondary;
 
     &:hover {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -483,7 +483,7 @@ export default {
   }
 
   .bg-grey-1 {
-    background: #2d3748 !important;
+    background: $dark-secondary !important;
   }
 }
 

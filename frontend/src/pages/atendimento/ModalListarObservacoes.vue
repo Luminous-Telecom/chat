@@ -208,4 +208,9 @@ export default {
     transform: scale(1.05);
   }
 }
+
+/* Dark mode styles */
+body.body--dark .q-img {
+        border: 1px solid $dark-border;
+      }
 </style>

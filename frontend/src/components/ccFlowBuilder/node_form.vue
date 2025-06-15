@@ -1106,16 +1106,20 @@ export default {
 }
 </script>
 
-<style>
-.el-node-form-tag {
-  position: absolute;
-  top: 50%;
-  margin-left: -15px;
-  height: 40px;
-  width: 15px;
-  background-color: #fbfbfb;
-  border: 1px solid rgb(220, 227, 232);
-  border-right: none;
-  z-index: 0;
-}
+<style lang="sass">
+.el-node-form-tag
+  position: absolute
+  top: 50%
+  margin-left: -15px
+  height: 40px
+  width: 15px
+  background-color: #fbfbfb
+  border: 1px solid rgb(220, 227, 232)
+  border-right: none
+  z-index: 0
+
+/* Dark mode */
+body.body--dark .q-stepper__tab:before
+  background-color: $dark-secondary
+  border: 1px solid $dark-border
 </style>
