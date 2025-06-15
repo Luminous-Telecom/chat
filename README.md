@@ -1,4 +1,4 @@
-# IZING - Sistema de Atendimento Multicanal com IA
+# CHAT - Sistema de Atendimento Multicanal com IA
 
 ![IZING Logo](frontend/public/izing-logo_5_transparent.png)
 
