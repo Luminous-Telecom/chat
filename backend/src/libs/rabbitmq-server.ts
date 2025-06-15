@@ -4,8 +4,7 @@ import { logger } from "../utils/logger";
 import { sleepRandomTime } from "../utils/sleepRandomTime";
 
 export default class RabbitmqServer {
-  private conn: Connection;
-
+  private conn: any; // Temporariamente usando any para contornar o problema de tipagem
   private channel: Channel;
 
   // eslint-disable-next-line prettier/prettier
