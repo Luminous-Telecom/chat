@@ -9,6 +9,7 @@ O erro "Trailing spaces not allowed" ocorre quando há espaços em branco no fin
 Você pode usar um dos seguintes comandos para corrigir automaticamente os erros de trailing spaces:
 
 #### Usando ESLint (Recomendado)
+
 ```bash
 # Corrigir todos os arquivos
 npm run lint -- --fix
@@ -18,6 +19,7 @@ npx eslint frontend/src/pages/atendimento/Index.vue --fix
 ```
 
 #### Usando Prettier
+
 ```bash
 # Corrigir todos os arquivos
 npx prettier --write "frontend/src/**/*.{js,vue}"
@@ -27,6 +29,7 @@ npx prettier --write frontend/src/pages/atendimento/Index.vue
 ```
 
 #### Usando sed (Linux/Mac)
+
 ```bash
 # Remover trailing spaces de um arquivo específico
 sed -i 's/[[:space:]]*$//' frontend/src/pages/atendimento/Index.vue
@@ -40,15 +43,18 @@ find frontend/src -name "*.vue" -exec sed -i 's/[[:space:]]*$//' {} \;
 Para evitar este problema no futuro, você pode configurar seu editor para remover automaticamente trailing spaces:
 
 #### VS Code
+
 1. Abra as configurações (Ctrl+,)
 2. Procure por "files.trimTrailingWhitespace"
 3. Marque a opção para true
 
 #### Sublime Text
+
 1. Abra as configurações (Preferences > Settings)
 2. Adicione: `"trim_trailing_white_space_on_save": true`
 
 #### WebStorm/IntelliJ
+
 1. Abra as configurações (Ctrl+Alt+S)
 2. Editor > General > "Strip trailing spaces on Save"
 3. Selecione "All"
@@ -86,4 +92,4 @@ npx eslint frontend/src/pages/atendimento/Index.vue
 
 # Corrigir um arquivo específico
 npx eslint frontend/src/pages/atendimento/Index.vue --fix
-``` 
+```

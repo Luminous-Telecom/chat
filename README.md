@@ -9,6 +9,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 ## 🚀 Principais Funcionalidades
 
 ### 📱 Integrações Multicanal
+
 - **WhatsApp Business** - Integração completa via Baileys
 - **Telegram** - Bot integrado para atendimento
 - **Instagram** - Mensagens diretas e comentários
@@ -16,6 +17,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **API Externa** - Integração com sistemas terceiros
 
 ### 🤖 Automação e IA
+
 - **ChatBot Inteligente** - Fluxos de conversa automatizados
 - **Chat Flow Builder** - Construtor visual de fluxos
 - **Auto Resposta** - Respostas automáticas configuráveis
@@ -23,6 +25,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **Horário de Atendimento** - Controle automático de disponibilidade
 
 ### 👥 Gestão de Atendimento
+
 - **Sistema de Filas** - Distribuição inteligente de tickets
 - **Múltiplos Usuários** - Controle de acesso e permissões
 - **Tickets** - Sistema completo de gerenciamento de atendimentos
@@ -30,6 +33,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **Transferência de Atendimento** - Entre usuários e filas
 
 ### 📊 Relatórios e Analytics
+
 - **Dashboard Executivo** - Visão geral dos atendimentos
 - **Painel de Atendimentos** - Monitoramento em tempo real
 - **Relatório de Contatos** - Análise detalhada da base
@@ -38,6 +42,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **Relatórios por Estado** - Análise geográfica
 
 ### 📞 Gestão de Contatos
+
 - **Base de Contatos Unificada** - Centralização de todos os canais
 - **Etiquetas** - Sistema de categorização
 - **Campos Customizados** - Informações personalizadas
@@ -45,6 +50,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **Histórico Completo** - Todas as interações registradas
 
 ### 📢 Campanhas e Marketing
+
 - **Campanhas de Mensagens** - Envio em massa
 - **Agendamento** - Programação de envios
 - **Múltiplas Mensagens** - Sequência de mensagens
@@ -52,6 +58,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **Controle de Contatos** - Gestão de listas de campanhas
 
 ### ⚙️ Configurações Avançadas
+
 - **Multi-tenant** - Suporte a múltiplas empresas
 - **API Configurável** - Endpoints personalizáveis
 - **Webhooks** - Integração com sistemas externos
@@ -61,6 +68,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 ## 🛠️ Tecnologias Utilizadas
 
 ### Backend
+
 - **Node.js** com TypeScript
 - **Express.js** - Framework web
 - **Sequelize** - ORM para banco de dados
@@ -74,6 +82,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 - **Messenger API** - Integração Facebook
 
 ### Frontend
+
 - **Vue.js 2** - Framework JavaScript
 - **Quasar Framework** - Componentes UI
 - **Axios** - Cliente HTTP
@@ -110,12 +119,14 @@ izing/
 ## 🚀 Como Executar
 
 ### Pré-requisitos
+
 - Node.js >= 18
 - PostgreSQL
 - Redis
 - NPM ou Yarn
 
 ### Backend
+
 ```bash
 cd backend
 npm install
@@ -125,6 +136,7 @@ npm run dev:server
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm install
@@ -134,6 +146,7 @@ npm run dev
 ## 🔧 Configuração
 
 ### Variáveis de Ambiente (Backend)
+
 Crie um arquivo `.env` baseado no `.env.example`:
 
 ```env
@@ -154,6 +167,7 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 ```
 
 ### Configuração do Frontend
+
 Crie um arquivo `.env` no frontend:
 
 ```env
@@ -164,12 +178,14 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 ## 📱 Funcionalidades por Módulo
 
 ### 🏠 Dashboard
+
 - Visão geral dos atendimentos
 - Gráficos de performance
 - Métricas em tempo real
 - Painel de tickets por fila
 
 ### 💬 Atendimento
+
 - Interface de chat unificada
 - Suporte a múltiplos canais
 - Envio de mídias
@@ -178,6 +194,7 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 - Observações internas
 
 ### 👤 Contatos
+
 - Cadastro completo de contatos
 - Histórico de conversas
 - Etiquetas e categorização
@@ -185,30 +202,35 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 - Importação em massa
 
 ### 👥 Usuários
+
 - Gestão de usuários
 - Controle de permissões
 - Associação a filas
 - Relatórios individuais
 
 ### 🏷️ Etiquetas
+
 - Sistema de categorização
 - Cores personalizadas
 - Filtros avançados
 - Relatórios por etiqueta
 
 ### 📋 Filas
+
 - Distribuição automática
 - Horários de funcionamento
 - Mensagens de saudação
 - Controle de capacidade
 
 ### 🤖 Chat Flow
+
 - Construtor visual de fluxos
 - Condições e ações
 - Integração com filas
 - Testes em tempo real
 
 ### 📢 Campanhas
+
 - Criação de campanhas
 - Agendamento de envios
 - Múltiplas mensagens
@@ -216,6 +238,7 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 - Relatórios de entrega
 
 ### 📊 Relatórios
+
 - Relatórios de atendimento
 - Análise de contatos
 - Performance por usuário
@@ -223,6 +246,7 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 - Gráficos interativos
 
 ### ⚙️ Configurações
+
 - Configurações globais
 - Personalização da interface
 - Integrações externas
@@ -231,6 +255,7 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 ## 🔌 APIs e Integrações
 
 ### API Externa
+
 - Endpoints RESTful
 - Autenticação via token
 - Envio de mensagens
@@ -238,6 +263,7 @@ VUE_FACEBOOK_APP_ID=your-facebook-app-id
 - Documentação Swagger
 
 ### Webhooks
+
 - Eventos em tempo real
 - Integração com CRM
 - Notificações personalizadas
