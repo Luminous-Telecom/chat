@@ -52,6 +52,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "helmet": "^4.4.1",
     "http-graceful-shutdown": "^2.4.0",
+    "http-proxy-middleware": "^3.0.5",
     "instagram_mqtt": "^1.2.2",
     "instagram-private-api": "^1.45.3",
     "ioredis": "^5.2.5",
