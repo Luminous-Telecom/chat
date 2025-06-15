@@ -1,0 +1,642 @@
+@import './variables';
+
+// Variáveis CSS para o tema escuro
+[data-theme='dark'] {
+  // Cores de fundo
+  --mui-palette-background-default: #{$dark-bg};
+  --mui-palette-background-paper: #{$dark-surface};
+  --mui-palette-background-paper-rgb: #{red($dark-surface)}, #{green($dark-surface)}, #{blue($dark-surface)};
+
+  // Cores de texto
+  --mui-palette-text-primary: #{$dark-text};
+  --mui-palette-text-secondary: #{$dark-text-secondary};
+  --mui-palette-text-disabled: #{$dark-text-disabled};
+
+  // Cores de borda
+  --mui-palette-divider: #{$dark-border};
+
+  // Cores de ação
+  --mui-palette-action-active: #{$dark-action-active};
+  --mui-palette-action-hover: #{$dark-action-hover};
+  --mui-palette-action-selected: #{$dark-action-selected};
+  --mui-palette-action-disabled: #{$dark-action-disabled};
+  --mui-palette-action-disabledBackground: #{$dark-action-disabled-bg};
+
+  // Cores de erro
+  --mui-palette-error-main: #{$error-color};
+  --mui-palette-error-light: #{lighten($error-color, 10%)};
+  --mui-palette-error-dark: #{darken($error-color, 10%)};
+  --mui-palette-error-contrastText: #{$dark-text};
+
+  // Cores de aviso
+  --mui-palette-warning-main: #{$warning-color};
+  --mui-palette-warning-light: #{lighten($warning-color, 10%)};
+  --mui-palette-warning-dark: #{darken($warning-color, 10%)};
+  --mui-palette-warning-contrastText: #{$dark-text};
+
+  // Cores de sucesso
+  --mui-palette-success-main: #{$success-color};
+  --mui-palette-success-light: #{lighten($success-color, 10%)};
+  --mui-palette-success-dark: #{darken($success-color, 10%)};
+  --mui-palette-success-contrastText: #{$dark-text};
+
+  // Cores de informação
+  --mui-palette-info-main: #{$info-color};
+  --mui-palette-info-light: #{lighten($info-color, 10%)};
+  --mui-palette-info-dark: #{darken($info-color, 10%)};
+  --mui-palette-info-contrastText: #{$dark-text};
+
+  // Cores primárias
+  --mui-palette-primary-main: #{$primary-color};
+  --mui-palette-primary-light: #{lighten($primary-color, 10%)};
+  --mui-palette-primary-dark: #{darken($primary-color, 10%)};
+  --mui-palette-primary-contrastText: #{$dark-text};
+
+  // Cores secundárias
+  --mui-palette-secondary-main: #{$secondary-color};
+  --mui-palette-secondary-light: #{lighten($secondary-color, 10%)};
+  --mui-palette-secondary-dark: #{darken($secondary-color, 10%)};
+  --mui-palette-secondary-contrastText: #{$dark-text};
+
+  // Sombras
+  --mui-palette-shadow-1: #{rgba($dark-bg, 0.1)};
+  --mui-palette-shadow-2: #{rgba($dark-bg, 0.2)};
+  --mui-palette-shadow-3: #{rgba($dark-bg, 0.3)};
+  --mui-palette-shadow-4: #{rgba($dark-bg, 0.4)};
+  --mui-palette-shadow-5: #{rgba($dark-bg, 0.5)};
+
+  // Ajustes específicos para componentes
+  .MuiPaper-root {
+    background-color: var(--mui-palette-background-paper);
+    color: var(--mui-palette-text-primary);
+  }
+
+  .MuiCard-root {
+    background-color: var(--mui-palette-background-paper);
+    border-color: var(--mui-palette-divider);
+  }
+
+  .MuiTableCell-root {
+    border-bottom-color: var(--mui-palette-divider);
+  }
+
+  .MuiTableHead-root {
+    background-color: var(--mui-palette-background-default);
+  }
+
+  .MuiTableBody-root {
+    .MuiTableRow-root {
+      &:hover {
+        background-color: var(--mui-palette-action-hover);
+      }
+    }
+  }
+
+  .MuiButton-root {
+    &.MuiButton-outlined {
+      border-color: var(--mui-palette-divider);
+      color: var(--mui-palette-text-primary);
+
+      &:hover {
+        background-color: var(--mui-palette-action-hover);
+      }
+    }
+  }
+
+  .MuiOutlinedInput-root {
+    .MuiOutlinedInput-notchedOutline {
+      border-color: var(--mui-palette-divider);
+    }
+
+    &:hover {
+      .MuiOutlinedInput-notchedOutline {
+        border-color: var(--mui-palette-primary-main);
+      }
+    }
+
+    &.Mui-focused {
+      .MuiOutlinedInput-notchedOutline {
+        border-color: var(--mui-palette-primary-main);
+      }
+    }
+  }
+
+  .MuiInputLabel-root {
+    color: var(--mui-palette-text-secondary);
+  }
+
+  .MuiChip-root {
+    background-color: var(--mui-palette-background-paper);
+    border-color: var(--mui-palette-divider);
+    color: var(--mui-palette-text-primary);
+
+    .MuiChip-deleteIcon {
+      color: var(--mui-palette-text-secondary);
+
+      &:hover {
+        color: var(--mui-palette-error-main);
+      }
+    }
+  }
+
+  .MuiTooltip-tooltip {
+    background-color: var(--mui-palette-background-paper);
+    color: var(--mui-palette-text-primary);
+    border: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiDialog-paper {
+    background-color: var(--mui-palette-background-paper);
+    border: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiDialogTitle-root {
+    border-bottom: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiDialogActions-root {
+    border-top: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiDrawer-paper {
+    background-color: var(--mui-palette-background-paper);
+    border-right: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiList-root {
+    .MuiListItem-root {
+      &:hover {
+        background-color: var(--mui-palette-action-hover);
+      }
+
+      &.Mui-selected {
+        background-color: var(--mui-palette-action-selected);
+      }
+    }
+  }
+
+  .MuiMenu-paper {
+    background-color: var(--mui-palette-background-paper);
+    border: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiMenuItem-root {
+    &:hover {
+      background-color: var(--mui-palette-action-hover);
+    }
+
+    &.Mui-selected {
+      background-color: var(--mui-palette-action-selected);
+    }
+  }
+
+  .MuiPopover-paper {
+    background-color: var(--mui-palette-background-paper);
+    border: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiSnackbar-root {
+    .MuiAlert-root {
+      background-color: var(--mui-palette-background-paper);
+      color: var(--mui-palette-text-primary);
+      border: 1px solid var(--mui-palette-divider);
+
+      &.MuiAlert-standardSuccess {
+        border-color: var(--mui-palette-success-main);
+      }
+
+      &.MuiAlert-standardError {
+        border-color: var(--mui-palette-error-main);
+      }
+
+      &.MuiAlert-standardWarning {
+        border-color: var(--mui-palette-warning-main);
+      }
+
+      &.MuiAlert-standardInfo {
+        border-color: var(--mui-palette-info-main);
+      }
+    }
+  }
+
+  .MuiTabs-root {
+    border-bottom: 1px solid var(--mui-palette-divider);
+
+    .MuiTab-root {
+      color: var(--mui-palette-text-secondary);
+
+      &.Mui-selected {
+        color: var(--mui-palette-primary-main);
+      }
+    }
+
+    .MuiTabs-indicator {
+      background-color: var(--mui-palette-primary-main);
+    }
+  }
+
+  .MuiTabPanel-root {
+    color: var(--mui-palette-text-primary);
+  }
+
+  .MuiAccordion-root {
+    background-color: var(--mui-palette-background-paper);
+    border: 1px solid var(--mui-palette-divider);
+
+    &:before {
+      display: none;
+    }
+
+    .MuiAccordionSummary-root {
+      border-bottom: 1px solid var(--mui-palette-divider);
+    }
+  }
+
+  .MuiStepConnector-line {
+    border-color: var(--mui-palette-divider);
+  }
+
+  .MuiStepLabel-label {
+    color: var(--mui-palette-text-secondary);
+
+    &.Mui-active {
+      color: var(--mui-palette-primary-main);
+    }
+
+    &.Mui-completed {
+      color: var(--mui-palette-success-main);
+    }
+  }
+
+  .MuiStepIcon-root {
+    color: var(--mui-palette-divider);
+
+    &.Mui-active {
+      color: var(--mui-palette-primary-main);
+    }
+
+    &.Mui-completed {
+      color: var(--mui-palette-success-main);
+    }
+  }
+
+  .MuiSwitch-root {
+    .MuiSwitch-track {
+      background-color: var(--mui-palette-divider);
+    }
+
+    .MuiSwitch-thumb {
+      background-color: var(--mui-palette-background-paper);
+    }
+
+    &.Mui-checked {
+      .MuiSwitch-track {
+        background-color: var(--mui-palette-primary-main);
+      }
+
+      .MuiSwitch-thumb {
+        background-color: var(--mui-palette-primary-main);
+      }
+    }
+  }
+
+  .MuiCheckbox-root {
+    color: var(--mui-palette-text-secondary);
+
+    &.Mui-checked {
+      color: var(--mui-palette-primary-main);
+    }
+  }
+
+  .MuiRadio-root {
+    color: var(--mui-palette-text-secondary);
+
+    &.Mui-checked {
+      color: var(--mui-palette-primary-main);
+    }
+  }
+
+  .MuiSlider-root {
+    color: var(--mui-palette-primary-main);
+
+    .MuiSlider-rail {
+      background-color: var(--mui-palette-divider);
+    }
+
+    .MuiSlider-track {
+      background-color: var(--mui-palette-primary-main);
+    }
+
+    .MuiSlider-thumb {
+      background-color: var(--mui-palette-background-paper);
+      border: 2px solid var(--mui-palette-primary-main);
+    }
+  }
+
+  .MuiRating-root {
+    color: var(--mui-palette-warning-main);
+  }
+
+  .MuiCircularProgress-root {
+    color: var(--mui-palette-primary-main);
+  }
+
+  .MuiLinearProgress-root {
+    background-color: var(--mui-palette-divider);
+
+    .MuiLinearProgress-bar {
+      background-color: var(--mui-palette-primary-main);
+    }
+  }
+
+  .MuiSkeleton-root {
+    background-color: var(--mui-palette-action-hover);
+  }
+
+  .MuiAlert-root {
+    background-color: var(--mui-palette-background-paper);
+    color: var(--mui-palette-text-primary);
+    border: 1px solid var(--mui-palette-divider);
+
+    &.MuiAlert-standardSuccess {
+      border-color: var(--mui-palette-success-main);
+    }
+
+    &.MuiAlert-standardError {
+      border-color: var(--mui-palette-error-main);
+    }
+
+    &.MuiAlert-standardWarning {
+      border-color: var(--mui-palette-warning-main);
+    }
+
+    &.MuiAlert-standardInfo {
+      border-color: var(--mui-palette-info-main);
+    }
+  }
+
+  .MuiPagination-root {
+    .MuiPaginationItem-root {
+      color: var(--mui-palette-text-primary);
+
+      &.Mui-selected {
+        background-color: var(--mui-palette-primary-main);
+        color: var(--mui-palette-primary-contrastText);
+      }
+
+      &:hover {
+        background-color: var(--mui-palette-action-hover);
+      }
+    }
+  }
+
+  .MuiTablePagination-root {
+    color: var(--mui-palette-text-primary);
+
+    .MuiTablePagination-select {
+      color: var(--mui-palette-text-primary);
+    }
+
+    .MuiTablePagination-selectIcon {
+      color: var(--mui-palette-text-secondary);
+    }
+  }
+
+  .MuiToolbar-root {
+    background-color: var(--mui-palette-background-paper);
+    border-bottom: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiAppBar-root {
+    background-color: var(--mui-palette-background-paper);
+    color: var(--mui-palette-text-primary);
+    border-bottom: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiBottomNavigation-root {
+    background-color: var(--mui-palette-background-paper);
+    border-top: 1px solid var(--mui-palette-divider);
+  }
+
+  .MuiSpeedDial-root {
+    .MuiSpeedDial-fab {
+      background-color: var(--mui-palette-primary-main);
+      color: var(--mui-palette-primary-contrastText);
+    }
+
+    .MuiSpeedDialAction-staticTooltip {
+      background-color: var(--mui-palette-background-paper);
+      color: var(--mui-palette-text-primary);
+      border: 1px solid var(--mui-palette-divider);
+    }
+  }
+
+  .MuiTimeline-root {
+    .MuiTimelineItem-root {
+      &:before {
+        background-color: var(--mui-palette-divider);
+      }
+    }
+
+    .MuiTimelineDot-root {
+      background-color: var(--mui-palette-background-paper);
+      border: 2px solid var(--mui-palette-primary-main);
+    }
+
+    .MuiTimelineConnector-root {
+      background-color: var(--mui-palette-divider);
+    }
+  }
+
+  .MuiTreeView-root {
+    .MuiTreeItem-root {
+      .MuiTreeItem-content {
+        &:hover {
+          background-color: var(--mui-palette-action-hover);
+        }
+
+        &.Mui-selected {
+          background-color: var(--mui-palette-action-selected);
+        }
+      }
+
+      .MuiTreeItem-iconContainer {
+        color: var(--mui-palette-text-secondary);
+      }
+
+      .MuiTreeItem-label {
+        color: var(--mui-palette-text-primary);
+      }
+    }
+  }
+
+  .MuiDataGrid-root {
+    border-color: var(--mui-palette-divider);
+    color: var(--mui-palette-text-primary);
+
+    .MuiDataGrid-cell {
+      border-color: var(--mui-palette-divider);
+    }
+
+    .MuiDataGrid-columnHeaders {
+      background-color: var(--mui-palette-background-default);
+      border-bottom: 1px solid var(--mui-palette-divider);
+    }
+
+    .MuiDataGrid-columnSeparator {
+      color: var(--mui-palette-divider);
+    }
+
+    .MuiDataGrid-row {
+      &:hover {
+        background-color: var(--mui-palette-action-hover);
+      }
+
+      &.Mui-selected {
+        background-color: var(--mui-palette-action-selected);
+      }
+    }
+
+    .MuiDataGrid-footerContainer {
+      border-top: 1px solid var(--mui-palette-divider);
+    }
+
+    .MuiDataGrid-toolbarContainer {
+      border-bottom: 1px solid var(--mui-palette-divider);
+    }
+  }
+
+  .MuiPickersDay-root {
+    color: var(--mui-palette-text-primary);
+
+    &:hover {
+      background-color: var(--mui-palette-action-hover);
+    }
+
+    &.Mui-selected {
+      background-color: var(--mui-palette-primary-main);
+      color: var(--mui-palette-primary-contrastText);
+
+      &:hover {
+        background-color: var(--mui-palette-primary-dark);
+      }
+    }
+
+    &.Mui-disabled {
+      color: var(--mui-palette-text-disabled);
+    }
+  }
+
+  .MuiPickersCalendarHeader-root {
+    .MuiPickersCalendarHeader-label {
+      color: var(--mui-palette-text-primary);
+    }
+
+    .MuiPickersArrowSwitcher-button {
+      color: var(--mui-palette-text-secondary);
+    }
+  }
+
+  .MuiPickersYear-root {
+    color: var(--mui-palette-text-primary);
+
+    &:hover {
+      background-color: var(--mui-palette-action-hover);
+    }
+
+    &.Mui-selected {
+      background-color: var(--mui-palette-primary-main);
+      color: var(--mui-palette-primary-contrastText);
+
+      &:hover {
+        background-color: var(--mui-palette-primary-dark);
+      }
+    }
+  }
+
+  .MuiPickersMonth-root {
+    color: var(--mui-palette-text-primary);
+
+    &:hover {
+      background-color: var(--mui-palette-action-hover);
+    }
+
+    &.Mui-selected {
+      background-color: var(--mui-palette-primary-main);
+      color: var(--mui-palette-primary-contrastText);
+
+      &:hover {
+        background-color: var(--mui-palette-primary-dark);
+      }
+    }
+  }
+
+  .MuiPickersClockNumber-root {
+    color: var(--mui-palette-text-primary);
+
+    &:hover {
+      background-color: var(--mui-palette-action-hover);
+    }
+
+    &.Mui-selected {
+      background-color: var(--mui-palette-primary-main);
+      color: var(--mui-palette-primary-contrastText);
+    }
+  }
+
+  .MuiPickersClockPointer-root {
+    background-color: var(--mui-palette-primary-main);
+
+    .MuiPickersClockPointer-thumb {
+      border-color: var(--mui-palette-primary-main);
+    }
+  }
+
+  .MuiPickersClock-pin {
+    background-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-noPoint {
+    background-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-thumb {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-face {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-thumb {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-noPoint {
+    background-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-thumb {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-face {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-thumb {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-noPoint {
+    background-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-thumb {
+    border-color: var(--mui-palette-primary-main);
+  }
+
+  .MuiPickersClockPointer-face {
+    border-color: var(--mui-palette-primary-main);
+  }
+} 
