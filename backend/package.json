@@ -14,7 +14,13 @@
     "posttest": "NODE_ENV=test sequelize db:migrate:undo:all",
     "db:migrate": "rm -Rf dist && npm run build && npx sequelize db:migrate",
     "db:seed": "npx sequelize db:seed:all",
-    "deploy:prod": "npm run build && pm2 start ecosystem.config.js --env production"
+    "deploy:prod": "npm run build && pm2 start ecosystem.config.js --env production",
+    "pm2:dev": "pm2 start ecosystem.config.js --only chat-backend-dev --env development",
+    "pm2:prod": "pm2 start ecosystem.config.js --only chat-backend-prod --env production",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:delete": "pm2 delete ecosystem.config.js",
+    "pm2:logs": "pm2 logs",
+    "pm2:monit": "pm2 monit"
   },
   "engines": {
     "node": ">=18"
