@@ -855,6 +855,7 @@ const loadTicketsEvolutionByQueue = async () => {
             spacing: 1
           }]
         }, {
+
           plugins: {
             legend: {
               position: 'right'
@@ -916,6 +917,7 @@ const loadTicketsInstances = async () => {
         spacing: 1
       }]
     }, {
+
       plugins: {
         legend: {
           position: 'right'
@@ -954,6 +956,7 @@ const loadTicketsQueue = async () => {
             spacing: 1
           }]
         }, {
+
           plugins: {
             legend: {
               position: 'right'
@@ -1016,6 +1019,7 @@ const loadTicketsChannels = async () => {
         spacing: 1
       }]
     }, {
+
       plugins: {
         legend: {
           position: 'right'
@@ -1659,13 +1663,26 @@ onMounted(async () => {
   margin-bottom: 1.5rem;
 }
 
+.chart-container {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .chart-card {
   background: $white;
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba($black, 0.1), 0 2px 4px -1px rgba($black, 0.06);
   border: 1px solid rgba($black, 0.05);
   overflow: hidden;
   transition: all 0.3s ease;
+  height: 100%;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 
   &:hover {
     transform: translateY(-2px);
@@ -1680,7 +1697,7 @@ onMounted(async () => {
 
 .chart-header {
   background: $grey-1;
-  padding: 1.25rem 1.5rem;
+  padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgba($black, 0.05);
 
   .body--dark & {
@@ -1690,7 +1707,7 @@ onMounted(async () => {
 }
 
 .chart-title {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: $dark;
   margin: 0;
@@ -1704,17 +1721,19 @@ onMounted(async () => {
 
   .q-icon {
     color: $primary;
-    font-size: 1.125rem;
+    font-size: 1rem;
   }
 }
 
 .chart-content {
-  padding: 1.5rem;
+  padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
-  min-width: 300px;
+  min-height: 200px;
+  min-width: 200px;
+  overflow: hidden;
+  position: relative;
 }
 
 // Estilo específico para o gráfico de evolução de canais
@@ -2038,12 +2057,14 @@ onMounted(async () => {
 }
 
 .pizza-chart {
-  width: 260px !important;
-  height: 260px !important;
+  width: 280px !important;
+  height: 280px !important;
   max-width: 100%;
   max-height: 100%;
   margin: 0 auto;
   display: block;
+  transform: scale(1.1);
+  transform-origin: center;
 }
 
 // Estilo específico para o gráfico de evolução temporal
