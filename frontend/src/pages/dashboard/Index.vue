@@ -504,21 +504,6 @@ const solidColors = [
   '#607D8B' // cinza azulado
 ]
 
-const getChannelColor = (channel) => {
-  if (!channel) return 'rgba(156, 39, 176, 0.2)' // cor padrão para canais indefinidos
-
-  const colors = {
-    whatsapp: 'rgba(37, 211, 102, 0.2)', // Verde WhatsApp
-    facebook: 'rgba(24, 119, 242, 0.2)', // Azul Facebook
-    instagram: 'rgba(228, 64, 95, 0.2)', // Rosa Instagram
-    telegram: 'rgba(0, 136, 204, 0.2)', // Azul Telegram
-    web: 'rgba(76, 175, 80, 0.2)', // Verde Web
-    email: 'rgba(234, 67, 53, 0.2)', // Vermelho Email
-    default: 'rgba(156, 39, 176, 0.2)' // Roxo padrão
-  }
-  return colors[channel.toLowerCase()] || colors.default
-}
-
 const listarFilas = async () => {
   try {
     const { data } = await ListarFilas()
@@ -575,7 +560,46 @@ const getDashTicketsEvolutionChannels = () => {
     }
 
     const series = []
-    const dados = groupBy(ticketsEvolutionChannels.value, 'label')
+    const dados = groupBy(ticketsEvolutionChannels.value, d => d.label && d.label !== 'undefined' && d.label !== '' ? d.label : 'Não definido')
+
+    // Definir cores modernas para cada canal (mover para fora do if e antes do for)
+    const channelColors = {
+      whatsapp: {
+        background: 'rgb(37, 211, 102)',
+        border: 'rgb(37, 211, 102)',
+        hover: 'rgb(37, 211, 102)'
+      },
+      facebook: {
+        background: 'rgb(24, 119, 242)',
+        border: 'rgb(24, 119, 242)',
+        hover: 'rgb(24, 119, 242)'
+      },
+      instagram: {
+        background: 'rgb(228, 64, 95)',
+        border: 'rgb(228, 64, 95)',
+        hover: 'rgb(228, 64, 95)'
+      },
+      telegram: {
+        background: 'rgb(0, 136, 204)',
+        border: 'rgb(0, 136, 204)',
+        hover: 'rgb(0, 136, 204)'
+      },
+      web: {
+        background: 'rgb(76, 175, 80)',
+        border: 'rgb(76, 175, 80)',
+        hover: 'rgb(76, 175, 80)'
+      },
+      email: {
+        background: 'rgb(234, 67, 53)',
+        border: 'rgb(234, 67, 53)',
+        hover: 'rgb(234, 67, 53)'
+      },
+      default: {
+        background: 'rgb(156, 39, 176)',
+        border: 'rgb(156, 39, 176)',
+        hover: 'rgb(156, 39, 176)'
+      }
+    }
 
     for (const item in dados) {
       if (Array.isArray(dados[item])) {
@@ -583,9 +607,20 @@ const getDashTicketsEvolutionChannels = () => {
           const point = dados[item].find(d => d.dt_referencia === label)
           return point ? Number(point.qtd) || 0 : 0
         })
+        const channelType = (item && item.toLowerCase && item.toLowerCase()) || 'default'
+        const colors = channelColors[channelType] || channelColors.default
+        const nomeSerie = (item && item !== 'undefined' && item !== '' && item !== undefined && item !== null) ? item : 'Não definido'
         series.push({
-          name: item,
-          data: dataPoints
+          name: nomeSerie,
+          label: nomeSerie,
+          data: dataPoints,
+          backgroundColor: colors.background,
+          borderColor: colors.border,
+          borderWidth: 2,
+          borderRadius: 4,
+          hoverBackgroundColor: colors.hover,
+          hoverBorderColor: colors.border,
+          hoverBorderWidth: 3
         })
       }
     }
@@ -623,6 +658,16 @@ const loadTicketsEvolutionByPeriod = async () => {
             data: tickets,
             borderColor: '#1976D2',
             backgroundColor: 'rgba(25, 118, 210, 0.1)',
+            borderWidth: 2,
+            pointBackgroundColor: '#1976D2',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#1976D2',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2,
+            tension: 0.4,
             fill: true
           },
           {
@@ -630,24 +675,112 @@ const loadTicketsEvolutionByPeriod = async () => {
             data: resolved,
             borderColor: '#4CAF50',
             backgroundColor: 'rgba(76, 175, 80, 0.1)',
+            borderWidth: 2,
+            pointBackgroundColor: '#4CAF50',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#4CAF50',
+            pointHoverBorderColor: '#fff',
+            pointHoverBorderWidth: 2,
+            tension: 0.4,
             fill: true
           }
         ]
       }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'center',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: {
+              size: 14,
+              weight: 'bold'
+            },
+            bodyFont: {
+              size: 13
+            },
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            displayColors: true,
+            callbacks: {
+              label: function (context) {
+                const label = context.dataset.label || ''
+                const value = context.parsed.y || 0
+                return `${label}: ${value} tickets`
+              }
+            }
+          }
+        },
         scales: {
           y: {
             beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              font: {
+                size: 12
+              },
+              padding: 10,
+              stepSize: 1
+            },
             title: {
               display: true,
-              text: 'Quantidade de Tickets'
+              text: 'Quantidade de Tickets',
+              font: {
+                size: 14,
+                weight: 'bold'
+              },
+              padding: { top: 10, bottom: 10 }
             }
           },
           x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 12
+              },
+              padding: 10,
+              maxRotation: 45,
+              minRotation: 45
+            },
             title: {
               display: true,
-              text: 'Data'
+              text: 'Data',
+              font: {
+                size: 14,
+                weight: 'bold'
+              },
+              padding: { top: 10, bottom: 10 }
             }
           }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeInOutQuart'
         }
       })
     }
@@ -655,7 +788,9 @@ const loadTicketsEvolutionByPeriod = async () => {
     console.error('Erro ao carregar dados de evolução por período:', error)
     Notify.create({
       type: 'negative',
-      message: 'Erro ao carregar dados de evolução por período'
+      message: 'Erro ao carregar dados de evolução por período',
+      position: 'top',
+      timeout: 5000
     })
   }
 }
@@ -1044,7 +1179,46 @@ const loadChannelEvolutionData = async () => {
 
       const dataLabel = groupBy(data, 'dt_referencia')
       const labels = Object.keys(dataLabel).sort()
-      const dados = groupBy(data, 'label')
+      const dados = groupBy(data, d => d.label && d.label !== 'undefined' && d.label !== '' ? d.label : 'Não definido')
+
+      // Definir cores modernas para cada canal (mover para fora do if e antes do for)
+      const channelColors = {
+        whatsapp: {
+          background: 'rgb(37, 211, 102)',
+          border: 'rgb(37, 211, 102)',
+          hover: 'rgb(37, 211, 102)'
+        },
+        facebook: {
+          background: 'rgb(24, 119, 242)',
+          border: 'rgb(24, 119, 242)',
+          hover: 'rgb(24, 119, 242)'
+        },
+        instagram: {
+          background: 'rgb(228, 64, 95)',
+          border: 'rgb(228, 64, 95)',
+          hover: 'rgb(228, 64, 95)'
+        },
+        telegram: {
+          background: 'rgb(0, 136, 204)',
+          border: 'rgb(0, 136, 204)',
+          hover: 'rgb(0, 136, 204)'
+        },
+        web: {
+          background: 'rgb(76, 175, 80)',
+          border: 'rgb(76, 175, 80)',
+          hover: 'rgb(76, 175, 80)'
+        },
+        email: {
+          background: 'rgb(234, 67, 53)',
+          border: 'rgb(234, 67, 53)',
+          hover: 'rgb(234, 67, 53)'
+        },
+        default: {
+          background: 'rgb(156, 39, 176)',
+          border: 'rgb(156, 39, 176)',
+          hover: 'rgb(156, 39, 176)'
+        }
+      }
 
       const series = []
       for (const item in dados) {
@@ -1053,9 +1227,20 @@ const loadChannelEvolutionData = async () => {
             const point = dados[item].find(d => d.dt_referencia === label)
             return point ? Number(point.qtd) || 0 : 0
           })
+          const channelType = (item && item.toLowerCase && item.toLowerCase()) || 'default'
+          const colors = channelColors[channelType] || channelColors.default
+          const nomeSerie = (item && item !== 'undefined' && item !== '' && item !== undefined && item !== null) ? item : 'Não definido'
           series.push({
-            name: item,
-            data: dataPoints
+            name: nomeSerie,
+            label: nomeSerie,
+            data: dataPoints,
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            borderWidth: 2,
+            borderRadius: 4,
+            hoverBackgroundColor: colors.hover,
+            hoverBorderColor: colors.border,
+            hoverBorderWidth: 3
           })
         }
       }
@@ -1073,29 +1258,107 @@ const loadChannelEvolutionData = async () => {
       channelEvolutionChart.value = createChart(ctx, 'bar', {
         labels,
         datasets: series.map(s => ({
-          label: s.name,
-          data: s.data,
-          backgroundColor: getChannelColor(s.name),
-          borderColor: getChannelColor(s.name).replace('0.2', '1'),
-          borderWidth: 1
+          ...s,
+          barThickness: 40, // largura máxima da barra
+          maxBarThickness: 60, // largura máxima absoluta
+          minBarLength: 2, // comprimento mínimo para visualização
+          categoryPercentage: 0.5, // espaçamento entre categorias
+          barPercentage: 0.7 // espaçamento entre barras
         }))
       }, {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            align: 'center',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: {
+                size: 12,
+                weight: 'bold'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: {
+              size: 14,
+              weight: 'bold'
+            },
+            bodyFont: {
+              size: 13
+            },
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            borderWidth: 1,
+            displayColors: true,
+            callbacks: {
+              label: function (context) {
+                const label = context.dataset.label || ''
+                const value = context.parsed.y || 0
+                return `${label}: ${value} atendimentos`
+              }
+            }
+          }
+        },
         scales: {
           y: {
             beginAtZero: true,
             stacked: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              font: {
+                size: 12
+              },
+              padding: 10
+            },
             title: {
               display: true,
-              text: 'Quantidade de Tickets'
+              text: 'Quantidade de Tickets',
+              font: {
+                size: 14,
+                weight: 'bold'
+              },
+              padding: { top: 10, bottom: 10 }
             }
           },
           x: {
             stacked: true,
+            grid: {
+              display: false
+            },
+            ticks: {
+              font: {
+                size: 12
+              },
+              padding: 10,
+              maxRotation: 45,
+              minRotation: 45
+            },
             title: {
               display: true,
-              text: 'Data'
+              text: 'Data',
+              font: {
+                size: 14,
+                weight: 'bold'
+              },
+              padding: { top: 10, bottom: 10 }
             }
           }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeInOutQuart'
         }
       })
     }
@@ -1103,7 +1366,9 @@ const loadChannelEvolutionData = async () => {
     console.error('Erro ao carregar dados de evolução dos canais:', error)
     Notify.create({
       type: 'negative',
-      message: 'Erro ao carregar dados de evolução dos canais'
+      message: 'Erro ao carregar dados de evolução dos canais',
+      position: 'top',
+      timeout: 5000
     })
   }
 }
@@ -1452,6 +1717,12 @@ onMounted(async () => {
   min-width: 300px;
 }
 
+// Estilo específico para o gráfico de evolução de canais
+#channelEvolutionChart {
+  height: 400px !important;
+  width: 100% !important;
+}
+
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -1773,6 +2044,12 @@ onMounted(async () => {
   max-height: 100%;
   margin: 0 auto;
   display: block;
+}
+
+// Estilo específico para o gráfico de evolução temporal
+#ticketsEvolutionByPeriod {
+  height: 400px !important;
+  width: 100% !important;
 }
 
 </style>
