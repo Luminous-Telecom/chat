@@ -157,8 +157,11 @@
                 Atendimentos por Canal
               </h3>
             </div>
-            <div class="chart-content">
-              <canvas id="ticketsChannels" class="pizza-chart"></canvas>
+            <div class="chart-content-wrapper">
+              <div class="chart-content">
+                <canvas id="ticketsChannels" class="pizza-chart"></canvas>
+              </div>
+              <div class="chart-legend" id="ticketsChannelsLegend"></div>
             </div>
           </div>
         </div>
@@ -171,8 +174,11 @@
                 Atendimentos por Instância
               </h3>
             </div>
-            <div class="chart-content">
-              <canvas id="ticketsInstances" class="pizza-chart"></canvas>
+            <div class="chart-content-wrapper">
+              <div class="chart-content">
+                <canvas id="ticketsInstances" class="pizza-chart"></canvas>
+              </div>
+              <div class="chart-legend" id="ticketsInstancesLegend"></div>
             </div>
           </div>
         </div>
@@ -185,8 +191,11 @@
                 Distribuição por Fila
               </h3>
             </div>
-            <div class="chart-content">
-              <canvas id="ticketsEvolutionByQueue" class="pizza-chart"></canvas>
+            <div class="chart-content-wrapper">
+              <div class="chart-content">
+                <canvas id="ticketsEvolutionByQueue" class="pizza-chart"></canvas>
+              </div>
+              <div class="chart-legend" id="ticketsEvolutionByQueueLegend"></div>
             </div>
           </div>
         </div>
@@ -1094,17 +1103,19 @@ const createChart = (ctx, type, data, options) => {
       return null
     }
 
-    // Criar novo gráfico com configurações padrão
+    // Forçar a legenda padrão como desabilitada
     const defaultOptions = {
       responsive: true,
       maintainAspectRatio: false,
       animation: {
-        duration: 0 // Desabilitar animações para melhor performance
+        duration: 800 // Deixa a transição mais lenta e suave
       },
       plugins: {
         legend: {
-          display: true,
-          position: 'top'
+          display: false, // Garante que a legenda padrão não será exibida
+          labels: {
+            generateLabels: () => [] // Garante que não será gerado nenhum item
+          }
         },
         tooltip: {
           enabled: true
@@ -1112,14 +1123,62 @@ const createChart = (ctx, type, data, options) => {
       }
     }
 
+    // Mesclar opções recebidas, mas sempre sobrescrever legend
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      plugins: {
+        ...defaultOptions.plugins,
+        ...(options && options.plugins),
+        legend: {
+          ...defaultOptions.plugins.legend,
+          ...(options && options.plugins && options.plugins.legend),
+          display: false,
+          labels: {
+            generateLabels: () => []
+          }
+        }
+      }
+    }
+
     const chart = new Chart(ctx, {
       type,
       data,
-      options: {
-        ...defaultOptions,
-        ...options
-      }
+      options: mergedOptions
     })
+
+    // Criar legenda personalizada
+    if (type === 'doughnut' || type === 'pie') {
+      const legendContainer = document.getElementById(ctx.id + 'Legend')
+      if (legendContainer) {
+        legendContainer.innerHTML = ''
+        const ul = document.createElement('ul')
+        ul.className = 'custom-legend'
+
+        data.labels.forEach((label, index) => {
+          const li = document.createElement('li')
+          const color = data.datasets[0].backgroundColor[index]
+
+          li.innerHTML = `
+            <span class="legend-color" style="background-color: ${color}"></span>
+            <span class="legend-label">${label}</span>
+            <span class="legend-separator">:</span>
+            <span class="legend-value">${data.datasets[0].data[index]}</span>
+          `
+
+          li.addEventListener('click', () => {
+            const meta = chart.getDatasetMeta(0)
+            meta.data[index].hidden = !meta.data[index].hidden
+            chart.update()
+            li.classList.toggle('legend-disabled', meta.data[index].hidden)
+          })
+
+          ul.appendChild(li)
+        })
+
+        legendContainer.appendChild(ul)
+      }
+    }
 
     return chart
   } catch (error) {
@@ -1395,6 +1454,21 @@ function formatMinutes (time) {
 
 onMounted(async () => {
   try {
+    // Bloquear seleção e cópia
+    document.body.style.userSelect = 'none'
+    document.body.style.webkitUserSelect = 'none'
+    document.body.style.msUserSelect = 'none'
+    document.body.style.mozUserSelect = 'none'
+    // Bloqueia Ctrl+C, Ctrl+X, Ctrl+A
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'x', 'a'].includes(e.key.toLowerCase())) {
+        e.preventDefault()
+      }
+    })
+    // Bloqueia botão direito do mouse
+    document.addEventListener('contextmenu', function (e) {
+      e.preventDefault()
+    })
     // Garantir que params está definido
     if (!params.startDate || !params.endDate) {
       params.startDate = startDate.toISOString()
@@ -1419,7 +1493,7 @@ onMounted(async () => {
 })
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .modern-dashboard {
   min-height: 100vh;
   background: linear-gradient(135deg, $grey-1 0%, $grey-3 100%);
@@ -1725,15 +1799,100 @@ onMounted(async () => {
   }
 }
 
+.chart-content-wrapper {
+  display: flex;
+  flex: 1;
+  min-height: 200px;
+  width: 100%;
+}
+
 .chart-content {
+  flex: 2;
   padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
   min-width: 200px;
   overflow: hidden;
   position: relative;
+}
+
+.chart-legend {
+  flex: 1;
+  padding: 0.75rem;
+  min-width: 150px;
+  max-width: 200px;
+  overflow-y: auto;
+}
+
+.custom-legend {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  li {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    font-size: 0.7rem;
+    color: #fff;
+    font-weight: 400;
+    margin-bottom: 2px;
+    background: none;
+    border: none;
+    box-shadow: none;
+  }
+
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    margin-right: 8px;
+    display: inline-block;
+    border: 1px solid #222;
+    flex-shrink: 0;
+  }
+
+  .legend-label {
+    margin-right: 6px;
+    color: #fff;
+    font-weight: 400;
+    font-size: 0.7rem;
+
+    white-space: nowrap;
+  }
+
+  .legend-separator {
+    margin: 0 4px 0 0;
+    color: #fff;
+    font-weight: 400;
+    font-size: 0.7rem;
+  }
+
+  .legend-value {
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.7rem;
+    margin-left: 2px;
+  }
+
+  .body--dark & {
+    color: #fff;
+    .legend-label, .legend-separator, .legend-value {
+      color: #fff;
+    }
+    .legend-color {
+      border: 1px solid #444;
+    }
+  }
+
+  li.legend-disabled {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
 }
 
 .loading-state {
@@ -1750,7 +1909,7 @@ onMounted(async () => {
 
   p {
     margin: 1rem 0 0;
-    font-size: 0.875rem;
+    font-size: 0.7rem;
     font-weight: 500;
   }
 }
@@ -1918,8 +2077,23 @@ onMounted(async () => {
     padding: 1rem;
   }
 
+  .chart-content-wrapper {
+    flex-direction: column;
+  }
+
   .chart-content {
-    padding: 1rem;
+    min-height: 200px;
+  }
+
+  .chart-legend {
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid rgba($black, 0.05);
+    padding-top: 1rem;
+
+    .body--dark & {
+      border-top: 1px solid rgba($white, 0.1);
+    }
   }
 }
 
@@ -1963,7 +2137,7 @@ onMounted(async () => {
     padding: 0.75rem;
   }
 
-  .chart-content {
+  .chart-content-wrapper {
     padding: 0.75rem;
   }
 
@@ -2046,4 +2220,10 @@ onMounted(async () => {
   width: 100% !important;
 }
 
+body, .modern-dashboard {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+}
 </style>
