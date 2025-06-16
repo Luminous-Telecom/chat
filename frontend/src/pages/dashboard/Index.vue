@@ -1520,7 +1520,7 @@ onMounted(async () => {
 
 // Metrics Section
 .metrics-section {
-  margin: 0 auto 2rem;
+  margin: 0 auto 1.5rem;
   padding: 0 1.5rem;
 }
 
@@ -1651,7 +1651,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
-  margin: 1rem 0;
+  margin: 1.5rem 0;
 }
 
 .chart-container,
@@ -1736,12 +1736,6 @@ onMounted(async () => {
   position: relative;
 }
 
-// Estilo específico para o gráfico de evolução de canais
-#channelEvolutionChart {
-  height: 400px !important;
-  width: 100% !important;
-}
-
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -1759,11 +1753,6 @@ onMounted(async () => {
     font-size: 0.875rem;
     font-weight: 500;
   }
-}
-
-// Table Section
-.table-section {
-  margin-top: 1.5rem;
 }
 
 .table-card {
@@ -2001,11 +1990,6 @@ onMounted(async () => {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-.table-section {
-  margin-top: 2rem;
-  padding: 0 1rem;
-}
-
 .tickets-table {
   width: 100%;
   background: white;
@@ -2054,17 +2038,6 @@ onMounted(async () => {
   .q-icon {
     color: #999;
   }
-}
-
-.pizza-chart {
-  width: 280px !important;
-  height: 280px !important;
-  max-width: 100%;
-  max-height: 100%;
-  margin: 0 auto;
-  display: block;
-  transform: scale(1.1);
-  transform-origin: center;
 }
 
 // Estilo específico para o gráfico de evolução temporal
