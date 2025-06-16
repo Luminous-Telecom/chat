@@ -87,7 +87,6 @@ module.exports = function (ctx) {
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-devServer
     devServer: {
       https: false,
-      // port: 8080,
       open: true, // opens browser window automatically
       hot: false, // disable hot reload
       liveReload: false, // disable live reload
@@ -96,7 +95,7 @@ module.exports = function (ctx) {
           target: 'http://localhost:3000',
           changeOrigin: true,
           pathRewrite: {
-            '^/api': ''
+            '^/api': '' // Remove o prefixo /api ao redirecionar para o backend
           }
         }
       }

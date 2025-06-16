@@ -21,9 +21,8 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.15.6",
-    "apexcharts": "^3.32.0",
     "axios": "^0.18.1",
-    "core-js": "^3.6.5",
+    "chart.js": "^3.5.1",
     "date-fns": "^2.16.1",
     "dotenv": "^16.0.3",
     "drawflow": "0.0.53",
@@ -38,7 +37,6 @@
     "v-emoji-picker": "^2.3.1",
     "vdata-parser": "^0.1.5",
     "vue": "^2.6.11",
-    "vue-apexcharts": "^1.6.2",
     "vue-codemirror": "^4.0.6",
     "vue-easy-lightbox": "^0.14.0",
     "vue-facebook-login-component": "^4.0.2",
@@ -51,9 +49,12 @@
     "xlsx": "^0.16.9"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/plugin-proposal-optional-chaining": "^7.18.9",
+    "@babel/preset-env": "^7.27.2",
     "@quasar/app": "^2.4.3",
     "babel-eslint": "^10.0.1",
+    "core-js": "^3.43.0",
     "eslint": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
     "eslint-loader": "^3.0.3",

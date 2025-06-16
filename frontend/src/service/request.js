@@ -6,7 +6,7 @@ import router from '../router'
 import backendErrors from './erros.js'
 
 const service = axios.create({
-  baseURL: process.env.VUE_URL_API,
+  baseURL: process.env.VUE_URL_API || 'http://localhost:3000',
   timeout: 20000
 })
 

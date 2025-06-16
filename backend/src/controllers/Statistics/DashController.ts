@@ -7,7 +7,9 @@ import DashTicketsEvolutionByPeriod from "../../services/Statistics/DashTicketsE
 import DashTicketsPerUsersDetail from "../../services/Statistics/DashTicketsPerUsersDetail";
 import DashTicketsQueue from "../../services/Statistics/DashTicketsQueue";
 import DashTicketsInstances from "../../services/Statistics/DashTicketsInstances";
+import DashTicketsEvolutionByQueue from "../../services/Statistics/DashTicketsEvolutionByQueue";
 // import AppError from "../errors/AppError";
+import { IndexQuery } from "../helpers/IndexQuery";
 
 type IndexQuery = {
   startDate: string;
@@ -132,6 +134,31 @@ export const getDashTicketsQueue = async (
   });
 
   return res.json(data);
+};
+
+export const getDashTicketsEvolutionByQueue = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { tenantId } = req.user;
+    const { startDate, endDate } = req.query as IndexQuery;
+    const userId = req.user.id;
+    const userProfile = req.user.profile;
+
+    const data = await DashTicketsEvolutionByQueue({
+      startDate,
+      endDate,
+      tenantId,
+      userId,
+      userProfile
+    });
+
+    return res.json(data);
+  } catch (error) {
+    console.error('Erro ao buscar evolução por fila:', error);
+    return res.status(500).json({ error: 'Erro ao buscar evolução por fila' });
+  }
 };
 
 export const getDashTicketsInstances = async (

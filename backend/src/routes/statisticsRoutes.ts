@@ -62,6 +62,12 @@ statisticsRoutes.get(
 );
 
 statisticsRoutes.get(
+  "/statistics-tickets-evolution-by-queue",
+  isAuth,
+  DashController.getDashTicketsEvolutionByQueue
+);
+
+statisticsRoutes.get(
   "/statistics-tickets-instances",
   isAuth,
   DashController.getDashTicketsInstances
