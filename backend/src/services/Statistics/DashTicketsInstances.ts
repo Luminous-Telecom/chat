@@ -47,14 +47,6 @@ const DashTicketsInstances = async ({
   userId,
   userProfile
 }: Request): Promise<any[]> => {
-  console.log("Executando query com parâmetros:", {
-    tenantId,
-    userId,
-    startDate,
-    endDate,
-    userProfile
-  });
-
   const data = await sequelize.query(
     userProfile === "admin" ? queryAdmin : query,
     {
@@ -64,12 +56,10 @@ const DashTicketsInstances = async ({
         endDate,
         userId
       },
-      type: QueryTypes.SELECT,
-      logging: console.log
+      type: QueryTypes.SELECT
     }
   );
 
-  console.log("Dados retornados:", data);
   return data;
 };
 
