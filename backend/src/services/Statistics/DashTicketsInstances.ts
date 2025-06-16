@@ -11,15 +11,12 @@ interface Request {
 
 const query = `
   SELECT 
-    w.name as whatsapp,
+    COALESCE(w.name, 'Não informado') as whatsapp,
     COUNT(t.id) as qtd
   FROM "Tickets" t
-  INNER JOIN "Whatsapps" w ON w.id = t."whatsappId"
-  INNER JOIN "LogTickets" lt ON lt."ticketId" = t.id
+  LEFT JOIN "Whatsapps" w ON w.id = t."whatsappId"
   WHERE 
     t."tenantId" = :tenantId 
-    AND lt."userId" = :userId
-    AND (lt."type" LIKE 'open' OR lt."type" LIKE 'receivedTransfer')
     AND date_trunc('day', t."createdAt") BETWEEN :startDate AND :endDate
   GROUP BY w.name
   ORDER BY qtd DESC
@@ -27,14 +24,12 @@ const query = `
 
 const queryAdmin = `
   SELECT 
-    w.name as whatsapp,
+    COALESCE(w.name, 'Não informado') as whatsapp,
     COUNT(t.id) as qtd
   FROM "Tickets" t
-  INNER JOIN "Whatsapps" w ON w.id = t."whatsappId"
-  INNER JOIN "LogTickets" lt ON lt."ticketId" = t.id
+  LEFT JOIN "Whatsapps" w ON w.id = t."whatsappId"
   WHERE 
     t."tenantId" = :tenantId 
-    AND (lt."type" LIKE 'open' OR lt."type" LIKE 'receivedTransfer')
     AND date_trunc('day', t."createdAt") BETWEEN :startDate AND :endDate
   GROUP BY w.name
   ORDER BY qtd DESC

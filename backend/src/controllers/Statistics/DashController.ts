@@ -19,7 +19,7 @@ type IndexQuery = {
 
 const validateQuery = (query: ParsedQs): IndexQuery => {
   const { startDate, endDate, queuesIds } = query;
-  
+
   if (!startDate || !endDate) {
     throw new Error("startDate e endDate são obrigatórios");
   }

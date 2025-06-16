@@ -72,14 +72,6 @@ const models = [
 
 sequelize.addModels(models);
 
-// const startLoopDb = () => {
-//   // eslint-disable-next-line no-underscore-dangle
-//   global._loopDb = setInterval(() => {
-//     FindUpdateTicketsInactiveChatBot();
-//     console.log("DATABASE CONNECT");
-//   }, 60000);
-// };
-
 sequelize.afterConnect(() => {
   logger.info("DATABASE CONNECT");
   QueueJobs.default.add("VerifyTicketsChatBotInactives", {});
