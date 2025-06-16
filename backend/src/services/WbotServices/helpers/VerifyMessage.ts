@@ -13,13 +13,10 @@ const VerifyMessage = async (
 ) => {
   try {
     // Verificar se há mensagem citada e obter referência
-    logger.info(`[VerifyMessage] Verificando mensagem citada para mensagem ${msg.id?.id || 'sem ID'}`);
     const quotedMsg = await VerifyQuotedMessage(msg, ticket);
-    
+
     if (quotedMsg) {
-      logger.info(`[VerifyMessage] Mensagem citada encontrada: ${quotedMsg.id}`);
     } else {
-      logger.info(`[VerifyMessage] Nenhuma mensagem citada encontrada`);
     }
 
     const messageData = {
@@ -57,9 +54,7 @@ const VerifyMessage = async (
       unreadMessages: newUnreadCount
     });
 
-    const createdMessage = await CreateMessageService({ messageData, tenantId: ticket.tenantId });
-    logger.info(`[VerifyMessage] Mensagem criada com sucesso: ${createdMessage.id}`);
-    
+    const createdMessage = await CreateMessageService({ messageData, tenantId: ticket.tenantId });    
     return createdMessage;
   } catch (err) {
     logger.error(`[VerifyMessage] Erro em VerifyMessage para ticket ${ticket.id}: ${err}`);

@@ -41,8 +41,6 @@ export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> =
       return;
     }
 
-    logger.info(`[HandleMsgAck] Processing ack ${ack} for message ${messageId}`);
-
     // Primeiro, busca TODAS as mensagens com esse messageId
     const messages = await Message.findAll({
       where: {
@@ -69,13 +67,10 @@ export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> =
       // Se só temos uma mensagem, ela é a que devemos atualizar
       messageToUpdate = messages[0];
     } else {
-      // Se temos múltiplas mensagens, vamos analisar cada uma
-      logger.warn(`[HandleMsgAck] Found ${messages.length} messages for ID ${messageId}, analyzing...`);
-      
+      // Se temos múltiplas mensagens, vamos analisar cada uma      
       // Primeiro, vamos verificar se alguma mensagem já tem um ACK maior
       const messagesWithHigherAck = messages.filter(m => m.ack >= ack);
       if (messagesWithHigherAck.length > 0) {
-        logger.info(`[HandleMsgAck] Found ${messagesWithHigherAck.length} messages with higher or equal ack (${ack}), ignoring update`);
         await t.rollback();
         return;
       }
@@ -103,7 +98,6 @@ export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> =
 
     // Não permitir que um ACK menor sobrescreva um ACK maior
     if (ack <= messageToUpdate.ack) {
-      logger.info(`[HandleMsgAck] Ignoring ack ${ack} for message ${messageToUpdate.id} as current ack ${messageToUpdate.ack} is higher or equal`);
       await t.rollback();
       return;
     }
@@ -121,9 +115,7 @@ export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> =
       return;
     }
 
-    const newStatus = getMessageStatus(ack);
-    logger.info(`[HandleMsgAck] Updating message ${messageToUpdate.id} from ack ${messageToUpdate.ack} to ${ack} (status: ${newStatus})`);
-    
+    const newStatus = getMessageStatus(ack);    
     // Atualiza a mensagem com lock
     await messageToUpdate.update({
       ack,
@@ -149,8 +141,6 @@ export const HandleMsgAck = async (msg: WAMessage, ack: number): Promise<void> =
         }
       }
     });
-
-    logger.info(`[HandleMsgAck] Message ${messageToUpdate.id} updated successfully to status ${newStatus}`);
 
     // Se temos mensagens duplicadas, marca como deletadas
     if (duplicateMessages.length > 0) {

@@ -31,6 +31,7 @@ interface ChannelData {
   wabaBSP?: string;
   tokenAPI?: string;
   tenantId: string | number;
+  connectionNumber?: string;
 }
 
 export const indexUsers = async (
@@ -135,7 +136,8 @@ export const storeChannel = async (
     instagramKey,
     type,
     wabaBSP,
-    tokenAPI
+    tokenAPI,
+    connectionNumber
   } = req.body;
 
   const data: ChannelData = {
@@ -147,7 +149,8 @@ export const storeChannel = async (
     instagramKey,
     type,
     wabaBSP,
-    tokenAPI
+    tokenAPI,
+    connectionNumber
   };
 
   const channels = await CreateWhatsAppService(data);

@@ -11,6 +11,7 @@ interface Request {
   tokenTelegram?: string;
   instagramUser?: string;
   instagramKey?: string;
+  connectionNumber?: string;
 }
 
 interface Response {
@@ -25,7 +26,8 @@ const AdminCreateChannelService = async ({
   tenantId,
   tokenTelegram,
   instagramUser,
-  instagramKey
+  instagramKey,
+  connectionNumber
 }: Request): Promise<Response> => {
   const schema = Yup.object().shape({
     name: Yup.string()
@@ -77,7 +79,8 @@ const AdminCreateChannelService = async ({
     tenantId,
     tokenTelegram,
     instagramUser,
-    instagramKey
+    instagramKey,
+    connectionNumber
   });
 
   return { whatsapp, oldDefaultWhatsapp };

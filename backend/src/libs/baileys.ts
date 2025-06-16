@@ -1,4 +1,4 @@
-import { makeWASocket, useMultiFileAuthState, DisconnectReason, BaileysEventMap } from "@whiskeysockets/baileys";
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, BaileysEventMap, Browsers } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import { logger as baseLogger } from "../utils/logger";
 import { BaileysClient } from "../types/baileys";
@@ -142,6 +142,30 @@ const handleWsUndefined = async (whatsappId: number, whatsapp: Whatsapp): Promis
   }
 };
 
+// Função auxiliar para fechar o WebSocket de forma segura
+const safeCloseWebSocket = async (wbot: any): Promise<void> => {
+  try {
+    if (!wbot.ws) return;
+    
+    const ws = wbot.ws;
+    if (typeof ws.close === 'function') {
+      ws.close();
+    } else if (typeof ws.terminate === 'function') {
+      ws.terminate();
+    } else if (typeof ws.destroy === 'function') {
+      ws.destroy();
+    }
+    
+    // Aguardar um momento para garantir que a conexão foi fechada
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Limpar referência
+    wbot.ws = undefined;
+  } catch (err) {
+    baseLogger.warn(`Erro ao fechar WebSocket: ${err}`);
+  }
+};
+
 // Enhanced session removal with better cleanup
 export const removeBaileysSession = async (whatsappId: number): Promise<void> => {
   const sessionIndex = sessions.findIndex(s => s.id === whatsappId);
@@ -175,7 +199,6 @@ export const removeBaileysSession = async (whatsappId: number): Promise<void> =>
         session.ev.removeAllListeners('blocklist.update');
         session.ev.removeAllListeners('call');
         
-        // These might not exist in all Baileys versions, so wrap in try-catch
         try {
           session.ev.removeAllListeners('labels.edit' as any);
           session.ev.removeAllListeners('labels.association' as any);
@@ -192,8 +215,8 @@ export const removeBaileysSession = async (whatsappId: number): Promise<void> =>
         if (wsState === 1) { // WebSocket.OPEN
           await session.logout();
           baseLogger.info(`Successfully logged out session ${whatsappId}`);
-        } else if ((session as any).ws) {
-          (session as any).ws.close();
+        } else {
+          await safeCloseWebSocket(session);
           baseLogger.info(`Closed WebSocket for session ${whatsappId}`);
         }
       } catch (err) {
@@ -285,7 +308,36 @@ export const restartBaileysSession = async (whatsappId: number): Promise<Baileys
   }
 };
 
-export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> => {
+// Função auxiliar para reconectar de forma segura
+const safeReconnect = async (wbot: any, whatsapp: Whatsapp): Promise<void> => {
+  try {
+    baseLogger.info(`Iniciando reconexão segura para ${whatsapp.name}`);
+    
+    // Primeiro, fechar a conexão atual de forma segura
+    await safeCloseWebSocket(wbot);
+    
+    // Aguardar um momento para garantir que tudo foi limpo
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Em vez de tentar usar connect/end, vamos reinicializar a sessão
+    const newSession = await initBaileys(whatsapp);
+    
+    // Atualizar a sessão na lista de sessões ativas
+    const sessionIndex = sessions.findIndex(s => s.id === whatsapp.id);
+    if (sessionIndex !== -1) {
+      sessions[sessionIndex] = newSession;
+    } else {
+      sessions.push(newSession);
+    }
+    
+    baseLogger.info(`Reconexão concluída para ${whatsapp.name}`);
+  } catch (err) {
+    baseLogger.error(`Erro durante reconexão segura: ${err}`);
+    throw err;
+  }
+};
+
+export const initBaileys = async (whatsapp: Whatsapp, phoneNumber?: string): Promise<BaileysClient> => {
   try {
     // Prevent multiple simultaneous initializations for the same session
     if (initializingSession.has(whatsapp.id)) {
@@ -297,6 +349,37 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
     
     baseLogger.info(`Initializing WhatsApp session for ${whatsapp.name} (ID: ${whatsapp.id})`);
     
+    // Se estiver tentando conectar por número, limpar completamente a sessão primeiro
+    if (phoneNumber) {
+      baseLogger.info(`Modo de número detectado - limpando sessão completamente`);
+      
+      // Remover sessão existente se houver
+      const existingSession = sessions.find(s => s.id === whatsapp.id);
+      if (existingSession) {
+        baseLogger.info(`Removendo sessão existente antes de iniciar modo número`);
+        await removeBaileysSession(whatsapp.id);
+      }
+      
+      // Limpar diretório da sessão
+      const sessionDir = join(__dirname, '..', '..', 'session', `session-${whatsapp.id}`);
+      try {
+        await rm(sessionDir, { recursive: true, force: true });
+        baseLogger.info(`Diretório da sessão limpo para ${whatsapp.name}`);
+      } catch (err) {
+        baseLogger.warn(`Erro ao limpar diretório da sessão: ${err}`);
+      }
+      
+      // Atualizar status no banco
+      await whatsapp.update({
+        status: 'CONNECTING',
+        qrcode: '',
+        retries: 0
+      });
+      
+      // Pequeno delay para garantir que tudo foi limpo
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
     // Check if we've exceeded max reconnection attempts
     const currentRetries = whatsapp.retries || 0;
     if (currentRetries >= MAX_RECONNECT_ATTEMPTS) {
@@ -329,23 +412,23 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
     const wbot = makeWASocket({
       auth: state,
       printQRInTerminal: false,
-      browser: ["Chrome (Linux)", "Chrome", "1.0.0"],
-      connectTimeoutMs: 60000,
+      browser: Browsers.macOS('Chrome'),
+      connectTimeoutMs: phoneNumber ? 120000 : 60000,
       defaultQueryTimeoutMs: 60000,
       emitOwnEvents: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
-      retryRequestDelayMs: 5000,
+      retryRequestDelayMs: phoneNumber ? 10000 : 5000,
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
       keepAliveIntervalMs: 15000,
-      qrTimeout: 60000,
+      qrTimeout: phoneNumber ? 0 : 60000,
       getMessage: async () => undefined,
       shouldIgnoreJid: () => false,
       linkPreviewImageThumbnailWidth: 0,
       transactionOpts: {
-        maxCommitRetries: 5,
-        delayBetweenTriesMs: 3000
+        maxCommitRetries: phoneNumber ? 10 : 5,
+        delayBetweenTriesMs: phoneNumber ? 5000 : 3000
       },
       patchMessageBeforeSending: (message) => {
         const requiresPatch = !!(
@@ -361,18 +444,36 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
       logger: require('pino')({ level: 'error' })
     }) as BaileysClient;
 
-    // Adiciona handler de erro do WebSocket
+    // Adiciona handler de erro do WebSocket com retry
     if ((wbot as any).ws) {
       const ws = (wbot as any).ws;
       
-      ws.on('error', (err: Error) => {
+      ws.on('error', async (err: Error) => {
         baseLogger.error(`WebSocket error for ${whatsapp.name}: ${err.message}`);
-        // Não desconecta aqui, deixa o handler de connection.update lidar com isso
+        
+        // Se estiver em modo número, tentar reconectar
+        if (phoneNumber) {
+          baseLogger.info(`Tentando reconectar WebSocket para ${whatsapp.name}`);
+          try {
+            await safeReconnect(wbot, whatsapp);
+          } catch (reconnectErr) {
+            baseLogger.error(`Erro ao reconectar WebSocket: ${reconnectErr}`);
+          }
+        }
       });
 
-      ws.on('close', (code: number, reason: string) => {
+      ws.on('close', async (code: number, reason: string) => {
         baseLogger.info(`WebSocket closed for ${whatsapp.name} (code: ${code}, reason: ${reason})`);
-        // Não desconecta aqui, deixa o handler de connection.update lidar com isso
+        
+        // Se estiver em modo número e o código for 1006, tentar reconectar
+        if (phoneNumber && code === 1006) {
+          baseLogger.info(`Tentando reconectar após fechamento inesperado do WebSocket`);
+          try {
+            await safeReconnect(wbot, whatsapp);
+          } catch (reconnectErr) {
+            baseLogger.error(`Erro ao reconectar após fechamento: ${reconnectErr}`);
+          }
+        }
       });
 
       ws.on('ping', () => {
@@ -426,6 +527,12 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
     wbot.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
       
+      // Se estiver usando número, ignorar QR codes
+      if (phoneNumber && qr) {
+        baseLogger.debug(`QR code recebido durante modo número - ignorando`);
+        return;
+      }
+      
       // Update connection state
       (wbot as any).connection = connection;
       
@@ -448,27 +555,12 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
         
         if (shouldReconnect) {
           baseLogger.info(`Session ${whatsapp.name} disconnected with status ${statusCode}, attempting to reconnect...`);
-          // Limpar estado atual
-          (wbot as any).ws = undefined;
-          (wbot as any).connection = 'close';
           
-          // Tentar reconectar
-          const newRetries = (whatsapp.retries || 0) + 1;
-          await whatsapp.update({ retries: newRetries });
-          
-          if (newRetries <= MAX_RECONNECT_ATTEMPTS) {
-            const retryDelay = Math.min(1000 * Math.pow(2, newRetries), 30000); // Max 30 seconds
-            baseLogger.info(`Scheduling reconnection attempt ${newRetries}/${MAX_RECONNECT_ATTEMPTS} in ${retryDelay}ms`);
-            
-            const timeout = setTimeout(async () => {
-              try {
-                reconnectionTimeouts.delete(whatsapp.id);
-              } catch (err) {
-                baseLogger.error(`Reconnection attempt ${newRetries} failed: ${err}`);
-              }
-            }, retryDelay);
-            
-            reconnectionTimeouts.set(whatsapp.id, timeout);
+          // Tentar reconectar usando a nova função segura
+          try {
+            await safeReconnect(wbot, whatsapp);
+          } catch (err) {
+            baseLogger.error(`Erro durante reconexão após desconexão: ${err}`);
           }
         } else {
           baseLogger.info(`Session ${whatsapp.name} logged out, not attempting to reconnect`);
@@ -666,6 +758,127 @@ export const initBaileys = async (whatsapp: Whatsapp): Promise<BaileysClient> =>
     
     // Remove from initializing set after successful initialization
     initializingSession.delete(whatsapp.id);
+
+    // Se phoneNumber estiver presente, implemente o fluxo de pairing code
+    if (phoneNumber) {
+      baseLogger.info(`Iniciando autenticação via número: ${phoneNumber}`);
+      
+      // Aguardar a conexão estar pronta antes de tentar o pairing
+      const waitForConnection = async () => {
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts) {
+          try {
+            baseLogger.debug(`Tentativa ${attempts + 1} de aguardar conexão para pairing...`);
+            
+            await new Promise<void>((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('Timeout aguardando conexão'));
+              }, 30000);
+
+              const checkConnection = () => {
+                if ((wbot as any).connection === 'open' && (wbot as any).ws) {
+                  clearTimeout(timeout);
+                  resolve();
+                } else if ((wbot as any).connection === 'close') {
+                  clearTimeout(timeout);
+                  reject(new Error('Conexão fechada antes do pairing'));
+                } else {
+                  setTimeout(checkConnection, 1000);
+                }
+              };
+
+              checkConnection();
+            });
+            
+            // Se chegou aqui, a conexão está pronta
+            baseLogger.debug(`Conexão pronta para pairing na tentativa ${attempts + 1}`);
+            return;
+            
+          } catch (err) {
+            attempts++;
+            baseLogger.warn(`Falha na tentativa ${attempts} de aguardar conexão: ${err.message}`);
+            
+            if (attempts < maxAttempts) {
+              baseLogger.info(`Tentando reconectar antes da próxima tentativa...`);
+              try {
+                await safeReconnect(wbot, whatsapp);
+                // Aguardar um momento após a reconexão
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              } catch (reconnectErr) {
+                baseLogger.error(`Erro ao reconectar: ${reconnectErr}`);
+              }
+            }
+          }
+        }
+        
+        throw new Error(`Falha em todas as ${maxAttempts} tentativas de estabelecer conexão`);
+      };
+
+      try {
+        await waitForConnection();
+        baseLogger.debug(`Conexão estabelecida com sucesso para pairing`);
+        
+        // Pequeno delay para garantir estabilidade
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        baseLogger.debug(`Estado da conexão antes do pairing: ${(wbot as any).connection}`);
+        baseLogger.debug(`WebSocket status antes do pairing: ${(wbot as any).ws ? 'disponível' : 'indisponível'}`);
+        
+        if (typeof wbot.requestPairingCode === 'function') {
+          try {
+            baseLogger.debug(`Iniciando requestPairingCode para ${whatsapp.name}`);
+            baseLogger.debug(`Tentando gerar pairing code para número: ${phoneNumber}`);
+            
+            const { pairingCode } = await wbot.requestPairingCode(phoneNumber);
+            
+            baseLogger.info(`Pairing code gerado com sucesso para ${whatsapp.name}: ${pairingCode}`);
+            baseLogger.debug(`Estado da conexão após gerar pairing code: ${(wbot as any).connection}`);
+            baseLogger.debug(`WebSocket status após gerar pairing code: ${(wbot as any).ws ? 'disponível' : 'indisponível'}`);
+            
+            // Emitir o pairing code para o frontend via websocket
+            const io = require('../libs/socket').getIO();
+            io.emit(`${whatsapp.tenantId}:pairingCode`, {
+              whatsappId: whatsapp.id,
+              pairingCode
+            });
+            
+            baseLogger.debug(`Pairing code enviado para o frontend via WebSocket`);
+          } catch (err) {
+            baseLogger.error(`Erro detalhado ao gerar pairing code para ${whatsapp.name}:`, {
+              error: err,
+              errorMessage: err.message,
+              errorStack: err.stack,
+              connectionState: (wbot as any).connection,
+              wsStatus: (wbot as any).ws ? 'disponível' : 'indisponível',
+              phoneNumber: phoneNumber
+            });
+            
+            // Verificar se o erro é específico de conexão
+            if (err.message.includes('Connection')) {
+              baseLogger.error(`Erro de conexão durante pairing: ${err.message}`);
+              baseLogger.debug(`Estado da conexão no momento do erro: ${(wbot as any).connection}`);
+              baseLogger.debug(`WebSocket status no momento do erro: ${(wbot as any).ws ? 'disponível' : 'indisponível'}`);
+            }
+            
+            // Verificar se o erro é específico de autenticação
+            if (err.message.includes('auth') || err.message.includes('401')) {
+              baseLogger.error(`Erro de autenticação durante pairing: ${err.message}`);
+            }
+          }
+        } else {
+          baseLogger.error('requestPairingCode não está disponível nesta versão do Baileys.', {
+            baileysVersion: require('@whiskeysockets/baileys/package.json').version,
+            whatsappName: whatsapp.name,
+            connectionState: (wbot as any).connection
+          });
+        }
+      } catch (err) {
+        baseLogger.error(`Erro ao aguardar conexão para pairing: ${err.message}`);
+        throw err;
+      }
+    }
 
     return wbot;
   } catch (err) {

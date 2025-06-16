@@ -159,4 +159,43 @@ export const remove = async (req: Request, res: Response): Promise<Response> => 
   return res.status(200).json({ message: "Session disconnected." });
 };
 
-export default { store, remove, update };
+export const connectByNumber = async (req: UserRequest, res: Response): Promise<Response> => {
+  const { whatsappId } = req.params;
+  const { number } = req.body;
+  const { tenantId } = req.user;
+
+  const whatsapp = await Whatsapp.findOne({
+    where: { id: whatsappId, tenantId }
+  });
+
+  if (!whatsapp) {
+    throw new AppError("No WhatsApp instance found with this ID.");
+  }
+
+  // Limpa o QR code e atualiza o status antes de iniciar a nova sessão
+  await whatsapp.update({
+    status: 'CONNECTING',
+    qrcode: '',
+    retries: 0
+  });
+
+  // Notifica o frontend sobre a mudança de status
+  const io = getIO();
+  io.emit(`${tenantId}:whatsappSession`, {
+    action: "update",
+    session: {
+      id: whatsapp.id,
+      name: whatsapp.name,
+      status: 'CONNECTING',
+      qrcode: '',
+      isDefault: whatsapp.isDefault,
+      tenantId: whatsapp.tenantId
+    }
+  });
+
+  await StartWhatsAppSession(whatsapp, Number(tenantId), number);
+
+  return res.status(200).json({ message: "Iniciando sessão via número." });
+};
+
+export default { store, remove, update, connectByNumber };

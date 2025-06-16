@@ -163,6 +163,7 @@
       :abrirModalQR.sync="abrirModalQR"
       :channel="cDadosWhatsappSelecionado"
       @gerar-novo-qrcode="v => handleRequestNewQrCode(v, 'btn-qrCode')"
+      @conectar-por-numero="handleConnectByNumber"
     />
     <ModalWhatsapp
       :modalWhatsapp.sync="modalWhatsapp"
@@ -588,6 +589,27 @@ export default {
         })
       } catch (error) {
         this.$notificarErro('Não foi possível encerrar a sessão', error)
+      }
+    },
+    async handleConnectByNumber ({ channel, number }) {
+      this.loading = true
+      try {
+        await request({
+          url: `/whatsappsession/${channel.id}/connect-by-number`,
+          method: 'post',
+          data: { number }
+        })
+        this.$q.notify({
+          type: 'positive',
+          message: 'Iniciando conexão via número...'
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao conectar via número.'
+        })
+      } finally {
+        this.loading = false
       }
     }
   },

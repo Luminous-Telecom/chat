@@ -19,6 +19,7 @@ interface WhatsappData {
   fbPageId?: string;
   farewellMessage?: string;
   chatFlowId?: number;
+  connectionNumber?: string;
 }
 
 interface Request {

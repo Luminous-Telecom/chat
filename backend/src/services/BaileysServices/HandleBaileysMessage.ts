@@ -25,13 +25,9 @@ const HandleBaileysMessage = async (
   return new Promise<void>((resolve, reject) => {
     (async () => {
       try {
-        // Logs iniciais para debug
-        logger.debug(`[HandleBaileysMessage] Processing message - fromMe: ${msg.key.fromMe}, messageType: ${msg.message ? Object.keys(msg.message)[0] : 'undefined'}`);
-        logger.debug(`[HandleBaileysMessage] Message IDs - remoteJid: ${msg.key.remoteJid}, participant: ${msg.key.participant}`);
 
         // Verificar se mensagem é válida
         if (!msg.key.fromMe && !msg.message) {
-          logger.debug(`[HandleBaileysMessage] Skipping message - no content and not from me`);
           resolve();
           return;
         }
@@ -49,7 +45,6 @@ const HandleBaileysMessage = async (
         ];
         
         if (ignoredMessageTypes.includes(messageType)) {
-          logger.debug(`[HandleBaileysMessage] Ignoring ${messageType} type message`);
           resolve();
           return;
         }
@@ -60,7 +55,6 @@ const HandleBaileysMessage = async (
         // Verificar se é mensagem de canal/newsletter do WhatsApp
         const remoteJid = msg.key.remoteJid || '';
         if (remoteJid.includes('@newsletter') || remoteJid.includes('newsletter')) {
-          logger.debug(`[HandleBaileysMessage] Ignoring WhatsApp channel/newsletter message from: ${remoteJid}`);
           resolve();
           return;
         }
@@ -72,7 +66,6 @@ const HandleBaileysMessage = async (
 
         const isGroup = msg.key.remoteJid?.endsWith('@g.us');
         if (Settingdb?.value === 'enabled' && isGroup) {
-          logger.debug(`[HandleBaileysMessage] Ignoring group message`);
           resolve();
           return;
         }
@@ -93,16 +86,11 @@ const HandleBaileysMessage = async (
 
         // Processar contato
         const { msgContact, groupContact } = await processMessageContact(msg, tenantId);
-        
-        // Log do contato processado
-        logger.debug(`[HandleBaileysMessage] Processed contact - Number: ${msgContact.number}, Name: ${msgContact.name}, isGroup: ${msgContact.isGroup}`);
-        
+    
         // Criar/buscar ticket
         const unreadMessages = msg.key.fromMe ? 0 : 1;
         const contact = await VerifyContact(msgContact, tenantId);
-        
-        logger.debug(`[HandleBaileysMessage] Verified contact in DB - ID: ${contact.id}, Name: ${contact.name}, Number: ${contact.number}`);
-        
+
         const ticket = await FindOrCreateTicketService({
           contact,
           whatsappId: wbot.id,
@@ -191,7 +179,6 @@ const processMessageContact = async (msg: proto.IWebMessageInfo, tenantId: numbe
     contactJid = msg.key.remoteJid || '';
     contactNumber = contactJid.split('@')[0].replace(/\D/g, '');
     
-    logger.debug(`[processMessageContact] FromMe=true - Contact JID: ${contactJid}, Number: ${contactNumber}`);
   } else {
     // Mensagem recebida - o contato é o remetente
     if (isGroup) {
@@ -199,13 +186,11 @@ const processMessageContact = async (msg: proto.IWebMessageInfo, tenantId: numbe
       contactJid = msg.key.participant || msg.key.remoteJid || '';
       contactNumber = contactJid.split('@')[0].replace(/\D/g, '');
       
-      logger.debug(`[processMessageContact] FromMe=false, Group - Participant JID: ${contactJid}, Number: ${contactNumber}`);
     } else {
       // Em conversas individuais, o remetente é o remoteJid
       contactJid = msg.key.remoteJid || '';
       contactNumber = contactJid.split('@')[0].replace(/\D/g, '');
       
-      logger.debug(`[processMessageContact] FromMe=false, Individual - Remote JID: ${contactJid}, Number: ${contactNumber}`);
     }
   }
 
@@ -233,7 +218,6 @@ const processMessageContact = async (msg: proto.IWebMessageInfo, tenantId: numbe
   // Para mensagens fromMe=true, o pushName é do remetente (eu), não do destinatário
   if (msg.pushName && foundContact.name !== msg.pushName && !isGroup && !msg.key.fromMe) {
     await foundContact.update({ name: msg.pushName });
-    logger.debug(`[processMessageContact] Updated contact name from ${foundContact.name} to ${msg.pushName}`);
   }
 
   // Criar objeto de contato compatível
@@ -272,11 +256,8 @@ const processMessageContact = async (msg: proto.IWebMessageInfo, tenantId: numbe
       });
       
       groupContact = foundGroupContact;
-      logger.debug(`[processMessageContact] Group contact - ID: ${groupContact.id}, Number: ${groupContact.number}`);
     }
   }
-
-  logger.debug(`[processMessageContact] Final result - Contact: ${msgContact.number}, Group: ${groupContact?.number || 'none'}`);
 
   return { msgContact, groupContact };
 };
@@ -286,14 +267,10 @@ const processMessage = async (msg: proto.IWebMessageInfo, ticket: any, contact: 
     const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
     const messageType = Object.keys(msg.message || {})[0];
     
-    logger.info(`[HandleBaileysMessage] Processing message type: ${messageType}, hasMedia: ${adaptedMessage.hasMedia}, ticketId: ${ticket.id}`);
-    
     let message;
     if (adaptedMessage.hasMedia) {
-      logger.info(`[HandleBaileysMessage] Processing as media message for ticket ${ticket.id}`);
       message = await VerifyMediaMessage(adaptedMessage, ticket, contact);
     } else {
-      logger.info(`[HandleBaileysMessage] Processing as text message for ticket ${ticket.id}`);
       message = await VerifyMessage(adaptedMessage, ticket, contact);
     }
 
@@ -318,9 +295,6 @@ const handleMessageReadReceipt = async (
   wbot: BaileysClient
 ): Promise<void> => {
   try {
-    // Removida a marcação automática de mensagens como lidas
-    // para permitir que o usuário controle manualmente
-    logger.info(`[HandleBaileysMessage] Read receipt received but automatic marking disabled for message ${message.id}`);
   } catch (err) {
     logger.error(`[HandleBaileysMessage] Error processing read receipt: ${err}`);
   }
@@ -352,8 +326,6 @@ const handleExternalWebhook = async (msg: proto.IWebMessageInfo, ticket: any): P
         type: payload.type,
         payload
       });
-      
-      logger.debug(`[HandleBaileysMessage] Webhook queued for ticket ${ticket.id}`);
     }
   } catch (err) {
     logger.error(`[HandleBaileysMessage] Webhook error: ${err}`);

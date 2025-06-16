@@ -50,6 +50,21 @@
 
           <div
             class="col-12 q-mt-md"
+            v-if="whatsapp.type === 'whatsapp'"
+          >
+            <c-input
+              outlined
+              dense
+              label="Número para Conexão"
+              v-model="whatsapp.connectionNumber"
+              hint="Número para conexão direta via API (ex: 5511999999999)"
+              mask="(##) #####-####"
+              unmasked-value
+            />
+          </div>
+
+          <div
+            class="col-12 q-mt-md"
             v-if="whatsapp.type === 'telegram'"
           >
             <c-input
@@ -245,7 +260,8 @@ export default {
         instagramKey: '',
         tokenAPI: '',
         type: 'whatsapp',
-        farewellMessage: ''
+        farewellMessage: '',
+        connectionNumber: ''
       },
       optionsWhatsappsTypes: [
         { label: 'Whatsapp', value: 'whatsapp' },

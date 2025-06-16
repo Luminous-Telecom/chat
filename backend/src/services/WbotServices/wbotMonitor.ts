@@ -249,9 +249,6 @@ const runMonitor = async (): Promise<void> => {
 
 // Inicia o monitor
 const startSingleMonitor = (): void => {
-  logger.info(`🎯 SINGLE_MONITOR: Starting unified monitor (${MONITOR_CONFIG.CHECK_INTERVAL}ms)`);
-  logger.warn(`⚠️  SINGLE_MONITOR: Ensure NO other monitoring code is active!`);
-  
   // Aguarda inicialização
   setTimeout(() => {
     runMonitor();

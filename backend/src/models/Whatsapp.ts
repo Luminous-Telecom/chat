@@ -153,6 +153,11 @@ class Whatsapp extends Model<Whatsapp> {
   @Default(null)
   @AllowNull
   @Column(DataType.TEXT)
+  connectionNumber: string;
+
+  @Default(null)
+  @AllowNull
+  @Column(DataType.TEXT)
   farewellMessage: string;
 
   @Column(DataType.VIRTUAL)

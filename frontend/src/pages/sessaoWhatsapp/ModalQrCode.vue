@@ -29,40 +29,86 @@
 
       <!-- QR Code Section -->
       <q-card-section class="qr-main-section">
-        <div v-if="cQrcode" class="qr-content-wrapper">
-          <!-- Logo above QR Code -->
-          <div class="logo-container">
-            <div class="logo-badge">
-              <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-professional" />
+        <div v-if="!showNumberInput">
+          <div v-if="cQrcode" class="qr-content-wrapper">
+            <!-- Logo above QR Code -->
+            <div class="logo-container">
+              <div class="logo-badge">
+                <img :src="baileysLogo" alt="Baileys Logo" class="baileys-logo-professional" />
+              </div>
+            </div>
+
+             <!-- QR Code -->
+            <div class="qr-code-container">
+              <div class="qr-frame">
+                <qrcode-vue
+                  :value="cQrcode"
+                  :size="160"
+                  level="M"
+                  render-as="svg"
+                  class="qr-code-professional" />
+              </div>
+              <div class="qr-scan-animation"></div>
             </div>
           </div>
 
-           <!-- QR Code -->
-          <div class="qr-code-container">
-            <div class="qr-frame">
-              <qrcode-vue
-                :value="cQrcode"
-                :size="160"
-                level="M"
-                render-as="svg"
-                class="qr-code-professional" />
+           <div v-else class="loading-state">
+            <div class="loading-animation">
+              <div class="loading-spinner"></div>
+              <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
             </div>
-            <div class="qr-scan-animation"></div>
+            <div class="loading-text">
+              Gerando QR Code...
+            </div>
           </div>
+          <!-- Botão para conectar por número -->
+          <q-btn
+            flat
+            color="primary"
+            class="full-width q-mt-md"
+            @click="showNumberInput = true"
+          >
+            Conectar com número de telefone
+          </q-btn>
         </div>
-
-         <div v-else class="loading-state">
-          <div class="loading-animation">
-            <div class="loading-spinner"></div>
-            <div class="loading-dots">
-              <span></span>
-              <span></span>
-              <span></span>
+        <div v-else class="q-pa-md flex flex-center column">
+          <div class="text-h5 text-center q-mb-md">Insira o número de telefone</div>
+          <div class="text-subtitle2 text-center q-mb-lg">Selecione o país e insira seu número de telefone.</div>
+          <q-select
+            outlined
+            dense
+            v-model="selectedCountry"
+            :options="countryOptions"
+            option-label="label"
+            option-value="ddi"
+            label="Selecionar país"
+            emit-value
+            map-options
+            class="q-mb-md"
+          />
+          <q-input
+            outlined
+            dense
+            v-model="phoneNumber"
+            label="Número de telefone"
+            type="tel"
+            class="q-mb-md"
+          />
+          <template v-if="pairingCode">
+            <div class="q-mb-md text-center">
+              <div class="text-h6">Código de pareamento:</div>
+              <div class="text-h4 text-bold text-primary">{{ pairingCode }}</div>
+              <div class="text-caption">Digite este código no WhatsApp Web para conectar</div>
             </div>
-          </div>
-          <div class="loading-text">
-            Gerando QR Code...
-          </div>
+          </template>
+          <q-btn color="primary" class="full-width q-mb-md" @click="conectarPorNumero">Avançar</q-btn>
+          <q-btn flat color="primary" class="full-width" @click="showNumberInput = false">
+            Conectar com o QR code <q-icon name="chevron_right" />
+          </q-btn>
         </div>
       </q-card-section>
 
@@ -105,6 +151,17 @@
 import QrcodeVue from 'qrcode.vue'
 import baileysLogo from 'assets/baileys.png'
 
+const countryOptions = [
+  { label: 'Brasil (+55)', ddi: '55' },
+  { label: 'Portugal (+351)', ddi: '351' },
+  { label: 'Estados Unidos (+1)', ddi: '1' },
+  { label: 'Argentina (+54)', ddi: '54' },
+  { label: 'Espanha (+34)', ddi: '34' },
+  { label: 'Alemanha (+49)', ddi: '49' },
+  { label: 'Reino Unido (+44)', ddi: '44' }
+  // ...adicione mais países conforme necessário
+]
+
 export default {
   name: 'ModalQrCode',
   components: {
@@ -143,7 +200,13 @@ export default {
   },
   data () {
     return {
-      baileysLogo
+      baileysLogo,
+      showNumberInput: false,
+      selectedCountry: '55',
+      phoneNumber: '',
+      countryOptions,
+      connectionNumber: '',
+      pairingCode: ''
     }
   },
   computed: {
@@ -154,10 +217,18 @@ export default {
   methods: {
     solicitarQrCode () {
       this.$emit('gerar-novo-qrcode', this.channel)
-      // Não fecha o modal para permitir ver o novo QR code sendo gerado
     },
     fecharModalQrModal () {
       this.$emit('update:abrirModalQR', false)
+    },
+    conectarPorNumero () {
+      if (!this.selectedCountry || !this.phoneNumber) {
+        this.$q.notify({ type: 'negative', message: 'Preencha o país e o número!' })
+        return
+      }
+      const numeroCompleto = this.selectedCountry + this.phoneNumber.replace(/\D/g, '')
+      this.$emit('conectar-por-numero', { channel: this.channel, number: numeroCompleto })
+      this.fecharModalQrModal()
     }
   },
   mounted () {
@@ -179,6 +250,19 @@ export default {
         this.fecharModalQrModal()
       }
     })
+
+    // Listener para pairing code via WebSocket
+    const usuario = JSON.parse(localStorage.getItem('usuario'))
+    if (usuario && usuario.tenantId) {
+      const socket = window.socket || this.$root.$socket || window.$nuxt?.$socket
+      if (socket) {
+        socket.on(`${usuario.tenantId}:pairingCode`, ({ whatsappId, pairingCode }) => {
+          if (this.channel && this.channel.id === whatsappId) {
+            this.pairingCode = pairingCode
+          }
+        })
+      }
+    }
   },
   beforeDestroy () {
     // Remove os listeners para evitar memory leaks
