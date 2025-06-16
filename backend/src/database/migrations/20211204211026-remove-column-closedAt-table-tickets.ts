@@ -10,8 +10,8 @@ module.exports = {
       queryInterface.addColumn("Tickets", "closedAt", {
         type: DataTypes.DATE(),
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
-  }
+  },
 };

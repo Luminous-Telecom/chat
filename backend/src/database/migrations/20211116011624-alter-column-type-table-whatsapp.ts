@@ -5,7 +5,7 @@ module.exports = {
     return queryInterface.changeColumn("Whatsapps", "type", {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "whatsapp"
+      defaultValue: "whatsapp",
     });
   },
 
@@ -13,7 +13,7 @@ module.exports = {
     return queryInterface.changeColumn("Whatsapps", "type", {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "w"
+      defaultValue: "w",
     });
-  }
+  },
 };

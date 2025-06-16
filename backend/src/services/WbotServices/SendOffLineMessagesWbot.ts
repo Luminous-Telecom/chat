@@ -1,5 +1,6 @@
 import { join } from "path";
-import { BaileysClient as Client } from '../../types/baileys';
+import fs from "fs";
+import { BaileysClient as Client } from "../../types/baileys";
 import Message from "../../models/Message";
 import MessagesOffLine from "../../models/MessageOffLine";
 import Ticket from "../../models/Ticket";
@@ -7,7 +8,6 @@ import { logger } from "../../utils/logger";
 import SendWhatsAppMessage from "./SendWhatsAppMessage";
 import { getIO } from "../../libs/socket";
 import UserMessagesLog from "../../models/UserMessagesLog";
-import fs from "fs";
 
 const SendOffLineMessagesWbot = async (
   wbot: Client,
@@ -20,15 +20,15 @@ const SendOffLineMessagesWbot = async (
         model: Ticket,
         as: "ticket",
         where: { tenantId },
-        include: ["contact"]
+        include: ["contact"],
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
-      }
+        include: ["contact"],
+      },
     ],
-    order: [["updatedAt", "ASC"]]
+    order: [["updatedAt", "ASC"]],
   });
   const io = getIO();
   await Promise.all(
@@ -42,8 +42,10 @@ const SendOffLineMessagesWbot = async (
             message.mediaName
           );
           const buffer = await fs.promises.readFile(mediaPath);
-          const mimetype = message.mediaType === "image" ? "image/jpeg" : "audio/mpeg";
-          const caption = message.mediaType === "image" ? message.body : undefined;
+          const mimetype =
+            message.mediaType === "image" ? "image/jpeg" : "audio/mpeg";
+          const caption =
+            message.mediaType === "image" ? message.body : undefined;
           const { number } = message.ticket.contact;
           const sendMessage = await wbot.sendMessage(
             `${number}@${message.ticket.isGroup ? "g" : "c"}.us`,
@@ -55,7 +57,7 @@ const SendOffLineMessagesWbot = async (
               await UserMessagesLog.create({
                 messageId: sendMessage.id.id,
                 userId: message.userId,
-                ticketId: message.ticketId
+                ticketId: message.ticketId,
               });
             }
           } catch (error) {
@@ -70,19 +72,19 @@ const SendOffLineMessagesWbot = async (
           );
         }
         await MessagesOffLine.destroy({ where: { id: message.id } });
-        
+
         // Emitir para o canal correto que o frontend está escutando
         io.emit(`tenant:${tenantId}:appMessage`, {
           action: "delete",
-          message
+          message,
         });
-        
+
         // Também emitir para o canal antigo para compatibilidade
         io.to(`${tenantId}-${message.ticketId.toString()}`).emit(
           `${tenantId}-appMessage`,
           {
             action: "delete",
-            message
+            message,
           }
         );
       } catch (error) {

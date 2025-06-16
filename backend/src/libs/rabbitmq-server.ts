@@ -5,10 +5,11 @@ import { sleepRandomTime } from "../utils/sleepRandomTime";
 
 export default class RabbitmqServer {
   private conn: any; // Temporariamente usando any para contornar o problema de tipagem
+
   private channel: Channel;
 
   // eslint-disable-next-line prettier/prettier
-  constructor(private uri: string) { }
+  constructor(private uri: string) {}
 
   async start(): Promise<void> {
     this.conn = await connect(this.uri);
@@ -27,7 +28,7 @@ export default class RabbitmqServer {
   async publishInQueue(queue: string, message: string) {
     await this.channel.assertQueue(queue, { durable: true });
     return this.channel.sendToQueue(queue, Buffer.from(message), {
-      persistent: true
+      persistent: true,
     });
   }
 
@@ -37,7 +38,7 @@ export default class RabbitmqServer {
     message: string
   ): Promise<boolean> {
     return this.channel.publish(exchange, routingKey, Buffer.from(message), {
-      persistent: true
+      persistent: true,
     });
   }
 
@@ -54,7 +55,7 @@ export default class RabbitmqServer {
         // delay para processamento da mensagem
         await sleepRandomTime({
           minMilliseconds: Number(process.env.MIN_SLEEP_INTERVAL || 500),
-          maxMilliseconds: Number(process.env.MAX_SLEEP_INTERVAL || 2000)
+          maxMilliseconds: Number(process.env.MAX_SLEEP_INTERVAL || 2000),
         });
         this.channel.ack(message);
         return;

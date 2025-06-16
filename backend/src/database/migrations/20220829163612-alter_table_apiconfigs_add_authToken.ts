@@ -6,14 +6,14 @@ module.exports = {
       queryInterface.addColumn("ApiConfigs", "authToken", {
         type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("ApiConfigs", "authToken")
+      queryInterface.removeColumn("ApiConfigs", "authToken"),
     ]);
-  }
+  },
 };

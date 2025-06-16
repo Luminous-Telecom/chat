@@ -19,8 +19,8 @@ export default {
     attempts: 50,
     backoff: {
       type: "fixed",
-      delay: 60000 * 3 // 3 min
-    }
+      delay: 60000 * 3, // 3 min
+    },
   },
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async handle({ data }: HandlerPayload) {
@@ -37,7 +37,7 @@ export default {
           ack: data.payload.ack,
           messageId: data.payload.messageId,
           externalKey: data.payload.externalKey,
-          type: data.type
+          type: data.type,
         };
       }
 
@@ -48,7 +48,7 @@ export default {
           messageId: data.payload.messageId,
           ticketId: data.payload.ticketId,
           externalKey: data.payload.externalKey,
-          type: data.type
+          type: data.type,
         };
       }
 
@@ -59,13 +59,13 @@ export default {
           status: data.payload.status,
           qrcode: data.payload.qrcode,
           timestamp: data.payload.timestamp,
-          type: data.type
+          type: data.type,
         };
       }
 
       if (data.payload.authToken) {
         await axios.post(data.url, payload, {
-          headers: { authorization: data.payload.authToken }
+          headers: { authorization: data.payload.authToken },
         });
       } else {
         await axios.post(data.url, payload);
@@ -76,7 +76,7 @@ export default {
       );
       return {
         data,
-        payload
+        payload,
       };
     } catch (error) {
       logger.error(`Error send message api: ${error}`);
@@ -85,5 +85,5 @@ export default {
       }
       throw new Error(error);
     }
-  }
+  },
 };

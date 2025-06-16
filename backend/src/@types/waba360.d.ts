@@ -12,7 +12,6 @@ interface messageId {
 
 interface WabaResponse {
   messages: messageId[];
-
 }
 
 interface WabaMessageDocument {
@@ -37,13 +36,13 @@ interface WabaMessage {
   recipient_type: "individual" | "group";
   to: string;
   type:
-  | "text"
-  | "voice"
-  | "template"
-  | "image"
-  | "video"
-  | "audio"
-  | "document";
+    | "text"
+    | "voice"
+    | "template"
+    | "image"
+    | "video"
+    | "audio"
+    | "document";
   text?: {
     body: string;
   };

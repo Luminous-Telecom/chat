@@ -22,7 +22,7 @@ interface Response {
 const ListMessagesService = async ({
   pageNumber = "1",
   ticketId,
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
   const ticket = await ShowTicketService({ id: ticketId, tenantId });
 
@@ -42,17 +42,21 @@ const ListMessagesService = async ({
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
+        include: ["contact"],
       },
       {
         model: Ticket,
-        where: {queueId: ticket.queueId, contactId: ticket.contactId, whatsappId: ticket.whatsappId},
-        required: true
-      }
+        where: {
+          queueId: ticket.queueId,
+          contactId: ticket.contactId,
+          whatsappId: ticket.whatsappId,
+        },
+        required: true,
+      },
     ],
     offset,
     // logging: console.log,
-    order: [["createdAt", "DESC"]]
+    order: [["createdAt", "DESC"]],
     // order: [
     //   Sequelize.literal(
     //     'coalesce(to_timestamp("Message"."timestamp") , "Message"."createdAt") desc'
@@ -69,10 +73,10 @@ const ListMessagesService = async ({
         {
           model: Message,
           as: "quotedMsg",
-          include: ["contact"]
-        }
+          include: ["contact"],
+        },
       ],
-      order: [["createdAt", "DESC"]]
+      order: [["createdAt", "DESC"]],
     });
     messagesOffLine = rows;
   }
@@ -84,7 +88,7 @@ const ListMessagesService = async ({
     messagesOffLine,
     ticket,
     count,
-    hasMore
+    hasMore,
   };
 };
 

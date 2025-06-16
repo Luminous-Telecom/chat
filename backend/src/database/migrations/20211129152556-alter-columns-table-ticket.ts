@@ -6,18 +6,18 @@ module.exports = {
       queryInterface.addColumn("Tickets", "chatFlowId", {
         type: DataTypes.INTEGER,
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       }),
       queryInterface.addColumn("Tickets", "stepChatFlow", {
         type: DataTypes.STRING,
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       }),
       queryInterface.addColumn("Tickets", "closedAt", {
         type: DataTypes.DATE,
         defaultValue: null,
-        allowNull: true
-      })
+        allowNull: true,
+      }),
     ]);
   },
 
@@ -25,7 +25,7 @@ module.exports = {
     return Promise.all([
       queryInterface.removeColumn("Tickets", "chatFlowId"),
       queryInterface.removeColumn("Tickets", "stepChatFlow"),
-      queryInterface.removeColumn("Tickets", "closedAt")
+      queryInterface.removeColumn("Tickets", "closedAt"),
     ]);
-  }
+  },
 };

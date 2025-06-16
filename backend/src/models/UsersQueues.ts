@@ -7,7 +7,7 @@ import {
   PrimaryKey,
   ForeignKey,
   BelongsTo,
-  AutoIncrement
+  AutoIncrement,
 } from "sequelize-typescript";
 import User from "./User";
 import Queue from "./Queue";

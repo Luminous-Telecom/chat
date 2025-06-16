@@ -7,12 +7,12 @@ module.exports = {
       allowNull: true,
       defaultValue: null,
       validate: {
-        isUrl: true
-      }
+        isUrl: true,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("ApiMessages", "mediaUrl");
-  }
+  },
 };

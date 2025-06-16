@@ -7,40 +7,40 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       status: {
         type: DataTypes.STRING,
         defaultValue: "pending",
-        allowNull: false
+        allowNull: false,
       },
       lastMessage: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
       },
       contactId: {
         type: DataTypes.INTEGER,
         references: { model: "Contacts", key: "id" },
         onUpdate: "CASCADE",
-        onDelete: "CASCADE"
+        onDelete: "CASCADE",
       },
       userId: {
         type: DataTypes.INTEGER,
         references: { model: "Users", key: "id" },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL"
+        onDelete: "SET NULL",
       },
       createdAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("Tickets");
-  }
+  },
 };

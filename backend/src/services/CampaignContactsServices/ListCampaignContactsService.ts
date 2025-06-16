@@ -8,21 +8,21 @@ interface Request {
 
 const ListCampaignContactsService = async ({
   campaignId,
-  tenantId
+  tenantId,
 }: Request): Promise<Contact[]> => {
   const contactsData = await Contact.findAll({
     where: {
-      tenantId
+      tenantId,
     },
     include: [
       {
         model: CampaignContacts,
         as: "campaignContacts",
         where: { campaignId },
-        required: true
-      }
+        required: true,
+      },
     ],
-    order: [["name", "ASC"]]
+    order: [["name", "ASC"]],
     // logging: console.log
   });
 

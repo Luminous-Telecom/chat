@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 import { join } from "path";
-import { createWriteStream } from "fs";
-import fs from "fs";
+import fs, { createWriteStream } from "fs";
 
 import axios from "axios";
 import { MessageSyncMessageWrapper } from "instagram_mqtt";
@@ -23,7 +22,7 @@ const downloadFile = async (url: any, pathFile: string): Promise<void> => {
   const request = await axios({
     url: url.toString(),
     method: "GET",
-    responseType: "stream"
+    responseType: "stream",
   });
   // const writer = createWriteStream(pathFile);
   await new Promise((resolve, reject) => {
@@ -76,10 +75,10 @@ const VerifyMediaMessage = async (
   }
 
   const filename = `${ticket.id}_${media.id}_${new Date().getTime()}.${ext}`;
-  
+
   const publicDir = join(__dirname, "..", "..", "..", "public");
   const receivedDir = join(publicDir, "received");
-  
+
   // Verificar se os diretórios existem
   try {
     await fs.promises.access(publicDir);
@@ -114,17 +113,17 @@ const VerifyMediaMessage = async (
     mediaType,
     quotedMsgId: "",
     timestamp: new Date().getTime(),
-    status: fromMe ? "sended" : "received"
+    status: fromMe ? "sended" : "received",
   };
 
   await ticket.update({
     lastMessage: ctx.message?.text || ctx.message?.caption || type,
     lastMessageAt: new Date().getTime(),
-    answered: fromMe || false
+    answered: fromMe || false,
   });
   const newMessage = await CreateMessageService({
     messageData,
-    tenantId: ticket.tenantId
+    tenantId: ticket.tenantId,
   });
 
   return newMessage;

@@ -14,7 +14,7 @@ import {
   BelongsToMany,
   ForeignKey,
   BelongsTo,
-  AllowNull
+  AllowNull,
 } from "sequelize-typescript";
 import { hash, compare } from "bcryptjs";
 import Ticket from "./Ticket";

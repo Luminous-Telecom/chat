@@ -47,7 +47,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     pageNumber,
     tenantId,
     profile,
-    userId
+    userId,
   });
 
   return res.json({ contacts, count, hasMore });
@@ -62,7 +62,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     name: Yup.string().required(),
     number: Yup.string()
       .required()
-      .matches(/^\d+$/, "Invalid number format. Only numbers is allowed.")
+      .matches(/^\d+$/, "Invalid number format. Only numbers is allowed."),
   });
 
   try {
@@ -79,7 +79,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     ...newContact,
     number: waNumber.user,
     profilePicUrl,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(contact);
@@ -106,7 +106,7 @@ export const update = async (
     number: Yup.string().matches(
       /^\d+$/,
       "Invalid number format. Only numbers is allowed."
-    )
+    ),
   });
 
   try {
@@ -124,7 +124,7 @@ export const update = async (
   const contact = await UpdateContactService({
     contactData,
     contactId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(contact);
@@ -153,7 +153,7 @@ export const updateContactTags = async (
   const contact = await UpdateContactTagsService({
     tags,
     contactId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(contact);
@@ -170,7 +170,7 @@ export const updateContactWallet = async (
   const contact = await UpdateContactWalletsService({
     wallets,
     contactId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(contact);
@@ -185,8 +185,8 @@ export const syncContacts = async (
     where: {
       tenantId,
       status: "CONNECTED",
-      type: "whatsapp"
-    }
+      type: "whatsapp",
+    },
   });
 
   if (!sessoes.length) {
@@ -248,7 +248,7 @@ export const exportContacts = async (req: Request, res: Response) => {
     where: { tenantId },
     attributes: ["id", "name", "number", "email"],
     order: [["name", "ASC"]],
-    raw: true
+    raw: true,
   });
 
   // Cria um novo workbook e worksheet
@@ -261,7 +261,7 @@ export const exportContacts = async (req: Request, res: Response) => {
   // Gera o arquivo Excel no formato .xlsx
   const excelBuffer = XLSX.write(workbook, {
     bookType: "xlsx",
-    type: "buffer"
+    type: "buffer",
   });
 
   // Define o nome do arquivo

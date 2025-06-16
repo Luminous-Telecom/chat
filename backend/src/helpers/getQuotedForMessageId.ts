@@ -7,8 +7,8 @@ const getQuotedForMessageId = async (
   const message = await Message.findOne({
     where: {
       messageId: String(messageId),
-      tenantId: +tenantId
-    }
+      tenantId: +tenantId,
+    },
   });
   return message;
 };

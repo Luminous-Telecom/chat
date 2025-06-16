@@ -20,7 +20,7 @@ const CreateApiConfigService = async ({
   urlMessageStatus,
   userId,
   authToken,
-  tenantId
+  tenantId,
 }: Request): Promise<ApiConfig> => {
   const { secret } = authConfig;
 
@@ -28,11 +28,11 @@ const CreateApiConfigService = async ({
     {
       tenantId,
       profile: "admin",
-      sessionId
+      sessionId,
     },
     secret,
     {
-      expiresIn: "730d"
+      expiresIn: "730d",
     }
   );
 
@@ -44,7 +44,7 @@ const CreateApiConfigService = async ({
     urlServiceStatus,
     urlMessageStatus,
     userId,
-    tenantId
+    tenantId,
   });
 
   return api;

@@ -34,8 +34,8 @@ export const sendMessageAPI = async (
   const APIConfig = await ApiConfig.findOne({
     where: {
       id: apiId,
-      tenantId
-    }
+      tenantId,
+    },
   });
 
   if (APIConfig?.sessionId !== sessionId) {
@@ -48,7 +48,7 @@ export const sendMessageAPI = async (
     sessionId,
     tenantId,
     apiConfig: APIConfig,
-    media
+    media,
   };
 
   const schema = Yup.object().shape({
@@ -66,10 +66,10 @@ export const sendMessageAPI = async (
         mimetype: Yup.string().required(),
         originalname: Yup.string().required(),
         path: Yup.string().required(),
-        size: Yup.number().required()
+        size: Yup.number().required(),
       }),
     externalKey: Yup.string().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -93,8 +93,8 @@ export const startSession = async (
   const APIConfig = await ApiConfig.findOne({
     where: {
       id: apiId,
-      tenantId
-    }
+      tenantId,
+    },
   });
 
   if (APIConfig?.sessionId !== sessionId) {
@@ -104,7 +104,7 @@ export const startSession = async (
   const whatsapp = await ShowWhatsAppService({
     id: APIConfig.sessionId,
     tenantId: APIConfig.tenantId,
-    isInternal: true
+    isInternal: true,
   });
   try {
     const wbot = getWbot(APIConfig.sessionId);

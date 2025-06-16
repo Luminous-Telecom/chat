@@ -3,7 +3,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 module.exports = {
   up: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("StepsReply", "initialStep")
+      queryInterface.removeColumn("StepsReply", "initialStep"),
     ]);
   },
 
@@ -11,8 +11,8 @@ module.exports = {
     return Promise.all([
       queryInterface.addColumn("StepsReply", "initialStep", {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
-      })
+        defaultValue: false,
+      }),
     ]);
-  }
+  },
 };

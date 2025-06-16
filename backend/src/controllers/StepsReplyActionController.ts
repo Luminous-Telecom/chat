@@ -23,14 +23,14 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const stepsReplyActionData: StepsReplyActionData = {
     ...req.body,
-    userId: req.user.id
+    userId: req.user.id,
   };
 
   const schema = Yup.object().shape({
     stepReplyId: Yup.number().required(),
     words: Yup.number().required(),
     action: Yup.number().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -55,14 +55,14 @@ export const update = async (
   }
   const stepsReplyActionData: StepsReplyActionData = {
     ...req.body,
-    userId: req.user.id
+    userId: req.user.id,
   };
 
   const schema = Yup.object().shape({
     stepReplyId: Yup.number().required(),
     words: Yup.number().required(),
     action: Yup.number().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -74,7 +74,7 @@ export const update = async (
   const { stepsReplyActionId } = req.params;
   const autoReply = await UpdateStepsReplyActionService({
     stepsReplyActionData,
-    stepsReplyActionId
+    stepsReplyActionId,
   });
 
   return res.status(200).json(autoReply);

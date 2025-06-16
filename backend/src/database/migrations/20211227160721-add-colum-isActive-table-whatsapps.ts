@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Whatsapps", "isActive", {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true
-      })
+        defaultValue: true,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Whatsapps", "isActive")]);
-  }
+  },
 };

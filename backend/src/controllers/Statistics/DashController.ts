@@ -34,7 +34,7 @@ const validateQuery = (query: ParsedQs): IndexQuery => {
   return {
     startDate: startDate as string,
     endDate: endDate as string,
-    queuesIds: parsedQueuesIds
+    queuesIds: parsedQueuesIds,
   };
 };
 
@@ -52,7 +52,7 @@ export const getDashTicketsAndTimes = async (
     endDate: query.endDate,
     tenantId,
     userId,
-    userProfile
+    userProfile,
   });
 
   return res.json(data);
@@ -72,7 +72,7 @@ export const getDashTicketsChannels = async (
     endDate: query.endDate,
     tenantId,
     userId,
-    userProfile
+    userProfile,
   });
 
   return res.json(data);
@@ -92,7 +92,7 @@ export const getDashTicketsEvolutionChannels = async (
     endDate: query.endDate,
     tenantId,
     userId,
-    userProfile
+    userProfile,
   });
 
   return res.json(data);
@@ -112,7 +112,7 @@ export const getDashTicketsEvolutionByPeriod = async (
     endDate: query.endDate,
     tenantId,
     userId,
-    userProfile
+    userProfile,
   });
 
   return res.json(data);
@@ -132,7 +132,7 @@ export const getDashTicketsPerUsersDetail = async (
     endDate: query.endDate,
     tenantId,
     userId,
-    userProfile
+    userProfile,
   });
 
   return res.json(data);
@@ -152,7 +152,7 @@ export const getDashTicketsQueue = async (
     endDate: query.endDate,
     tenantId,
     userId,
-    userProfile
+    userProfile,
   });
 
   return res.json(data);
@@ -173,7 +173,7 @@ export const getDashTicketsEvolutionByQueue = async (
       endDate: query.endDate,
       tenantId,
       userId,
-      userProfile
+      userProfile,
     });
 
     return res.json(data);
@@ -198,7 +198,7 @@ export const getDashTicketsInstances = async (
       endDate: query.endDate,
       tenantId,
       userId,
-      userProfile
+      userProfile,
     });
 
     if (!data) return res.status(200).json([]);
@@ -206,6 +206,8 @@ export const getDashTicketsInstances = async (
     return res.status(200).json(data);
   } catch (error) {
     console.error("Erro ao buscar dados das instâncias:", error);
-    return res.status(500).json({ error: "Erro ao buscar dados das instâncias" });
+    return res
+      .status(500)
+      .json({ error: "Erro ao buscar dados das instâncias" });
   }
 };

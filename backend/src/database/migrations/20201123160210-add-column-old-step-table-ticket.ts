@@ -9,12 +9,12 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "SET NULL",
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Tickets", "oldStepAutoReplyId");
-  }
+  },
 };

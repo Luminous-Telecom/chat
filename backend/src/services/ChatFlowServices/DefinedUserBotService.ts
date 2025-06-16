@@ -47,21 +47,21 @@ const DefinedUserBotService = async (
   const user: any = await User.sequelize?.query(query, {
     replacements: {
       tenantId,
-      queueId
+      queueId,
     },
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
   });
 
   if (user.length) {
     const userId = user[0].id;
     await ticket.update({
-      userId
+      userId,
     });
 
     await CreateLogTicketService({
       ticketId: ticket.id,
       type: "userDefine",
-      userId
+      userId,
     });
   }
 };

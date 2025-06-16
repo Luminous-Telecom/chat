@@ -16,7 +16,7 @@ import {
   BelongsTo,
   AfterUpdate,
   BeforeCreate,
-  BeforeUpdate
+  BeforeUpdate,
   // DefaultScope
 } from "sequelize-typescript";
 import webHooks from "../config/webHooks.dev.json";
@@ -193,11 +193,11 @@ class Whatsapp extends Model<Whatsapp> {
       status,
       qrcode,
       timestamp: Date.now(),
-      type: "hookSessionStatus"
+      type: "hookSessionStatus",
     };
 
     const apiConfig: any = await ApiConfig.findAll({
-      where: { tenantId, sessionId }
+      where: { tenantId, sessionId },
     });
 
     if (!apiConfig) return;
@@ -211,7 +211,7 @@ class Whatsapp extends Model<Whatsapp> {
           return Queue.add("WebHooksAPI", {
             url: api.urlServiceStatus,
             type: payload.type,
-            payload
+            payload,
           });
         }
       })
@@ -230,12 +230,12 @@ class Whatsapp extends Model<Whatsapp> {
       const tokenHook = sign(
         {
           tenantId: instance.tenantId,
-          whatsappId: instance.id
+          whatsappId: instance.id,
           // wabaBSP: instance.wabaBSP
         },
         secret,
         {
-          expiresIn: "10000d"
+          expiresIn: "10000d",
         }
       );
 

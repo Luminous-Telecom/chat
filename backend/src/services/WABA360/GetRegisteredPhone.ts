@@ -17,8 +17,8 @@ const GetRegisteredPhone = async (apiKey: string): Promise<Response> => {
       url: apiUrl360,
       headers: {
         "D360-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     return res.data;
   } catch (error) {

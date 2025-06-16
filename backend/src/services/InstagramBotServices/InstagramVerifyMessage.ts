@@ -24,16 +24,16 @@ const VerifyMessage = async (
     mediaType: "chat",
     quotedMsgId: "",
     timestamp: new Date().getTime(), // Math.trunc(ctx.message.timestamp / 1000),
-    status: "received"
+    status: "received",
   };
   await ticket.update({
     lastMessage: ctx.message.text,
     lastMessageAt: new Date().getTime(),
-    answered: fromMe || false
+    answered: fromMe || false,
   });
   await CreateMessageService({
     messageData,
-    tenantId: ticket.tenantId
+    tenantId: ticket.tenantId,
   });
 };
 

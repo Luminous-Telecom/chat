@@ -5,12 +5,12 @@ module.exports = {
     return Promise.all([
       queryInterface.addColumn("StepsReply", "initialStep", {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
-      })
+        defaultValue: false,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("StepsReply", "initialStep");
-  }
+  },
 };

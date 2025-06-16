@@ -7,5 +7,5 @@ module.exports = {
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.renameColumn("Whatsapps", "isDefault", "default");
-  }
+  },
 };

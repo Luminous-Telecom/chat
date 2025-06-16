@@ -8,53 +8,53 @@ module.exports = {
           allowNull: false,
           primaryKey: true,
           type: DataTypes.UUID,
-          defaultValue: Sequelize.literal("gen_random_uuid()")
+          defaultValue: Sequelize.literal("gen_random_uuid()"),
         },
         messageId: {
           type: DataTypes.STRING,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         externalKey: {
           type: DataTypes.STRING,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         body: {
           type: DataTypes.TEXT,
           allowNull: false,
           validate: {
-            notEmpty: true
-          }
+            notEmpty: true,
+          },
         },
         ack: {
           type: DataTypes.INTEGER,
           allowNull: false,
-          defaultValue: 0
+          defaultValue: 0,
         },
         number: {
           type: DataTypes.STRING,
           allowNull: false,
           validate: {
             notEmpty: true,
-            len: [12, 14]
-          }
+            len: [12, 14],
+          },
         },
         mediaName: {
           type: DataTypes.TEXT,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         timestamp: {
           type: DataTypes.INTEGER,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         sessionId: {
           type: DataTypes.INTEGER,
           references: { model: "Whatsapps", key: "id" },
           onUpdate: "CASCADE",
-          onDelete: "SET NULL"
+          onDelete: "SET NULL",
         },
         tenantId: {
           type: DataTypes.INTEGER,
@@ -62,31 +62,31 @@ module.exports = {
           onUpdate: "CASCADE",
           onDelete: "CASCADE",
           allowNull: false,
-          defaultValue: 1
+          defaultValue: 1,
         },
         messageWA: {
           type: DataTypes.JSONB,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         apiConfig: {
           type: DataTypes.JSONB,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         createdAt: {
           type: DataTypes.DATE,
-          allowNull: false
+          allowNull: false,
         },
         updatedAt: {
           type: DataTypes.DATE,
-          allowNull: false
-        }
-      })
+          allowNull: false,
+        },
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.dropTable("ApiMessages")]);
-  }
+  },
 };

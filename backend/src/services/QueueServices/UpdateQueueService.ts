@@ -15,13 +15,13 @@ interface Request {
 
 const UpdateQueueService = async ({
   queueData,
-  queueId
+  queueId,
 }: Request): Promise<Queue> => {
   const { queue, isActive, userId, tenantId } = queueData;
 
   const queueModel = await Queue.findOne({
     where: { id: queueId, tenantId },
-    attributes: ["id", "queue", "isActive", "userId"]
+    attributes: ["id", "queue", "isActive", "userId"],
   });
 
   if (!queueModel) {
@@ -31,11 +31,11 @@ const UpdateQueueService = async ({
   await queueModel.update({
     queue,
     isActive,
-    userId
+    userId,
   });
 
   await queueModel.reload({
-    attributes: ["id", "queue", "isActive", "userId"]
+    attributes: ["id", "queue", "isActive", "userId"],
   });
 
   return queueModel;

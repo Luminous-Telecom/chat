@@ -66,9 +66,9 @@ export async function ImportFileContactsService(
       const [newContact, created] = await Contact.findOrCreate({
         where: {
           number: contact.number, // `${waNumber.user}`,
-          tenantId: contact.tenantId
+          tenantId: contact.tenantId,
         },
-        defaults: contact
+        defaults: contact,
       });
 
       const setContact: any = newContact;

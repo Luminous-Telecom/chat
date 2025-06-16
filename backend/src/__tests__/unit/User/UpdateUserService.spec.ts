@@ -22,16 +22,16 @@ describe("User", () => {
       name: faker.name.findName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-      tenantId: 1
+      tenantId: 1,
     });
 
     const updatedUser = await UpdateUserService({
       userId: newUser.id,
       userData: {
         name: "New name",
-        email: "newmail@email.com"
+        email: "newmail@email.com",
       },
-      tenantId: 1
+      tenantId: 1,
     });
 
     expect(updatedUser).toHaveProperty("name", "New name");
@@ -42,7 +42,7 @@ describe("User", () => {
     const userId = faker.random.number();
     const userData = {
       name: faker.name.findName(),
-      email: faker.internet.email()
+      email: faker.internet.email(),
     };
 
     expect(
@@ -55,13 +55,13 @@ describe("User", () => {
       name: faker.name.findName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-      tenantId: 1
+      tenantId: 1,
     });
 
     const userId = newUser.id;
     const userData = {
       name: faker.name.findName(),
-      email: "test.worgn.email"
+      email: "test.worgn.email",
     };
 
     expect(

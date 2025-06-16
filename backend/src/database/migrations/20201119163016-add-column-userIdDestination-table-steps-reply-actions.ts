@@ -3,7 +3,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 module.exports = {
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("StepsReplyActions", "userIdDestination", {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
     });
   },
 
@@ -12,5 +12,5 @@ module.exports = {
       "StepsReplyActions",
       "userIdDestination"
     );
-  }
+  },
 };

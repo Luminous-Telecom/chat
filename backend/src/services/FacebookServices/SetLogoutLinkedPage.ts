@@ -8,7 +8,7 @@ interface Request {
 
 const SetLogoutLinkedPage = async ({
   whatsapp,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const io = getIO();
 
@@ -16,14 +16,14 @@ const SetLogoutLinkedPage = async ({
     fbPageId: null,
     fbObject: {},
     tokenAPI: null,
-    status: "DISCONNECTED"
+    status: "DISCONNECTED",
   };
 
   Whatsapp.update(dataUpdated, { where: { id: whatsapp.id, tenantId } });
 
   io.emit(`${tenantId}:whatsappSession`, {
     action: "update",
-    session: { ...whatsapp, ...dataUpdated }
+    session: { ...whatsapp, ...dataUpdated },
   });
 };
 

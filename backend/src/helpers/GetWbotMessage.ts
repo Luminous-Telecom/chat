@@ -1,9 +1,9 @@
-import { BaileysMessage } from '../types/baileys';
+import { proto } from "@whiskeysockets/baileys";
+import { BaileysMessage } from "../types/baileys";
 import Ticket from "../models/Ticket";
 import GetTicketWbot from "./GetTicketWbot";
 import AppError from "../errors/AppError";
 import { logger } from "../utils/logger";
-import { proto } from "@whiskeysockets/baileys";
 
 export const GetWbotMessage = async (
   ticket: Ticket,
@@ -39,13 +39,17 @@ export const GetWbotMessage = async (
       .slice(0, totalMessages);
 
     const msgFound = sortedMessages.find(msg => msg.key.id === messageId);
-    
+
     if (msgFound) {
-      logger.info(`[GetWbotMessage] Message found in recent messages: ${messageId}`);
+      logger.info(
+        `[GetWbotMessage] Message found in recent messages: ${messageId}`
+      );
       return msgFound;
     }
 
-    logger.warn(`[GetWbotMessage] Cannot find message ${messageId} in store or recent messages`);
+    logger.warn(
+      `[GetWbotMessage] Cannot find message ${messageId} in store or recent messages`
+    );
     return undefined;
   } catch (err) {
     logger.error(`[GetWbotMessage] Error: ${err}`);

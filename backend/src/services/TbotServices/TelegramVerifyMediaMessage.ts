@@ -16,10 +16,28 @@ const writeFileAsync = promisify(writeFile);
 
 const getMediaInfo = (msg: any) => {
   // eslint-disable-next-line prettier/prettier
-  const mediaType = msg.photo ? "photo" : msg.video ? "video" : msg.audio ? "audio" : msg.voice ? "voice" : msg.sticker && !msg.sticker.is_animated ? "sticker" : "document";
+  const mediaType = msg.photo
+    ? "photo"
+    : msg.video
+    ? "video"
+    : msg.audio
+    ? "audio"
+    : msg.voice
+    ? "voice"
+    : msg.sticker && !msg.sticker.is_animated
+    ? "sticker"
+    : "document";
   const mediaObj = msg[mediaType];
   // eslint-disable-next-line prettier/prettier
-  const [type, mimeType, SAD, fileName, fileId, caption, SAV] = [mediaType, mediaObj.mime_type ? mediaObj.mime_type : "", false, null, mediaObj.file_id ? mediaObj.file_id : mediaObj[mediaObj.length - 1].file_id, msg.caption ? msg.caption : "", mediaType == "voice"];
+  const [type, mimeType, SAD, fileName, fileId, caption, SAV] = [
+    mediaType,
+    mediaObj.mime_type ? mediaObj.mime_type : "",
+    false,
+    null,
+    mediaObj.file_id ? mediaObj.file_id : mediaObj[mediaObj.length - 1].file_id,
+    msg.caption ? msg.caption : "",
+    mediaType == "voice",
+  ];
   switch (mediaType) {
     case "photo":
       return {
@@ -29,7 +47,7 @@ const getMediaInfo = (msg: any) => {
         fileName,
         fileId,
         caption,
-        SAV
+        SAV,
       };
       break;
     case "video":
@@ -50,7 +68,7 @@ const getMediaInfo = (msg: any) => {
         fileId,
         caption,
         SAV,
-        SAS: true
+        SAS: true,
       };
       break;
     default:
@@ -61,7 +79,7 @@ const getMediaInfo = (msg: any) => {
         fileName: mediaObj.file_name ? mediaObj.file_name : null,
         fileId,
         caption,
-        SAV
+        SAV,
       };
       break;
   }
@@ -71,7 +89,7 @@ const downloadFile = async (url: any, pathFile: string): Promise<void> => {
   const request = await axios({
     url: url.toString(),
     method: "GET",
-    responseType: "stream"
+    responseType: "stream",
   });
   // const writer = createWriteStream(pathFile);
   await new Promise((resolve, reject) => {
@@ -137,17 +155,17 @@ const VerifyMediaMessage = async (
     mediaType: mediaInfo.mimeType.split("/")[0],
     quotedMsgId,
     timestamp: +message.date * 1000, // compatibilizar JS
-    status: fromMe ? "sended" : "received"
+    status: fromMe ? "sended" : "received",
   };
 
   await ticket.update({
     lastMessage: message.text || message.caption || filename,
     lastMessageAt: new Date().getTime(),
-    answered: fromMe || false
+    answered: fromMe || false,
   });
   const newMessage = await CreateMessageService({
     messageData,
-    tenantId: ticket.tenantId
+    tenantId: ticket.tenantId,
   });
 
   return newMessage;

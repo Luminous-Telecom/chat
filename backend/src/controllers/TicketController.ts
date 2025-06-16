@@ -51,7 +51,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     withUnreadMessages,
     queuesIds,
     isNotAssignedUser,
-    includeNotQueueDefined
+    includeNotQueueDefined,
   } = req.query as IndexQuery;
 
   const userId = req.user.id;
@@ -68,7 +68,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     isNotAssignedUser,
     includeNotQueueDefined,
     tenantId,
-    profile
+    profile,
   });
 
   return res.status(200).json({ tickets, count, hasMore });
@@ -85,7 +85,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     userId,
     tenantId,
     channel,
-    channelId
+    channelId,
   });
 
   // se ticket criado pelo próprio usuário, não emitir socket.
@@ -93,7 +93,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     const io = getIO();
     io.to(`${tenantId}:${ticket.status}`).emit(`${tenantId}:ticket`, {
       action: "create",
-      ticket
+      ticket,
     });
   }
 
@@ -127,10 +127,10 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   const where = {
     contactId: ticket.contactId,
     scheduleDate: { [Op.not]: null },
-    status: "pending"
+    status: "pending",
   };
   const scheduledMessages = await Message.findAll({
-    where
+    where,
     // logging: console.log
   });
 
@@ -139,7 +139,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   await CreateLogTicketService({
     userId,
     ticketId,
-    type: "access"
+    type: "access",
   });
 
   return res.status(200).json(ticket);
@@ -160,17 +160,17 @@ export const update = async (
     ticketData,
     ticketId,
     isTransference,
-    userIdRequest
+    userIdRequest,
   });
 
   if (ticket.status === "closed") {
     const whatsapp = await Whatsapp.findOne({
-      where: { id: ticket.whatsappId, tenantId }
+      where: { id: ticket.whatsappId, tenantId },
     });
     if (whatsapp?.farewellMessage) {
       const body = pupa(whatsapp.farewellMessage || "", {
         protocol: ticket.protocol,
-        name: ticket.contact.name
+        name: ticket.contact.name,
       });
       const messageData = {
         msg: { body, fromMe: true, read: true },
@@ -180,7 +180,7 @@ export const update = async (
         sendType: "bot",
         status: "pending",
         isTransfer: false,
-        note: false
+        note: false,
       };
       await CreateMessageSystemService(messageData);
       ticket.update({ isFarewellMessage: true });
@@ -206,7 +206,7 @@ export const remove = async (
     .to(`${tenantId}:notification`)
     .emit(`${tenantId}:ticket`, {
       action: "delete",
-      ticketId: +ticketId
+      ticketId: +ticketId,
     });
 
   return res.status(200).json({ message: "ticket deleted" });
@@ -223,26 +223,35 @@ export const showLogsTicket = async (
   return res.status(200).json(logsTicket);
 };
 
-export const markAllAsRead = async (req: Request, res: Response): Promise<Response> => {
+export const markAllAsRead = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { ticketId } = req.params;
   const { tenantId } = req.user;
 
-  logger.info(`[markAllAsRead] Iniciando marcação de todas as mensagens como lidas. TicketId: ${ticketId}, TenantId: ${tenantId}`);
+  logger.info(
+    `[markAllAsRead] Iniciando marcação de todas as mensagens como lidas. TicketId: ${ticketId}, TenantId: ${tenantId}`
+  );
 
   try {
     const ticket = await ShowTicketService({ id: ticketId, tenantId });
     if (!ticket) {
-      logger.warn(`[markAllAsRead] Ticket não encontrado. TicketId: ${ticketId}`);
+      logger.warn(
+        `[markAllAsRead] Ticket não encontrado. TicketId: ${ticketId}`
+      );
       return res.status(404).json({ error: "Ticket not found" });
     }
 
-    logger.info(`[markAllAsRead] Ticket encontrado, marcando mensagens como lidas`);
+    logger.info(
+      "[markAllAsRead] Ticket encontrado, marcando mensagens como lidas"
+    );
     await SetTicketMessagesAsRead(ticket, true);
-    logger.info(`[markAllAsRead] Mensagens marcadas como lidas com sucesso`);
+    logger.info("[markAllAsRead] Mensagens marcadas como lidas com sucesso");
 
     return res.status(200).json({ message: "All messages marked as read" });
   } catch (error) {
-    logger.error(`[markAllAsRead] Erro ao marcar mensagens como lidas:`, error);
+    logger.error("[markAllAsRead] Erro ao marcar mensagens como lidas:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

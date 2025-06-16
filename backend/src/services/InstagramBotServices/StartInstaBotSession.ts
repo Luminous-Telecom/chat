@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import {
   AccountRepositoryCurrentUserResponseUser,
-  AccountRepositoryLoginResponseLogged_in_user
+  AccountRepositoryLoginResponseLogged_in_user,
 } from "instagram-private-api";
 import { IgApiClientMQTT } from "instagram_mqtt";
 import AppError from "../../errors/AppError";
@@ -25,7 +25,7 @@ export const StartInstaBotSession = async (
   await connection.update({ status: "OPENING" });
   io.emit(`${connection.tenantId}:whatsappSession`, {
     action: "update",
-    session: connection
+    session: connection,
   });
 
   try {
@@ -35,14 +35,14 @@ export const StartInstaBotSession = async (
     await connection.update({ status: "CONNECTED" });
     io.emit(`${connection.tenantId}:whatsappSession`, {
       action: "update",
-      session: connection
+      session: connection,
     });
   } catch (err) {
     logger.error(`StartInstaBotSession | Error: ${err}`);
     await connection.update({ status: "DISCONNECTED" });
     io.emit(`${connection.tenantId}:whatsappSession`, {
       action: "update",
-      session: connection
+      session: connection,
     });
     throw new AppError(`ERROR_CONNECT_INSTAGRAM: ${err}`, 404);
   }

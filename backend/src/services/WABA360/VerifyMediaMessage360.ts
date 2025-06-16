@@ -16,7 +16,7 @@ const VerifyMediaMessage = async (
   let filename;
   try {
     filename = await GetMediaWaba360({ channel, msg, ticket });
-  } catch (error) { }
+  } catch (error) {}
 
   // if (!filename) {
   //   throw new Error("ERR_WAPP_DOWNLOAD_MEDIA");
@@ -39,17 +39,17 @@ const VerifyMediaMessage = async (
     // quotedMsgId: undefind || quotedMsg?.id,
     timestamp: +msg.timestamp,
     wabaMediaId,
-    status: msg.fromMe ? "sended" : "received"
+    status: msg.fromMe ? "sended" : "received",
   };
 
   await ticket.update({
     lastMessage: msg?.text?.body || filename,
     lastMessageAt: new Date().getTime(),
-    answered: msg.fromMe || false
+    answered: msg.fromMe || false,
   });
   const newMessage = await CreateMessageService({
     messageData,
-    tenantId: ticket.tenantId
+    tenantId: ticket.tenantId,
   });
 
   return newMessage;

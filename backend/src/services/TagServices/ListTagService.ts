@@ -7,11 +7,11 @@ interface Request {
 
 const ListTagService = async ({
   tenantId,
-  isActive
+  isActive,
 }: Request): Promise<Tag[]> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
-    tenantId
+    tenantId,
   };
 
   if (isActive) {
@@ -20,7 +20,7 @@ const ListTagService = async ({
 
   const tagData = await Tag.findAll({
     where,
-    order: [["tag", "ASC"]]
+    order: [["tag", "ASC"]],
   });
 
   return tagData;

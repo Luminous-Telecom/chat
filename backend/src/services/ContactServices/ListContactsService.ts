@@ -22,7 +22,7 @@ const ListContactsService = async ({
   pageNumber = "1",
   tenantId,
   profile,
-  userId
+  userId,
 }: Request): Promise<Response> => {
   const limit = 40;
   const offset = limit * (+pageNumber - 1);
@@ -71,11 +71,11 @@ const ListContactsService = async ({
   `;
 
   const contacts: Contact[] = await sequelize.query(query, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
   });
 
   const data: any = await sequelize.query(queryCount, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
   });
 
   const count = (data && data[0]?.count) || 0;
@@ -84,7 +84,7 @@ const ListContactsService = async ({
   return {
     contacts,
     count,
-    hasMore
+    hasMore,
   };
 };
 

@@ -22,12 +22,12 @@ describe("User", () => {
       name: faker.name.findName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-      tenantId: 1
+      tenantId: 1,
     });
 
     const response = await ListUsersService({
       pageNumber: 1,
-      tenantId: 1
+      tenantId: 1,
     });
 
     expect(response).toHaveProperty("users");

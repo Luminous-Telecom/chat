@@ -8,7 +8,7 @@ import {
   PrimaryKey,
   BelongsTo,
   ForeignKey,
-  AutoIncrement
+  AutoIncrement,
 } from "sequelize-typescript";
 import Contact from "./Contact";
 import Ticket from "./Ticket";

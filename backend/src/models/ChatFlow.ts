@@ -11,7 +11,7 @@ import {
   BelongsTo,
   ForeignKey,
   AutoIncrement,
-  AllowNull
+  AllowNull,
 } from "sequelize-typescript";
 import User from "./User";
 import Tenant from "./Tenant";

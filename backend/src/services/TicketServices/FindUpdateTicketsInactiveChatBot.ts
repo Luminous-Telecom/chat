@@ -27,7 +27,7 @@ const FindUpdateTicketsInactiveChatBot = async (): Promise<void> => {
   `;
 
   const tickets: any = await Ticket.sequelize?.query(query, {
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
   });
   Promise.all(
     tickets.map(async (item: any) => {
@@ -39,7 +39,7 @@ const FindUpdateTicketsInactiveChatBot = async (): Promise<void> => {
           chatFlowId: null,
           stepChatFlow: null,
           botRetries: 0,
-          lastInteractionBot: new Date()
+          lastInteractionBot: new Date(),
         };
         // instance.type_action: 1 = fila | 2 = usuario
         if (item.type_action == 1) {
@@ -52,7 +52,7 @@ const FindUpdateTicketsInactiveChatBot = async (): Promise<void> => {
         socketEmit({
           tenantId: ticket.tenantId,
           type: "ticket:update",
-          payload: ticket
+          payload: ticket,
         });
       }
     })

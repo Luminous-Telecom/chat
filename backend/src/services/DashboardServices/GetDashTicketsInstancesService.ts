@@ -23,36 +23,36 @@ interface RawTicket {
 const GetDashTicketsInstancesService = async ({
   tenantId,
   startDate,
-  endDate
+  endDate,
 }: Request): Promise<TicketCount[]> => {
-  const tickets = await Ticket.findAll({
+  const tickets = (await Ticket.findAll({
     attributes: [
       [literal("Whatsapp.name"), "whatsapp"],
-      [fn("COUNT", col("Ticket.id")), "qtd"]
+      [fn("COUNT", col("Ticket.id")), "qtd"],
     ],
     include: [
       {
         model: Whatsapp,
-        attributes: []
-      }
+        attributes: [],
+      },
     ],
     where: {
       tenantId,
       createdAt: {
-        [Op.between]: [+new Date(startDate), +new Date(endDate)]
-      }
+        [Op.between]: [+new Date(startDate), +new Date(endDate)],
+      },
     } as WhereOptions,
     group: ["whatsapp"],
-    raw: true
-  }) as unknown as RawTicket[];
+    raw: true,
+  })) as unknown as RawTicket[];
 
   const total = tickets.reduce((acc, ticket) => acc + Number(ticket.qtd), 0);
 
   return tickets.map(ticket => ({
     whatsapp: ticket.whatsapp,
     qtd: Number(ticket.qtd),
-    percentual: Number(((Number(ticket.qtd) * 100) / total).toFixed(2))
+    percentual: Number(((Number(ticket.qtd) * 100) / total).toFixed(2)),
   }));
 };
 
-export default GetDashTicketsInstancesService; 
+export default GetDashTicketsInstancesService;

@@ -111,8 +111,8 @@ export const pupa = function pupa(
 
   const composeHtmlEscape =
     replacer =>
-      (...args: any) =>
-        htmlEscape(replacer(...args));
+    (...args: any) =>
+      htmlEscape(replacer(...args));
 
   // The regex tries to match either a number inside `{{ }}` or a valid JS identifier or key path.
   const doubleBraceRegex = /{{(\d+|[a-z$_][\w\-$]*?(?:\.[\w\-$]*?)*?)}}/gi;

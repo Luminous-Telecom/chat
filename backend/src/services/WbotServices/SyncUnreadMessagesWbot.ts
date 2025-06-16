@@ -5,7 +5,10 @@ import Ticket from "../../models/Ticket";
 import { getIO } from "../../libs/socket";
 import { BaileysMessageAdapter } from "../BaileysServices/BaileysMessageAdapter";
 
-const SyncUnreadMessagesWbot = async (wbot: BaileysClient, tenantId: number): Promise<void> => {
+const SyncUnreadMessagesWbot = async (
+  wbot: BaileysClient,
+  tenantId: number
+): Promise<void> => {
   try {
     // Removida a sincronização automática de mensagens não lidas
     // para evitar marcação automática ao abrir o sistema

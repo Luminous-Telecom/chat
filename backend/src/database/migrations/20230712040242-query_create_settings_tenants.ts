@@ -7,8 +7,8 @@ module.exports = {
       'SELECT id FROM "Tenants"',
       { type: QueryTypes.SELECT }
     );
-    
-    const settingId:any = await queryInterface.sequelize.query(
+
+    const settingId: any = await queryInterface.sequelize.query(
       'select max(id) mId from "Settings"',
       { type: QueryTypes.SELECT }
     );
@@ -23,14 +23,14 @@ module.exports = {
             value: "disabled",
             tenantId: id,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
           },
           {
             key: "rejectCalls",
             value: "disabled",
             tenantId: id,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
           },
           {
             key: "callRejectMessage",
@@ -38,16 +38,16 @@ module.exports = {
               "As chamadas de voz e vídeo estão desabilitas para esse WhatsApp, favor enviar uma mensagem de texto.",
             tenantId: id,
             createdAt: new Date(),
-            updatedAt: new Date()
-          }
-        ]
+            updatedAt: new Date(),
+          },
+        ];
 
         const bulk = newSettings.map((s, i) => {
           return {
             ...s,
             id: settingId[0].mid + idx + 1 + i,
-          }
-        })
+          };
+        });
 
         // Insere as novas configurações para o tenant
         await queryInterface.bulkInsert("Settings", bulk);
@@ -58,7 +58,7 @@ module.exports = {
   down: async (queryInterface: QueryInterface) => {
     // Remove as configurações inseridas para cada tenant
     await queryInterface.sequelize.query('SELECT id FROM "Tenants"', {
-      type: QueryTypes.SELECT
+      type: QueryTypes.SELECT,
     });
-  }
+  },
 };

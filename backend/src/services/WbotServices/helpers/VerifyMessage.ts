@@ -29,35 +29,42 @@ const VerifyMessage = async (
       read: msg.fromMe,
       quotedMsgId: quotedMsg?.id,
       timestamp: msg.timestamp,
-      status: "received"
+      status: "received",
     };
-    
-    logger.debug(`[VerifyMessage] Dados da mensagem: ${JSON.stringify({
-      messageId: messageData.messageId,
-      ticketId: messageData.ticketId,
-      fromMe: messageData.fromMe,
-      quotedMsgId: messageData.quotedMsgId
-    })}`);
+
+    logger.debug(
+      `[VerifyMessage] Dados da mensagem: ${JSON.stringify({
+        messageId: messageData.messageId,
+        ticketId: messageData.ticketId,
+        fromMe: messageData.fromMe,
+        quotedMsgId: messageData.quotedMsgId,
+      })}`
+    );
 
     // Calcular contador de mensagens não lidas
     const currentUnread = await Message.count({
-      where: { ticketId: ticket.id, read: false, fromMe: false }
+      where: { ticketId: ticket.id, read: false, fromMe: false },
     });
-    
+
     // Incrementar contador se mensagem não for própria
     const newUnreadCount = msg.fromMe ? currentUnread : currentUnread + 1;
-    
+
     await ticket.update({
       lastMessage: msg.body,
       lastMessageAt: new Date().getTime(),
       answered: msg.fromMe || false,
-      unreadMessages: newUnreadCount
+      unreadMessages: newUnreadCount,
     });
 
-    const createdMessage = await CreateMessageService({ messageData, tenantId: ticket.tenantId });    
+    const createdMessage = await CreateMessageService({
+      messageData,
+      tenantId: ticket.tenantId,
+    });
     return createdMessage;
   } catch (err) {
-    logger.error(`[VerifyMessage] Erro em VerifyMessage para ticket ${ticket.id}: ${err}`);
+    logger.error(
+      `[VerifyMessage] Erro em VerifyMessage para ticket ${ticket.id}: ${err}`
+    );
     logger.error(`[VerifyMessage] Stack de erro: ${err.stack}`);
     throw err;
   }

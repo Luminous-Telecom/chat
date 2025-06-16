@@ -15,13 +15,13 @@ interface Request {
 
 const UpdateFastReplyService = async ({
   fastReplyData,
-  fastReplyId
+  fastReplyId,
 }: Request): Promise<FastReply> => {
   const { key, message, userId, tenantId } = fastReplyData;
 
   const fastReplyModel = await FastReply.findOne({
     where: { id: fastReplyId, tenantId },
-    attributes: ["id", "key", "message", "userId"]
+    attributes: ["id", "key", "message", "userId"],
   });
 
   if (!fastReplyModel) {
@@ -31,11 +31,11 @@ const UpdateFastReplyService = async ({
   await fastReplyModel.update({
     key,
     message,
-    userId
+    userId,
   });
 
   await fastReplyModel.reload({
-    attributes: ["id", "key", "message", "userId"]
+    attributes: ["id", "key", "message", "userId"],
   });
 
   return fastReplyModel;

@@ -1,5 +1,9 @@
 // Este arquivo foi migrado para Baileys. Redirecionando para a nova implementação.
-import { initBaileys, getBaileysSession, removeBaileysSession } from "./baileys";
+import {
+  initBaileys,
+  getBaileysSession,
+  removeBaileysSession,
+} from "./baileys";
 import Whatsapp from "../models/Whatsapp";
 import { BaileysClient } from "../types/baileys";
 import AppError from "../errors/AppError";
@@ -27,5 +31,7 @@ export const getWbot = (whatsappId: number): Session => {
 // Função de compatibilidade que não existe mais no Baileys
 export const apagarPastaSessao = async (id: number | string): Promise<void> => {
   // Esta função foi removida pois o Baileys gerencia as sessões de forma diferente
-  console.warn('apagarPastaSessao is deprecated and no longer needed with Baileys');
+  console.warn(
+    "apagarPastaSessao is deprecated and no longer needed with Baileys"
+  );
 };

@@ -22,12 +22,12 @@ describe("Auth", () => {
       name: faker.name.findName(),
       email: "mail@test.com",
       password: "hardpassword",
-      tenantId: 1
+      tenantId: 1,
     });
 
     const response = await AuthUserService({
       email: "mail@test.com",
-      password: "hardpassword"
+      password: "hardpassword",
     });
 
     expect(response).toHaveProperty("token");
@@ -37,7 +37,7 @@ describe("Auth", () => {
     try {
       await AuthUserService({
         email: faker.internet.email(),
-        password: faker.internet.password()
+        password: faker.internet.password(),
       });
     } catch (err) {
       expect(err).toBeInstanceOf(AppError);
@@ -51,13 +51,13 @@ describe("Auth", () => {
       name: faker.name.findName(),
       email: "mail@test.com",
       password: "hardpassword",
-      tenantId: 1
+      tenantId: 1,
     });
 
     try {
       await AuthUserService({
         email: "mail@test.com",
-        password: faker.internet.password()
+        password: faker.internet.password(),
       });
     } catch (err) {
       expect(err).toBeInstanceOf(AppError);

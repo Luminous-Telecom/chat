@@ -41,7 +41,7 @@ const DashTicketsEvolutionByQueue = async ({
   endDate,
   tenantId,
   userId,
-  userProfile
+  userProfile,
 }: Request): Promise<any[]> => {
   const data = await sequelize.query(
     userProfile === "admin" ? queryAdmin : query,
@@ -50,9 +50,9 @@ const DashTicketsEvolutionByQueue = async ({
         tenantId,
         startDate,
         endDate,
-        userId
+        userId,
       },
-      type: QueryTypes.SELECT
+      type: QueryTypes.SELECT,
     }
   );
 
@@ -65,8 +65,8 @@ const DashTicketsEvolutionByQueue = async ({
       acc.push({
         date: curr.date,
         queues: {
-          [curr.queue]: curr.count
-        }
+          [curr.queue]: curr.count,
+        },
       });
     }
     return acc;
@@ -75,4 +75,4 @@ const DashTicketsEvolutionByQueue = async ({
   return transformedData;
 };
 
-export default DashTicketsEvolutionByQueue; 
+export default DashTicketsEvolutionByQueue;

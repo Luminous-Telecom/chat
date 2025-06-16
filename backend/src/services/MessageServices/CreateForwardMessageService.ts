@@ -18,22 +18,22 @@ const CreateForwardMessageService = async ({
   tenantId,
   message,
   contact,
-  ticketIdOrigin
+  ticketIdOrigin,
 }: Request): Promise<void> => {
   const ticketOrigin = await ShowTicketService({
     id: ticketIdOrigin,
-    tenantId
+    tenantId,
   });
 
   let ticket: Ticket | undefined | null;
   ticket = await Ticket.findOne({
     where: {
       status: {
-        [Op.or]: ["open", "pending"]
+        [Op.or]: ["open", "pending"],
       },
       tenantId,
-      contactId: contact.id
-    }
+      contactId: contact.id,
+    },
   });
 
   // caso não exista ticket aberto ou pendente
@@ -48,7 +48,7 @@ const CreateForwardMessageService = async ({
       whatsappId: ticketOrigin.whatsappId,
       lastMessage: message.body,
       lastMessageAt: new Date().getTime(),
-      answered: true
+      answered: true,
     });
   }
 
@@ -67,7 +67,7 @@ const CreateForwardMessageService = async ({
     sendType: "chat",
     status: "pending",
     ticketId: ticket.id,
-    tenantId
+    tenantId,
   };
 
   const msgCreated = await Message.create(msgData);
@@ -78,14 +78,14 @@ const CreateForwardMessageService = async ({
         model: Ticket,
         as: "ticket",
         where: { tenantId },
-        include: ["contact"]
+        include: ["contact"],
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
-      }
-    ]
+        include: ["contact"],
+      },
+    ],
   });
 
   if (!messageCreated) {
@@ -96,13 +96,13 @@ const CreateForwardMessageService = async ({
   await ticket.update({
     lastMessage: messageCreated.body,
     lastMessageAt: new Date().getTime(),
-    answered: true
+    answered: true,
   });
 
   socketEmit({
     tenantId,
     type: "chat:create",
-    payload: messageCreated
+    payload: messageCreated,
   });
 };
 

@@ -35,7 +35,7 @@ export const StartMessengerBot = async (
   await connection.update({ status: "OPENING" });
   io.emit(`${connection.tenantId}:whatsappSession`, {
     action: "update",
-    session: connection
+    session: connection,
   });
 
   try {
@@ -51,14 +51,14 @@ export const StartMessengerBot = async (
     );
     io.emit(`${connection.tenantId}:whatsappSession`, {
       action: "update",
-      session: connection
+      session: connection,
     });
   } catch (err) {
     logger.error(`SetWebHookUrl 360 | Error: ${err}`);
     await connection.update({ status: "DISCONNECTED" });
     io.emit(`${connection.tenantId}:whatsappSession`, {
       action: "update",
-      session: connection
+      session: connection,
     });
     throw new AppError(`ERROR_CONNECT_WABA_360: ${err}`, 404);
   }

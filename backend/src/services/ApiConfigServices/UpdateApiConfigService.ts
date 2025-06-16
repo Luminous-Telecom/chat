@@ -21,10 +21,10 @@ interface Request {
 const UpdateApiConfigService = async ({
   apiData,
   apiId,
-  tenantId
+  tenantId,
 }: Request): Promise<ApiConfig> => {
   const api = await ApiConfig.findOne({
-    where: { id: apiId, tenantId }
+    where: { id: apiId, tenantId },
   });
 
   if (!api) {
@@ -38,7 +38,7 @@ const UpdateApiConfigService = async ({
     urlMessageStatus,
     userId,
     authToken,
-    isActive
+    isActive,
   } = apiData;
 
   await api.update({
@@ -48,7 +48,7 @@ const UpdateApiConfigService = async ({
     urlMessageStatus,
     userId,
     authToken,
-    isActive
+    isActive,
   });
 
   await api.reload();

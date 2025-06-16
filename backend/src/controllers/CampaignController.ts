@@ -33,7 +33,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const campaign: CampaignData = {
     ...req.body,
     userId: req.user.id,
-    tenantId
+    tenantId,
   };
 
   const schema = Yup.object().shape({
@@ -44,7 +44,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     message3: Yup.string().required(),
     userId: Yup.string().required(),
     sessionId: Yup.string().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -55,7 +55,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const newCampaign = await CreateCampaignService({
     campaign,
-    medias
+    medias,
   });
 
   return res.status(200).json(newCampaign);
@@ -64,7 +64,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { tenantId } = req.user;
   const tags = await ListCampaignService({
-    tenantId
+    tenantId,
   });
   return res.status(200).json(tags);
 };
@@ -82,7 +82,7 @@ export const update = async (
   const campaignData: CampaignData = {
     ...req.body,
     userId: req.user.id,
-    tenantId
+    tenantId,
   };
 
   const schema = Yup.object().shape({
@@ -94,7 +94,7 @@ export const update = async (
     mediaUrl: Yup.string().required(),
     userId: Yup.string().required(),
     sessionId: Yup.string().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -108,7 +108,7 @@ export const update = async (
     campaignData,
     medias,
     campaignId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(campaignObj);
@@ -142,8 +142,8 @@ export const startCampaign = async (
     campaignId,
     tenantId,
     options: {
-      delay: 2000
-    }
+      delay: 2000,
+    },
   });
 
   return res.status(200).json({ message: "Campaign started" });
@@ -161,7 +161,7 @@ export const cancelCampaign = async (
 
   await CancelCampaignService({
     campaignId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json({ message: "Campaign canceled" });

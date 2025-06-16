@@ -25,10 +25,10 @@ const ShowStepAutoReplyMessageService = async (
     include: [
       {
         model: AutoReply,
-        where: { action, tenantId } // action 0 - AutoReply Criacao ticket ou 1 - Resolução do ticket
+        where: { action, tenantId }, // action 0 - AutoReply Criacao ticket ou 1 - Resolução do ticket
         // attributes: ["id", "name"]
-      }
-    ]
+      },
+    ],
     // logging: console.log
   });
   if (!stepReply) {

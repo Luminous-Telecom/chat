@@ -28,7 +28,7 @@ const isAPIAuth = (req: Request, res: Response, next: NextFunction): void => {
     req.APIAuth = {
       apiId,
       sessionId,
-      tenantId
+      tenantId,
     };
   } catch (err) {
     throw new AppError("Invalid token.", 403);

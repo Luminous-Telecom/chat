@@ -24,11 +24,11 @@ interface Response {
 
 const AdminUpdateUserService = async ({
   userData,
-  userId
+  userId,
 }: Request): Promise<Response | undefined> => {
   const user = await User.findOne({
     where: { id: userId },
-    attributes: ["name", "id", "tenantId", "email", "profile"]
+    attributes: ["name", "id", "tenantId", "email", "profile"],
   });
 
   if (!user) {
@@ -39,7 +39,7 @@ const AdminUpdateUserService = async ({
     name: Yup.string().min(2),
     email: Yup.string().email(),
     profile: Yup.string(),
-    password: Yup.string()
+    password: Yup.string(),
   });
 
   const { email, password, profile, name } = userData;
@@ -54,11 +54,11 @@ const AdminUpdateUserService = async ({
     email,
     password,
     profile,
-    name
+    name,
   });
 
   await user.reload({
-    attributes: ["id", "name", "email", "profile", "tenantId"]
+    attributes: ["id", "name", "email", "profile", "tenantId"],
   });
 
   const serializedUser = {
@@ -66,7 +66,7 @@ const AdminUpdateUserService = async ({
     name: user.name,
     email: user.email,
     profile: user.profile,
-    tenantId: user.tenantId
+    tenantId: user.tenantId,
   };
 
   return serializedUser;

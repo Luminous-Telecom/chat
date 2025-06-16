@@ -1,4 +1,4 @@
-import { BaileysClient as Client } from '../../types/baileys';
+import { BaileysClient as Client } from "../../types/baileys";
 
 import HandleMessage from "./helpers/HandleMessage";
 import HandleMsgAck from "./helpers/HandleMsgAck";

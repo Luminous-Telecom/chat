@@ -43,7 +43,7 @@ const CreateMessageOffilineService = async ({
   tenantId,
   medias,
   ticket,
-  userId
+  userId,
 }: Request): Promise<void> => {
   const io = getIO();
 
@@ -57,7 +57,7 @@ const CreateMessageOffilineService = async ({
     mediaType: "chat",
     mediaUrl: undefined,
     timestamp: undefined,
-    userId
+    userId,
   };
 
   try {
@@ -82,7 +82,7 @@ const CreateMessageOffilineService = async ({
           const message = {
             ...messageData,
             mediaUrl: media.filename,
-            mediaType: media.mimetype.substr(0, media.mimetype.indexOf("/"))
+            mediaType: media.mimetype.substr(0, media.mimetype.indexOf("/")),
           };
 
           const msgCreated = await MessageOffLine.create(message);
@@ -94,14 +94,14 @@ const CreateMessageOffilineService = async ({
                 model: Ticket,
                 as: "ticket",
                 where: { tenantId },
-                include: ["contact"]
+                include: ["contact"],
               },
               {
                 model: Message,
                 as: "quotedMsg",
-                include: ["contact"]
-              }
-            ]
+                include: ["contact"],
+              },
+            ],
           });
 
           if (!messageCreated) {
@@ -113,9 +113,9 @@ const CreateMessageOffilineService = async ({
             action: "create",
             message: messageCreated,
             ticket: messageCreated.ticket,
-            contact: messageCreated.ticket.contact
+            contact: messageCreated.ticket.contact,
           });
-          
+
           // Também emitir para os canais antigos para compatibilidade
           io.to(`${tenantId}-${messageCreated.ticketId.toString()}`)
             .to(`${tenantId}-${messageCreated.ticket.status}`)
@@ -124,19 +124,19 @@ const CreateMessageOffilineService = async ({
               action: "create",
               message: messageCreated,
               ticket: messageCreated.ticket,
-              contact: messageCreated.ticket.contact
+              contact: messageCreated.ticket.contact,
             });
 
           await ticket.update({
             lastMessage: messageCreated.body,
-            lastMessageAt: new Date().getTime()
+            lastMessageAt: new Date().getTime(),
           });
         })
       );
     } else {
       const msgCreated = await MessageOffLine.create({
         ...messageData,
-        mediaType: "chat"
+        mediaType: "chat",
       });
 
       const messageCreated = await MessageOffLine.findByPk(msgCreated.id, {
@@ -146,14 +146,14 @@ const CreateMessageOffilineService = async ({
             model: Ticket,
             as: "ticket",
             where: { tenantId },
-            include: ["contact"]
+            include: ["contact"],
           },
           {
             model: Message,
             as: "quotedMsg",
-            include: ["contact"]
-          }
-        ]
+            include: ["contact"],
+          },
+        ],
       });
 
       if (!messageCreated) {
@@ -163,7 +163,7 @@ const CreateMessageOffilineService = async ({
 
       await ticket.update({
         lastMessage: messageCreated.body,
-        lastMessageAt: new Date().getTime()
+        lastMessageAt: new Date().getTime(),
       });
 
       // Emitir para o canal correto que o frontend está escutando
@@ -171,9 +171,9 @@ const CreateMessageOffilineService = async ({
         action: "create",
         message: messageCreated,
         ticket: messageCreated.ticket,
-        contact: messageCreated.ticket.contact
+        contact: messageCreated.ticket.contact,
       });
-      
+
       // Também emitir para os canais antigos para compatibilidade
       io.to(`${tenantId}-${messageCreated.ticketId.toString()}`)
         .to(`${tenantId}-${messageCreated.ticket.status}`)
@@ -182,7 +182,7 @@ const CreateMessageOffilineService = async ({
           action: "create",
           message: messageCreated,
           ticket: messageCreated.ticket,
-          contact: messageCreated.ticket.contact
+          contact: messageCreated.ticket.contact,
         });
     }
   } catch (error) {

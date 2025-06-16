@@ -129,10 +129,10 @@ ami.action(
     priority: 1,
     variable: {
       connectedlinenum: "0991191708",
-      connectedlinename: "CID:4815"
+      connectedlinename: "CID:4815",
       // name1: "value1",
       // name2: "value2"
-    }
+    },
   },
   (err: any, res: any) => {
     console.log("action", err, res);

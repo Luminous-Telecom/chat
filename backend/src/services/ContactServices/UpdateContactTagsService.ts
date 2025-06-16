@@ -17,13 +17,13 @@ interface Tag {
 const UpdateContactService = async ({
   tags,
   contactId,
-  tenantId
+  tenantId,
 }: Request): Promise<Contact> => {
   await ContactTag.destroy({
     where: {
       tenantId,
-      contactId
-    }
+      contactId,
+    },
   });
 
   const contactTags: Tag[] = [];
@@ -32,7 +32,7 @@ const UpdateContactService = async ({
     contactTags.push({
       tagId: !tag.id ? tag : tag.id,
       contactId,
-      tenantId
+      tenantId,
     });
   });
 
@@ -46,9 +46,9 @@ const UpdateContactService = async ({
       "tags",
       {
         association: "wallets",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (!contact) {

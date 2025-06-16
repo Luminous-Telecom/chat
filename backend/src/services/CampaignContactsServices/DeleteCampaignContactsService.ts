@@ -11,7 +11,7 @@ interface Request {
 const DeleteCampaignContactsService = async ({
   campaignId,
   contactId,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const cc = await CampaignContacts.findOne({
     where: { campaignId, contactId },
@@ -21,10 +21,10 @@ const DeleteCampaignContactsService = async ({
         required: true,
         where: {
           id: campaignId,
-          tenantId
-        }
-      }
-    ]
+          tenantId,
+        },
+      },
+    ],
   });
 
   if (!cc) {

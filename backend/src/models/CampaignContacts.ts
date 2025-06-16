@@ -10,7 +10,7 @@ import {
   UpdatedAt,
   Default,
   DataType,
-  AllowNull
+  AllowNull,
 } from "sequelize-typescript";
 import Campaign from "./Campaign";
 import Contact from "./Contact";

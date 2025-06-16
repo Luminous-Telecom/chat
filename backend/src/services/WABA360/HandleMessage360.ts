@@ -23,7 +23,7 @@ const HandleMessage360 = async (
         const msgData = {
           ...context.messages[0],
           fromMe: false,
-          message_id: context.messages[0].id
+          message_id: context.messages[0].id,
         };
         const ticket = await FindOrCreateTicketService({
           contact,
@@ -31,7 +31,7 @@ const HandleMessage360 = async (
           unreadMessages,
           tenantId: channel.tenantId,
           msg: msgData,
-          channel: "waba"
+          channel: "waba",
         });
         if (ticket?.isCampaignMessage) {
           resolve();

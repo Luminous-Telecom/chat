@@ -32,15 +32,15 @@ const FindOrCreateTicketService = async ({
   groupContact,
   msg,
   isSync,
-  channel
+  channel,
 }: Data): Promise<Ticket | any> => {
   // se for uma mensagem de campanha, não abrir tícket
   if (msg && msg.fromMe) {
     const msgCampaign = await CampaignContacts.findOne({
       where: {
         contactId: contact.id,
-        messageId: msg.id?.id || msg.message_id || msg.item_id
-      }
+        messageId: msg.id?.id || msg.message_id || msg.item_id,
+      },
     });
     if (msgCampaign?.id) {
       return { isCampaignMessage: true };
@@ -50,7 +50,7 @@ const FindOrCreateTicketService = async ({
   if (msg && msg.fromMe) {
     const farewellMessage = await MessageModel.findOne({
       where: { messageId: msg.id?.id || msg.message_id || msg.item_id },
-      include: ["ticket"]
+      include: ["ticket"],
     });
 
     if (
@@ -66,11 +66,11 @@ const FindOrCreateTicketService = async ({
   let ticket = await Ticket.findOne({
     where: {
       status: {
-        [Op.or]: ["open", "pending"]
+        [Op.or]: ["open", "pending"],
       },
       tenantId,
       whatsappId,
-      contactId: groupContact ? groupContact.id : contact.id
+      contactId: groupContact ? groupContact.id : contact.id,
     },
     include: [
       {
@@ -81,20 +81,20 @@ const FindOrCreateTicketService = async ({
           "tags",
           {
             association: "wallets",
-            attributes: ["id", "name"]
-          }
-        ]
+            attributes: ["id", "name"],
+          },
+        ],
       },
       {
         model: User,
         as: "user",
-        attributes: ["id", "name"]
+        attributes: ["id", "name"],
       },
       {
         association: "whatsapp",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (ticket) {
@@ -107,7 +107,7 @@ const FindOrCreateTicketService = async ({
     socketEmit({
       tenantId,
       type: "ticket:update",
-      payload: ticket
+      payload: ticket,
     });
     return ticket;
   }
@@ -117,7 +117,7 @@ const FindOrCreateTicketService = async ({
       where: {
         contactId: groupContact.id,
         tenantId,
-        whatsappId
+        whatsappId,
       },
       order: [["updatedAt", "DESC"]],
       include: [
@@ -129,33 +129,33 @@ const FindOrCreateTicketService = async ({
             "tags",
             {
               association: "wallets",
-              attributes: ["id", "name"]
-            }
-          ]
+              attributes: ["id", "name"],
+            },
+          ],
         },
         {
           model: User,
           as: "user",
-          attributes: ["id", "name"]
+          attributes: ["id", "name"],
         },
         {
           association: "whatsapp",
-          attributes: ["id", "name"]
-        }
-      ]
+          attributes: ["id", "name"],
+        },
+      ],
     });
 
     if (ticket) {
       await ticket.update({
         status: "pending",
         userId: null,
-        unreadMessages
+        unreadMessages,
       });
 
       socketEmit({
         tenantId,
         type: "ticket:update",
-        payload: ticket
+        payload: ticket,
       });
 
       return ticket;
@@ -167,11 +167,11 @@ const FindOrCreateTicketService = async ({
         //   [Op.between]: [+subHours(new Date(), 24), +new Date()]
         // },
         status: {
-          [Op.in]: ["open", "pending"]
+          [Op.in]: ["open", "pending"],
         },
         tenantId,
         whatsappId,
-        contactId: contact.id
+        contactId: contact.id,
       },
       order: [["updatedAt", "DESC"]],
       include: [
@@ -183,33 +183,33 @@ const FindOrCreateTicketService = async ({
             "tags",
             {
               association: "wallets",
-              attributes: ["id", "name"]
-            }
-          ]
+              attributes: ["id", "name"],
+            },
+          ],
         },
         {
           model: User,
           as: "user",
-          attributes: ["id", "name"]
+          attributes: ["id", "name"],
         },
         {
           association: "whatsapp",
-          attributes: ["id", "name"]
-        }
-      ]
+          attributes: ["id", "name"],
+        },
+      ],
     });
 
     if (ticket) {
       await ticket.update({
         status: "pending",
         userId: null,
-        unreadMessages
+        unreadMessages,
       });
 
       socketEmit({
         tenantId,
         type: "ticket:update",
-        payload: ticket
+        payload: ticket,
       });
 
       return ticket;
@@ -228,7 +228,7 @@ const FindOrCreateTicketService = async ({
     unreadMessages,
     whatsappId,
     tenantId,
-    channel
+    channel,
   };
 
   if (DirectTicketsToWallets && contact.id) {
@@ -245,7 +245,7 @@ const FindOrCreateTicketService = async ({
 
   await CreateLogTicketService({
     ticketId: ticketCreated.id,
-    type: "create"
+    type: "create",
   });
 
   if ((msg && !msg.fromMe) || !ticketCreated.userId || isSync) {
@@ -258,7 +258,7 @@ const FindOrCreateTicketService = async ({
   socketEmit({
     tenantId,
     type: "ticket:update",
-    payload: ticket
+    payload: ticket,
   });
 
   return ticket;

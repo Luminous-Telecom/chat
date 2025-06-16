@@ -21,6 +21,10 @@ ticketRoutes.get(
   TicketController.showLogsTicket
 );
 
-ticketRoutes.post("/tickets/:ticketId/read", isAuth, TicketController.markAllAsRead);
+ticketRoutes.post(
+  "/tickets/:ticketId/read",
+  isAuth,
+  TicketController.markAllAsRead
+);
 
 export default ticketRoutes;

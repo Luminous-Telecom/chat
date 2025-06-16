@@ -10,4 +10,4 @@ dashboardRoutes.get(
   DashController.getDashTicketsInstances
 );
 
-export default dashboardRoutes; 
+export default dashboardRoutes;

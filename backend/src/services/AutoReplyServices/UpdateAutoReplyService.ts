@@ -18,13 +18,13 @@ interface Request {
 const UpdateAutoReplyService = async ({
   autoReplyData,
   autoReplyId,
-  tenantId
+  tenantId,
 }: Request): Promise<AutoReply> => {
   const { name, action, userId, isActive, celularTeste } = autoReplyData;
 
   const autoReply = await AutoReply.findOne({
     where: { id: autoReplyId, tenantId },
-    attributes: ["id", "name", "action", "userId", "isActive", "celularTeste"]
+    attributes: ["id", "name", "action", "userId", "isActive", "celularTeste"],
   });
 
   if (!autoReply) {
@@ -36,11 +36,11 @@ const UpdateAutoReplyService = async ({
     action,
     userId,
     isActive,
-    celularTeste
+    celularTeste,
   });
 
   await autoReply.reload({
-    attributes: ["id", "name", "action", "userId", "isActive", "celularTeste"]
+    attributes: ["id", "name", "action", "userId", "isActive", "celularTeste"],
   });
 
   return autoReply;

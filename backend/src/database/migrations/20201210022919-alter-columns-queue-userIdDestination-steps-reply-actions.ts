@@ -10,7 +10,7 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "restrict",
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       }),
       queryInterface.removeColumn("StepsReplyActions", "userIdDestination"),
       queryInterface.addColumn("StepsReplyActions", "userIdDestination", {
@@ -19,8 +19,8 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "restrict",
         defaultValue: null,
-        allowNull: true
-      })
+        allowNull: true,
+      }),
     ]);
   },
 
@@ -30,14 +30,14 @@ module.exports = {
       queryInterface.addColumn("StepsReplyActions", "queue", {
         type: DataTypes.INTEGER,
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       }),
       queryInterface.removeColumn("StepsReplyActions", "userIdDestination"),
       queryInterface.addColumn("StepsReplyActions", "userIdDestination", {
         type: DataTypes.INTEGER,
         defaultValue: null,
-        allowNull: true
-      })
+        allowNull: true,
+      }),
     ]);
-  }
+  },
 };

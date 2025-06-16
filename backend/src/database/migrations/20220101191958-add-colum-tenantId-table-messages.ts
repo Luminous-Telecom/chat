@@ -9,12 +9,12 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "restrict",
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Messages", "tenantId")]);
-  }
+  },
 };

@@ -21,7 +21,7 @@ describe("User", () => {
       name: faker.name.findName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-      tenantId: 1
+      tenantId: 1,
     });
 
     expect(user).toHaveProperty("id");
@@ -32,7 +32,7 @@ describe("User", () => {
       name: faker.name.findName(),
       email: "teste@sameemail.com",
       password: faker.internet.password(),
-      tenantId: 1
+      tenantId: 1,
     });
 
     try {
@@ -40,7 +40,7 @@ describe("User", () => {
         name: faker.name.findName(),
         email: "teste@sameemail.com",
         password: faker.internet.password(),
-        tenantId: 1
+        tenantId: 1,
       });
     } catch (err) {
       expect(err).toBeInstanceOf(AppError);

@@ -10,7 +10,7 @@ interface Request {
 // Use this edge to manage your profile's About section.
 const SetAboutProfileInfo = async ({
   text,
-  apiKey
+  apiKey,
 }: Request): Promise<boolean> => {
   const apiUrl360 = `${process.env.API_URL_360}/v1/settings/profile/about`;
 
@@ -21,8 +21,8 @@ const SetAboutProfileInfo = async ({
       data: { text },
       headers: {
         "D360-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     return true;
   } catch (error) {

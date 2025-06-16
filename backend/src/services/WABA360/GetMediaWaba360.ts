@@ -1,12 +1,11 @@
 /* eslint-disable camelcase */
 import axios from "axios";
-import { createWriteStream } from "fs";
+import fs, { createWriteStream } from "fs";
 import { join } from "path";
 import AppError from "../../errors/AppError";
 import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";
 import { logger } from "../../utils/logger";
-import fs from "fs";
 
 interface Request {
   channel: Whatsapp;
@@ -20,10 +19,10 @@ const downloadFile = async (
   filename: string
 ): Promise<void> => {
   const apiUrl360 = `${process.env.API_URL_360}/v1/media/${wabaMediaId}`;
-  
+
   const publicDir = join(__dirname, "..", "..", "public");
   const receivedDir = join(publicDir, "received");
-  
+
   // Verificar se os diretórios existem
   try {
     await fs.promises.access(publicDir);
@@ -44,8 +43,8 @@ const downloadFile = async (
     method: "GET",
     responseType: "stream",
     headers: {
-      "D360-API-KEY": apiKey
-    }
+      "D360-API-KEY": apiKey,
+    },
   });
 
   await new Promise((resolve, reject) => {
@@ -64,7 +63,7 @@ const downloadFile = async (
 const GetMediaWaba360 = async ({
   channel,
   msg,
-  ticket
+  ticket,
 }: Request): Promise<string> => {
   try {
     let mediaId = "";

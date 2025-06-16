@@ -8,27 +8,27 @@ module.exports = {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
-          allowNull: false
+          allowNull: false,
         },
         tag: {
           type: DataTypes.STRING,
-          allowNull: false
+          allowNull: false,
         },
         isActive: {
           type: DataTypes.BOOLEAN,
           defaultValue: true,
-          allowNull: false
+          allowNull: false,
         },
         color: {
           type: DataTypes.STRING,
-          allowNull: false
+          allowNull: false,
           // unique: true
         },
         userId: {
           type: DataTypes.INTEGER,
           references: { model: "Users", key: "id" },
           onUpdate: "CASCADE",
-          onDelete: "SET NULL"
+          onDelete: "SET NULL",
         },
         tenantId: {
           type: DataTypes.INTEGER,
@@ -36,21 +36,21 @@ module.exports = {
           onUpdate: "CASCADE",
           onDelete: "CASCADE",
           allowNull: false,
-          defaultValue: 1
+          defaultValue: 1,
         },
         createdAt: {
           type: DataTypes.DATE,
-          allowNull: false
+          allowNull: false,
         },
         updatedAt: {
           type: DataTypes.DATE,
-          allowNull: false
-        }
-      })
+          allowNull: false,
+        },
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.dropTable("Tags")]);
-  }
+  },
 };

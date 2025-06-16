@@ -10,60 +10,72 @@ const VerifyQuotedMessage = async (
 ): Promise<Message | null> => {
   try {
     if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-      logger.debug(`[VerifyQuotedMessage] No quoted message found in message context`);
+      logger.debug(
+        "[VerifyQuotedMessage] No quoted message found in message context"
+      );
       return null;
     }
 
     // Extrair informações da mensagem citada
-    const contextInfo = msg.message.extendedTextMessage.contextInfo;
+    const { contextInfo } = msg.message.extendedTextMessage;
     const quotedId = contextInfo.stanzaId;
     const quotedParticipant = contextInfo.participant;
-    
-    logger.info(`[VerifyQuotedMessage] Procurando mensagem citada com ID: ${quotedId}, participante: ${quotedParticipant}`);
-    
+
+    logger.info(
+      `[VerifyQuotedMessage] Procurando mensagem citada com ID: ${quotedId}, participante: ${quotedParticipant}`
+    );
+
     // Tentar encontrar a mensagem pelo messageId
     let quotedMsg = await Message.findOne({
-      where: { 
+      where: {
         messageId: quotedId ?? null,
-        tenantId: ticket.tenantId
+        tenantId: ticket.tenantId,
       },
       include: [
         {
           model: Ticket,
           as: "ticket",
-          where: { tenantId: ticket.tenantId }
-        }
-      ]
+          where: { tenantId: ticket.tenantId },
+        },
+      ],
     });
 
     // Se não encontrar pelo messageId, tentar pelo id
     if (!quotedMsg && quotedId) {
-      logger.info(`[VerifyQuotedMessage] Tentando encontrar mensagem pelo ID direto: ${quotedId}`);
+      logger.info(
+        `[VerifyQuotedMessage] Tentando encontrar mensagem pelo ID direto: ${quotedId}`
+      );
       quotedMsg = await Message.findOne({
-        where: { 
+        where: {
           id: quotedId,
-          tenantId: ticket.tenantId
+          tenantId: ticket.tenantId,
         },
         include: [
           {
             model: Ticket,
             as: "ticket",
-            where: { tenantId: ticket.tenantId }
-          }
-        ]
+            where: { tenantId: ticket.tenantId },
+          },
+        ],
       });
     }
 
     // Verificar se encontrou a mensagem
     if (!quotedMsg) {
-      logger.warn(`[VerifyQuotedMessage] Mensagem citada não encontrada para ID: ${quotedId}`);
+      logger.warn(
+        `[VerifyQuotedMessage] Mensagem citada não encontrada para ID: ${quotedId}`
+      );
       return null;
     }
 
-    logger.info(`[VerifyQuotedMessage] Mensagem citada encontrada: ${quotedMsg.id}, messageId: ${quotedMsg.messageId}`);
+    logger.info(
+      `[VerifyQuotedMessage] Mensagem citada encontrada: ${quotedMsg.id}, messageId: ${quotedMsg.messageId}`
+    );
     return quotedMsg;
   } catch (error) {
-    logger.error(`[VerifyQuotedMessage] Erro ao verificar mensagem citada: ${error}`);
+    logger.error(
+      `[VerifyQuotedMessage] Erro ao verificar mensagem citada: ${error}`
+    );
     return null;
   }
 };

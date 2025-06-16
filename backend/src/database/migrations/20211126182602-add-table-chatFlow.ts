@@ -7,27 +7,27 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: ""
+        defaultValue: "",
       },
       flow: {
         type: DataTypes.JSON,
         allowNull: false,
-        defaultValue: {}
+        defaultValue: {},
       },
       isActive: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true
+        defaultValue: true,
       },
       celularTeste: {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       },
       userId: {
         type: DataTypes.INTEGER,
@@ -35,7 +35,7 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       },
       tenantId: {
         type: DataTypes.INTEGER,
@@ -43,20 +43,20 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "restrict",
         allowNull: false,
-        defaultValue: 1
+        defaultValue: 1,
       },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("ChatFlow");
-  }
+  },
 };

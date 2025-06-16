@@ -38,7 +38,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const { whatsapp } = await CreateWhatsAppService({
     ...whatsappData,
     whatsappId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(whatsapp);
@@ -55,7 +55,7 @@ export const update = async (
   const { whatsapp } = await UpdateWhatsAppService({
     whatsappData,
     whatsappId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(whatsapp);
@@ -73,7 +73,7 @@ export const remove = async (
   const io = getIO();
   io.emit(`${tenantId}:whatsapp`, {
     action: "delete",
-    whatsappId: +whatsappId
+    whatsappId: +whatsappId,
   });
 
   return res.status(200).json({ message: "Whatsapp deleted." });

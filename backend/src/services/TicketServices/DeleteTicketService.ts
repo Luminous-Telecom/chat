@@ -12,7 +12,7 @@ interface Request {
 const DeleteTicketService = async ({
   id,
   tenantId,
-  userId
+  userId,
 }: Request): Promise<Ticket> => {
   const ticket = await ShowTicketService({ id, tenantId });
 
@@ -25,7 +25,7 @@ const DeleteTicketService = async ({
   await CreateLogTicketService({
     userId,
     ticketId: ticket.id,
-    type: "delete"
+    type: "delete",
   });
 
   return ticket;

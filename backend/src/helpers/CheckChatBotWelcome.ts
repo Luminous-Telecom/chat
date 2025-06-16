@@ -31,12 +31,12 @@ const AutoReplyWelcome = async (instance: Ticket): Promise<void> => {
 
   await instance.update({
     autoReplyId: stepAutoReply.autoReply.id,
-    stepAutoReplyId: stepAutoReply.id
+    stepAutoReplyId: stepAutoReply.id,
   });
 
   await CreateLogTicketService({
     ticketId: instance.id,
-    type: "chatBot"
+    type: "chatBot",
   });
 };
 

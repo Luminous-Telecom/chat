@@ -2,12 +2,15 @@
 
 const isValidMsg = (msg: WbotMessage): boolean => {
   if (msg.from === "status@broadcast") return false;
-  
+
   // Verificar se é mensagem de canal/newsletter do WhatsApp
-  if (msg.from && (msg.from.includes('@newsletter') || msg.from.includes('newsletter'))) {
+  if (
+    msg.from &&
+    (msg.from.includes("@newsletter") || msg.from.includes("newsletter"))
+  ) {
     return false;
   }
-  
+
   if (
     msg.type === "chat" ||
     msg.type === "audio" ||

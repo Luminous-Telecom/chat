@@ -18,7 +18,7 @@ const buildWabaMessage360 = async (
     timestamp: String(message.timestamp),
     recipient_type: "individual",
     to: chatId,
-    type: "text"
+    type: "text",
   };
   if (message.mediaType === "application" || message.mediaType === "document") {
     newMessage = {
@@ -26,8 +26,8 @@ const buildWabaMessage360 = async (
       type: "document",
       document: {
         id: message.wabaMediaId,
-        caption: message.body || message.mediaName || "" || ""
-      }
+        caption: message.body || message.mediaName || "" || "",
+      },
     };
   }
   if (message.mediaType === "image") {
@@ -36,8 +36,8 @@ const buildWabaMessage360 = async (
       type: "image",
       image: {
         id: message.wabaMediaId,
-        caption: message.body || message.mediaName || ""
-      }
+        caption: message.body || message.mediaName || "",
+      },
     };
   }
   if (message.mediaType === "video") {
@@ -46,8 +46,8 @@ const buildWabaMessage360 = async (
       type: "video",
       video: {
         id: message.wabaMediaId,
-        caption: message.body || message.mediaName || ""
-      }
+        caption: message.body || message.mediaName || "",
+      },
     };
   }
   if (message.mediaType === "audio" || message.mediaType === "voice") {
@@ -56,16 +56,16 @@ const buildWabaMessage360 = async (
       type: "audio",
       audio: {
         id: message.wabaMediaId,
-        caption: message.body || message.mediaName || ""
-      }
+        caption: message.body || message.mediaName || "",
+      },
     };
   }
   if (message.mediaType === "chat" || message.mediaType === "text") {
     newMessage = {
       ...newMessage,
       text: {
-        body: message.body
-      }
+        body: message.body,
+      },
     };
   }
   return newMessage;
@@ -78,13 +78,13 @@ const where = {
   [Op.or]: [
     {
       scheduleDate: {
-        [Op.lte]: new Date()
-      }
+        [Op.lte]: new Date(),
+      },
     },
     {
-      scheduleDate: { [Op.is]: null }
-    }
-  ]
+      scheduleDate: { [Op.is]: null },
+    },
+  ],
 };
 
 const Waba360SendMessagesSystem = async (
@@ -103,17 +103,17 @@ const Waba360SendMessagesSystem = async (
           {
             model: Whatsapp,
             as: "whatsapp",
-            where: { id: connection.id, type: "waba", wabaBSP: "360" }
-          }
-        ]
+            where: { id: connection.id, type: "waba", wabaBSP: "360" },
+          },
+        ],
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
-      }
+        include: ["contact"],
+      },
     ],
-    order: [["createdAt", "ASC"]]
+    order: [["createdAt", "ASC"]],
   });
   for (const messageItem of messages) {
     const { ticket } = messageItem;
@@ -131,14 +131,14 @@ const Waba360SendMessagesSystem = async (
     const buldedMessage = await buildWabaMessage360(messageItem, chatId);
     const sendedMessage: any = await SentMessage({
       message: buldedMessage,
-      apiKey: connection.tokenAPI
+      apiKey: connection.tokenAPI,
     });
 
     const messageToUpdate: any = {
       ...messageItem,
       messageId: sendedMessage.messages[0].id,
       status: "sended",
-      ack: 1
+      ack: 1,
     };
 
     await Message.update(
@@ -155,8 +155,8 @@ const Waba360SendMessagesSystem = async (
         messageId: messageToUpdate.messageId,
         status: "sended",
         ack: 1,
-        fromMe: messageItem.fromMe
-      }
+        fromMe: messageItem.fromMe,
+      },
     });
 
     logger.info("Message Update ok");

@@ -26,8 +26,8 @@ const UploadMedia = async ({ file, apiKey }: Request): Promise<Response> => {
       data: { file },
       headers: {
         "D360-API-KEY": apiKey,
-        "Content-Type": "multipart/form-data"
-      }
+        "Content-Type": "multipart/form-data",
+      },
     });
     return res.data;
   } catch (error) {

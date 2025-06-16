@@ -7,7 +7,7 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       userId: {
         type: DataTypes.INTEGER,
@@ -15,14 +15,14 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       },
       ticketId: {
         type: DataTypes.INTEGER,
         references: { model: "Tickets", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
-        allowNull: false
+        allowNull: false,
       },
       queueId: {
         type: DataTypes.INTEGER,
@@ -30,24 +30,24 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       },
       type: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
       },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("LogTickets");
-  }
+  },
 };

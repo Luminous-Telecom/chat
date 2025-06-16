@@ -8,7 +8,7 @@ interface Request {
 
 const DeleteTagService = async ({ id, tenantId }: Request): Promise<void> => {
   const tag = await Tag.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!tag) {

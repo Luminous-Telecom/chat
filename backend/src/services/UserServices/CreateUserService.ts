@@ -23,7 +23,7 @@ const CreateUserService = async ({
   password,
   name,
   tenantId,
-  profile = "admin"
+  profile = "admin",
 }: Request): Promise<Response> => {
   const schema = Yup.object().shape({
     name: Yup.string().required().min(2),
@@ -36,12 +36,12 @@ const CreateUserService = async ({
         "An user with this email already exists.",
         async value => {
           const emailExists = await User.findOne({
-            where: { email: value! }
+            where: { email: value! },
           });
           return !emailExists;
         }
       ),
-    password: Yup.string().required().min(5)
+    password: Yup.string().required().min(5),
   });
 
   try {
@@ -55,14 +55,14 @@ const CreateUserService = async ({
     password,
     name,
     profile,
-    tenantId
+    tenantId,
   });
 
   const serializedUser = {
     id: user.id,
     name: user.name,
     email: user.email,
-    profile: user.profile
+    profile: user.profile,
   };
 
   return serializedUser;

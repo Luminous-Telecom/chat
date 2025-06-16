@@ -33,7 +33,7 @@ interface Request {
 const UpdateContactService = async ({
   contactData,
   contactId,
-  tenantId
+  tenantId,
 }: Request): Promise<Contact> => {
   const { email, name, number, extraInfo, wallets } = contactData;
 
@@ -45,9 +45,9 @@ const UpdateContactService = async ({
       "tags",
       {
         association: "wallets",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (!contact) {
@@ -76,8 +76,8 @@ const UpdateContactService = async ({
     await ContactWallet.destroy({
       where: {
         tenantId,
-        contactId
-      }
+        contactId,
+      },
     });
 
     const contactWallets: Wallet[] = [];
@@ -86,7 +86,7 @@ const UpdateContactService = async ({
       contactWallets.push({
         walletId: !wallet.id ? wallet : wallet.id,
         contactId,
-        tenantId
+        tenantId,
       });
     });
 
@@ -96,7 +96,7 @@ const UpdateContactService = async ({
   await contact.update({
     name,
     number,
-    email
+    email,
   });
 
   await contact.reload({
@@ -106,15 +106,15 @@ const UpdateContactService = async ({
       "tags",
       {
         association: "wallets",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   socketEmit({
     tenantId,
     type: "contact:update",
-    payload: contact
+    payload: contact,
   });
 
   return contact;

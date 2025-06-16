@@ -34,13 +34,13 @@ const MessengerVerifyMessage = async (
     read: false,
     quotedMsgId,
     timestamp: msg.timestamp,
-    status: "received"
+    status: "received",
   };
 
   await ticket.update({
     lastMessage: messageData.body,
     lastMessageAt: new Date().getTime(),
-    answered: false
+    answered: false,
   });
   await CreateMessageService({ messageData, tenantId: ticket.tenantId });
 };

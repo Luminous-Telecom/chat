@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Campaigns", "delay", {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 20
+      defaultValue: 20,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Campaigns", "delay");
-  }
+  },
 };

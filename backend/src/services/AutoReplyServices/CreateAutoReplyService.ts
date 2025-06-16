@@ -12,13 +12,13 @@ const CreateAutoReplyService = async ({
   name,
   action,
   userId,
-  tenantId
+  tenantId,
 }: Request): Promise<AutoReply> => {
   const autoReply = await AutoReply.create({
     name,
     action,
     userId,
-    tenantId
+    tenantId,
   });
 
   return autoReply;

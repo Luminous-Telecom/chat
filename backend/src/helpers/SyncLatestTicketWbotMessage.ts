@@ -1,4 +1,4 @@
-//import { WbotMessage } from '../types/baileys';
+// import { WbotMessage } from '../types/baileys';
 // import { Message as WbotMessage } from "whatsapp-web.js";
 // import { Op } from "sequelize";
 // import Ticket from "../models/Ticket";

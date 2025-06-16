@@ -9,11 +9,11 @@ interface Request {
 }
 
 const ListApiConfigService = async ({
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
   const apis = await ApiConfig.findAll({
     where: { tenantId },
-    order: [["name", "ASC"]]
+    order: [["name", "ASC"]],
   });
 
   return { apis };

@@ -10,10 +10,10 @@ interface Request {
 
 const CancelCampaignService = async ({
   campaignId,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const campaign = await Campaign.findOne({
-    where: { id: campaignId, tenantId }
+    where: { id: campaignId, tenantId },
   });
 
   if (!campaign) {
@@ -26,8 +26,8 @@ const CancelCampaignService = async ({
         port: Number(process.env.IO_REDIS_PORT),
         host: process.env.IO_REDIS_SERVER,
         db: Number(process.env.IO_REDIS_DB_SESSION) || 2,
-        password: process.env.IO_REDIS_PASSWORD || undefined
-      }
+        password: process.env.IO_REDIS_PASSWORD || undefined,
+      },
     }).removeJobs(`campaginId_${campaign.id}*`);
 
     await CampaignContacts.update(
@@ -36,18 +36,18 @@ const CancelCampaignService = async ({
         mediaName: null,
         timestamp: null,
         ack: 0,
-        messageId: null
+        messageId: null,
       },
       {
         where: {
           campaignId: campaign.id,
-          messageId: null
-        }
+          messageId: null,
+        },
       }
     );
 
     await campaign.update({
-      status: "canceled"
+      status: "canceled",
     });
   } catch (error) {
     throw new AppError(`ERROR: ${error}`, 404);

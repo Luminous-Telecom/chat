@@ -1,6 +1,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { Request, Response } from "express";
+import { Op } from "sequelize";
 import AppError from "../errors/AppError";
 import DeleteMessageSystem from "../helpers/DeleteMessageSystem";
 // import GetTicketWbot from "../helpers/GetTicketWbot";
@@ -19,7 +20,6 @@ import { getIO } from "../libs/socket";
 import CreateMessageService from "../services/MessageServices/CreateMessageService";
 import SendWhatsAppMedia from "../services/WbotServices/SendWhatsAppMedia";
 import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
-import { Op } from "sequelize";
 import Ticket from "../models/Ticket";
 import Contact from "../models/Contact";
 
@@ -46,24 +46,33 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     await ListMessagesService({
       pageNumber,
       ticketId,
-      tenantId
+      tenantId,
     });
 
   // Serialização manual para garantir que todos os campos venham completos
   const serializedMessages = messages.map(msg => {
     const plain = msg.get({ plain: true }) as any;
     if (plain.quotedMsg) {
-      if (typeof plain.quotedMsg.get === 'function') {
+      if (typeof plain.quotedMsg.get === "function") {
         plain.quotedMsg = plain.quotedMsg.get({ plain: true });
       }
-      if (plain.quotedMsg.contact && typeof plain.quotedMsg.contact.get === 'function') {
+      if (
+        plain.quotedMsg.contact &&
+        typeof plain.quotedMsg.contact.get === "function"
+      ) {
         plain.quotedMsg.contact = plain.quotedMsg.contact.get({ plain: true });
       }
     }
     return plain;
   });
 
-  return res.json({ count, messages: serializedMessages, messagesOffLine, ticket, hasMore });
+  return res.json({
+    count,
+    messages: serializedMessages,
+    messagesOffLine,
+    ticket,
+    hasMore,
+  });
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
@@ -89,7 +98,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     scheduleDate: messageData.scheduleDate,
     sendType: messageData.sendType || "chat",
     status: "pending",
-    idFront: messageData.idFront
+    idFront: messageData.idFront,
   });
 
   return res.send();
@@ -99,32 +108,40 @@ export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  console.log('[DEBUG DELETE CONTROLLER] Remove function called');
+  console.log("[DEBUG DELETE CONTROLLER] Remove function called");
   const { messageId } = req.params;
   const { tenantId } = req.user;
-  
+
   // Debug logs para investigar o erro 400
-  console.log('[DEBUG DELETE CONTROLLER] messageId from params:', messageId);
-  console.log('[DEBUG DELETE CONTROLLER] req.body:', JSON.stringify(req.body, null, 2));
-  console.log('[DEBUG DELETE CONTROLLER] tenantId:', tenantId);
-  console.log('[DEBUG DELETE CONTROLLER] req.method:', req.method);
-  console.log('[DEBUG DELETE CONTROLLER] req.url:', req.url);
-  
+  console.log("[DEBUG DELETE CONTROLLER] messageId from params:", messageId);
+  console.log(
+    "[DEBUG DELETE CONTROLLER] req.body:",
+    JSON.stringify(req.body, null, 2)
+  );
+  console.log("[DEBUG DELETE CONTROLLER] tenantId:", tenantId);
+  console.log("[DEBUG DELETE CONTROLLER] req.method:", req.method);
+  console.log("[DEBUG DELETE CONTROLLER] req.url:", req.url);
+
   try {
-    console.log('[DEBUG DELETE CONTROLLER] Calling DeleteMessageSystem with params:', {
-      id: req.body.id,
-      messageId,
-      tenantId
-    });
+    console.log(
+      "[DEBUG DELETE CONTROLLER] Calling DeleteMessageSystem with params:",
+      {
+        id: req.body.id,
+        messageId,
+        tenantId,
+      }
+    );
     await DeleteMessageSystem(req.body.id, messageId, tenantId);
-    console.log('[DEBUG DELETE CONTROLLER] DeleteMessageSystem completed successfully');
+    console.log(
+      "[DEBUG DELETE CONTROLLER] DeleteMessageSystem completed successfully"
+    );
   } catch (error) {
-    console.log('[DEBUG DELETE CONTROLLER] Error details:', error);
+    console.log("[DEBUG DELETE CONTROLLER] Error details:", error);
     logger.error(`ERR_DELETE_SYSTEM_MSG: ${error}`);
     throw new AppError("ERR_DELETE_SYSTEM_MSG");
   }
 
-  console.log('[DEBUG DELETE CONTROLLER] Sending response');
+  console.log("[DEBUG DELETE CONTROLLER] Sending response");
   return res.send();
 };
 
@@ -141,61 +158,70 @@ export const forward = async (
       tenantId: user.tenantId,
       message,
       contact: data.contact,
-      ticketIdOrigin: message.ticketId
+      ticketIdOrigin: message.ticketId,
     });
   }
 
   return res.send();
 };
 
-export const markAsRead = async (req: Request, res: Response): Promise<Response> => {
+export const markAsRead = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { messageId } = req.params;
   const { tenantId } = req.user;
 
-  logger.info(`[markAsRead] Iniciando marcação de mensagem como lida. MessageId: ${messageId}, TenantId: ${tenantId}`);
+  logger.info(
+    `[markAsRead] Iniciando marcação de mensagem como lida. MessageId: ${messageId}, TenantId: ${tenantId}`
+  );
 
   try {
     const message = await Message.findOne({
-      where: { 
+      where: {
         id: messageId,
-        tenantId
+        tenantId,
       },
       include: [
         {
           model: Ticket,
-          include: [{ model: Contact }]
-        }
-      ]
+          include: [{ model: Contact }],
+        },
+      ],
     });
 
     if (!message) {
-      logger.warn(`[markAsRead] Mensagem não encontrada. MessageId: ${messageId}`);
+      logger.warn(
+        `[markAsRead] Mensagem não encontrada. MessageId: ${messageId}`
+      );
       return res.status(404).json({ error: "Message not found" });
     }
 
-    logger.info(`[markAsRead] Mensagem encontrada:`, {
+    logger.info("[markAsRead] Mensagem encontrada:", {
       messageId: message.id,
       ticketId: message.ticketId,
-      read: message.read
+      read: message.read,
     });
 
     // Marcar mensagem como lida
     await message.update({ read: true });
-    logger.info(`[markAsRead] Mensagem marcada como lida`);
+    logger.info("[markAsRead] Mensagem marcada como lida");
 
     // Atualizar contador de mensagens não lidas no ticket
     const unreadCount = await Message.count({
-      where: { 
-        ticketId: message.ticketId, 
+      where: {
+        ticketId: message.ticketId,
         read: false,
-        fromMe: false
-      }
+        fromMe: false,
+      },
     });
 
-    logger.info(`[markAsRead] Novo contador de mensagens não lidas: ${unreadCount}`);
+    logger.info(
+      `[markAsRead] Novo contador de mensagens não lidas: ${unreadCount}`
+    );
 
     await message.ticket.update({ unreadMessages: unreadCount });
-    logger.info(`[markAsRead] Ticket atualizado com novo contador`);
+    logger.info("[markAsRead] Ticket atualizado com novo contador");
 
     // Notificar frontend
     const io = getIO();
@@ -207,16 +233,16 @@ export const markAsRead = async (req: Request, res: Response): Promise<Response>
         read: true,
         ticket: {
           id: message.ticket.id,
-          unreadMessages: unreadCount
-        }
-      }
+          unreadMessages: unreadCount,
+        },
+      },
     });
-    logger.info(`[markAsRead] Evento emitido para o frontend`);
+    logger.info("[markAsRead] Evento emitido para o frontend");
 
     return res.status(200).json({ message: "Message marked as read" });
   } catch (err) {
-    logger.error(`[markAsRead] Erro ao marcar mensagem como lida:`, err);
-    logger.error(`[markAsRead] Stack do erro:`, err.stack);
+    logger.error("[markAsRead] Erro ao marcar mensagem como lida:", err);
+    logger.error("[markAsRead] Stack do erro:", err.stack);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

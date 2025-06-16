@@ -12,7 +12,7 @@ import {
   Default,
   // AfterCreate,
   DataType,
-  AllowNull
+  AllowNull,
 } from "sequelize-typescript";
 
 import { format } from "date-fns";

@@ -58,7 +58,7 @@ const DashTicketsPerUsersDetail = async ({
   endDate,
   tenantId,
   userId,
-  userProfile
+  userProfile,
 }: Request): Promise<any[]> => {
   const data = await sequelize.query(
     userProfile == "admin" ? queryAdmin : query,
@@ -67,9 +67,9 @@ const DashTicketsPerUsersDetail = async ({
         tenantId,
         startDate,
         endDate,
-        userId
+        userId,
       },
-      type: QueryTypes.SELECT
+      type: QueryTypes.SELECT,
     }
   );
   return data;

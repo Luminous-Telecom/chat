@@ -7,25 +7,25 @@ interface Request {
 }
 
 const ShowLogTicketService = async ({
-  ticketId
+  ticketId,
 }: Request): Promise<LogTicket[]> => {
   const logs = await LogTicket.findAll({
     where: {
-      ticketId
+      ticketId,
     },
     include: [
       {
         model: User,
         as: "user",
-        attributes: ["id", "name"]
+        attributes: ["id", "name"],
       },
       {
         model: Queue,
         as: "queue",
-        attributes: ["id", "queue"]
-      }
+        attributes: ["id", "queue"],
+      },
     ],
-    order: [["createdAt", "DESC"]]
+    order: [["createdAt", "DESC"]],
   });
 
   return logs;

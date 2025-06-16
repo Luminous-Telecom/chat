@@ -9,7 +9,7 @@ import {
   Default,
   BelongsTo,
   ForeignKey,
-  AutoIncrement
+  AutoIncrement,
 } from "sequelize-typescript";
 import Contact from "./Contact";
 import Message from "./Message";

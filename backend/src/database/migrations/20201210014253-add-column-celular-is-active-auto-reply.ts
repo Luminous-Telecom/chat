@@ -6,20 +6,20 @@ module.exports = {
       queryInterface.addColumn("AutoReply", "isActive", {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true
+        defaultValue: true,
       }),
       queryInterface.addColumn("AutoReply", "celularTeste", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
       queryInterface.removeColumn("AutoReply", "isActive"),
-      queryInterface.removeColumn("AutoReply", "celularTeste")
+      queryInterface.removeColumn("AutoReply", "celularTeste"),
     ]);
-  }
+  },
 };

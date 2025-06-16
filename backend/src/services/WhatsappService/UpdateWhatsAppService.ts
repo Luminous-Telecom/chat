@@ -36,11 +36,11 @@ interface Response {
 const UpdateWhatsAppService = async ({
   whatsappData,
   whatsappId,
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
   const schema = Yup.object().shape({
     name: Yup.string().min(2),
-    isDefault: Yup.boolean()
+    isDefault: Yup.boolean(),
   });
 
   const {
@@ -57,7 +57,7 @@ const UpdateWhatsAppService = async ({
     tokenAPI,
     fbPageId,
     farewellMessage,
-    chatFlowId
+    chatFlowId,
   } = whatsappData;
 
   try {
@@ -67,7 +67,7 @@ const UpdateWhatsAppService = async ({
 
     if (isDefault) {
       oldDefaultWhatsapp = await Whatsapp.findOne({
-        where: { isDefault: true, tenantId, id: { [Op.not]: whatsappId } }
+        where: { isDefault: true, tenantId, id: { [Op.not]: whatsappId } },
       });
       if (oldDefaultWhatsapp) {
         await oldDefaultWhatsapp.update({ isDefault: false });
@@ -75,7 +75,7 @@ const UpdateWhatsAppService = async ({
     }
 
     const whatsapp = await Whatsapp.findOne({
-      where: { id: whatsappId, tenantId }
+      where: { id: whatsappId, tenantId },
     });
 
     if (!whatsapp) {
@@ -95,7 +95,7 @@ const UpdateWhatsAppService = async ({
       tokenAPI,
       fbPageId,
       farewellMessage,
-      chatFlowId
+      chatFlowId,
     };
 
     if (instagramKey) {

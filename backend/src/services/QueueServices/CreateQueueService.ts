@@ -12,13 +12,13 @@ const CreateQueueService = async ({
   queue,
   isActive,
   userId,
-  tenantId
+  tenantId,
 }: Request): Promise<Queue> => {
   const queueData = await Queue.create({
     queue,
     isActive,
     userId,
-    tenantId
+    tenantId,
   });
 
   return queueData;

@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Tickets", "apiConfig", {
         type: DataTypes.JSONB,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Tickets", "apiConfig")]);
-  }
+  },
 };

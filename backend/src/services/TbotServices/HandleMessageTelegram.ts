@@ -31,7 +31,7 @@ const HandleMessage = async (ctx: Context, tbot: Session): Promise<void> => {
   const messageData = {
     ...message,
     // compatibilizar timestamp com js
-    timestamp: +message.date * 1000
+    timestamp: +message.date * 1000,
   };
 
   const contact = await VerifyContact(ctx, channel.tenantId);
@@ -41,7 +41,7 @@ const HandleMessage = async (ctx: Context, tbot: Session): Promise<void> => {
     unreadMessages: fromMe ? 0 : 1,
     tenantId: channel.tenantId,
     msg: { ...messageData, fromMe },
-    channel: "telegram"
+    channel: "telegram",
   });
   if (ticket?.isFarewellMessage) {
     return;
@@ -56,7 +56,7 @@ const HandleMessage = async (ctx: Context, tbot: Session): Promise<void> => {
   await VerifyStepsChatFlowTicket(
     {
       fromMe,
-      body: message.text || ""
+      body: message.text || "",
     },
     ticket
   );
@@ -64,7 +64,7 @@ const HandleMessage = async (ctx: Context, tbot: Session): Promise<void> => {
   await verifyBusinessHours(
     {
       fromMe,
-      timestamp: messageData.timestamp
+      timestamp: messageData.timestamp,
     },
     ticket
   );

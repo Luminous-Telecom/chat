@@ -4,7 +4,7 @@ import ShowUserService from "../UserServices/ShowUserService";
 import authConfig from "../../config/auth";
 import {
   createAccessToken,
-  createRefreshToken
+  createRefreshToken,
 } from "../../helpers/CreateTokens";
 
 interface RefreshTokenPayload {

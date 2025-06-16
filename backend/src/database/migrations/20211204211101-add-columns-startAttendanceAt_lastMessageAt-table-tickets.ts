@@ -6,18 +6,18 @@ module.exports = {
       queryInterface.addColumn("Tickets", "lastMessageAt", {
         type: DataTypes.BIGINT,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Tickets", "startedAttendanceAt", {
         type: DataTypes.BIGINT,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Tickets", "closedAt", {
         type: DataTypes.BIGINT,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
@@ -25,7 +25,7 @@ module.exports = {
     return Promise.all([
       queryInterface.removeColumn("Tickets", "lastMessageAt"),
       queryInterface.removeColumn("Tickets", "startedAttendanceAt"),
-      queryInterface.removeColumn("Tickets", "closedAt")
+      queryInterface.removeColumn("Tickets", "closedAt"),
     ]);
-  }
+  },
 };

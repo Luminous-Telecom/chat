@@ -24,8 +24,8 @@ export default {
     removeOnFail: false,
     backoff: {
       type: "fixed",
-      delay: 60000 * 3 // 3 min
-    }
+      delay: 60000 * 3, // 3 min
+    },
   },
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async handle({ data }: any) {
@@ -46,7 +46,7 @@ export default {
             externalKey: data.externalKey,
             error: "number invalid in whatsapp",
             type: "hookMessageStatus",
-            authToken: data.authToken
+            authToken: data.authToken,
           };
 
           if (data.media) {
@@ -58,7 +58,7 @@ export default {
             Queue.add("WebHooksAPI", {
               url: data.apiConfig.urlMessageStatus,
               type: payload.type,
-              payload
+              payload,
             });
           }
           return payload;
@@ -74,7 +74,7 @@ export default {
           tenantId: data.tenantId,
           groupContact: undefined,
           msg: data,
-          channel: "whatsapp"
+          channel: "whatsapp",
         });
 
         await CreateMessageSystemService({
@@ -82,14 +82,14 @@ export default {
           tenantId: data.tenantId,
           ticket,
           sendType: "API",
-          status: "pending"
+          status: "pending",
         });
 
         await ticket.update({
           apiConfig: {
             ...data.apiConfig,
-            externalKey: data.externalKey
-          }
+            externalKey: data.externalKey,
+          },
         });
       } catch (error) {
         const payload = {
@@ -100,14 +100,14 @@ export default {
           externalKey: data.externalKey,
           error: "error session",
           type: "hookMessageStatus",
-          authToken: data.authToken
+          authToken: data.authToken,
         };
 
         if (data?.apiConfig?.urlMessageStatus) {
           Queue.add("WebHooksAPI", {
             url: data.apiConfig.urlMessageStatus,
             type: payload.type,
-            payload
+            payload,
           });
         }
         throw new Error(error);
@@ -131,5 +131,5 @@ export default {
       logger.error({ message: "Error send message api", error });
       throw new Error(error);
     }
-  }
+  },
 };

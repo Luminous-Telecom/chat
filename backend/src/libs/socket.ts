@@ -12,17 +12,17 @@ let io: SocketIO;
 export const initIO = (httpServer: Server): SocketIO => {
   io = new SocketIO(httpServer, {
     cors: {
-      origin: "*"
+      origin: "*",
     },
     pingTimeout: 180000,
-    pingInterval: 60000
+    pingInterval: 60000,
   });
 
   const connRedis = {
     host: process.env.IO_REDIS_SERVER,
     port: Number(process.env.IO_REDIS_PORT),
     username: process.env.IO_REDIS_USERNAME,
-    password: process.env.IO_REDIS_PASSWORD
+    password: process.env.IO_REDIS_PASSWORD,
   };
 
   // apresentando problema na assinatura
@@ -39,7 +39,7 @@ export const initIO = (httpServer: Server): SocketIO => {
           ...auth,
           ...verify.data,
           id: String(verify.data.id),
-          tenantId: String(verify.data.tenantId)
+          tenantId: String(verify.data.tenantId),
         };
 
         const user = await User.findByPk(verify.data.id, {
@@ -51,8 +51,8 @@ export const initIO = (httpServer: Server): SocketIO => {
             "profile",
             "status",
             "lastLogin",
-            "lastOnline"
-          ]
+            "lastOnline",
+          ],
         });
         socket.handshake.auth.user = user;
         return next();

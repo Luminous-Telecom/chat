@@ -24,7 +24,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     reply: Yup.string().required(),
     idAutoReply: Yup.number().required(),
     userId: Yup.number().required(),
-    initialStep: Yup.boolean().required()
+    initialStep: Yup.boolean().required(),
   });
 
   try {
@@ -51,7 +51,7 @@ export const update = async (
     reply: Yup.string().required(),
     idAutoReply: Yup.number().required(),
     userId: Yup.number().required(),
-    initialStep: Yup.boolean().required()
+    initialStep: Yup.boolean().required(),
   });
 
   try {
@@ -63,7 +63,7 @@ export const update = async (
   const { stepsReplyId } = req.params;
   const stepsReply = await UpdateStepsReplyService({
     stepsReplyData,
-    stepsReplyId
+    stepsReplyId,
   });
 
   return res.status(200).json(stepsReply);

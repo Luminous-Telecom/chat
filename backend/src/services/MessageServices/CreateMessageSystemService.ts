@@ -75,38 +75,38 @@ const downloadMedia = async (msg: any): Promise<any> => {
   try {
     // Verificar se a URL de mídia é válida
     if (!msg.mediaUrl) {
-      throw new Error('No media URL provided');
+      throw new Error("No media URL provided");
     }
 
     const request = await axios.get(msg.mediaUrl, {
       responseType: "stream",
       timeout: 30000, // 30 segundos de timeout
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MediaDownloader/1.0)'
-      }
+        "User-Agent": "Mozilla/5.0 (compatible; MediaDownloader/1.0)",
+      },
     });
-    
+
     const cType = request.headers["content-type"];
     if (!cType) {
-      throw new Error('No content-type header received');
+      throw new Error("No content-type header received");
     }
-    
+
     const tMine: any = mime;
-    const fileExt = tMine.extension(cType) || 'bin';
+    const fileExt = tMine.extension(cType) || "bin";
     const mediaName = uuidv4();
     const dir = join(__dirname, "..", "..", "..", "public");
-    
+
     // Verificar se o diretório existe, criar se necessário
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    
+
     const fileName = `${mediaName}.${fileExt}`;
     const mediaPath = join(dir, fileName);
     const mediaData = {
       originalname: fileName,
       filename: fileName,
-      mediaType: fileExt
+      mediaType: fileExt,
     };
     await new Promise((resolve, reject) => {
       request.data
@@ -115,14 +115,17 @@ const downloadMedia = async (msg: any): Promise<any> => {
           resolve(mediaData);
         })
         .on("error", (error: any) => {
-          console.error("ERROR DOWNLOAD", error.message || 'Unknown error');
+          console.error("ERROR DOWNLOAD", error.message || "Unknown error");
           // Tentar remover o arquivo se existir
           try {
             if (fs.existsSync(mediaPath)) {
               fs.unlinkSync(mediaPath);
             }
           } catch (unlinkError) {
-            console.error("Error removing failed download file:", unlinkError.message);
+            console.error(
+              "Error removing failed download file:",
+              unlinkError.message
+            );
           }
           reject(new Error(error));
         });
@@ -138,13 +141,13 @@ const downloadMedia = async (msg: any): Promise<any> => {
         externalKey: msg.externalKey,
         error: error.message,
         authToken: msg.apiConfig.authToken,
-        type: "hookMessageStatus"
+        type: "hookMessageStatus",
       };
       if (msg?.apiConfig?.urlMessageStatus) {
         Queue.add("WebHooksAPI", {
           url: msg.apiConfig.urlMessageStatus,
           type: payload.type,
-          payload
+          payload,
         });
       }
       return {};
@@ -162,15 +165,15 @@ const CreateMessageSystemService = async ({
   sendType,
   scheduleDate,
   status,
-  idFront
+  idFront,
 }: Request): Promise<void> => {
   try {
     // Log do payload recebido
-    logger.info('[DEBUG] CreateMessageSystemService - Payload recebido:', {
+    logger.info("[DEBUG] CreateMessageSystemService - Payload recebido:", {
       quotedMsgId: msg.quotedMsgId,
       quotedMsg: msg.quotedMsg,
       body: msg.body,
-      type: msg.type
+      type: msg.type,
     });
 
     // Buscar a mensagem citada para obter o messageId do WhatsApp
@@ -179,7 +182,9 @@ const CreateMessageSystemService = async ({
       const quotedMessage = await Message.findByPk(msg.quotedMsg.id);
       if (quotedMessage) {
         quotedMsgMessageId = quotedMessage.messageId;
-        logger.info(`[DEBUG] CreateMessageSystemService - Found quoted message WhatsApp ID: ${quotedMsgMessageId}`);
+        logger.info(
+          `[DEBUG] CreateMessageSystemService - Found quoted message WhatsApp ID: ${quotedMsgMessageId}`
+        );
       }
     }
 
@@ -200,26 +205,36 @@ const CreateMessageSystemService = async ({
       idFront,
       tenantId,
       ack: scheduleDate ? 0 : 1,
-      messageId: msg.messageId || null
+      messageId: msg.messageId || null,
     };
 
     // Log do messageData antes de processar
-    logger.info('[DEBUG] CreateMessageSystemService - baseMessageData:', {
+    logger.info("[DEBUG] CreateMessageSystemService - baseMessageData:", {
       quotedMsgId: baseMessageData.quotedMsgId,
       body: baseMessageData.body,
-      type: baseMessageData.mediaType
+      type: baseMessageData.mediaType,
     });
 
     if (medias && medias.length > 0) {
-      await processMediaMessages(medias, baseMessageData, ticket, tenantId, userId);
+      await processMediaMessages(
+        medias,
+        baseMessageData,
+        ticket,
+        tenantId,
+        userId
+      );
     } else {
       await processTextMessage(baseMessageData, ticket, tenantId, userId);
     }
-
   } catch (error) {
-    logger.error(`[CreateMessageSystemService] Erro ao criar mensagem:`, error.message || 'Erro desconhecido');
-    logger.error(`[CreateMessageSystemService] Stack trace:`, error.stack);
-    throw new Error(`Erro ao criar mensagem: ${error.message || 'Erro desconhecido'}`);
+    logger.error(
+      "[CreateMessageSystemService] Erro ao criar mensagem:",
+      error.message || "Erro desconhecido"
+    );
+    logger.error("[CreateMessageSystemService] Stack trace:", error.stack);
+    throw new Error(
+      `Erro ao criar mensagem: ${error.message || "Erro desconhecido"}`
+    );
   }
 };
 
@@ -244,7 +259,10 @@ const processMediaMessages = async (
         try {
           await mkdirAsync(sentDir, { recursive: true });
         } catch (err) {
-          logger.error(`[CreateMessageSystemService] Error creating sent directory:`, err);
+          logger.error(
+            "[CreateMessageSystemService] Error creating sent directory:",
+            err
+          );
           // Se não conseguir criar o diretório, tentar usar o diretório temporário
           const tempDir = join(process.cwd(), "backend", "public", "sent");
           await mkdirAsync(tempDir, { recursive: true });
@@ -266,7 +284,7 @@ const processMediaMessages = async (
           originalName: media.originalname,
           body: media.originalname,
           mediaUrl: media.filename,
-          userId
+          userId,
         };
 
         // Enviar mensagem e obter a mensagem criada
@@ -288,7 +306,7 @@ const processMediaMessages = async (
             ...mediaMessageData,
             status: "pending",
             messageId: null,
-            ack: 0
+            ack: 0,
           });
         }
 
@@ -304,14 +322,16 @@ const processMediaMessages = async (
         // Registrar atividade do usuário se houver userId
         if (userId) {
           await UserMessagesLog.create({
-            messageId: messageId,
+            messageId,
             userId,
-            tenantId
+            tenantId,
           });
         }
-
       } catch (err) {
-        logger.error(`[CreateMessageSystemService] Error processing media ${index}:`, err);
+        logger.error(
+          `[CreateMessageSystemService] Error processing media ${index}:`,
+          err
+        );
         throw err;
       }
     })
@@ -326,15 +346,17 @@ const processTextMessage = async (
 ): Promise<void> => {
   try {
     // Log antes de enviar mensagem
-    logger.info('[DEBUG] processTextMessage - Enviando mensagem:', {
+    logger.info("[DEBUG] processTextMessage - Enviando mensagem:", {
       quotedMsgId: messageData.quotedMsgId,
-      body: messageData.body
+      body: messageData.body,
     });
 
     // Buscar o contato
     const contact = await Contact.findByPk(ticket.contactId);
     if (!contact) {
-      logger.error(`[CreateMessageSystemService] Contact not found for ticket ${ticket.id}`);
+      logger.error(
+        `[CreateMessageSystemService] Contact not found for ticket ${ticket.id}`
+      );
       throw new AppError("ERR_CONTACT_NOT_FOUND");
     }
 
@@ -342,7 +364,7 @@ const processTextMessage = async (
     let sentMessage: any = {};
     if (!messageData.scheduleDate) {
       // Buscar o objeto da mensagem citada usando quotedMsgId
-      let quotedMsg: Message | undefined = undefined;
+      let quotedMsg: Message | undefined;
       if (messageData.quotedMsgId) {
         const found = await Message.findByPk(messageData.quotedMsgId);
         if (found) quotedMsg = found;
@@ -362,7 +384,7 @@ const processTextMessage = async (
         messageId: null,
         ack: 0,
         mediaType: "chat",
-        userId
+        userId,
       });
     }
 
@@ -378,16 +400,22 @@ const processTextMessage = async (
     // Registrar atividade do usuário se houver userId
     if (userId) {
       await UserMessagesLog.create({
-        messageId: messageId,
+        messageId,
         userId,
-        tenantId
+        tenantId,
       });
     }
-
   } catch (error) {
-    logger.error(`[CreateMessageSystemService] Erro ao processar mensagem de texto:`, error.message || 'Erro desconhecido');
-    logger.error(`[CreateMessageSystemService] Stack trace:`, error.stack);
-    throw new Error(`Erro ao processar mensagem de texto: ${error.message || 'Erro desconhecido'}`);
+    logger.error(
+      "[CreateMessageSystemService] Erro ao processar mensagem de texto:",
+      error.message || "Erro desconhecido"
+    );
+    logger.error("[CreateMessageSystemService] Stack trace:", error.stack);
+    throw new Error(
+      `Erro ao processar mensagem de texto: ${
+        error.message || "Erro desconhecido"
+      }`
+    );
   }
 };
 
@@ -398,7 +426,7 @@ const finalizeMessage = async (
 ): Promise<void> => {
   try {
     // Log antes de buscar mensagem
-    logger.info('[DEBUG] finalizeMessage - Buscando mensagem:', { messageId });
+    logger.info("[DEBUG] finalizeMessage - Buscando mensagem:", { messageId });
 
     // Garantir que messageId é uma string ou número
     const id = String(messageId);
@@ -410,21 +438,21 @@ const finalizeMessage = async (
           model: Ticket,
           as: "ticket",
           where: { tenantId },
-          include: ["contact"]
+          include: ["contact"],
         },
         {
           model: Message,
           as: "quotedMsg",
-          include: ["contact"]
-        }
-      ]
+          include: ["contact"],
+        },
+      ],
     });
 
     // Log após buscar mensagem
-    logger.info('[DEBUG] finalizeMessage - Mensagem encontrada:', {
+    logger.info("[DEBUG] finalizeMessage - Mensagem encontrada:", {
       id: messageCreated?.id,
       quotedMsgId: messageCreated?.quotedMsgId,
-      quotedMsg: messageCreated?.quotedMsg ? 'present' : 'missing'
+      quotedMsg: messageCreated?.quotedMsg ? "present" : "missing",
     });
 
     if (!messageCreated) {
@@ -435,14 +463,14 @@ const finalizeMessage = async (
     await ticket.update({
       lastMessage: messageCreated.body,
       lastMessageAt: new Date().getTime(),
-      answered: true
+      answered: true,
     });
 
     // Emitir eventos para o frontend
     socketEmit({
       tenantId,
       type: "chat:create",
-      payload: messageCreated
+      payload: messageCreated,
     });
 
     // Emitir evento de status usando chat:ack que é um tipo válido
@@ -459,13 +487,12 @@ const finalizeMessage = async (
           id: ticket.id,
           status: ticket.status,
           unreadMessages: ticket.unreadMessages,
-          answered: ticket.answered
-        }
-      }
+          answered: ticket.answered,
+        },
+      },
     });
-
   } catch (err) {
-    logger.error(`[CreateMessageSystemService] Error finalizing message:`, err);
+    logger.error("[CreateMessageSystemService] Error finalizing message:", err);
     throw err;
   }
 };

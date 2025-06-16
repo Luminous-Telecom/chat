@@ -10,7 +10,7 @@ module.exports = {
       type: DataTypes.INTEGER,
       references: { model: "Users", key: "id" },
       onUpdate: "CASCADE",
-      onDelete: "SET NULL"
+      onDelete: "SET NULL",
     });
-  }
+  },
 };

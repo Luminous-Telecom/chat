@@ -51,7 +51,7 @@ const SyncContactsWhatsappInstanceService = async (
         ON CONFLICT (number, "tenantId") DO NOTHING`;
 
       await Contact.sequelize?.query(query, {
-        type: QueryTypes.INSERT
+        type: QueryTypes.INSERT,
       });
       // await Contact.bulkCreate(dataArray, {
       //   fields: ["number", "name", "tenantId"],

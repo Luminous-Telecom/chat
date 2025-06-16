@@ -19,5 +19,5 @@ module.exports = {
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.bulkDelete("Tenants", {});
-  }
+  },
 };

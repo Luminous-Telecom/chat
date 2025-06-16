@@ -32,9 +32,9 @@ const dddsPorEstado = [
   { estado: "SE", ddds: ["79"] },
   {
     estado: "SP",
-    ddds: ["11", "12", "13", "14", "15", "16", "17", "18", "19"]
+    ddds: ["11", "12", "13", "14", "15", "16", "17", "18", "19"],
   },
-  { estado: "TO", ddds: ["63"] }
+  { estado: "TO", ddds: ["63"] },
 ];
 
 interface Request {
@@ -62,12 +62,12 @@ const ListContactsService = async ({
   ddds,
   userId,
   profile,
-  searchParam
+  searchParam,
 }: Request): Promise<Response> => {
   let includeCondition: Includeable[] = [];
   let where: any = {
     tenantId,
-    isGroup: false
+    isGroup: false,
   };
 
   if (searchParam) {
@@ -79,10 +79,10 @@ const ListContactsService = async ({
             Sequelize.fn("LOWER", Sequelize.col("Contact.name")),
             "LIKE",
             `%${searchParam.toLowerCase().trim()}%`
-          )
+          ),
         },
-        { number: { [Op.like]: `%${searchParam.toLowerCase().trim()}%` } }
-      ]
+        { number: { [Op.like]: `%${searchParam.toLowerCase().trim()}%` } },
+      ],
     };
   }
 
@@ -92,9 +92,9 @@ const ListContactsService = async ({
       createdAt: {
         [Op.between]: [
           +startOfDay(parseISO(startDate)),
-          +endOfDay(parseISO(endDate))
-        ]
-      }
+          +endOfDay(parseISO(endDate)),
+        ],
+      },
     };
   }
 
@@ -105,11 +105,11 @@ const ListContactsService = async ({
         as: "tags",
         where: {
           id: {
-            [Op.in]: tags
-          }
+            [Op.in]: tags,
+          },
         },
-        required: true
-      }
+        required: true,
+      },
     ];
   }
 
@@ -118,18 +118,18 @@ const ListContactsService = async ({
       model: ContactWallet,
       // as: "wallets",
       where: {
-        walletId: wallets
+        walletId: wallets,
       },
-      required: true
+      required: true,
     });
   } else if (profile !== "admin") {
     includeCondition.push({
       model: ContactWallet,
       // as: "wallet",
       where: {
-        walletId: userId
+        walletId: userId,
       },
-      required: true
+      required: true,
     });
   }
 
@@ -147,8 +147,8 @@ const ListContactsService = async ({
     where = {
       ...where,
       number: {
-        [Op.or]: dddsFilter.map(ddd => ({ [Op.like]: `55${ddd}%` }))
-      }
+        [Op.or]: dddsFilter.map(ddd => ({ [Op.like]: `55${ddd}%` })),
+      },
     };
   }
 
@@ -156,7 +156,7 @@ const ListContactsService = async ({
     where,
     attributes: ["id", "name", "number", "email"],
     include: includeCondition,
-    order: [["name", "ASC"]]
+    order: [["name", "ASC"]],
   });
 
   return { contacts };

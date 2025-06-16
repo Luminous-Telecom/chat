@@ -8,7 +8,7 @@ const ShowUserService = async (
 ): Promise<User> => {
   const user = await User.findByPk(id, {
     attributes: ["name", "id", "email", "profile", "tokenVersion", "tenantId"],
-    include: [{ model: Queue, as: "queues" }]
+    include: [{ model: Queue, as: "queues" }],
   });
 
   if (!user || user.tenantId !== tenantId) {

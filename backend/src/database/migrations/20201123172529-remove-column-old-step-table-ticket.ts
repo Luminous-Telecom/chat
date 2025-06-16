@@ -3,7 +3,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 module.exports = {
   up: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("Tickets", "oldStepAutoReplyId")
+      queryInterface.removeColumn("Tickets", "oldStepAutoReplyId"),
     ]);
   },
 
@@ -14,7 +14,7 @@ module.exports = {
       onUpdate: "CASCADE",
       onDelete: "SET NULL",
       allowNull: true,
-      defaultValue: null
+      defaultValue: null,
     });
-  }
+  },
 };

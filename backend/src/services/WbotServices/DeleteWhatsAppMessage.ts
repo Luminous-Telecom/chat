@@ -15,7 +15,7 @@ const DeleteWhatsAppMessage = async (
     await Message.update(
       {
         isDeleted: true,
-        status: "canceled"
+        status: "canceled",
       },
       { where: { id } }
     );
@@ -25,9 +25,9 @@ const DeleteWhatsAppMessage = async (
           model: Ticket,
           as: "ticket",
           include: ["contact"],
-          where: { tenantId }
-        }
-      ]
+          where: { tenantId },
+        },
+      ],
     });
     if (message) {
       const io = getIO();
@@ -36,9 +36,9 @@ const DeleteWhatsAppMessage = async (
         action: "update",
         message,
         ticket: message.ticket,
-        contact: message.ticket.contact
+        contact: message.ticket.contact,
       });
-      
+
       // Também emitir para o canal específico para compatibilidade
       io.to(`tenant:${tenantId}:${message.ticket.id}`).emit(
         `tenant:${tenantId}:appMessage`,
@@ -46,7 +46,7 @@ const DeleteWhatsAppMessage = async (
           action: "update",
           message,
           ticket: message.ticket,
-          contact: message.ticket.contact
+          contact: message.ticket.contact,
         }
       );
     }
@@ -59,9 +59,9 @@ const DeleteWhatsAppMessage = async (
         model: Ticket,
         as: "ticket",
         include: ["contact"],
-        where: { tenantId }
-      }
-    ]
+        where: { tenantId },
+      },
+    ],
   });
 
   if (!message) {
@@ -82,8 +82,8 @@ const DeleteWhatsAppMessage = async (
     await (session as any).sendMessage(chatId, {
       protocolMessage: {
         type: 0, // 0 = message deletion
-        key: messageToDelete.key
-      }
+        key: messageToDelete.key,
+      },
     });
   } catch (err) {
     // StartWhatsAppSessionVerify(ticket.whatsappId, err);
@@ -97,16 +97,16 @@ const DeleteWhatsAppMessage = async (
   io.emit(`tenant:${tenantId}:appMessage`, {
     action: "update",
     message,
-    contact: ticket.contact
+    contact: ticket.contact,
   });
-  
+
   // Também emitir para o canal específico para compatibilidade
   io.to(`tenant:${tenantId}:${message.ticket.id}`).emit(
     `tenant:${tenantId}:appMessage`,
     {
       action: "update",
       message,
-      contact: ticket.contact
+      contact: ticket.contact,
     }
   );
 };

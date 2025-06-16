@@ -8,34 +8,34 @@ module.exports = {
           allowNull: false,
           primaryKey: true,
           type: DataTypes.UUID,
-          defaultValue: Sequelize.literal("gen_random_uuid()")
+          defaultValue: Sequelize.literal("gen_random_uuid()"),
         },
         sessionId: {
           type: DataTypes.INTEGER,
           references: { model: "Whatsapps", key: "id" },
           onUpdate: "CASCADE",
-          onDelete: "SET NULL"
+          onDelete: "SET NULL",
         },
         name: {
           type: DataTypes.STRING,
           allowNull: false,
-          defaultValue: ""
+          defaultValue: "",
         },
         isActive: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
-          defaultValue: true
+          defaultValue: true,
         },
         token: {
           type: DataTypes.STRING,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         userId: {
           type: DataTypes.INTEGER,
           references: { model: "Users", key: "id" },
           onUpdate: "CASCADE",
-          onDelete: "SET NULL"
+          onDelete: "SET NULL",
         },
         tenantId: {
           type: DataTypes.INTEGER,
@@ -43,37 +43,37 @@ module.exports = {
           onUpdate: "CASCADE",
           onDelete: "CASCADE",
           allowNull: false,
-          defaultValue: 1
+          defaultValue: 1,
         },
         urlServiceStatus: {
           type: DataTypes.TEXT,
           allowNull: true,
           defaultValue: null,
           validate: {
-            isUrl: true
-          }
+            isUrl: true,
+          },
         },
         urlMessageStatus: {
           type: DataTypes.TEXT,
           allowNull: true,
           defaultValue: null,
           validate: {
-            isUrl: true
-          }
+            isUrl: true,
+          },
         },
         createdAt: {
           type: DataTypes.DATE,
-          allowNull: false
+          allowNull: false,
         },
         updatedAt: {
           type: DataTypes.DATE,
-          allowNull: false
-        }
-      })
+          allowNull: false,
+        },
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.dropTable("ApiConfigs")]);
-  }
+  },
 };

@@ -2,11 +2,11 @@ import { readFileSync } from "fs";
 import moment from "moment";
 import expressInstance, { Request, Response, NextFunction } from "express";
 import * as Sentry from "@sentry/node";
+import path from "path";
 import routes from "../routes";
 import uploadConfig from "../config/upload";
 import AppError from "../errors/AppError";
 import { logger } from "../utils/logger";
-import path from "path";
 
 export default async function modules(app): Promise<void> {
   const { version } = JSON.parse(readFileSync("./package.json").toString());
@@ -16,7 +16,7 @@ export default async function modules(app): Promise<void> {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     serverName: env.BACKEND_URL,
-    release: version
+    release: version,
   });
 
   app.get("/health", async (req, res) => {
@@ -30,12 +30,15 @@ export default async function modules(app): Promise<void> {
       started: moment(started).format("DD/MM/YYYY HH:mm:ss"),
       currentVersion: version,
       uptime: (Date.now() - Number(started)) / 1000,
-      statusService: checkConnection
+      statusService: checkConnection,
     });
   });
   app.use(Sentry.Handlers.requestHandler());
 
-  app.use("/public", expressInstance.static(path.resolve(__dirname, "..", "..", "public")));
+  app.use(
+    "/public",
+    expressInstance.static(path.resolve(__dirname, "..", "..", "public"))
+  );
 
   app.use(routes);
   app.use(Sentry.Handlers.errorHandler());

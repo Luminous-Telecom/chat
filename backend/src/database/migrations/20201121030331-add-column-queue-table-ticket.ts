@@ -8,11 +8,11 @@ module.exports = {
       // onUpdate: "CASCADE",
       // onDelete: "CASCADE",
       defaultValue: null,
-      allowNull: true
+      allowNull: true,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Tickets", "queue");
-  }
+  },
 };

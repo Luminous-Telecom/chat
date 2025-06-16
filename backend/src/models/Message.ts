@@ -9,7 +9,7 @@ import {
   Default,
   BelongsTo,
   ForeignKey,
-  AllowNull
+  AllowNull,
 } from "sequelize-typescript";
 import { v4 as uuidV4 } from "uuid";
 import Contact from "./Contact";

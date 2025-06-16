@@ -10,12 +10,12 @@ const queues = Object.values(jobs).map((job: any) => ({
       host: process.env.IO_REDIS_SERVER,
       port: +(process.env.IO_REDIS_PORT || "6379"),
       password: process.env.IO_REDIS_PASSWORD || undefined,
-      db: 3
-    }
+      db: 3,
+    },
   }),
   name: job.key,
   handle: job.handle,
-  options: job.options
+  options: job.options,
 }));
 
 export default {
@@ -31,8 +31,8 @@ export default {
           data: jobData,
           opts: {
             ...queue.options,
-            ...jobData?.options
-          }
+            ...jobData?.options,
+          },
         };
       });
       return queue.bull.addBulk(parsedJobs);
@@ -53,5 +53,5 @@ export default {
         .on("cleaned", QueueListeners.onClean)
         .on("removed", QueueListeners.onRemoved);
     });
-  }
+  },
 };

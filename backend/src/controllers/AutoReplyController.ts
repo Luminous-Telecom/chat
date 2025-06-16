@@ -28,7 +28,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     name: Yup.string().required(),
     action: Yup.number().required(),
     tenantId: Yup.number().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -61,7 +61,7 @@ export const update = async (
   const schema = Yup.object().shape({
     name: Yup.string().required(),
     action: Yup.number().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -74,7 +74,7 @@ export const update = async (
   const autoReply = await UpdateAutoReplyService({
     autoReplyData,
     autoReplyId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(autoReply);

@@ -48,7 +48,7 @@ const DashTicketsEvolutionChannels = async ({
   endDate,
   tenantId,
   userId,
-  userProfile
+  userProfile,
 }: Request): Promise<any[]> => {
   const data = await sequelize.query(
     userProfile == "admin" ? queryAdmin : query,
@@ -57,9 +57,9 @@ const DashTicketsEvolutionChannels = async ({
         tenantId,
         startDate,
         endDate,
-        userId
+        userId,
       },
-      type: QueryTypes.SELECT
+      type: QueryTypes.SELECT,
       // logging: console.log
     }
   );

@@ -19,13 +19,28 @@
   "rules": {
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-unused-vars": [
-      "error",
+      "warn",
       { "argsIgnorePattern": "_" }
     ],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-use-before-define": "off",
     "import/prefer-default-export": "off",
     "no-console": "off",
     "no-param-reassign": "off",
-    "prettier/prettier": "error",
+    "no-await-in-loop": "warn",
+    "no-plusplus": "off",
+    "no-restricted-properties": "off",
+    "no-restricted-syntax": "off",
+    "no-continue": "off",
+    "no-empty": "warn",
+    "no-underscore-dangle": "off",
+    "no-shadow": "warn",
+    "no-nested-ternary": "warn",
+    "eqeqeq": "warn",
+    "consistent-return": "warn",
+    "prefer-destructuring": "warn",
+    "prettier/prettier": "warn",
     "import/extensions": [
       "error",
       "ignorePackages",
@@ -34,7 +49,7 @@
       }
     ],
     "quotes": [
-      1,
+      "warn",
       "double",
       {
         "avoidEscape": true

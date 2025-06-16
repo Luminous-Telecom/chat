@@ -1,4 +1,3 @@
-
 import { fromUnixTime, parse, isWithinInterval } from "date-fns";
 // import { getIO } from "../../../libs/socket";
 // import SetTicketMessagesAsRead from "../../../helpers/SetTicketMessagesAsRead";
@@ -21,7 +20,7 @@ const verifyBusinessHours = async (
   // Não é um ticket referente a um grupo do whatsapp
   if (ticket.status !== "closed" && !msg.fromMe && !ticket.isGroup) {
     const tenant = await ShowBusinessHoursAndMessageService({
-      tenantId: ticket.tenantId
+      tenantId: ticket.tenantId,
     });
 
     const dateMsg = fromUnixTime(msg.timestamp);
@@ -40,13 +39,13 @@ const verifyBusinessHours = async (
     // verificar se data da mensagem está dendo do primerio período de tempo
     const isHoursFistInterval = isWithinInterval(dateMsg, {
       start: parse(businessDay.hr1, "HH:mm", new Date()),
-      end: parse(businessDay.hr2, "HH:mm", new Date())
+      end: parse(businessDay.hr2, "HH:mm", new Date()),
     });
 
     // verificar se data da mensagem está dendo do segundo período de tempo
     const isHoursLastInterval = isWithinInterval(dateMsg, {
       start: parse(businessDay.hr3, "HH:mm", new Date()),
-      end: parse(businessDay.hr4, "HH:mm", new Date())
+      end: parse(businessDay.hr4, "HH:mm", new Date()),
     });
 
     // se o tipo for C - Closed significa que o estabelecimento está
@@ -72,14 +71,14 @@ const verifyBusinessHours = async (
         fromMe: true,
         read: true,
         sendType: "bot",
-        tenantId: ticket.tenantId
+        tenantId: ticket.tenantId,
       };
       await CreateMessageSystemService({
         msg: messageData,
         tenantId: ticket.tenantId,
         ticket,
         sendType: messageData.sendType,
-        status: "pending"
+        status: "pending",
       });
     }
   }

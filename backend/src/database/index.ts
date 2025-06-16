@@ -67,7 +67,7 @@ const models = [
   ApiMessage,
   LogTicket,
   ChatFlow,
-  TicketObservation
+  TicketObservation,
 ];
 
 sequelize.addModels(models);

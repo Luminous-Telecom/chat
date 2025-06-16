@@ -9,7 +9,7 @@ module.exports = {
       onUpdate: "CASCADE",
       onDelete: "restrict",
       defaultValue: null,
-      allowNull: true
+      allowNull: true,
     });
   },
 
@@ -21,7 +21,7 @@ module.exports = {
       // onUpdate: "CASCADE",
       // onDelete: "CASCADE",
       defaultValue: null,
-      allowNull: true
+      allowNull: true,
     });
-  }
+  },
 };

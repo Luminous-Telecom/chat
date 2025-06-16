@@ -7,8 +7,8 @@ module.exports = {
         type: DataTypes.STRING,
         primaryKey: false,
         allowNull: false,
-        unique: false
-      })
+        unique: false,
+      }),
     ]);
   },
 
@@ -18,8 +18,8 @@ module.exports = {
         type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false,
-        unique: true
-      })
+        unique: true,
+      }),
     ]);
-  }
+  },
 };

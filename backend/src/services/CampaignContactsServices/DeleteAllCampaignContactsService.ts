@@ -9,21 +9,21 @@ interface Request {
 
 const DeleteAllCampaignContactsService = async ({
   campaignId,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   try {
     const campaign = await Campaign.findOne({
       where: {
         id: campaignId,
-        tenantId
-      }
+        tenantId,
+      },
     });
 
     if (campaign?.id) {
       await CampaignContacts.destroy({
         where: {
-          campaignId
-        }
+          campaignId,
+        },
       });
     } else {
       throw new AppError(

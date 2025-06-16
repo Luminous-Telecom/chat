@@ -20,17 +20,26 @@ export default async function application() {
   let httpServer: any;
 
   // Configuração do servidor HTTPS
-  if (process.env.NODE_ENV === 'production' || process.env.USE_HTTPS === 'true') {
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.USE_HTTPS === "true"
+  ) {
     try {
       const options = {
-        key: readFileSync(process.env.SSL_KEY_PATH || '/etc/letsencrypt/live/devback.fenixnetcom.com.br/privkey.pem'),
-        cert: readFileSync(process.env.SSL_CERT_PATH || '/etc/letsencrypt/live/devback.fenixnetcom.com.br/fullchain.pem')
+        key: readFileSync(
+          process.env.SSL_KEY_PATH ||
+            "/etc/letsencrypt/live/devback.fenixnetcom.com.br/privkey.pem"
+        ),
+        cert: readFileSync(
+          process.env.SSL_CERT_PATH ||
+            "/etc/letsencrypt/live/devback.fenixnetcom.com.br/fullchain.pem"
+        ),
       };
       httpServer = createHttpsServer(options, app);
-      console.info('HTTPS server configured');
+      console.info("HTTPS server configured");
     } catch (error) {
-      console.error('Error loading SSL certificates:', error);
-      console.info('Falling back to HTTP server');
+      console.error("Error loading SSL certificates:", error);
+      console.info("Falling back to HTTP server");
       httpServer = createHttpServer(app);
     }
   } else {
@@ -44,7 +53,8 @@ export default async function application() {
   async function start() {
     const host = app.get("host") || "0.0.0.0";
     app.server = httpServer.listen(port, host, async () => {
-      const protocol = httpServer instanceof createHttpsServer ? 'https' : 'http';
+      const protocol =
+        httpServer instanceof createHttpsServer ? "https" : "http";
       console.info(`Web server listening at: ${protocol}://${host}:${port}/`);
     });
 
@@ -52,18 +62,18 @@ export default async function application() {
 
     // Inicia o monitoramento do WhatsApp
     startMonitoring();
-    
+
     // Inicia todas as sessões do WhatsApp
     await StartAllWhatsAppsSessions();
-    
+
     GracefulShutdown(app.server, {
-      signals: 'SIGINT SIGTERM',
+      signals: "SIGINT SIGTERM",
       timeout: 10000, // 10 segundos para finalizar conexões
       development: false,
       onShutdown: async () => {
-        console.info('Shutting down gracefully...');
+        console.info("Shutting down gracefully...");
         // Aqui você pode adicionar lógica de limpeza se necessário
-      }
+      },
     });
   }
 

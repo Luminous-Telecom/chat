@@ -42,16 +42,16 @@ const VerifyMessage = async (
     mediaType: "chat",
     quotedMsgId,
     timestamp: +message.date * 1000, // compatibilizar JS
-    status: "received"
+    status: "received",
   };
   await ticket.update({
     lastMessage: message.text,
     lastMessageAt: new Date().getTime(),
-    answered: fromMe || false
+    answered: fromMe || false,
   });
   await CreateMessageService({
     messageData,
-    tenantId: ticket.tenantId
+    tenantId: ticket.tenantId,
   });
 };
 

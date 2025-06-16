@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Users", "configs", {
         type: DataTypes.JSON,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Users", "configs")]);
-  }
+  },
 };

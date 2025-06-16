@@ -18,7 +18,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const cc = await CreateCampaignContactsService({
     campaignContacts: contacts,
-    campaignId
+    campaignId,
   });
 
   return res.status(200).json(cc);
@@ -29,7 +29,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { campaignId } = req.params;
   const tags = await ListCampaignContactsService({
     campaignId,
-    tenantId
+    tenantId,
     // eslint-disable-next-line eqeqeq
   });
   return res.status(200).json(tags);

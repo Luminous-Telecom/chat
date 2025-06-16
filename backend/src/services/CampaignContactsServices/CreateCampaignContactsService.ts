@@ -21,7 +21,7 @@ interface CampaignContactData {
 
 const CreateCampaignContactsService = async ({
   campaignContacts,
-  campaignId
+  campaignId,
 }: Request): Promise<void> => {
   const randomInteger = (min: number, max: number) => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -29,15 +29,15 @@ const CreateCampaignContactsService = async ({
 
   const isCreateds = await CampaignContacts.findAll({
     where: {
-      campaignId
-    }
+      campaignId,
+    },
   });
 
   const data: CampaignContactData[] = campaignContacts.map((contact: any) => {
     return {
       contactId: contact.id,
       campaignId,
-      messageRandom: `message${randomInteger(1, 3)}`
+      messageRandom: `message${randomInteger(1, 3)}`,
     };
   });
 
@@ -55,7 +55,7 @@ const CreateCampaignContactsService = async ({
     Yup.object().shape({
       messageRandom: Yup.string().required(),
       campaignId: Yup.number().required(),
-      contactId: Yup.number().required()
+      contactId: Yup.number().required(),
     })
   );
 

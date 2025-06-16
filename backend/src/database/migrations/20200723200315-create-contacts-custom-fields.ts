@@ -7,35 +7,35 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       name: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
       },
       value: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
       },
       contactId: {
         type: DataTypes.INTEGER,
         references: { model: "Contacts", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
-        allowNull: false
+        allowNull: false,
       },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("ContactCustomFields");
-  }
+  },
 };

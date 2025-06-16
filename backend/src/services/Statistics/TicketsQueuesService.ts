@@ -23,7 +23,7 @@ const TicketsQueuesService = async ({
   userId,
   queuesIds,
   tenantId,
-  showAll
+  showAll,
 }: Request): Promise<Ticket[]> => {
   let whereCondition: Filterable["where"] = {
     // [Op.or]: [{ userId }, { status: "pending" }]
@@ -33,17 +33,17 @@ const TicketsQueuesService = async ({
     {
       model: Contact,
       as: "contact",
-      attributes: ["id", "name", "number", "profilePicUrl"]
+      attributes: ["id", "name", "number", "profilePicUrl"],
     },
     {
       association: "whatsapp",
-      attributes: ["id", "name"]
+      attributes: ["id", "name"],
     },
     {
       model: User,
       as: "user",
-      attributes: ["id", "name", "profile"]
-    }
+      attributes: ["id", "name", "profile"],
+    },
   ];
 
   const isExistsQueues = await Queue.count({ where: { tenantId } });
@@ -51,8 +51,8 @@ const TicketsQueuesService = async ({
   if (isExistsQueues) {
     const queues = await UsersQueues.findAll({
       where: {
-        userId
-      }
+        userId,
+      },
     });
     let queuesIdsUser = queues.map(q => q.queueId);
 
@@ -70,8 +70,8 @@ const TicketsQueuesService = async ({
     whereCondition = {
       ...whereCondition,
       queueId: {
-        [Op.in]: queuesIdsUser
-      }
+        [Op.in]: queuesIdsUser,
+      },
     };
   }
 
@@ -83,7 +83,7 @@ const TicketsQueuesService = async ({
   if (status) {
     whereCondition = {
       ...whereCondition,
-      status
+      status,
     };
   } else {
     status = ["open", "pending"];
@@ -96,9 +96,9 @@ const TicketsQueuesService = async ({
       createdAt: {
         [Op.between]: [
           +startOfDay(parseISO(dateStart)),
-          +endOfDay(parseISO(dateEnd))
-        ]
-      }
+          +endOfDay(parseISO(dateEnd)),
+        ],
+      },
     };
   }
 
@@ -108,10 +108,10 @@ const TicketsQueuesService = async ({
       // queueId: {
       //   [Op.in]: queuesIdsUser
       // },
-      tenantId
+      tenantId,
     },
     include: includeCondition,
-    order: [["updatedAt", "DESC"]]
+    order: [["updatedAt", "DESC"]],
   });
 
   return tickets;

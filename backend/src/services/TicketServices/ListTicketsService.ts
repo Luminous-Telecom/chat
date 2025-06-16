@@ -43,7 +43,7 @@ const ListTicketsService = async ({
   isNotAssignedUser,
   includeNotQueueDefined,
   tenantId,
-  profile
+  profile,
 }: Request): Promise<Response> => {
   // check is admin
   const isAdminShowAll = showAll == "true" && profile === "admin";
@@ -79,15 +79,15 @@ const ListTicketsService = async ({
   // não aplicar restrição
   const isExistsQueueTenant =
     (await Queue.count({
-      where: { tenantId }
+      where: { tenantId },
     })) > 0
       ? "S"
       : "N";
   // list queues user request
   const queues = await UsersQueues.findAll({
     where: {
-      userId
-    }
+      userId,
+    },
   });
 
   // mount array ids queues
@@ -220,8 +220,6 @@ const ListTicketsService = async ({
   const limit = 30;
   const offset = limit * (+pageNumber - 1);
 
-
-
   const tickets: any = await Ticket.sequelize?.query(query, {
     replacements: {
       tenantId,
@@ -236,10 +234,10 @@ const ListTicketsService = async ({
       isSearchParam,
       searchParam: `%${searchParam}%`,
       limit,
-      offset
+      offset,
     },
     type: QueryTypes.SELECT,
-    nest: true
+    nest: true,
   });
 
   let count = 0;
@@ -253,7 +251,7 @@ const ListTicketsService = async ({
   return {
     tickets: tickets || [],
     count,
-    hasMore
+    hasMore,
   };
 };
 

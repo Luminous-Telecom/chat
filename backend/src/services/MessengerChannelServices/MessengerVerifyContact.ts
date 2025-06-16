@@ -41,7 +41,7 @@ const MessengerVerifyContact = async (
     isUser: false,
     isWAContact: true,
     isGroup: false,
-    origem: "messenger"
+    origem: "messenger",
   };
 
   const newContact = await CreateOrUpdateContactService(contactData);

@@ -12,7 +12,7 @@ import SendMessageSystemProxy from "../../helpers/SendMessageSystemProxy";
 const SendMessagesSchenduleWbot = async (): Promise<void> => {
   const currentDate = new Date(
     new Date().toLocaleString("en-US", {
-      timeZone: process.env.TIMEZONE || "America/Sao_Paulo"
+      timeZone: process.env.TIMEZONE || "America/Sao_Paulo",
     })
   );
   const twentyFourHoursAgo = new Date(
@@ -25,31 +25,31 @@ const SendMessagesSchenduleWbot = async (): Promise<void> => {
     status: "pending",
     scheduleDate: {
       [Op.lte]: currentDate, // Menor ou igual à data atual
-      [Op.gte]: twentyFourHoursAgo
-    }
+      [Op.gte]: twentyFourHoursAgo,
+    },
   };
   const messages = await Message.findAll({
     where,
     include: [
       {
         model: Contact,
-        as: "contact"
+        as: "contact",
       },
       {
         model: Ticket,
         as: "ticket",
         where: {
-          status: ["open", "pending"]
+          status: ["open", "pending"],
         },
-        include: ["contact"]
+        include: ["contact"],
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
-      }
+        include: ["contact"],
+      },
     ],
-    order: [["createdAt", "ASC"]]
+    order: [["createdAt", "ASC"]],
   });
 
   for (const message of messages) {
@@ -63,14 +63,14 @@ const SendMessagesSchenduleWbot = async (): Promise<void> => {
           ticket: message.ticket,
           messageData: message.toJSON(),
           media: null,
-          userId: message.userId
+          userId: message.userId,
         });
 
         message.update({
           messageId: sent.id?.id || sent.messageId,
           status: "sended",
           ack: 1,
-          userId: message.userId
+          userId: message.userId,
         });
       } catch (error) {
         logger.error(

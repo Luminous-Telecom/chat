@@ -15,5 +15,5 @@ module.exports = {
       queryInterface.removeIndex("Contacts", "Contacts_number_tenantId"),
       // Outras alterações de rollback que você precisa executar na migração, se houver
     ]);
-  }
+  },
 };

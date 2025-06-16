@@ -41,7 +41,7 @@ export const indexUsers = async (
   const { searchParam, pageNumber } = req.query as IndexQuery;
   const { users, count, hasMore } = await AdminListUsersService({
     searchParam,
-    pageNumber
+    pageNumber,
   });
   return res.status(200).json({ users, count, hasMore });
 };
@@ -59,7 +59,7 @@ export const updateUser = async (
   if (user) {
     io.emit(`${user.tenantId}:user`, {
       action: "update",
-      user
+      user,
     });
   }
 
@@ -103,13 +103,13 @@ export const updateSettings = async (
   const setting = await UpdateSettingService({
     key,
     value,
-    tenantId
+    tenantId,
   });
 
   const io = getIO();
   io.emit(`${tenantId}:settings`, {
     action: "update",
-    setting
+    setting,
   });
 
   return res.status(200).json(setting);
@@ -137,7 +137,7 @@ export const storeChannel = async (
     type,
     wabaBSP,
     tokenAPI,
-    connectionNumber
+    connectionNumber,
   } = req.body;
 
   const data: ChannelData = {
@@ -150,7 +150,7 @@ export const storeChannel = async (
     type,
     wabaBSP,
     tokenAPI,
-    connectionNumber
+    connectionNumber,
   };
 
   const channels = await CreateWhatsAppService(data);

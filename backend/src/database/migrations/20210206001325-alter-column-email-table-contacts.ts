@@ -6,8 +6,8 @@ module.exports = {
       queryInterface.changeColumn("Contacts", "email", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
@@ -16,8 +16,8 @@ module.exports = {
       queryInterface.changeColumn("Contacts", "email", {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: ""
-      })
+        defaultValue: "",
+      }),
     ]);
-  }
+  },
 };

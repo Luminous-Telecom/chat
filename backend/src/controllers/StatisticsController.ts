@@ -35,7 +35,7 @@ export const DashTicketsQueues = async (
     status,
     queuesIds,
     userId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(tickets);
@@ -60,7 +60,7 @@ export const ContactsReport = async (
     tenantId,
     profile: req.user.profile,
     userId: +req.user.id,
-    searchParam
+    searchParam,
   });
 
   return res.status(200).json(tickets);

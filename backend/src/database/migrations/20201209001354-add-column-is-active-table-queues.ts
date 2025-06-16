@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Queues", "isActive", {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: true
-      })
+        defaultValue: true,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Queues", "isActive");
-  }
+  },
 };

@@ -15,7 +15,7 @@ const CreateAutoReplyLogService = async (
     stepsReplyMessage: stepsReply.reply,
     wordsReply: msg,
     ticketId: ticket.id,
-    contactId: ticket.contactId
+    contactId: ticket.contactId,
   };
   const autoReplyLog = await AutoReplyLogs.create(log);
 

@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import {
   AccountRepositoryCurrentUserResponseUser,
-  AccountRepositoryLoginResponseLogged_in_user
+  AccountRepositoryLoginResponseLogged_in_user,
 } from "instagram-private-api";
 import { IgApiClientMQTT, MessageSyncMessageWrapper } from "instagram_mqtt";
 import VerifyStepsChatFlowTicket from "../ChatFlowServices/VerifyStepsChatFlowTicket";
@@ -43,7 +43,7 @@ const handleRealtimeReceive = async (
     unreadMessages: fromMe ? 0 : 1,
     tenantId: channel.tenantId,
     msg: { ...ctx.message, fromMe },
-    channel: "instagram"
+    channel: "instagram",
   });
 
   if (ticket?.isFarewellMessage) {
@@ -63,7 +63,7 @@ const handleRealtimeReceive = async (
   await VerifyStepsChatFlowTicket(
     {
       fromMe,
-      body: ctx.message?.text || ""
+      body: ctx.message?.text || "",
     },
     ticket
   );
@@ -71,7 +71,7 @@ const handleRealtimeReceive = async (
   await verifyBusinessHours(
     {
       fromMe,
-      timestamp: ctx.message.timestamp / 1000 // adequar horário node
+      timestamp: ctx.message.timestamp / 1000, // adequar horário node
     },
     ticket
   );

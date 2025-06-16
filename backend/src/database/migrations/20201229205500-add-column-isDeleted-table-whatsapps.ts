@@ -5,12 +5,12 @@ module.exports = {
     return Promise.all([
       queryInterface.addColumn("Whatsapps", "isDeleted", {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
-      })
+        defaultValue: false,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Whatsapps", "isDeleted")]);
-  }
+  },
 };

@@ -10,10 +10,10 @@ interface Request {
 const UpdateSettingService = async ({
   key,
   value,
-  tenantId
+  tenantId,
 }: Request): Promise<Setting | undefined> => {
   const setting = await Setting.findOne({
-    where: { key, tenantId }
+    where: { key, tenantId },
   });
 
   if (!setting) {

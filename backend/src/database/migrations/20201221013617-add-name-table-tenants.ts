@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Tenants", "name", {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: ""
-      })
+        defaultValue: "",
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Tenants", "name")]);
-  }
+  },
 };

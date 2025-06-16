@@ -9,10 +9,10 @@ interface Request {
 
 const DeleteAutoReplyService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const autoReply = await AutoReply.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   const countTicket = await Ticket.findOne({ where: { autoReplyId: id } });

@@ -7,7 +7,7 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       messageId: {
         type: DataTypes.STRING,
@@ -15,33 +15,33 @@ module.exports = {
         // onUpdate: "CASCADE",
         // onDelete: "CASCADE",
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       },
       userId: {
         type: DataTypes.INTEGER,
         references: { model: "Users", key: "id" },
         onUpdate: "CASCADE",
-        onDelete: "RESTRICT"
+        onDelete: "RESTRICT",
       },
       ticketId: {
         type: DataTypes.INTEGER,
         references: { model: "Tickets", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "SET NULL",
-        allowNull: true
+        allowNull: true,
       },
       createdAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("UserMessagesLog");
-  }
+  },
 };

@@ -10,7 +10,7 @@ import {
   BelongsTo,
   ForeignKey,
   AllowNull,
-  AutoIncrement
+  AutoIncrement,
 } from "sequelize-typescript";
 import Message from "./Message";
 import Ticket from "./Ticket";

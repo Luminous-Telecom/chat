@@ -7,53 +7,53 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       autoReplyId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
       },
       autoReplyName: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
       },
       stepsReplyId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
       },
       stepsReplyMessage: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
       },
       wordsReply: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
       },
       contactId: {
         type: DataTypes.INTEGER,
         references: { model: "Contacts", key: "id" },
         onUpdate: "CASCADE",
-        onDelete: "restrict"
+        onDelete: "restrict",
       },
       ticketId: {
         type: DataTypes.INTEGER,
         references: { model: "Tickets", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "restrict",
-        allowNull: false
+        allowNull: false,
       },
       createdAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("AutoReplyLogs");
-  }
+  },
 };

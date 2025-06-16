@@ -6,53 +6,53 @@ module.exports = {
       id: {
         type: DataTypes.STRING,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       body: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
       },
       ack: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: 0,
       },
       read: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: false
+        defaultValue: false,
       },
       mediaType: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
       },
       mediaUrl: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
       },
       userId: {
         type: DataTypes.INTEGER,
         references: { model: "Users", key: "id" },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL"
+        onDelete: "SET NULL",
       },
       ticketId: {
         type: DataTypes.INTEGER,
         references: { model: "Tickets", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
-        allowNull: false
+        allowNull: false,
       },
       createdAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("Messages");
-  }
+  },
 };

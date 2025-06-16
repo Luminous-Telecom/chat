@@ -53,7 +53,7 @@ const BuildSendMessageService = async ({
   msg,
   tenantId,
   ticket,
-  userId
+  userId,
 }: Request): Promise<void> => {
   const messageData: MessageData = {
     ticketId: ticket.id,
@@ -69,7 +69,7 @@ const BuildSendMessageService = async ({
     scheduleDate: undefined,
     sendType: "bot",
     status: "pending",
-    tenantId
+    tenantId,
   };
 
   try {
@@ -83,7 +83,7 @@ const BuildSendMessageService = async ({
         mediaUrl: urlSplit[urlSplit.length - 1],
         mediaType: msg.data.type
           ? msg.data?.type.substr(0, msg.data.type.indexOf("/"))
-          : "chat"
+          : "chat",
       };
 
       const customPath = join(__dirname, "..", "..", "..", "public");
@@ -91,77 +91,21 @@ const BuildSendMessageService = async ({
 
       const media = {
         path: mediaPath,
-        filename: message.mediaName
+        filename: message.mediaName,
       };
 
       const messageSent = await SendMessageSystemProxy({
         ticket,
         messageData: message,
         media,
-        userId
+        userId,
       });
 
       const msgCreated = await Message.create({
         ...message,
         ...messageSent,
         id: messageData.id,
-        messageId: messageSent.id?.id || messageSent.messageId || null
-      });
-
-      const messageCreated = await Message.findByPk(msgCreated.id, {
-        include: [
-          {
-            model: Ticket,
-            as: "ticket",
-            where: { tenantId },
-            include: ["contact"]
-          },
-          {
-            model: Message,
-            as: "quotedMsg",
-            include: ["contact"]
-          }
-        ]
-      });
-
-      if (!messageCreated) {
-        throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
-      }
-
-      await ticket.update({
-        lastMessage: messageCreated.body,
-        lastMessageAt: new Date().getTime()
-      });
-
-      socketEmit({
-        tenantId,
-        type: "chat:create",
-        payload: messageCreated
-      });
-    } else {
-      // Alter template message
-      msg.data.message = pupa(msg.data.message || "", {
-        // greeting: será considerado conforme data/hora da mensagem internamente na função pupa
-        protocol: ticket.protocol,
-        name: ticket.contact.name
-      });
-
-      const messageSent = await SendMessageSystemProxy({
-        ticket,
-        messageData: {
-          ...messageData,
-          body: msg.data.message
-        },
-        media: null,
-        userId: null
-      });
-
-      const msgCreated = await Message.create({
-        ...messageData,
-        ...messageSent,
-        id: messageData.id,
         messageId: messageSent.id?.id || messageSent.messageId || null,
-        mediaType: "bot"
       });
 
       const messageCreated = await Message.findByPk(msgCreated.id, {
@@ -170,14 +114,14 @@ const BuildSendMessageService = async ({
             model: Ticket,
             as: "ticket",
             where: { tenantId },
-            include: ["contact"]
+            include: ["contact"],
           },
           {
             model: Message,
             as: "quotedMsg",
-            include: ["contact"]
-          }
-        ]
+            include: ["contact"],
+          },
+        ],
       });
 
       if (!messageCreated) {
@@ -187,13 +131,69 @@ const BuildSendMessageService = async ({
       await ticket.update({
         lastMessage: messageCreated.body,
         lastMessageAt: new Date().getTime(),
-        answered: true
       });
 
       socketEmit({
         tenantId,
         type: "chat:create",
-        payload: messageCreated
+        payload: messageCreated,
+      });
+    } else {
+      // Alter template message
+      msg.data.message = pupa(msg.data.message || "", {
+        // greeting: será considerado conforme data/hora da mensagem internamente na função pupa
+        protocol: ticket.protocol,
+        name: ticket.contact.name,
+      });
+
+      const messageSent = await SendMessageSystemProxy({
+        ticket,
+        messageData: {
+          ...messageData,
+          body: msg.data.message,
+        },
+        media: null,
+        userId: null,
+      });
+
+      const msgCreated = await Message.create({
+        ...messageData,
+        ...messageSent,
+        id: messageData.id,
+        messageId: messageSent.id?.id || messageSent.messageId || null,
+        mediaType: "bot",
+      });
+
+      const messageCreated = await Message.findByPk(msgCreated.id, {
+        include: [
+          {
+            model: Ticket,
+            as: "ticket",
+            where: { tenantId },
+            include: ["contact"],
+          },
+          {
+            model: Message,
+            as: "quotedMsg",
+            include: ["contact"],
+          },
+        ],
+      });
+
+      if (!messageCreated) {
+        throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
+      }
+
+      await ticket.update({
+        lastMessage: messageCreated.body,
+        lastMessageAt: new Date().getTime(),
+        answered: true,
+      });
+
+      socketEmit({
+        tenantId,
+        type: "chat:create",
+        payload: messageCreated,
       });
     }
   } catch (error) {

@@ -24,13 +24,13 @@ interface Request {
 const UpdateChatFlowService = async ({
   chatFlowData,
   chatFlowId,
-  tenantId
+  tenantId,
 }: Request): Promise<ChatFlow> => {
   const { name, flow, userId, isActive, celularTeste } = chatFlowData;
 
   const cahtFlow = await ChatFlow.findOne({
     where: { id: chatFlowId, tenantId },
-    attributes: ["id", "name", "flow", "userId", "isActive", "celularTeste"]
+    attributes: ["id", "name", "flow", "userId", "isActive", "celularTeste"],
   });
 
   if (!cahtFlow) {
@@ -65,11 +65,11 @@ const UpdateChatFlowService = async ({
     flow: flow.flow,
     userId,
     isActive: flow.isActive,
-    celularTeste: flow.celularTeste
+    celularTeste: flow.celularTeste,
   });
 
   await cahtFlow.reload({
-    attributes: ["id", "name", "flow", "userId", "isActive", "celularTeste"]
+    attributes: ["id", "name", "flow", "userId", "isActive", "celularTeste"],
   });
 
   return cahtFlow;

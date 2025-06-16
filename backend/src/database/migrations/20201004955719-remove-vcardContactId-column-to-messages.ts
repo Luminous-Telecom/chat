@@ -10,7 +10,7 @@ module.exports = {
       type: DataTypes.INTEGER,
       references: { model: "Contacts", key: "id" },
       onUpdate: "CASCADE",
-      onDelete: "CASCADE"
+      onDelete: "CASCADE",
     });
-  }
+  },
 };

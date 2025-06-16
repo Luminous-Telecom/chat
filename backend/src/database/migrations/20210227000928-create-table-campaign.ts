@@ -8,54 +8,54 @@ module.exports = {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
-          allowNull: false
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING,
-          allowNull: false
+          allowNull: false,
         },
         start: {
           type: DataTypes.DATE,
-          allowNull: false
+          allowNull: false,
         },
         status: {
           type: DataTypes.STRING,
           allowNull: false,
-          defaultValue: "pending"
+          defaultValue: "pending",
         },
         sessionId: {
           type: DataTypes.INTEGER,
           references: { model: "Whatsapps", key: "id" },
           onUpdate: "CASCADE",
-          onDelete: "SET NULL"
+          onDelete: "SET NULL",
         },
         message1: {
           type: DataTypes.TEXT,
-          allowNull: false
+          allowNull: false,
         },
         message2: {
           type: DataTypes.TEXT,
-          allowNull: false
+          allowNull: false,
         },
         message3: {
           type: DataTypes.TEXT,
-          allowNull: false
+          allowNull: false,
         },
         mediaUrl: {
           type: DataTypes.STRING,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         mediaType: {
           type: DataTypes.STRING,
           allowNull: true,
-          defaultValue: null
+          defaultValue: null,
         },
         userId: {
           type: DataTypes.INTEGER,
           references: { model: "Users", key: "id" },
           onUpdate: "CASCADE",
-          onDelete: "SET NULL"
+          onDelete: "SET NULL",
         },
         tenantId: {
           type: DataTypes.INTEGER,
@@ -63,21 +63,21 @@ module.exports = {
           onUpdate: "CASCADE",
           onDelete: "CASCADE",
           allowNull: false,
-          defaultValue: 1
+          defaultValue: 1,
         },
         createdAt: {
           type: DataTypes.DATE,
-          allowNull: false
+          allowNull: false,
         },
         updatedAt: {
           type: DataTypes.DATE,
-          allowNull: false
-        }
-      })
+          allowNull: false,
+        },
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.dropTable("Campaigns")]);
-  }
+  },
 };

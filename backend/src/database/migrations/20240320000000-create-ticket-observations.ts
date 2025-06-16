@@ -7,49 +7,49 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       texto: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: false,
       },
       anexo: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
       },
       ticketId: {
         type: DataTypes.INTEGER,
         references: { model: "Tickets", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
-        allowNull: false
+        allowNull: false,
       },
       userId: {
         type: DataTypes.INTEGER,
         references: { model: "Users", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "SET NULL",
-        allowNull: true
+        allowNull: true,
       },
       tenantId: {
         type: DataTypes.INTEGER,
         references: { model: "Tenants", key: "id" },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
-        allowNull: false
+        allowNull: false,
       },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("TicketObservations");
-  }
+  },
 };

@@ -18,7 +18,7 @@ interface Response {
 const ListUsersService = async ({
   searchParam = "",
   pageNumber = "1",
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
   const whereCondition = {
     tenantId,
@@ -28,10 +28,10 @@ const ListUsersService = async ({
           Sequelize.fn("LOWER", Sequelize.col("name")),
           "LIKE",
           `%${searchParam.toLowerCase()}%`
-        )
+        ),
       },
-      { email: { [Op.like]: `%${searchParam.toLowerCase()}%` } }
-    ]
+      { email: { [Op.like]: `%${searchParam.toLowerCase()}%` } },
+    ],
   };
   const limit = 40;
   const offset = limit * (+pageNumber - 1);
@@ -43,7 +43,7 @@ const ListUsersService = async ({
     limit,
     offset,
     distinct: true,
-    order: [["name", "ASC"]]
+    order: [["name", "ASC"]],
   });
 
   const hasMore = count > offset + users.length;
@@ -51,7 +51,7 @@ const ListUsersService = async ({
   return {
     users,
     count,
-    hasMore
+    hasMore,
   };
 };
 

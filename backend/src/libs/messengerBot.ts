@@ -31,7 +31,7 @@ export const initMessengerBot = async (
 
     const messengerClient = new MessengerClient({
       accessToken,
-      appId
+      appId,
       // appSecret
       // version: '6.0',
     }) as Session;

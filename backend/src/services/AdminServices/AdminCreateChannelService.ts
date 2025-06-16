@@ -27,7 +27,7 @@ const AdminCreateChannelService = async ({
   tokenTelegram,
   instagramUser,
   instagramKey,
-  connectionNumber
+  connectionNumber,
 }: Request): Promise<Response> => {
   const schema = Yup.object().shape({
     name: Yup.string()
@@ -39,14 +39,14 @@ const AdminCreateChannelService = async ({
         async value => {
           if (value) {
             const whatsappFound = await Whatsapp.findOne({
-              where: { name: value }
+              where: { name: value },
             });
             return !whatsappFound;
           }
           return true;
         }
       ),
-    isDefault: Yup.boolean().required()
+    isDefault: Yup.boolean().required(),
   });
 
   try {
@@ -65,7 +65,7 @@ const AdminCreateChannelService = async ({
 
   if (isDefault) {
     oldDefaultWhatsapp = await Whatsapp.findOne({
-      where: { isDefault: true, tenantId }
+      where: { isDefault: true, tenantId },
     });
     if (oldDefaultWhatsapp) {
       await oldDefaultWhatsapp.update({ isDefault: false });
@@ -80,7 +80,7 @@ const AdminCreateChannelService = async ({
     tokenTelegram,
     instagramUser,
     instagramKey,
-    connectionNumber
+    connectionNumber,
   });
 
   return { whatsapp, oldDefaultWhatsapp };

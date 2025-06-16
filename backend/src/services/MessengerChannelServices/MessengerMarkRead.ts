@@ -12,12 +12,12 @@ const MessengerMarkRead = async (
     where: {
       tenantId,
       createdAt: {
-        [Op.lte]: new Date(messageObj.read.watermark)
+        [Op.lte]: new Date(messageObj.read.watermark),
       },
       fromMe: true,
       ack: {
-        [Op.in]: [1, 2]
-      }
+        [Op.in]: [1, 2],
+      },
     },
     include: [
       {
@@ -28,12 +28,12 @@ const MessengerMarkRead = async (
             model: Contact,
             where: {
               tenantId,
-              messengerId: messageObj.sender.id
-            }
-          }
-        ]
-      }
-    ]
+              messengerId: messageObj.sender.id,
+            },
+          },
+        ],
+      },
+    ],
   });
 
   await Promise.all(
@@ -49,8 +49,8 @@ const MessengerMarkRead = async (
           timestamp: message.timestamp,
           messageId: message.messageId,
           status: "sended",
-          ack: 3
-        }
+          ack: 3,
+        },
       });
     })
   );

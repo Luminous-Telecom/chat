@@ -12,13 +12,13 @@ const CreateFastReplyService = async ({
   key,
   message,
   userId,
-  tenantId
+  tenantId,
 }: Request): Promise<FastReply> => {
   const fastReplyData = await FastReply.create({
     key,
     message,
     userId,
-    tenantId
+    tenantId,
   });
 
   return fastReplyData;

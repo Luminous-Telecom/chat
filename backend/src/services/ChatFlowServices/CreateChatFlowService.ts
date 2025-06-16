@@ -22,7 +22,7 @@ const CreateChatFlowService = async ({
   userId,
   tenantId,
   name,
-  isActive
+  isActive,
 }: Request): Promise<ChatFlow> => {
   for await (const node of flow.nodeList) {
     if (node.type === "node") {
@@ -48,7 +48,7 @@ const CreateChatFlowService = async ({
     userId,
     tenantId,
     name,
-    isActive
+    isActive,
   });
 
   return chatFlow;

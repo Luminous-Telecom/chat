@@ -6,7 +6,7 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
+    hr4: "18:00",
   },
   {
     day: 1,
@@ -15,7 +15,7 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
+    hr4: "18:00",
   },
   {
     day: 2,
@@ -24,7 +24,7 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
+    hr4: "18:00",
   },
   {
     day: 3,
@@ -33,7 +33,7 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
+    hr4: "18:00",
   },
   {
     day: 4,
@@ -42,7 +42,7 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
+    hr4: "18:00",
   },
   {
     day: 5,
@@ -51,7 +51,7 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
+    hr4: "18:00",
   },
   {
     day: 6,
@@ -60,8 +60,8 @@ export const BusinessHours = [
     hr1: "08:00",
     hr2: "12:00",
     hr3: "14:00",
-    hr4: "18:00"
-  }
+    hr4: "18:00",
+  },
 ];
 
 export const messageBusinessHours =

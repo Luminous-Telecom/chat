@@ -22,7 +22,7 @@ describe("User", () => {
       name: faker.name.findName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-      tenantId: 1
+      tenantId: 1,
     });
 
     expect(DeleteUserService(id, 1, 1)).resolves.not.toThrow();

@@ -7,35 +7,35 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       session: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
       },
       qrcode: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
       },
       status: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
       },
       battery: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
       },
       plugged: {
-        type: DataTypes.BOOLEAN
+        type: DataTypes.BOOLEAN,
       },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("Whatsapps");
-  }
+  },
 };

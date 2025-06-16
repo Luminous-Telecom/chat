@@ -6,18 +6,18 @@ module.exports = {
       queryInterface.addColumn("Contacts", "pushname", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Contacts", "isUser", {
         type: DataTypes.BOOLEAN,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Contacts", "isWAContact", {
         type: DataTypes.BOOLEAN,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
@@ -25,7 +25,7 @@ module.exports = {
     return Promise.all([
       queryInterface.removeColumn("Contacts", "pushname"),
       queryInterface.removeColumn("Contacts", "isUser"),
-      queryInterface.removeColumn("Contacts", "isWAContact")
+      queryInterface.removeColumn("Contacts", "isWAContact"),
     ]);
-  }
+  },
 };

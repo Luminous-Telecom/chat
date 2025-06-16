@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Whatsapps", "name", {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true
+      unique: true,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Whatsapps", "name");
-  }
+  },
 };

@@ -6,14 +6,14 @@ module.exports = {
       queryInterface.addColumn("Messages", "wabaMediaId", {
         type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("Messages", "wabaMediaId")
+      queryInterface.removeColumn("Messages", "wabaMediaId"),
     ]);
-  }
+  },
 };

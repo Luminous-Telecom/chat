@@ -10,7 +10,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     whatsapp,
     accountId,
     userToken,
-    tenantId: req.user.tenantId
+    tenantId: req.user.tenantId,
   });
 
   return res.status(200).json();
@@ -24,7 +24,7 @@ export const facebookLogout = async (
 
   await SetLogoutLinkedPage({
     whatsapp,
-    tenantId: req.user.tenantId
+    tenantId: req.user.tenantId,
   });
 
   return res.status(200).json();

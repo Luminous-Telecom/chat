@@ -33,17 +33,17 @@ const UpdateCampaignService = async ({
   campaignData,
   medias,
   campaignId,
-  tenantId
+  tenantId,
 }: Request): Promise<Campaign> => {
   let mediaData: Express.Multer.File | undefined;
   let data: any = {
     ...campaignData,
     mediaUrl: cArquivoName(campaignData.mediaUrl),
-    start: setHours(setMinutes(parseISO(campaignData.start), 0), 8)
+    start: setHours(setMinutes(parseISO(campaignData.start), 0), 8),
   };
 
   const campaignModel = await Campaign.findOne({
-    where: { id: campaignId, tenantId }
+    where: { id: campaignId, tenantId },
   });
 
   if (
@@ -70,13 +70,13 @@ const UpdateCampaignService = async ({
     data = {
       ...campaignData,
       mediaUrl: mediaData?.filename,
-      mediaType: mediaData?.mimetype.substr(0, mediaData.mimetype.indexOf("/"))
+      mediaType: mediaData?.mimetype.substr(0, mediaData.mimetype.indexOf("/")),
     };
   } else if (campaignData.mediaUrl === "null") {
     data = {
       ...campaignData,
       mediaUrl: "",
-      mediaType: ""
+      mediaType: "",
     };
   }
 

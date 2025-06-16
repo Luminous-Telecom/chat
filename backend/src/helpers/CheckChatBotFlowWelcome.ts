@@ -12,13 +12,13 @@ const CheckChatBotFlowWelcome = async (instance: Ticket): Promise<void> => {
   const setting = await Setting.findOne({
     where: {
       key: "botTicketActive",
-      tenantId: instance.tenantId
-    }
+      tenantId: instance.tenantId,
+    },
   });
 
   const channel = await ShowWhatsAppService({
     id: instance.whatsappId,
-    tenantId: instance.tenantId
+    tenantId: instance.tenantId,
   });
 
   const chatFlowId = channel?.chatFlowId || setting?.value;
@@ -30,8 +30,8 @@ const CheckChatBotFlowWelcome = async (instance: Ticket): Promise<void> => {
       id: +chatFlowId,
       tenantId: instance.tenantId,
       isActive: true,
-      isDeleted: false
-    }
+      isDeleted: false,
+    },
   });
 
   if (!chatFlow) return;
@@ -50,12 +50,12 @@ const CheckChatBotFlowWelcome = async (instance: Ticket): Promise<void> => {
   await instance.update({
     chatFlowId: chatFlow.id,
     stepChatFlow: lineFlow.to,
-    lastInteractionBot: new Date()
+    lastInteractionBot: new Date(),
   });
 
   await CreateLogTicketService({
     ticketId: instance.id,
-    type: "chatBot"
+    type: "chatBot",
   });
 };
 

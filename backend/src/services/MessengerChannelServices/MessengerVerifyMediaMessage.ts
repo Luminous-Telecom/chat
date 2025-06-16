@@ -1,6 +1,6 @@
 import { join } from "path";
 import axios from "axios";
-import { createWriteStream } from "fs";
+import fs, { createWriteStream } from "fs";
 import contentDiposition from "content-disposition";
 import Contact from "../../models/Contact";
 import Ticket from "../../models/Ticket";
@@ -10,7 +10,6 @@ import CreateMessageService from "../MessageServices/CreateMessageService";
 import Whatsapp from "../../models/Whatsapp";
 import { EventMessage, MessengerRawEvent } from "./MessengerTypes";
 import getQuotedForMessageId from "../../helpers/getQuotedForMessageId";
-import fs from "fs";
 
 interface IMessage extends EventMessage {
   type: string;
@@ -21,7 +20,7 @@ const downloadFile = async (url: string, filename: string): Promise<string> => {
   const request = await axios({
     url,
     method: "GET",
-    responseType: "stream"
+    responseType: "stream",
   });
 
   const parseDisposition: any = request.headers["content-disposition"]
@@ -41,7 +40,7 @@ const downloadFile = async (url: string, filename: string): Promise<string> => {
 
   const publicDir = join(__dirname, "..", "..", "..", "public");
   const receivedDir = join(publicDir, "received");
-  
+
   // Verificar se os diretórios existem
   try {
     await fs.promises.access(publicDir);
@@ -105,18 +104,18 @@ const MessengerVerifyMediaMessage = async (
         mediaType: msg.type,
         quotedMsgId,
         timestamp: +msg.timestamp,
-        status: "received"
+        status: "received",
       };
 
       await ticket.update({
         lastMessage: msg.message?.text || filename || "",
         lastMessageAt: new Date().getTime(),
-        answered: false
+        answered: false,
       });
 
       await CreateMessageService({
         messageData,
-        tenantId: ticket.tenantId
+        tenantId: ticket.tenantId,
       });
       // return newMessage;
     })

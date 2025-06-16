@@ -23,7 +23,7 @@ const VerifyContactWaba360 = async (
     pushname: contact.profile.name || "",
     isUser: false,
     isWAContact: true,
-    isGroup: false
+    isGroup: false,
   };
 
   const newContact = await CreateOrUpdateContactService(contactData);

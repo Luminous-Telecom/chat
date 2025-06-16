@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Messages", "idFront", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Messages", "idFront")]);
-  }
+  },
 };

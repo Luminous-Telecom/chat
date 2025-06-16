@@ -14,13 +14,13 @@ interface Request {
 
 const UpdateStepsReplyService = async ({
   stepsReplyData,
-  stepsReplyId
+  stepsReplyId,
 }: Request): Promise<StepsReply> => {
   const { reply, userId, initialStep } = stepsReplyData;
 
   const stepsReply = await StepsReply.findOne({
     where: { id: stepsReplyId },
-    attributes: ["id", "reply", "userId", "initialStep"]
+    attributes: ["id", "reply", "userId", "initialStep"],
   });
 
   if (!stepsReply) {
@@ -30,11 +30,11 @@ const UpdateStepsReplyService = async ({
   await stepsReply.update({
     reply,
     userId,
-    initialStep
+    initialStep,
   });
 
   await stepsReply.reload({
-    attributes: ["id", "reply", "userId", "initialStep"]
+    attributes: ["id", "reply", "userId", "initialStep"],
   });
 
   return stepsReply;

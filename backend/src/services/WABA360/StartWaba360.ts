@@ -28,14 +28,14 @@ export const StartWaba360 = async (connection: Whatsapp): Promise<void> => {
   await connection.update({ status: "OPENING" });
   io.emit(`${connection.tenantId}:whatsappSession`, {
     action: "update",
-    session: connection
+    session: connection,
   });
 
   try {
     await SetWebHookUrl({
       // eslint-disable-next-line no-bitwise
       url: connection.UrlWabaWebHook || "",
-      apiKey: connection.tokenAPI
+      apiKey: connection.tokenAPI,
     });
     const phoneNumber = ""; // await GetRegisteredPhone(connection.tokenAPI);
     logger.info(`Conexão Waba 360 iniciada | Empresa: ${connection.tenantId}`);
@@ -47,14 +47,14 @@ export const StartWaba360 = async (connection: Whatsapp): Promise<void> => {
     );
     io.emit(`${connection.tenantId}:whatsappSession`, {
       action: "update",
-      session: connection
+      session: connection,
     });
   } catch (err) {
     logger.error(`SetWebHookUrl 360 | Error: ${err}`);
     await connection.update({ status: "DISCONNECTED" });
     io.emit(`${connection.tenantId}:whatsappSession`, {
       action: "update",
-      session: connection
+      session: connection,
     });
     throw new AppError(`ERROR_CONNECT_WABA_360: ${err}`, 404);
   }

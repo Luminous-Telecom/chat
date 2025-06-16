@@ -2,13 +2,13 @@
 /* eslint-disable no-await-in-loop */
 import { join } from "path";
 import { Op } from "sequelize";
+import fs from "fs";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import { logger } from "../../utils/logger";
 import { sleepRandomTime } from "../../utils/sleepRandomTime";
 import Contact from "../../models/Contact";
 import GetWbotMessage from "../../helpers/GetWbotMessage";
-import fs from "fs";
 // import SetTicketMessagesAsRead from "../../helpers/SetTicketMessagesAsRead";
 
 const SendMessagesSystemWbot = async (
@@ -22,13 +22,13 @@ const SendMessagesSystemWbot = async (
     [Op.or]: [
       {
         scheduleDate: {
-          [Op.lte]: new Date()
-        }
+          [Op.lte]: new Date(),
+        },
       },
       {
-        scheduleDate: { [Op.is]: null }
-      }
-    ]
+        scheduleDate: { [Op.is]: null },
+      },
+    ],
   };
   const messages = await Message.findAll({
     where,
@@ -39,9 +39,9 @@ const SendMessagesSystemWbot = async (
         where: {
           tenantId,
           number: {
-            [Op.notIn]: ["", "null"]
-          }
-        }
+            [Op.notIn]: ["", "null"],
+          },
+        },
       },
       {
         model: Ticket,
@@ -50,20 +50,20 @@ const SendMessagesSystemWbot = async (
           tenantId,
           [Op.or]: {
             status: { [Op.ne]: "closed" },
-            isFarewellMessage: true
+            isFarewellMessage: true,
           },
           channel: "whatsapp",
-          whatsappId: wbot.id
+          whatsappId: wbot.id,
         },
-        include: ["contact"]
+        include: ["contact"],
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
-      }
+        include: ["contact"],
+      },
     ],
-    order: [["createdAt", "ASC"]]
+    order: [["createdAt", "ASC"]],
   });
   let sendedMessage;
 
@@ -99,12 +99,16 @@ const SendMessagesSystemWbot = async (
         const buffer = await fs.promises.readFile(mediaPath);
         const mimetype = message.mediaType;
         const caption = message.body;
-        sendedMessage = await (wbot as any).sendMessage(chatId, { image: buffer, mimetype, caption });
+        sendedMessage = await (wbot as any).sendMessage(chatId, {
+          image: buffer,
+          mimetype,
+          caption,
+        });
         logger.info("sendMessage media");
       } else {
         sendedMessage = await wbot.sendMessage(chatId, message.body, {
           quotedMessageId: quotedMsgSerializedId,
-          linkPreview: false // fix: send a message takes 2 seconds when there's a link on message body
+          linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
         });
         logger.info("sendMessage text");
       }
@@ -115,7 +119,7 @@ const SendMessagesSystemWbot = async (
         ...sendedMessage,
         id: message.id,
         messageId: sendedMessage.id.id,
-        status: "sended"
+        status: "sended",
       };
 
       await Message.update(
@@ -129,7 +133,7 @@ const SendMessagesSystemWbot = async (
       // delay para processamento da mensagem
       await sleepRandomTime({
         minMilliseconds: Number(process.env.MIN_SLEEP_INTERVAL || 500),
-        maxMilliseconds: Number(process.env.MAX_SLEEP_INTERVAL || 2000)
+        maxMilliseconds: Number(process.env.MAX_SLEEP_INTERVAL || 2000),
       });
 
       logger.info("sendMessage", sendedMessage.id.id);
@@ -139,7 +143,7 @@ const SendMessagesSystemWbot = async (
 
       if (error.code === "ENOENT") {
         await Message.destroy({
-          where: { id: message.id }
+          where: { id: message.id },
         });
       }
 

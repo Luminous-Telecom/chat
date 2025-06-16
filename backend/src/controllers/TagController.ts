@@ -27,7 +27,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     tag: Yup.string().required(),
     color: Yup.string().required(),
     userId: Yup.number().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -47,7 +47,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const tags = await ListTagService({
     tenantId,
     // eslint-disable-next-line eqeqeq
-    isActive: isActive ? isActive == "true" : false
+    isActive: isActive ? isActive == "true" : false,
   });
   return res.status(200).json(tags);
 };
@@ -67,7 +67,7 @@ export const update = async (
     tag: Yup.string().required(),
     color: Yup.string().required(),
     isActive: Yup.boolean().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -79,7 +79,7 @@ export const update = async (
   const { tagId } = req.params;
   const tagObj = await UpdateTagService({
     tagData,
-    tagId
+    tagId,
   });
 
   return res.status(200).json(tagObj);

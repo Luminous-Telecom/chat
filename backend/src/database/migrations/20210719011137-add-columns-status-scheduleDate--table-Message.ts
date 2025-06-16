@@ -5,7 +5,7 @@ module.exports = {
     return Promise.all([
       queryInterface.addColumn("Messages", "scheduleDate", {
         type: DataTypes.DATE,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Messages", "sendType", {
         type: DataTypes.STRING,
@@ -18,20 +18,20 @@ module.exports = {
           "web",
           "celular",
           "bot",
-          "sync"
-        ]
+          "sync",
+        ],
       }),
       queryInterface.addColumn("Messages", "messageId", {
         type: DataTypes.STRING,
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       }),
       queryInterface.addColumn("Messages", "status", {
         type: DataTypes.STRING,
         allowNull: true,
         defaultValue: null,
-        values: ["pending", "sended", "received"]
-      })
+        values: ["pending", "sended", "received"],
+      }),
     ]);
   },
 
@@ -40,7 +40,7 @@ module.exports = {
       queryInterface.removeColumn("Messages", "scheduleDate"),
       queryInterface.removeColumn("Messages", "sendType"),
       queryInterface.removeColumn("Messages", "messageId"),
-      queryInterface.removeColumn("Messages", "status")
+      queryInterface.removeColumn("Messages", "status"),
     ]);
-  }
+  },
 };

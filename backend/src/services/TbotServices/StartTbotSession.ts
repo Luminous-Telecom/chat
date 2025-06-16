@@ -9,7 +9,7 @@ export const StartTbotSession = async (connection: Whatsapp): Promise<void> => {
   await connection.update({ status: "OPENING" });
   io.emit(`${connection.tenantId}:whatsappSession`, {
     action: "update",
-    session: connection
+    session: connection,
   });
 
   try {

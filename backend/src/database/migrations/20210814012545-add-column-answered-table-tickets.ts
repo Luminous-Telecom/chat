@@ -5,12 +5,12 @@ module.exports = {
     return Promise.all([
       queryInterface.addColumn("Tickets", "answered", {
         type: DataTypes.BOOLEAN,
-        defaultValue: true
-      })
+        defaultValue: true,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Tickets", "answered")]);
-  }
+  },
 };

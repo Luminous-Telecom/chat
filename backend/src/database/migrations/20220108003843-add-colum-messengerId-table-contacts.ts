@@ -6,14 +6,14 @@ module.exports = {
       queryInterface.addColumn("Contacts", "messengerId", {
         type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("Contacts", "messengerId")
+      queryInterface.removeColumn("Contacts", "messengerId"),
     ]);
-  }
+  },
 };

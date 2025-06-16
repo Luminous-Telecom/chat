@@ -17,11 +17,11 @@ interface Request {
 const UpdateUserConfigsService = async ({
   userConfigs,
   userId,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const user = await User.findOne({
     where: { id: userId, tenantId },
-    attributes: ["name", "id", "email", "profile", "configs"]
+    attributes: ["name", "id", "email", "profile", "configs"],
   });
 
   if (!user) {
@@ -31,8 +31,8 @@ const UpdateUserConfigsService = async ({
   await user.update({
     configs: {
       ...user.configs,
-      ...userConfigs
-    }
+      ...userConfigs,
+    },
   });
 };
 

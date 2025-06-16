@@ -32,12 +32,12 @@ export const initTbot = async (connection: Whatsapp): Promise<Session> => {
       connection.update({
         status: "CONNECTED",
         qrcode: "",
-        retries: 0
+        retries: 0,
       });
 
       io.emit(`${tenantId}:whatsappSession`, {
         action: "update",
-        session: connection
+        session: connection,
       });
 
       logger.info(`Session TELEGRAM: ${sessionName} - READY `);
@@ -49,7 +49,7 @@ export const initTbot = async (connection: Whatsapp): Promise<Session> => {
       connection.update({
         status: "DISCONNECTED",
         qrcode: "",
-        retries: 0
+        retries: 0,
       });
       logger.error(`initWbot error | Error: ${error}`);
       reject(new Error("Error starting telegram session."));

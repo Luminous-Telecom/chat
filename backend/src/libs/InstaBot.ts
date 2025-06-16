@@ -2,7 +2,7 @@
 import {
   AccountRepositoryCurrentUserResponseUser,
   AccountRepositoryLoginResponseLogged_in_user,
-  IgApiClient
+  IgApiClient,
   // IgLoginTwoFactorRequiredError
 } from "instagram-private-api";
 import { IgApiClientMQTT, withFbnsAndRealtime } from "instagram_mqtt";
@@ -14,8 +14,8 @@ import { logger } from "../utils/logger";
 interface Session extends IgApiClientMQTT {
   id: number;
   accountLogin?:
-  | AccountRepositoryLoginResponseLogged_in_user
-  | AccountRepositoryCurrentUserResponseUser;
+    | AccountRepositoryLoginResponseLogged_in_user
+    | AccountRepositoryCurrentUserResponseUser;
 }
 
 const sessions: Session[] = [];
@@ -56,18 +56,18 @@ export const initInstaBot = async (connection: Whatsapp): Promise<Session> => {
       });
       sessionCfg = await ig.exportState();
       await connection.update({
-        session: sessionCfg
+        session: sessionCfg,
       });
     }
 
     await ig.realtime.connect({
-      irisData: await ig.feed.directInbox().request()
+      irisData: await ig.feed.directInbox().request(),
     });
     // PartialObserver<FbnsNotificationUnknown>
     // ig.fbns.push$.subscribe((data: any) => {
 
     await ig.fbns.connect({
-      autoReconnect: true
+      autoReconnect: true,
     });
 
     const sessionIndex = sessions.findIndex(s => s.id === connection.id);
@@ -110,7 +110,7 @@ export const removeInstaBot = (connection: Whatsapp): void => {
       sessions.splice(sessionIndex, 1);
     }
     connection.update({
-      session: ""
+      session: "",
     });
   } catch (err) {
     logger.error(`removeWbot | Error: ${err}`);

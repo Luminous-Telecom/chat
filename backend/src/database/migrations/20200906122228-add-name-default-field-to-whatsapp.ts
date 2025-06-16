@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Whatsapps", "default", {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: false
+      defaultValue: false,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Whatsapps", "default");
-  }
+  },
 };

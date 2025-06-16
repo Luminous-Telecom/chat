@@ -27,8 +27,8 @@ const decode = (token: string): Result => {
     data: {
       id: "",
       profile: "",
-      tenantId: 0
-    }
+      tenantId: 0,
+    },
   };
   try {
     const decoded = verify(token, authConfig.secret);
@@ -37,7 +37,7 @@ const decode = (token: string): Result => {
     validation.data = {
       id,
       profile,
-      tenantId
+      tenantId,
     };
   } catch (err) {
     logger.error(err);

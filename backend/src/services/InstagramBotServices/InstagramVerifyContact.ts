@@ -49,7 +49,7 @@ const InstagramVerifyContact = async (
     isWAContact: false,
     isGroup: false,
     origem: "instagram",
-    instagramPK: user.pk
+    instagramPK: user.pk,
   };
 
   const contact = await CreateOrUpdateContactService(contactData);

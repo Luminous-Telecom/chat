@@ -6,20 +6,20 @@ module.exports = {
       queryInterface.addColumn("Whatsapps", "instagramUser", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Whatsapps", "instagramKey", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
       queryInterface.removeColumn("Whatsapps", "instagramUser"),
-      queryInterface.removeColumn("Whatsapps", "instagramKey")
+      queryInterface.removeColumn("Whatsapps", "instagramKey"),
     ]);
-  }
+  },
 };

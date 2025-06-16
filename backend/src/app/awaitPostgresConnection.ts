@@ -18,8 +18,10 @@ const waitForPostgresConnection = async function () {
       logger.info("Conexão com o PostgreSQL estabelecida com sucesso!");
 
       // Verifica se é produção e se é a instância principal (process.env.pm_id === '0')
-      if (process.env.NODE_ENV === "production" && process.env.pm_id === '0') {
-        logger.info("Instância principal detectada. Iniciando execução das migrations...");
+      if (process.env.NODE_ENV === "production" && process.env.pm_id === "0") {
+        logger.info(
+          "Instância principal detectada. Iniciando execução das migrations..."
+        );
         try {
           const { stdout, stderr } = await execAsync(
             "npm run copy-templates-files && npx sequelize db:migrate"

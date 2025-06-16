@@ -6,9 +6,9 @@ interface Request {
 const ListQueueService = async ({ tenantId }: Request): Promise<Queue[]> => {
   const queueData = await Queue.findAll({
     where: {
-      tenantId
+      tenantId,
     },
-    order: [["queue", "ASC"]]
+    order: [["queue", "ASC"]],
   });
 
   return queueData;

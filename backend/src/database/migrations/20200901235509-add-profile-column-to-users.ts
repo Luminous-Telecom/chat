@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Users", "profile", {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "admin"
+      defaultValue: "admin",
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Users", "profile");
-  }
+  },
 };

@@ -36,15 +36,15 @@ const query = `
 const StatisticsPerUser = async ({
   startDate,
   endDate,
-  tenantId
+  tenantId,
 }: Request): Promise<any[]> => {
   const data = await sequelize.query(query, {
     replacements: {
       tenantId,
       startDate,
-      endDate
+      endDate,
     },
-    type: QueryTypes.SELECT
+    type: QueryTypes.SELECT,
     // logging: console.log
   });
   return data;

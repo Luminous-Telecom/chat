@@ -39,7 +39,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     urlServiceStatus: Yup.string().url().nullable(),
     urlMessageStatus: Yup.string().url().nullable(),
     userId: Yup.number().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -81,7 +81,7 @@ export const update = async (
     urlMessageStatus: Yup.string().url().nullable(),
     userId: Yup.number().required(),
     tenantId: Yup.number().required(),
-    isActive: Yup.boolean().required()
+    isActive: Yup.boolean().required(),
   });
 
   try {
@@ -93,7 +93,7 @@ export const update = async (
   const api = await UpdateApiConfigService({
     apiData,
     apiId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(api);
@@ -129,7 +129,7 @@ export const renewTokenApi = async (
   const schema = Yup.object().shape({
     sessionId: Yup.number().required(),
     userId: Yup.number().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -142,7 +142,7 @@ export const renewTokenApi = async (
     apiId,
     userId: api.userId,
     sessionId: api.sessionId,
-    tenantId: api.tenantId
+    tenantId: api.tenantId,
   });
 
   return res.status(200).json(newApi);

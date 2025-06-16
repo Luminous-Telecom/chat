@@ -7,8 +7,8 @@ module.exports = {
         allowNull: false,
         primaryKey: true,
         type: DataTypes.UUID,
-        defaultValue: Sequelize.literal("gen_random_uuid()")
-      })
+        defaultValue: Sequelize.literal("gen_random_uuid()"),
+      }),
     ]);
   },
 
@@ -18,8 +18,8 @@ module.exports = {
         allowNull: false,
         primaryKey: true,
         type: DataTypes.UUID,
-        defaultValue: Sequelize.literal("gen_random_uuid()")
-      })
+        defaultValue: Sequelize.literal("gen_random_uuid()"),
+      }),
     ]);
-  }
+  },
 };

@@ -19,7 +19,7 @@ interface Request {
 
 const UpdateStepsReplyActionService = async ({
   stepsReplyActionData,
-  stepsReplyActionId
+  stepsReplyActionId,
 }: Request): Promise<StepsReplyAction> => {
   const {
     stepReplyId,
@@ -29,7 +29,7 @@ const UpdateStepsReplyActionService = async ({
     queueId,
     userIdDestination,
     nextStepId,
-    replyDefinition
+    replyDefinition,
   } = stepsReplyActionData;
 
   const stepsReplyAction = await StepsReplyAction.findOne({
@@ -43,8 +43,8 @@ const UpdateStepsReplyActionService = async ({
       "queueId",
       "userIdDestination",
       "nextStepId",
-      "replyDefinition"
-    ]
+      "replyDefinition",
+    ],
   });
 
   if (!stepsReplyAction) {
@@ -59,7 +59,7 @@ const UpdateStepsReplyActionService = async ({
     queueId,
     userIdDestination,
     nextStepId,
-    replyDefinition
+    replyDefinition,
   });
 
   await stepsReplyAction.reload({
@@ -72,8 +72,8 @@ const UpdateStepsReplyActionService = async ({
       "queueId",
       "userIdDestination",
       "nextStepId",
-      "replyDefinition"
-    ]
+      "replyDefinition",
+    ],
   });
 
   return stepsReplyAction;

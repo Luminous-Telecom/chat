@@ -1,4 +1,4 @@
-import { BaileysClient as Session } from '../types/baileys';
+import { BaileysClient as Session } from "../types/baileys";
 import { getBaileysSession } from "../libs/baileys";
 import GetDefaultWhatsApp from "./GetDefaultWhatsApp";
 import Ticket from "../models/Ticket";

@@ -23,25 +23,25 @@ const CreateTicketObservationService = async ({
   texto,
   anexo,
   userId,
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
-  logger.info(`[CreateTicketObservationService] Recebendo dados:`, {
+  logger.info("[CreateTicketObservationService] Recebendo dados:", {
     ticketId,
     texto,
     anexo,
     userId,
     tenantId,
-    tenantIdType: typeof tenantId
+    tenantIdType: typeof tenantId,
   });
 
   const ticket = await Ticket.findOne({
-    where: { id: ticketId, tenantId }
+    where: { id: ticketId, tenantId },
   });
 
   if (!ticket) {
-    logger.error(`[CreateTicketObservationService] Ticket não encontrado:`, {
+    logger.error("[CreateTicketObservationService] Ticket não encontrado:", {
       ticketId,
-      tenantId
+      tenantId,
     });
     throw new AppError("ERR_NO_TICKET_FOUND", 404);
   }
@@ -52,40 +52,46 @@ const CreateTicketObservationService = async ({
       anexo,
       ticketId,
       userId,
-      tenantId
+      tenantId,
     });
 
-    logger.info(`[CreateTicketObservationService] Observação criada:`, {
-      observationId: observation.id
+    logger.info("[CreateTicketObservationService] Observação criada:", {
+      observationId: observation.id,
     });
 
-    const observationWithUser = await TicketObservation.findByPk(observation.id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "name"]
-        }
-      ]
-    });
+    const observationWithUser = await TicketObservation.findByPk(
+      observation.id,
+      {
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "name"],
+          },
+        ],
+      }
+    );
 
     if (!observationWithUser) {
-      logger.error(`[CreateTicketObservationService] Observação não encontrada após criação:`, {
-        observationId: observation.id
-      });
+      logger.error(
+        "[CreateTicketObservationService] Observação não encontrada após criação:",
+        {
+          observationId: observation.id,
+        }
+      );
       throw new AppError("ERR_OBSERVATION_NOT_FOUND", 404);
     }
 
     const io = getIO();
     io.to(`tenant-${tenantId}`).emit("ticketObservation:create", {
-      observation: observationWithUser
+      observation: observationWithUser,
     });
 
     return { observation: observationWithUser };
   } catch (error) {
-    logger.error(`[CreateTicketObservationService] Erro ao criar observação:`, {
+    logger.error("[CreateTicketObservationService] Erro ao criar observação:", {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
     throw error;
   }

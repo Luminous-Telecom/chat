@@ -6,11 +6,11 @@ module.exports = {
     return queryInterface.addColumn("Tenants", "messageBusinessHours", {
       type: DataTypes.TEXT,
       allowNull: true,
-      defaultValue: messageBusinessHours
+      defaultValue: messageBusinessHours,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Tenants", "messageBusinessHours");
-  }
+  },
 };

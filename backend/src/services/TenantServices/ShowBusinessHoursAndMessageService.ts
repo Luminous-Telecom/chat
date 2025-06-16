@@ -6,10 +6,10 @@ interface Request {
 }
 
 const ShowBusinessHoursAndMessageService = async ({
-  tenantId
+  tenantId,
 }: Request): Promise<Tenant> => {
   const tenant = await Tenant.findByPk(tenantId, {
-    attributes: ["businessHours", "messageBusinessHours"]
+    attributes: ["businessHours", "messageBusinessHours"],
   });
 
   if (!tenant) {

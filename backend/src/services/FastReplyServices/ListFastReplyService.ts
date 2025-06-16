@@ -5,13 +5,13 @@ interface Request {
 }
 
 const ListFastReplyService = async ({
-  tenantId
+  tenantId,
 }: Request): Promise<FastReply[]> => {
   const fastReplyData = await FastReply.findAll({
     where: {
-      tenantId
+      tenantId,
     },
-    order: [["key", "ASC"]]
+    order: [["key", "ASC"]],
   });
 
   return fastReplyData;

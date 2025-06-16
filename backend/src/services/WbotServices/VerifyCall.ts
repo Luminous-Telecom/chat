@@ -57,7 +57,7 @@ const VerifyCall = async (call: any, wbot: Session): Promise<void> => {
           whatsappId: wbot.id!,
           unreadMessages: 1,
           tenantId,
-          channel: "whatsapp"
+          channel: "whatsapp",
         });
 
         // create message for call
@@ -66,12 +66,12 @@ const VerifyCall = async (call: any, wbot: Session): Promise<void> => {
             body: callRejectMessage,
             fromMe: true,
             read: true,
-            sendType: "bot"
+            sendType: "bot",
           },
           tenantId: ticket.tenantId,
           ticket,
           sendType: "call",
-          status: "pending"
+          status: "pending",
         });
 
         resolve();

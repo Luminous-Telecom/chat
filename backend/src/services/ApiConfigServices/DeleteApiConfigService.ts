@@ -8,10 +8,10 @@ interface Request {
 
 const DeleteApiConfigService = async ({
   apiId,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const api = await ApiConfig.findOne({
-    where: { id: apiId, tenantId }
+    where: { id: apiId, tenantId },
   });
 
   if (!api) {

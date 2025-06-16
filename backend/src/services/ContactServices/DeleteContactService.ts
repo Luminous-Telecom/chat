@@ -10,10 +10,10 @@ interface Request {
 
 const DeleteContactService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const contact = await Contact.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!contact) {
@@ -21,7 +21,7 @@ const DeleteContactService = async ({
   }
 
   const tickets = await Ticket.count({
-    where: { contactId: id }
+    where: { contactId: id },
   });
 
   if (tickets) {
@@ -33,7 +33,7 @@ const DeleteContactService = async ({
   socketEmit({
     tenantId,
     type: "contact:delete",
-    payload: contact
+    payload: contact,
   });
 };
 

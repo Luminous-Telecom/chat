@@ -22,7 +22,7 @@ const CreateTicketService = async ({
   userId,
   tenantId,
   channel,
-  channelId = undefined
+  channelId = undefined,
 }: Request): Promise<Ticket> => {
   const defaultWhatsapp = await GetDefaultWhatsApp(tenantId, channelId);
 
@@ -41,7 +41,7 @@ const CreateTicketService = async ({
     userId,
     isActiveDemand: true,
     channel,
-    tenantId
+    tenantId,
   });
 
   const ticket = await ShowTicketService({ id, tenantId });
@@ -53,13 +53,13 @@ const CreateTicketService = async ({
   await CreateLogTicketService({
     userId,
     ticketId: ticket.id,
-    type: "create"
+    type: "create",
   });
 
   socketEmit({
     tenantId,
     type: "ticket:update",
-    payload: ticket
+    payload: ticket,
   });
 
   return ticket;

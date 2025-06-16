@@ -11,17 +11,19 @@ export default async function express(app: Application): Promise<void> {
   app.use(
     cors({
       origin,
-      credentials: true
+      credentials: true,
     })
   );
 
   if (process.env.NODE_ENV !== "dev") {
     const frontendUrl = process.env.FRONTEND_URL || "'self'";
-    
-    app.use(helmet({
-      crossOriginResourcePolicy: false,
-      frameguard: false
-    }));
+
+    app.use(
+      helmet({
+        crossOriginResourcePolicy: false,
+        frameguard: false,
+      })
+    );
 
     // Sets all of the defaults, but overrides script-src
     app.use(
@@ -36,19 +38,10 @@ export default async function express(app: Application): Promise<void> {
           "script-src-attr": ["'none'"],
           "style-src": ["'self'", "https:", "'unsafe-inline'"],
           "upgrade-insecure-requests": [],
-          "script-src": [
-            "'self'",
-            frontendUrl
-          ],
-          "frame-ancestors": [
-            "'self'",
-            frontendUrl
-          ],
-          "connect-src": [
-            "'self'",
-            frontendUrl
-          ]
-        }
+          "script-src": ["'self'", frontendUrl],
+          "frame-ancestors": ["'self'", frontendUrl],
+          "connect-src": ["'self'", frontendUrl],
+        },
       })
     );
   }

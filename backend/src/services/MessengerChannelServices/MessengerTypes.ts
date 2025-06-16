@@ -32,13 +32,13 @@ export type FallbackAttachment = {
 
 export type EventMessageAttachment =
   | {
-    type: "audio" | "video" | "image" | "file";
-    payload: MediaAttachmentPayload;
-  }
+      type: "audio" | "video" | "image" | "file";
+      payload: MediaAttachmentPayload;
+    }
   | {
-    type: "location";
-    payload: LocationAttachmentPayload;
-  }
+      type: "location";
+      payload: LocationAttachmentPayload;
+    }
   | FallbackAttachment;
 
 type EventMessageTag = {
@@ -95,14 +95,14 @@ export type EventGamePlay = {
 
 export type EventOptin =
   | {
-    ref: string;
-    userRef?: string;
-  }
+      ref: string;
+      userRef?: string;
+    }
   | {
-    type: "one_time_notif_req";
-    payload: string;
-    oneTimeNotifToken: string;
-  };
+      type: "one_time_notif_req";
+      payload: string;
+      oneTimeNotifToken: string;
+    };
 
 export type EventPayment = {
   payload: string;
@@ -181,14 +181,14 @@ export type EventAccountLinking =
 
 export type EventReaction = {
   reaction:
-  | "smile"
-  | "angry"
-  | "sad"
-  | "wow"
-  | "love"
-  | "like"
-  | "dislike"
-  | "other";
+    | "smile"
+    | "angry"
+    | "sad"
+    | "wow"
+    | "love"
+    | "like"
+    | "dislike"
+    | "other";
   emoji: string;
   action: "react" | "unreact";
   mid: string;
@@ -196,111 +196,111 @@ export type EventReaction = {
 
 export type MessengerRawEvent =
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    message: EventMessage;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      message: EventMessage;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    delivery: EventDelivery;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      delivery: EventDelivery;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    read: EventRead;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      read: EventRead;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    postback: EventPostback;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      postback: EventPostback;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    accountLinking: EventAccountLinking;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      accountLinking: EventAccountLinking;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    gamePlay: EventGamePlay;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      gamePlay: EventGamePlay;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    optin: EventOptin;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      optin: EventOptin;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    referral: EventReferral;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      referral: EventReferral;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    payment: EventPayment;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      payment: EventPayment;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    checkoutUpdate: EventCheckoutUpdate;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      checkoutUpdate: EventCheckoutUpdate;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    preCheckout: EventPreCheckout;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      preCheckout: EventPreCheckout;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    passThreadControl: EventPassThreadControl;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      passThreadControl: EventPassThreadControl;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    takeThreadControl: EventTakeThreadControl;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      takeThreadControl: EventTakeThreadControl;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    requestThreadControl: EventRequestThreadControl;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      requestThreadControl: EventRequestThreadControl;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    brandedCamera: EventBrandedCamera;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      brandedCamera: EventBrandedCamera;
+    }
   | {
-    sender: EventSender;
-    recipient: EventRecipient;
-    timestamp: number;
-    reaction: EventReaction;
-  }
+      sender: EventSender;
+      recipient: EventRecipient;
+      timestamp: number;
+      reaction: EventReaction;
+    }
   | {
-    recipient: EventRecipient;
-    timestamp: number;
-    appRoles: EventAppRoles;
-  }
+      recipient: EventRecipient;
+      timestamp: number;
+      appRoles: EventAppRoles;
+    }
   | {
-    recipient: EventRecipient;
-    timestamp: number;
-    "policy-enforcement": EventPolicyEnforcement;
-  };
+      recipient: EventRecipient;
+      timestamp: number;
+      "policy-enforcement": EventPolicyEnforcement;
+    };
 
 export type MessengerEventOptions = {
   isStandby?: boolean;
@@ -309,41 +309,41 @@ export type MessengerEventOptions = {
 
 export type MessagingEntry =
   | {
-    id: string;
-    time: number;
-    messaging: MessengerRawEvent[];
-  }
+      id: string;
+      time: number;
+      messaging: MessengerRawEvent[];
+    }
   | {
-    id: string;
-    time: number;
-    // Supported Events: message_reads, message_deliveries, messages, messaging_postbacks
-    standby: (
-      | {
-        sender: EventSender;
-        recipient: EventRecipient;
-        timestamp: number;
-        message: EventMessage;
-      }
-      | {
-        sender: EventSender;
-        recipient: EventRecipient;
-        timestamp: number;
-        delivery: EventDelivery;
-      }
-      | {
-        sender: EventSender;
-        recipient: EventRecipient;
-        timestamp: number;
-        read: EventRead;
-      }
-      | {
-        sender: EventSender;
-        recipient: EventRecipient;
-        timestamp: number;
-        postback: EventPostback;
-      }
-    )[];
-  };
+      id: string;
+      time: number;
+      // Supported Events: message_reads, message_deliveries, messages, messaging_postbacks
+      standby: (
+        | {
+            sender: EventSender;
+            recipient: EventRecipient;
+            timestamp: number;
+            message: EventMessage;
+          }
+        | {
+            sender: EventSender;
+            recipient: EventRecipient;
+            timestamp: number;
+            delivery: EventDelivery;
+          }
+        | {
+            sender: EventSender;
+            recipient: EventRecipient;
+            timestamp: number;
+            read: EventRead;
+          }
+        | {
+            sender: EventSender;
+            recipient: EventRecipient;
+            timestamp: number;
+            postback: EventPostback;
+          }
+      )[];
+    };
 
 export type MessengerRequestBody = {
   object: "page";

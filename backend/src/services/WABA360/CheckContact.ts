@@ -17,7 +17,7 @@ interface Request {
 // Use this endpoint to manage your profile photo.
 const CheckContact = async ({
   contacts,
-  apiKey
+  apiKey,
 }: Request): Promise<Contact[]> => {
   const apiUrl360 = `${process.env.API_URL_360}/v1/contacts`;
 
@@ -28,12 +28,12 @@ const CheckContact = async ({
       data: {
         blocking: "wait",
         force_check: true,
-        contacts
+        contacts,
       },
       headers: {
         "D360-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     return res.data;
   } catch (error) {

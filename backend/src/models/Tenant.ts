@@ -8,7 +8,7 @@ import {
   ForeignKey,
   BelongsTo,
   AutoIncrement,
-  DataType
+  DataType,
 } from "sequelize-typescript";
 import User from "./User";
 

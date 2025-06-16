@@ -11,7 +11,7 @@ export default {
   options: {
     attempts: 0,
     removeOnComplete: true,
-    removeOnFail: true
+    removeOnFail: true,
     // repeat: {
     //   every: 5000
     // }
@@ -31,5 +31,5 @@ export default {
       sending[data.tenantId] = false;
       throw new Error(error);
     }
-  }
+  },
 };

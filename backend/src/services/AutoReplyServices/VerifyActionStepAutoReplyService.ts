@@ -18,15 +18,15 @@ const VerifyActionStepAutoReplyService = async (
     where: {
       stepReplyId: stepAutoReplyId,
       // words: msg
-      words: where(fn("lower", col("words")), fn("lower", msg))
+      words: where(fn("lower", col("words")), fn("lower", msg)),
     },
     include: [
       {
         model: StepsReply,
         as: "stepsReply",
-        include: [{ model: AutoReply, as: "autoReply", where: { tenantId } }]
-      }
-    ]
+        include: [{ model: AutoReply, as: "autoReply", where: { tenantId } }],
+      },
+    ],
     // include: [
     //   {
     //     model: StepsReply,

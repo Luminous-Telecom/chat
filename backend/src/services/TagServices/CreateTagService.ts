@@ -14,14 +14,14 @@ const CreateTagService = async ({
   color,
   isActive,
   userId,
-  tenantId
+  tenantId,
 }: Request): Promise<Tag> => {
   const tagData = await Tag.create({
     tag,
     color,
     isActive,
     userId,
-    tenantId
+    tenantId,
   });
 
   return tagData;

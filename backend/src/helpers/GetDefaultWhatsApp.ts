@@ -14,7 +14,7 @@ const GetDefaultWhatsApp = async (
   }
 
   const defaultWhatsapp = await Whatsapp.findOne({
-    where
+    where,
   });
 
   if (!defaultWhatsapp || !tenantId) {

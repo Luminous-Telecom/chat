@@ -17,14 +17,14 @@ const MessengerShowChannel = async ({ fbPageId }: Data): Promise<Whatsapp> => {
     "tokenAPI",
     "fbPageId",
     "fbObject",
-    "instagramKey"
+    "instagramKey",
   ];
 
   const channel = await Whatsapp.findOne({
     where: {
-      fbPageId
+      fbPageId,
     },
-    attributes: attr
+    attributes: attr,
   });
 
   if (!channel) {

@@ -1,10 +1,10 @@
-import { WASocket, proto } from '@whiskeysockets/baileys';
-import AppError from '../../errors/AppError';
-import GetTicketWbot from '../../helpers/GetTicketWbot';
-import Message from '../../models/Message';
-import Ticket from '../../models/Ticket';
-import UserMessagesLog from '../../models/UserMessagesLog';
-import { logger } from '../../utils/logger';
+import { WASocket, proto } from "@whiskeysockets/baileys";
+import AppError from "../../errors/AppError";
+import GetTicketWbot from "../../helpers/GetTicketWbot";
+import Message from "../../models/Message";
+import Ticket from "../../models/Ticket";
+import UserMessagesLog from "../../models/UserMessagesLog";
+import { logger } from "../../utils/logger";
 
 interface Session extends WASocket {
   id: number;
@@ -21,27 +21,35 @@ const SendBaileysMessage = async ({
   ticket,
   body,
   quotedMsg,
-  userId
+  userId,
 }: Request): Promise<any> => {
   const wbot = await GetTicketWbot(ticket);
 
   try {
-    const chatId = `${ticket.contact.number}@${ticket.isGroup ? 'g' : 's'}.whatsapp.net`;
-    
+    const chatId = `${ticket.contact.number}@${
+      ticket.isGroup ? "g" : "s"
+    }.whatsapp.net`;
+
     const messageOptions: any = {
-      quoted: quotedMsg ? {
-        key: {
-          remoteJid: chatId,
-          id: quotedMsg.messageId
-        }
-      } : undefined
+      quoted: quotedMsg
+        ? {
+            key: {
+              remoteJid: chatId,
+              id: quotedMsg.messageId,
+            },
+          }
+        : undefined,
     };
 
-    const sendMessage = await wbot.sendMessage(chatId, { text: body }, messageOptions);
+    const sendMessage = await wbot.sendMessage(
+      chatId,
+      { text: body },
+      messageOptions
+    );
 
     await ticket.update({
       lastMessage: body,
-      lastMessageAt: new Date().getTime()
+      lastMessageAt: new Date().getTime(),
     });
 
     try {
@@ -49,7 +57,7 @@ const SendBaileysMessage = async ({
         await UserMessagesLog.create({
           messageId: sendMessage.key.id,
           userId,
-          ticketId: ticket.id
+          ticketId: ticket.id,
         });
       }
     } catch (error) {
@@ -59,7 +67,7 @@ const SendBaileysMessage = async ({
     return sendMessage as proto.WebMessageInfo;
   } catch (err) {
     logger.error(`SendBaileysMessage | Error: ${err}`);
-    throw new AppError('ERR_SENDING_WAPP_MSG');
+    throw new AppError("ERR_SENDING_WAPP_MSG");
   }
 };
 

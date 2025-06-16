@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Messages", "timestamp", {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Messages", "timestamp")]);
-  }
+  },
 };

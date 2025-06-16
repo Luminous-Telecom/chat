@@ -18,13 +18,13 @@ const VerifyContact = async (
 
   const contactData = {
     name,
-    number: msgContact.id.user.replace(/\D/g, ''),
+    number: msgContact.id.user.replace(/\D/g, ""),
     profilePicUrl,
     tenantId,
     pushname,
     isUser,
     isWAContact: msgContact.isWAContact,
-    isGroup: msgContact.isGroup
+    isGroup: msgContact.isGroup,
   };
 
   const contact = await CreateOrUpdateContactService(contactData);

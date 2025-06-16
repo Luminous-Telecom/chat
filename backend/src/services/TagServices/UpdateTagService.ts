@@ -19,7 +19,7 @@ const UpdateTagService = async ({ tagData, tagId }: Request): Promise<Tag> => {
 
   const tagModel = await Tag.findOne({
     where: { id: tagId, tenantId },
-    attributes: ["id", "tag", "color", "isActive", "userId"]
+    attributes: ["id", "tag", "color", "isActive", "userId"],
   });
 
   if (!tagModel) {
@@ -30,11 +30,11 @@ const UpdateTagService = async ({ tagData, tagId }: Request): Promise<Tag> => {
     tag,
     color,
     isActive,
-    userId
+    userId,
   });
 
   await tagModel.reload({
-    attributes: ["id", "tag", "color", "isActive", "userId"]
+    attributes: ["id", "tag", "color", "isActive", "userId"],
   });
 
   return tagModel;

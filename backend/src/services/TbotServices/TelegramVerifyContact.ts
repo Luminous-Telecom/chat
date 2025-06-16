@@ -27,7 +27,7 @@ const VerifyContact = async (
     isWAContact: false,
     isGroup: false,
     origem: "telegram",
-    telegramId: chatInfo.id
+    telegramId: chatInfo.id,
   };
 
   const contact = await CreateOrUpdateContactService(contactData);

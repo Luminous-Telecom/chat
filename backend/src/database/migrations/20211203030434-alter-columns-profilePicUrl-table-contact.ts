@@ -5,7 +5,7 @@ module.exports = {
     return queryInterface.changeColumn("Contacts", "profilePicUrl", {
       type: DataTypes.TEXT,
       allowNull: true,
-      defaultValue: null
+      defaultValue: null,
     });
   },
 
@@ -13,7 +13,7 @@ module.exports = {
     return queryInterface.changeColumn("Contacts", "profilePicUrl", {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: ""
+      defaultValue: "",
     });
-  }
+  },
 };

@@ -47,7 +47,7 @@ export const updateBusinessHours = async (
         // eslint-disable-next-line no-template-curly-in-string
         .test("isHoursValid", "${path} is not valid", value =>
           isMatch(value || "", "HH:mm")
-        )
+        ),
     })
   );
 
@@ -59,7 +59,7 @@ export const updateBusinessHours = async (
 
   const newBusinessHours = await UpdateBusinessHoursService({
     businessHours,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(newBusinessHours);
@@ -83,7 +83,7 @@ export const updateMessageBusinessHours = async (
 
   const newBusinessHours = await UpdateMessageBusinessHoursService({
     messageBusinessHours,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(newBusinessHours);

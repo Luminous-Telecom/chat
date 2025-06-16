@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Messages", "fromMe", {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: false
+      defaultValue: false,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Messages", "fromMe");
-  }
+  },
 };

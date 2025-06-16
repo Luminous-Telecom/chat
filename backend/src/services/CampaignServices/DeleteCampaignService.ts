@@ -8,10 +8,10 @@ interface Request {
 
 const DeleteCampaignService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const campaign = await Campaign.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!campaign) {

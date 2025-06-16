@@ -1,8 +1,8 @@
 import { join } from "path";
+import fs from "fs";
 import Message from "../../models/Message";
 import { logger } from "../../utils/logger";
 import { getWbot } from "../../libs/wbot";
-import fs from "fs";
 
 const SendMessage = async (message: Message): Promise<void> => {
   logger.info(`SendMessage: ${message.id}`);
@@ -28,14 +28,18 @@ const SendMessage = async (message: Message): Promise<void> => {
     const options = {
       quotedMessageId: quotedMsgSerializedId,
       linkPreview: false,
-      sendAudioAsVoice: false
+      sendAudioAsVoice: false,
     };
-    sendedMessage = await wbot.sendMessage(chatId, { image: buffer, mimetype, caption }, options);
+    sendedMessage = await wbot.sendMessage(
+      chatId,
+      { image: buffer, mimetype, caption },
+      options
+    );
   } else {
     const options = {
       quotedMessageId: quotedMsgSerializedId,
       linkPreview: false,
-      sendAudioAsVoice: false
+      sendAudioAsVoice: false,
     };
     sendedMessage = await wbot.sendMessage(chatId, message.body, options);
   }
@@ -46,7 +50,7 @@ const SendMessage = async (message: Message): Promise<void> => {
     ...sendedMessage,
     id: message.id,
     messageId: sendedMessage.id.id,
-    status: "sended"
+    status: "sended",
   };
 
   await Message.update({ ...messageToUpdate }, { where: { id: message.id } });

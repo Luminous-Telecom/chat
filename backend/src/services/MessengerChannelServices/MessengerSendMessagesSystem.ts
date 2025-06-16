@@ -31,13 +31,13 @@ const MessengerSendMessagesSystem = async (
     [Op.or]: [
       {
         scheduleDate: {
-          [Op.lte]: new Date()
-        }
+          [Op.lte]: new Date(),
+        },
       },
       {
-        scheduleDate: { [Op.is]: null }
-      }
-    ]
+        scheduleDate: { [Op.is]: null },
+      },
+    ],
   };
   const messages = await Message.findAll({
     where,
@@ -50,20 +50,20 @@ const MessengerSendMessagesSystem = async (
           tenantId,
           [Op.or]: {
             status: { [Op.ne]: "closed" },
-            isFarewellMessage: true
+            isFarewellMessage: true,
           },
           channel: "messenger",
-          whatsappId: messengerBot.id
+          whatsappId: messengerBot.id,
         },
-        include: ["contact"]
+        include: ["contact"],
       },
       {
         model: Message,
         as: "quotedMsg",
-        include: ["contact"]
-      }
+        include: ["contact"],
+      },
     ],
-    order: [["createdAt", "ASC"]]
+    order: [["createdAt", "ASC"]],
   });
 
   let sendedMessage: any;
@@ -104,18 +104,18 @@ const MessengerSendMessagesSystem = async (
         if (message.mediaType === "image") {
           const photo = await sharp(file).jpeg().toBuffer();
           sendedMessage = await messengerBot.sendImage(chatId, photo, {
-            filename: message.mediaName
+            filename: message.mediaName,
           });
         }
         if (message.mediaType === "video") {
           sendedMessage = await messengerBot.sendVideo(chatId, file, {
-            filename: message.mediaName
+            filename: message.mediaName,
           });
         }
 
         if (["application", "file", "document"].includes(message.mediaType)) {
           sendedMessage = await messengerBot.sendFile(chatId, file, {
-            filename: message.mediaName
+            filename: message.mediaName,
           });
         }
       }
@@ -131,7 +131,7 @@ const MessengerSendMessagesSystem = async (
         timestamp: message.timestamp,
         messageId: sendedMessage.messageId,
         status: "sended",
-        ack: 1
+        ack: 1,
       };
 
       await Message.update(
@@ -150,8 +150,8 @@ const MessengerSendMessagesSystem = async (
           messageId: sendedMessage.messageId,
           status: "sended",
           ack: 1,
-          fromMe: message.fromMe
-        }
+          fromMe: message.fromMe,
+        },
       });
 
       logger.info("Message Update ok");
@@ -161,7 +161,7 @@ const MessengerSendMessagesSystem = async (
       // delay para processamento da mensagem
       await sleepRandomTime({
         minMilliseconds: Number(500),
-        maxMilliseconds: Number(1500)
+        maxMilliseconds: Number(1500),
       });
 
       // logger.info("sendMessage", sendedMessage.id.id);

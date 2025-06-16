@@ -6,7 +6,7 @@ module.exports = {
       await queryInterface.addColumn("Whatsapps", "farewellMessage", {
         type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       });
     } catch (error) {
       console.error(
@@ -25,5 +25,5 @@ module.exports = {
         error
       );
     }
-  }
+  },
 };

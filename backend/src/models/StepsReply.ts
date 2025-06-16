@@ -10,7 +10,7 @@ import {
   ForeignKey,
   AutoIncrement,
   HasMany,
-  Default
+  Default,
 } from "sequelize-typescript";
 import User from "./User";
 import AutoReply from "./AutoReply";

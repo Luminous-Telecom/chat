@@ -10,7 +10,7 @@ interface Data {
 const ShowWhatsAppService = async ({
   id,
   tenantId,
-  isInternal = false
+  isInternal = false,
 }: Data): Promise<Whatsapp> => {
   const attr = [
     "id",
@@ -31,14 +31,14 @@ const ShowWhatsAppService = async ({
     "tokenAPI",
     "fbPageId",
     "farewellMessage",
-    "chatFlowId"
+    "chatFlowId",
   ];
   if (isInternal) {
     attr.push("instagramKey");
   }
 
   const whatsapp = await Whatsapp.findByPk(id, {
-    attributes: attr
+    attributes: attr,
   });
 
   if (!whatsapp || (tenantId && whatsapp.tenantId !== tenantId)) {

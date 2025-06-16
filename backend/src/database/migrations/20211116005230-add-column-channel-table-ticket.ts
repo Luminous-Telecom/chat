@@ -6,12 +6,12 @@ module.exports = {
       queryInterface.addColumn("Tickets", "channel", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: "whatsapp"
-      })
+        defaultValue: "whatsapp",
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([queryInterface.removeColumn("Tickets", "channel")]);
-  }
+  },
 };

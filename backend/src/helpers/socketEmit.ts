@@ -29,7 +29,7 @@ const emitEvent = ({ tenantId, type, payload }: ObjEvent): void => {
 
   io.to(tenantId.toString()).emit(eventChannel, {
     type,
-    payload
+    payload,
   });
 };
 

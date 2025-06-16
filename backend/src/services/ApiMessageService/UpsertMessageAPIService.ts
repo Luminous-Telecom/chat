@@ -29,12 +29,12 @@ const UpsertMessageAPIService = async ({
   externalKey,
   messageWA,
   apiConfig,
-  tenantId
+  tenantId,
 }: MessageData): Promise<ApiMessage> => {
   let message;
 
   const messageExists = await ApiMessage.findOne({
-    where: { messageId, tenantId }
+    where: { messageId, tenantId },
   });
 
   if (messageExists) {
@@ -50,7 +50,7 @@ const UpsertMessageAPIService = async ({
       externalKey,
       messageWA,
       apiConfig,
-      tenantId
+      tenantId,
     });
     message = await messageExists.reload();
   } else {
@@ -66,7 +66,7 @@ const UpsertMessageAPIService = async ({
       externalKey,
       messageWA,
       apiConfig,
-      tenantId
+      tenantId,
     });
   }
 

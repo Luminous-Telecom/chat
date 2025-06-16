@@ -8,7 +8,7 @@ module.exports = {
   down: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("StepsReplyActions", "reply", {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     });
-  }
+  },
 };

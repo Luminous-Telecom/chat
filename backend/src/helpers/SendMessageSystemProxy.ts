@@ -19,14 +19,16 @@ const SendMessageSystemProxy = async ({
   ticket,
   messageData,
   media,
-  userId
+  userId,
 }: Payload): Promise<any> => {
   let message;
 
   // Buscar o contato para garantir que temos todos os dados necessários
   const contact = await Contact.findByPk(ticket.contactId);
   if (!contact) {
-    logger.error(`[SendMessageSystemProxy] Contact not found for ticket ${ticket.id}`);
+    logger.error(
+      `[SendMessageSystemProxy] Contact not found for ticket ${ticket.id}`
+    );
     throw new Error("ERR_CONTACT_NOT_FOUND");
   }
 
@@ -78,8 +80,8 @@ const SendMessageSystemProxy = async ({
         break;
 
       default:
-        const quotedMessage = messageData?.quotedMsg?.id 
-          ? await Message.findByPk(messageData.quotedMsg.id) 
+        const quotedMessage = messageData?.quotedMsg?.id
+          ? await Message.findByPk(messageData.quotedMsg.id)
           : undefined;
         message = await SendWhatsAppMessage(
           contact,

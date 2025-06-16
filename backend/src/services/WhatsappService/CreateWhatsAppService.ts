@@ -35,7 +35,7 @@ const CreateWhatsAppService = async ({
   tokenAPI,
   fbPageId,
   farewellMessage,
-  isDefault = false
+  isDefault = false,
 }: Request): Promise<Response> => {
   if (type === "waba" && (!tokenAPI || !wabaBSP)) {
     throw new AppError("WABA: favor informar o Token e a BSP");
@@ -52,7 +52,7 @@ const CreateWhatsAppService = async ({
   }
 
   const whatsappFound = await Whatsapp.findOne({
-    where: { tenantId, isDefault: true }
+    where: { tenantId, isDefault: true },
   });
 
   if (!whatsappFound) {
@@ -78,12 +78,12 @@ const CreateWhatsAppService = async ({
       wabaBSP,
       tokenAPI,
       fbPageId,
-      farewellMessage
+      farewellMessage,
     });
     const io = getIO();
     io.emit(`${tenantId}:whatsapp`, {
       action: "update",
-      whatsapp
+      whatsapp,
     });
 
     return { whatsapp, oldDefaultWhatsapp: whatsappFound };

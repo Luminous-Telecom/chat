@@ -7,7 +7,7 @@ module.exports = {
     return Promise.all([
       queryInterface.sequelize.query(
         'ALTER TABLE public."Messages" DROP CONSTRAINT "Messages_quotedMsgId_fkey";'
-      )
+      ),
     ]);
   },
 
@@ -15,7 +15,7 @@ module.exports = {
     return Promise.all([
       queryInterface.sequelize.query(
         'ALTER TABLE public."Messages" ADD CONSTRAINT "Messages_quotedMsgId_fkey" FOREIGN KEY ("quotedMsgId") REFERENCES "Messages"(id) ON UPDATE CASCADE ON DELETE SET NULL;'
-      )
+      ),
     ]);
-  }
+  },
 };

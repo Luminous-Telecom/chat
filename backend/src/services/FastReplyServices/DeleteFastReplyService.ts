@@ -8,10 +8,10 @@ interface Request {
 
 const DeleteFastReplyService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const reply = await FastReply.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!reply) {

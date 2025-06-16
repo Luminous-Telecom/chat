@@ -8,7 +8,7 @@ interface Request {
 
 const ShowContactService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<Contact> => {
   const contact = await Contact.findByPk(id, {
     include: [
@@ -16,9 +16,9 @@ const ShowContactService = async ({
       "tags",
       {
         association: "wallets",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (!contact || contact.tenantId !== tenantId) {

@@ -11,7 +11,7 @@ import {
   startOfDay,
   isAfter,
   isBefore,
-  differenceInDays
+  differenceInDays,
 } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
 import Campaign from "../../models/Campaign";
@@ -63,7 +63,7 @@ const mountMessageData = (
     mediaName: cArquivoName(campaign.mediaUrl),
     messageRandom: `message${messageRandom}`,
     campaignContact,
-    options
+    options,
   };
 };
 
@@ -121,11 +121,11 @@ const calcDelay = (nextDate: Date, delay: number) => {
 const StartCampaignService = async ({
   campaignId,
   tenantId,
-  options
+  options,
 }: Request): Promise<void> => {
   const campaign = await Campaign.findOne({
     where: { id: campaignId, tenantId },
-    include: ["session"]
+    include: ["session"],
   });
 
   if (!campaign) {
@@ -138,7 +138,7 @@ const StartCampaignService = async ({
 
   const campaignContacts = await CampaignContacts.findAll({
     where: { campaignId },
-    include: ["contact"]
+    include: ["contact"],
   });
 
   if (!campaignContacts) {
@@ -160,14 +160,14 @@ const StartCampaignService = async ({
     return mountMessageData(campaign, campaignContact, {
       ...options,
       jobId: `campaginId_${campaign.id}_contact_${campaignContact.contactId}_id_${campaignContact.id}`,
-      delay: calcDelay(dateDelay, timeDelay)
+      delay: calcDelay(dateDelay, timeDelay),
     });
   });
 
   Queue.add("SendMessageWhatsappCampaign", data);
 
   await campaign.update({
-    status: "scheduled"
+    status: "scheduled",
   });
 };
 

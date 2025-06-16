@@ -15,7 +15,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const data = await StatisticsPerUser({
     startDate,
     endDate,
-    tenantId
+    tenantId,
   });
 
   return res.json(data);

@@ -11,7 +11,7 @@ import {
   UpdatedAt,
   HasMany,
   Default,
-  AfterFind
+  AfterFind,
 } from "sequelize-typescript";
 import CampaignContacts from "./CampaignContacts";
 import Tenant from "./Tenant";

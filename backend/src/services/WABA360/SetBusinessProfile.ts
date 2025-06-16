@@ -4,23 +4,23 @@ import { logger } from "../../utils/logger";
 
 interface BusinessProfile {
   vertical:
-  | "Automotive"
-  | "Beauty, Spa and Salon"
-  | "Clothing and Apparel"
-  | "Education"
-  | "Entertainment"
-  | "Event Planning and Service"
-  | "Finance and Banking"
-  | "Food and Grocery"
-  | "Public Service"
-  | "Hotel and Lodging"
-  | "Medical and Health"
-  | "Non-profit"
-  | "Professional Services"
-  | "Shopping and Retail"
-  | "Travel and Transportation"
-  | "Restaurant"
-  | "Other";
+    | "Automotive"
+    | "Beauty, Spa and Salon"
+    | "Clothing and Apparel"
+    | "Education"
+    | "Entertainment"
+    | "Event Planning and Service"
+    | "Finance and Banking"
+    | "Food and Grocery"
+    | "Public Service"
+    | "Hotel and Lodging"
+    | "Medical and Health"
+    | "Non-profit"
+    | "Professional Services"
+    | "Shopping and Retail"
+    | "Travel and Transportation"
+    | "Restaurant"
+    | "Other";
   websites: string[];
   email: string;
   description: string;
@@ -35,7 +35,7 @@ interface Request {
 // Use this edge to manage your profile's About section.
 const SetBusinessProfile = async ({
   data,
-  apiKey
+  apiKey,
 }: Request): Promise<boolean> => {
   const apiUrl360 = `${process.env.API_URL_360}/v1/settings/business/profile`;
 
@@ -46,8 +46,8 @@ const SetBusinessProfile = async ({
       data,
       headers: {
         "D360-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     return true;
   } catch (error) {

@@ -17,11 +17,13 @@ const ImportContactsService = async (
 
   try {
     const session = await GetTicketWbot(ticket);
-    const contacts = Object.values((session as any).store.contacts || {}) as any[];
+    const contacts = Object.values(
+      (session as any).store.contacts || {}
+    ) as any[];
 
     const contactsStore = contacts.map((c: any) => ({
-      number: (c.id || '').split('@')[0].replace(/\D/g, ''),
-      name: c.name || c.notify || c.pushname || ""
+      number: (c.id || "").split("@")[0].replace(/\D/g, ""),
+      name: c.name || c.notify || c.pushname || "",
     }));
 
     phoneContacts = contactsStore.map(({ number, name }) => ({ number, name }));
@@ -42,12 +44,16 @@ const ImportContactsService = async (
         }
 
         const numberExists = await Contact.findOne({
-          where: { number: number.replace(/\D/g, ''), tenantId }
+          where: { number: number.replace(/\D/g, ""), tenantId },
         });
 
         if (numberExists) return null;
 
-        return Contact.create({ number: number.replace(/\D/g, ''), name, tenantId });
+        return Contact.create({
+          number: number.replace(/\D/g, ""),
+          name,
+          tenantId,
+        });
       })
     );
   }

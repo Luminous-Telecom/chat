@@ -2,7 +2,7 @@ import User from "../../models/User";
 import AppError from "../../errors/AppError";
 import {
   createAccessToken,
-  createRefreshToken
+  createRefreshToken,
 } from "../../helpers/CreateTokens";
 import Queue from "../../models/Queue";
 
@@ -20,11 +20,11 @@ interface Response {
 
 const AuthUserService = async ({
   email,
-  password
+  password,
 }: Request): Promise<Response> => {
   const user = await User.findOne({
     where: { email },
-    include: [{ model: Queue, as: "queues" }]
+    include: [{ model: Queue, as: "queues" }],
   });
 
   if (!user) {
@@ -40,19 +40,19 @@ const AuthUserService = async ({
   await user.update({
     isOnline: true,
     status: "online",
-    lastLogin: new Date()
+    lastLogin: new Date(),
   });
 
   const usuariosOnline = await User.findAll({
     where: { tenantId: user.tenantId, isOnline: true },
-    attributes: ["id", "email", "status", "lastOnline", "name", "lastLogin"]
+    attributes: ["id", "email", "status", "lastOnline", "name", "lastLogin"],
   });
 
   return {
     user,
     token,
     refreshToken,
-    usuariosOnline
+    usuariosOnline,
   };
 };
 

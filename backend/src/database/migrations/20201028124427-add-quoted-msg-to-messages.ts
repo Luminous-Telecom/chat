@@ -6,11 +6,11 @@ module.exports = {
       type: DataTypes.STRING,
       references: { model: "Messages", key: "id" },
       onUpdate: "CASCADE",
-      onDelete: "SET NULL"
+      onDelete: "SET NULL",
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Messages", "quotedMsgId");
-  }
+  },
 };

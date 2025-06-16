@@ -8,10 +8,10 @@ interface Request {
 
 const UpdateMessageBusinessHoursService = async ({
   messageBusinessHours,
-  tenantId
+  tenantId,
 }: Request): Promise<Tenant> => {
   const tenantModel = await Tenant.findOne({
-    where: { id: tenantId }
+    where: { id: tenantId },
   });
 
   if (!tenantModel) {
@@ -19,11 +19,11 @@ const UpdateMessageBusinessHoursService = async ({
   }
 
   await tenantModel.update({
-    messageBusinessHours
+    messageBusinessHours,
   });
 
   await tenantModel.reload({
-    attributes: ["businessHours", "messageBusinessHours"]
+    attributes: ["businessHours", "messageBusinessHours"],
   });
 
   return tenantModel;

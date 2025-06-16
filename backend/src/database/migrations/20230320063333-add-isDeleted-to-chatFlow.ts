@@ -4,11 +4,11 @@ module.exports = {
   up: (queryInterface: QueryInterface) => {
     return queryInterface.addColumn("ChatFlow", "isDeleted", {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("ChatFlow", "isDeleted");
-  }
+  },
 };

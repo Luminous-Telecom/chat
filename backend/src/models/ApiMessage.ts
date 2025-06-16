@@ -11,7 +11,7 @@ import {
   ForeignKey,
   AllowNull,
   AfterCreate,
-  AfterUpdate
+  AfterUpdate,
 } from "sequelize-typescript";
 import { v4 as uuidV4 } from "uuid";
 import Queue from "../libs/Queue";
@@ -101,13 +101,13 @@ class ApiMessage extends Model<ApiMessage> {
         number: instance.number,
         externalKey: instance.externalKey,
         type: "hookMessageStatus",
-        authToken: instance.authToken
+        authToken: instance.authToken,
       };
 
       Queue.add("WebHooksAPI", {
         url: instance.apiConfig.urlMessageStatus,
         type: payload.type,
-        payload
+        payload,
       });
     }
   }

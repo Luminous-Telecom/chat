@@ -12,13 +12,13 @@ const CreateStepsReplyService = async ({
   reply,
   idAutoReply,
   userId,
-  initialStep
+  initialStep,
 }: Request): Promise<StepsReply> => {
   const stepsReply = await StepsReply.create({
     reply,
     idAutoReply,
     userId,
-    initialStep
+    initialStep,
   });
 
   return stepsReply;

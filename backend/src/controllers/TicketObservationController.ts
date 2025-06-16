@@ -11,7 +11,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { tenantId } = req.user;
 
   const ticket = await Ticket.findOne({
-    where: { id: ticketId, tenantId }
+    where: { id: ticketId, tenantId },
   });
 
   if (!ticket) {
@@ -23,10 +23,10 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     include: [
       {
         model: User,
-        attributes: ["id", "name"]
-      }
+        attributes: ["id", "name"],
+      },
     ],
-    order: [["createdAt", "DESC"]]
+    order: [["createdAt", "DESC"]],
   });
 
   return res.json(observations);
@@ -35,23 +35,28 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 export const store = async (req: Request, res: Response): Promise<Response> => {
   logger.info("[TicketObservationController] Request completo:", {
     body: req.body,
-    file: req.file ? {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      encoding: req.file.encoding,
-      mimetype: req.file.mimetype,
-      destination: req.file.destination,
-      filename: req.file.filename,
-      path: req.file.path,
-      size: req.file.size
-    } : null,
+    file: req.file
+      ? {
+          fieldname: req.file.fieldname,
+          originalname: req.file.originalname,
+          encoding: req.file.encoding,
+          mimetype: req.file.mimetype,
+          destination: req.file.destination,
+          filename: req.file.filename,
+          path: req.file.path,
+          size: req.file.size,
+        }
+      : null,
     params: req.params,
     query: req.query,
     headers: req.headers,
     rawBody: req.body,
-    contentType: req.headers['content-type'],
+    contentType: req.headers["content-type"],
     bodyKeys: Object.keys(req.body),
-    bodyValues: Object.values(req.body).map(v => ({ value: v, type: typeof v }))
+    bodyValues: Object.values(req.body).map(v => ({
+      value: v,
+      type: typeof v,
+    })),
   });
 
   const { ticketId: ticketIdParam } = req.params;
@@ -62,16 +67,18 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   logger.info("[TicketObservationController] Dados extraídos:", {
     params: req.params,
     body: req.body,
-    file: req.file ? {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      encoding: req.file.encoding,
-      mimetype: req.file.mimetype,
-      destination: req.file.destination,
-      filename: req.file.filename,
-      path: req.file.path,
-      size: req.file.size
-    } : null,
+    file: req.file
+      ? {
+          fieldname: req.file.fieldname,
+          originalname: req.file.originalname,
+          encoding: req.file.encoding,
+          mimetype: req.file.mimetype,
+          destination: req.file.destination,
+          filename: req.file.filename,
+          path: req.file.path,
+          size: req.file.size,
+        }
+      : null,
     user: req.user,
     ticketIdParam,
     texto,
@@ -85,7 +92,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     ticketIdParamType: typeof ticketIdParam,
     ticketIdParamValue: ticketIdParam,
     ticketIdParamParsed: Number(ticketIdParam),
-    isNaN: isNaN(Number(ticketIdParam))
+    isNaN: isNaN(Number(ticketIdParam)),
   });
 
   // Validação dos dados
@@ -95,7 +102,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       ticketIdParamType: typeof ticketIdParam,
       ticketIdParamValue: ticketIdParam,
       ticketIdParamParsed: Number(ticketIdParam),
-      isNaN: isNaN(Number(ticketIdParam))
+      isNaN: isNaN(Number(ticketIdParam)),
     });
     throw new AppError("ERR_INVALID_TICKET_ID", 400);
   }
@@ -107,7 +114,10 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       textoValue: texto,
       textoLength: texto?.length,
       bodyKeys: Object.keys(req.body),
-      bodyValues: Object.values(req.body).map(v => ({ value: v, type: typeof v }))
+      bodyValues: Object.values(req.body).map(v => ({
+        value: v,
+        type: typeof v,
+      })),
     });
     throw new AppError("ERR_INVALID_TEXT", 400);
   }
@@ -118,7 +128,9 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   }
 
   if (!tenantId || isNaN(Number(tenantId))) {
-    logger.error("[TicketObservationController] tenantId inválido:", { tenantId });
+    logger.error("[TicketObservationController] tenantId inválido:", {
+      tenantId,
+    });
     throw new AppError("ERR_INVALID_TENANT_ID", 400);
   }
 
@@ -128,7 +140,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       texto,
       anexo,
       userId: Number(userId),
-      tenantId: Number(tenantId)
+      tenantId: Number(tenantId),
     });
 
     if (!observation) {
@@ -136,15 +148,18 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       throw new AppError("ERR_OBSERVATION_NOT_CREATED", 500);
     }
 
-    logger.info("[TicketObservationController] Observação criada com sucesso:", {
-      observationId: observation.id
-    });
+    logger.info(
+      "[TicketObservationController] Observação criada com sucesso:",
+      {
+        observationId: observation.id,
+      }
+    );
 
     return res.json(observation);
   } catch (error) {
     logger.error("[TicketObservationController] Erro ao criar observação:", {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
     throw error;
   }

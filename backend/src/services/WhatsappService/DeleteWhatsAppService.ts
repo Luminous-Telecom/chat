@@ -6,7 +6,7 @@ const DeleteWhatsApprService = async (
   tenantId: string | number
 ): Promise<void> => {
   const whatsapp = await Whatsapp.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!whatsapp) {

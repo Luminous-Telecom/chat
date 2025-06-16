@@ -15,25 +15,25 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
         {
           [Op.and]: {
             type: {
-              [Op.in]: ["instagram", "telegram", "waba", "messenger"]
+              [Op.in]: ["instagram", "telegram", "waba", "messenger"],
             },
             status: {
-              [Op.notIn]: ["DISCONNECTED"]
-            }
-          }
+              [Op.notIn]: ["DISCONNECTED"],
+            },
+          },
         },
         {
           [Op.and]: {
-            type: "whatsapp"
+            type: "whatsapp",
           },
           status: {
-            [Op.notIn]: ["DISCONNECTED", "qrcode"]
+            [Op.notIn]: ["DISCONNECTED", "qrcode"],
             // "DISCONNECTED"
-          }
-        }
+          },
+        },
       ],
-      isActive: true
-    }
+      isActive: true,
+    },
   });
   const whatsappSessions = whatsapps.filter(w => w.type === "whatsapp");
   const telegramSessions = whatsapps.filter(

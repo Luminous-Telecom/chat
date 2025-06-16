@@ -3,15 +3,15 @@ import pino from "pino";
 const configPino = {
   dev: {
     enabled: true,
-    level: "info"
+    level: "info",
   },
   prod: {
     enabled: true,
     level: "info",
     prettyPrint: {
-      ignore: "pid,hostname"
-    }
-  }
+      ignore: "pid,hostname",
+    },
+  },
 };
 
 let env = "prod";

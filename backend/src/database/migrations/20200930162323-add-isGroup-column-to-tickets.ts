@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Tickets", "isGroup", {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: false
+      defaultValue: false,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Tickets", "isGroup");
-  }
+  },
 };

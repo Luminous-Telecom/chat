@@ -37,7 +37,7 @@ const CreateOrUpdateContactService = async ({
   instagramPK,
   messengerId,
   extraInfo = [],
-  origem = "whatsapp"
+  origem = "whatsapp",
 }: Request): Promise<Contact> => {
   const number = isGroup
     ? String(rawNumber)
@@ -69,7 +69,7 @@ const CreateOrUpdateContactService = async ({
       isWAContact,
       telegramId,
       instagramPK,
-      messengerId
+      messengerId,
     });
   } else {
     contact = await Contact.create({
@@ -85,14 +85,14 @@ const CreateOrUpdateContactService = async ({
       extraInfo,
       telegramId,
       instagramPK,
-      messengerId
+      messengerId,
     });
   }
 
   socketEmit({
     tenantId,
     type: "contact:update",
-    payload: contact
+    payload: contact,
   });
 
   return contact;

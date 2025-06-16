@@ -6,18 +6,18 @@ module.exports = {
       queryInterface.addColumn("Whatsapps", "tokenAPI", {
         type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Whatsapps", "wabaBSP", {
         type: DataTypes.STRING,
         allowNull: true,
-        defaultValue: null
+        defaultValue: null,
       }),
       queryInterface.addColumn("Whatsapps", "wabaKeyHook", {
         type: DataTypes.TEXT,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
@@ -25,7 +25,7 @@ module.exports = {
     return Promise.all([
       queryInterface.removeColumn("Whatsapps", "tokenAPI"),
       queryInterface.removeColumn("Whatsapps", "wabaBSP"),
-      queryInterface.removeColumn("Whatsapps", "wabaKeyHook")
+      queryInterface.removeColumn("Whatsapps", "wabaKeyHook"),
     ]);
-  }
+  },
 };

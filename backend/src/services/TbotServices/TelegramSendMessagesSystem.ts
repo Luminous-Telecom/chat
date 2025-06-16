@@ -34,7 +34,7 @@ const TelegramSendMessagesSystem = async (
         sendedMessage = await tbot.telegram.sendVoice(
           chatId,
           {
-            source: mediaPath
+            source: mediaPath,
           },
           extraInfo
         );
@@ -42,7 +42,7 @@ const TelegramSendMessagesSystem = async (
         sendedMessage = await tbot.telegram.sendPhoto(
           chatId,
           {
-            source: mediaPath
+            source: mediaPath,
           },
           extraInfo
         );
@@ -50,7 +50,7 @@ const TelegramSendMessagesSystem = async (
         sendedMessage = await tbot.telegram.sendVideo(
           chatId,
           {
-            source: mediaPath
+            source: mediaPath,
           },
           extraInfo
         );
@@ -58,7 +58,7 @@ const TelegramSendMessagesSystem = async (
         sendedMessage = await tbot.telegram.sendDocument(
           chatId,
           {
-            source: mediaPath
+            source: mediaPath,
           },
           extraInfo
         );
@@ -82,7 +82,7 @@ const TelegramSendMessagesSystem = async (
       timestamp: message.timestamp,
       messageId: sendedMessage.message_id,
       status: "sended",
-      ack: 1
+      ack: 1,
     };
 
     logger.info("Message Update ok");

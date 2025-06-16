@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Tickets", "stepAutoReplyId", {
       type: DataTypes.INTEGER,
       defaultValue: null,
-      allowNull: true
+      allowNull: true,
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Tickets", "stepAutoReplyId");
-  }
+  },
 };

@@ -9,7 +9,7 @@ const DeleteUserService = async (
   userIdRequest: string | number
 ): Promise<void> => {
   const user = await User.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!user || tenantId !== user.tenantId) {
@@ -17,7 +17,7 @@ const DeleteUserService = async (
   }
 
   const userOpenTickets: Ticket[] = await user.$get("tickets", {
-    where: { status: "open", tenantId }
+    where: { status: "open", tenantId },
   });
 
   if (userOpenTickets.length > 0) {
@@ -27,13 +27,12 @@ const DeleteUserService = async (
       userIdRequest
     );
   }
-  
-    try {
+
+  try {
     await user.destroy();
   } catch (error) {
     throw new AppError("ERROR_USER_MESSAGES_NOT_EXISTS", 404);
   }
-  
 };
 
 export default DeleteUserService;

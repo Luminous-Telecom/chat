@@ -14,7 +14,7 @@ interface Request {
 const RenewApiConfigTokenService = async ({
   apiId,
   sessionId,
-  tenantId
+  tenantId,
 }: Request): Promise<ApiInstance> => {
   const { secret } = authConfig;
 
@@ -28,11 +28,11 @@ const RenewApiConfigTokenService = async ({
     {
       tenantId,
       profile: "admin",
-      sessionId
+      sessionId,
     },
     secret,
     {
-      expiresIn: "730d"
+      expiresIn: "730d",
     }
   );
 

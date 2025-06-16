@@ -8,7 +8,7 @@ import axios from "axios";
 
 export enum ExecutionType {
   DELAY = "delay",
-  REPEAT = "repeat"
+  REPEAT = "repeat",
 }
 
 export type ExecutionOption = {
@@ -74,7 +74,7 @@ export default class QueueListener {
         const apiBody = {
           ...jobConfig,
           id: job.id,
-          error: err
+          error: err,
         };
         // console.log("Sending fallback hook");
         return axios.post(jobConfig.retryOptions.fallbackUrl, apiBody);
@@ -85,7 +85,7 @@ export default class QueueListener {
         data: jobData,
         name: jobName,
         opts: jobOpts,
-        timestamp
+        timestamp,
       } = job;
       const subject = `Job - ${jobId} failed ${job.attemptsMade} times`;
       const mailBody = `

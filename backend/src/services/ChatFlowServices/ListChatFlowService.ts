@@ -9,10 +9,10 @@ interface Request {
 }
 
 const ListChatFlowService = async ({
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
   const chatFlow = await ChatFlow.findAll({
-    where: { tenantId, isDeleted: false }
+    where: { tenantId, isDeleted: false },
     // order: [[{ model: StepsReply, as: "stepsReply" }, "id", "ASC"]]
   });
 

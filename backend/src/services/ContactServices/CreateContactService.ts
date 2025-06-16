@@ -30,10 +30,10 @@ const CreateContactService = async ({
   email = "",
   extraInfo = [],
   tenantId,
-  wallets
+  wallets,
 }: Request): Promise<Contact> => {
   const numberExists = await Contact.findOne({
-    where: { number, tenantId }
+    where: { number, tenantId },
   });
 
   if (numberExists) {
@@ -46,7 +46,7 @@ const CreateContactService = async ({
       number,
       email,
       extraInfo,
-      tenantId
+      tenantId,
     },
     {
       include: [
@@ -54,9 +54,9 @@ const CreateContactService = async ({
         "tags",
         {
           association: "wallets",
-          attributes: ["id", "name"]
-        }
-      ]
+          attributes: ["id", "name"],
+        },
+      ],
     }
   );
 
@@ -64,8 +64,8 @@ const CreateContactService = async ({
     await ContactWallet.destroy({
       where: {
         tenantId,
-        contactId: contact.id
-      }
+        contactId: contact.id,
+      },
     });
 
     const contactWallets: Wallet[] = [];
@@ -74,7 +74,7 @@ const CreateContactService = async ({
       contactWallets.push({
         walletId: !wallet.id ? wallet : wallet.id,
         contactId: contact.id,
-        tenantId
+        tenantId,
       });
     });
 
@@ -88,15 +88,15 @@ const CreateContactService = async ({
       "tags",
       {
         association: "wallets",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   socketEmit({
     tenantId,
     type: "contact:update",
-    payload: contact
+    payload: contact,
   });
 
   return contact;

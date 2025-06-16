@@ -4,7 +4,7 @@ module.exports = {
   up: (queryInterface: QueryInterface) => {
     return Promise.all([
       queryInterface.removeColumn("StepsReply", "action"),
-      queryInterface.removeColumn("StepsReply", "stepOrder")
+      queryInterface.removeColumn("StepsReply", "stepOrder"),
     ]);
   },
 
@@ -13,12 +13,12 @@ module.exports = {
       queryInterface.addColumn("StepsReply", "action", {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 0
+        defaultValue: 0,
       }),
       queryInterface.addColumn("StepsReply", "stepOrder", {
         type: DataTypes.INTEGER,
-        allowNull: false
-      })
+        allowNull: false,
+      }),
     ]);
-  }
+  },
 };

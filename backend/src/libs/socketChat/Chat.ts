@@ -10,13 +10,13 @@ import {
   size,
   sortBy,
   toPairs,
-  without
+  without,
 } from "lodash";
 import {
   sendToAllConnectedClients,
   sendToSelf,
   sendToUser,
-  sortByKeys
+  sortByKeys,
 } from "./Utils";
 import { shared } from "./Index";
 import User from "../../models/User";
@@ -27,7 +27,7 @@ const events: any = {};
 const JoinChatServer = (socket: Socket) => {
   const { user } = socket.handshake.auth;
 
-  //logger.info(`joinChatServer USER ${user.name}`);
+  // logger.info(`joinChatServer USER ${user.name}`);
   const { tenantId } = user;
   const socketDataTenant = `socketData_${tenantId}`;
   let dataTenant: any;
@@ -37,7 +37,7 @@ const JoinChatServer = (socket: Socket) => {
   if (dataTenant) {
     dataTenant.usersOnline[user.id] = {
       sockets: [socket.id],
-      user
+      user,
     };
     dataTenant.sockets.push(socket);
     sendToSelf(socket, "joinSuccessfully");
@@ -47,12 +47,12 @@ const JoinChatServer = (socket: Socket) => {
     shared[socketDataTenant] = {
       sockets: [],
       usersOnline: {},
-      idleUsers: {}
+      idleUsers: {},
     };
     dataTenant = shared[socketDataTenant];
     dataTenant.usersOnline[user.id] = {
       sockets: [socket.id],
-      user
+      user,
     };
     dataTenant.sockets.push(socket);
     sendToSelf(socket, `${user.tenantId}:joinSuccessfully`);
@@ -171,7 +171,7 @@ const UpdateOnlineBubbles = (socket: Socket) => {
     `${user.tenantId}:chat:updateOnlineBubbles`,
     {
       sortedUserList,
-      sortedIdleList
+      sortedIdleList,
     }
   );
 };
@@ -189,7 +189,7 @@ const spawnChatWindow = (socket: Socket) => {
   socket.on("spawnChatWindow", async (userId: number) => {
     // Get user
     const user = await User.findByPk(userId, {
-      attributes: ["id", "name", "email", "profile"]
+      attributes: ["id", "name", "email", "profile"],
     });
     sendToSelf(socket, "spawnChatWindow", user);
   });
@@ -205,14 +205,14 @@ const onSetUserIdle = (socket: Socket) => {
     if (dataTenant) {
       dataTenant.idleUsers[user.id] = {
         sockets: [socket.id],
-        user
+        user,
       };
     }
     if (!dataTenant) {
       shared[socketDataTenant] = {
         sockets: [],
         usersOnline: {},
-        idleUsers: {}
+        idleUsers: {},
       };
       dataTenant = shared[socketDataTenant];
       dataTenant.idleUsers.push(socket.id);
@@ -240,7 +240,7 @@ const onSetUserActive = (socket: Socket) => {
       shared[socketDataTenant] = {
         sockets: [],
         usersOnline: {},
-        idleUsers: {}
+        idleUsers: {},
       };
       dataTenant = shared[socketDataTenant];
     }
@@ -248,7 +248,7 @@ const onSetUserActive = (socket: Socket) => {
     // Sempre atualiza o usersOnline com o usuário atual
     dataTenant.usersOnline[user.id] = {
       sockets: [socket.id],
-      user
+      user,
     };
 
     UpdateOnlineBubbles(socket);
@@ -269,8 +269,8 @@ const onChatMessage = (socket: Socket) => {
     if (dataTenant) {
       const { to } = data;
       const { from } = data;
-      //console.log("TO", to);
-      //console.log("FROM", from);
+      // console.log("TO", to);
+      // console.log("FROM", from);
       const od = data.type;
       if (data.type === "s") {
         data.type = "r";
@@ -437,7 +437,7 @@ const onDisconnect = (socket: Socket) => {
     if (reason === "transport error") {
       reason = "client terminated";
     }
-    //logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
+    // logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
   });
 };
 
@@ -482,7 +482,7 @@ function register(socket: Socket): void {
   events.onDisconnect(socket);
 
   if (socket.handshake.auth.user.id) {
-    (socket);
+    socket;
   }
 }
 
@@ -495,7 +495,7 @@ const eventLoop = (socket: Socket) => {
 const chat = {
   events,
   eventLoop,
-  register
+  register,
 };
 
 export default chat;

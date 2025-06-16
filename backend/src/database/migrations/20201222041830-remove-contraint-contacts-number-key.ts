@@ -3,7 +3,7 @@ import { QueryInterface } from "sequelize";
 module.exports = {
   up: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeConstraint("Contacts", "Contacts_number_key")
+      queryInterface.removeConstraint("Contacts", "Contacts_number_key"),
     ]);
   },
 
@@ -11,8 +11,8 @@ module.exports = {
     return Promise.all([
       queryInterface.addConstraint("Contacts", ["number"], {
         type: "unique",
-        name: "Contacts_number_key"
-      })
+        name: "Contacts_number_key",
+      }),
     ]);
-  }
+  },
 };

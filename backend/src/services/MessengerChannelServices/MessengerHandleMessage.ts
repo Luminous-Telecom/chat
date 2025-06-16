@@ -60,7 +60,7 @@ const MessengerHandleMessage = async (
           fromMe: false,
           body: messageObj?.message?.text || "",
           timestamp: messageObj.timestamp,
-          message_id: messageObj.message.mid
+          message_id: messageObj.message.mid,
         };
         const ticket = await FindOrCreateTicketService({
           contact,
@@ -68,7 +68,7 @@ const MessengerHandleMessage = async (
           unreadMessages,
           tenantId: channel.tenantId,
           msg: msgData,
-          channel: "messenger"
+          channel: "messenger",
         });
         if (ticket?.isCampaignMessage) {
           resolve();

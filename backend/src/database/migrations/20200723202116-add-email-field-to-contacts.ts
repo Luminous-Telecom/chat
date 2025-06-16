@@ -5,11 +5,11 @@ module.exports = {
     return queryInterface.addColumn("Contacts", "email", {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: ""
+      defaultValue: "",
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.removeColumn("Contacts", "email");
-  }
+  },
 };

@@ -6,7 +6,7 @@ module.exports = {
       queryInterface.addColumn("Contacts", "telegramId", {
         type: DataTypes.BIGINT,
         defaultValue: null,
-        allowNull: true
+        allowNull: true,
       }),
       queryInterface.removeConstraint(
         "Contacts",
@@ -16,8 +16,8 @@ module.exports = {
         type: DataTypes.STRING,
         allowNull: true,
         unique: false,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
@@ -27,12 +27,12 @@ module.exports = {
       queryInterface.changeColumn("Contacts", "number", {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        unique: true,
       }),
       queryInterface.addConstraint("Contacts", ["number", "tenantId"], {
         type: "unique",
-        name: "unique_constraint_contact_number_tenant"
-      })
+        name: "unique_constraint_contact_number_tenant",
+      }),
     ]);
-  }
+  },
 };

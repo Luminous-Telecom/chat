@@ -17,13 +17,13 @@ interface Wallet {
 const UpdateContactWalletsService = async ({
   wallets,
   contactId,
-  tenantId
+  tenantId,
 }: Request): Promise<Contact> => {
   await ContactWallet.destroy({
     where: {
       tenantId,
-      contactId
-    }
+      contactId,
+    },
   });
 
   const contactWallets: Wallet[] = [];
@@ -32,7 +32,7 @@ const UpdateContactWalletsService = async ({
     contactWallets.push({
       walletId: !wallet.id ? wallet : wallet.id,
       contactId,
-      tenantId
+      tenantId,
     });
   });
 
@@ -46,9 +46,9 @@ const UpdateContactWalletsService = async ({
       "tags",
       {
         association: "wallets",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (!contact) {

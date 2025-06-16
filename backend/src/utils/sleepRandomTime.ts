@@ -6,7 +6,7 @@ interface IParams {
 
 export function sleepRandomTime({
   minMilliseconds,
-  maxMilliseconds
+  maxMilliseconds,
 }: IParams): Promise<void> {
   const min = !minMilliseconds ? 2 : minMilliseconds;
   const max = !maxMilliseconds ? 4 : maxMilliseconds;

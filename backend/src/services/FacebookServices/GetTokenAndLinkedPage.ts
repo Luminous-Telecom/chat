@@ -30,7 +30,7 @@ const getPermanentPageAccessToken = async (
   account_id: string
 ) => {
   const {
-    data: { data }
+    data: { data },
   } = await axios.get(
     `${baseUrl}/${account_id}/accounts?access_token=${long_lived_access_token}`
   );
@@ -43,10 +43,10 @@ const getPageInfo = async (accountId: string, userToken: string) => {
 
   // pegar informações das páginas
   const {
-    data: { data }
+    data: { data },
   } = await axios({
     method: "GET",
-    url: urlPageInfo
+    url: urlPageInfo,
   });
 
   return data;
@@ -56,7 +56,7 @@ const GetTokenAndLinkedPage = async ({
   whatsapp,
   accountId,
   userToken,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   try {
     const io = getIO();
@@ -89,9 +89,9 @@ const GetTokenAndLinkedPage = async ({
       fbObject: {
         ...permanent_page_access_token,
         accountId,
-        long_lived_access_token
+        long_lived_access_token,
       },
-      tokenAPI: permanent_page_access_token.access_token
+      tokenAPI: permanent_page_access_token.access_token,
     };
 
     // vincular a pagina ao channel e salvar o objeto do facebook
@@ -99,7 +99,7 @@ const GetTokenAndLinkedPage = async ({
 
     io.emit(`${tenantId}:whatsappSession`, {
       action: "update",
-      session: { ...whatsapp, ...dataUpdated }
+      session: { ...whatsapp, ...dataUpdated },
     });
   } catch (error) {
     console.error("GetTokenAndLinkedPage", error);

@@ -43,7 +43,7 @@ const verifyAutoReplyActionTicket = async (
         // action = 0: enviar para proximo step: nextStepId
         if (actionAutoReply.action === 0) {
           await ticket.update({
-            stepAutoReplyId: actionAutoReply.nextStepId
+            stepAutoReplyId: actionAutoReply.nextStepId,
           });
           const stepAutoReply = await ShowStepAutoReplyMessageService(
             0,
@@ -70,14 +70,14 @@ const verifyAutoReplyActionTicket = async (
             body: stepAutoReply.reply,
             fromMe: true,
             read: true,
-            sendType: "bot"
+            sendType: "bot",
           };
           await CreateMessageSystemService({
             msg: messageData,
             tenantId: ticket.tenantId,
             ticket,
             sendType: messageData.sendType,
-            status: "pending"
+            status: "pending",
           });
           // await SetTicketMessagesAsRead(ticket);
           return;
@@ -88,13 +88,13 @@ const verifyAutoReplyActionTicket = async (
           ticket.update({
             queueId: actionAutoReply.queueId,
             autoReplyId: null,
-            stepAutoReplyId: null
+            stepAutoReplyId: null,
           });
 
           await CreateLogTicketService({
             ticketId: ticket.id,
             type: "queue",
-            queueId: actionAutoReply.queueId
+            queueId: actionAutoReply.queueId,
           });
         }
 
@@ -104,19 +104,19 @@ const verifyAutoReplyActionTicket = async (
             userId: actionAutoReply.userIdDestination,
             // status: "pending",
             autoReplyId: null,
-            stepAutoReplyId: null
+            stepAutoReplyId: null,
           });
           await CreateLogTicketService({
             userId: actionAutoReply.userIdDestination,
             ticketId: ticket.id,
-            type: "userDefine"
+            type: "userDefine",
           });
         }
 
         socketEmit({
           tenantId: ticket.tenantId,
           type: "ticket:update",
-          payload: ticket
+          payload: ticket,
         });
 
         if (actionAutoReply.replyDefinition) {
@@ -124,14 +124,14 @@ const verifyAutoReplyActionTicket = async (
             body: actionAutoReply.replyDefinition,
             fromMe: true,
             read: true,
-            sendType: "bot"
+            sendType: "bot",
           };
           await CreateMessageSystemService({
             msg: messageData,
             tenantId: ticket.tenantId,
             ticket,
             sendType: messageData.sendType,
-            status: "pending"
+            status: "pending",
           });
           // await SetTicketMessagesAsRead(ticket);
         }
@@ -155,14 +155,14 @@ const verifyAutoReplyActionTicket = async (
             body: "Desculpe! Não entendi sua resposta. Vamos tentar novamente! Escolha uma opção válida.",
             fromMe: true,
             read: true,
-            sendType: "bot"
+            sendType: "bot",
           };
           await CreateMessageSystemService({
             msg: messageData,
             tenantId: ticket.tenantId,
             ticket,
             sendType: messageData.sendType,
-            status: "pending"
+            status: "pending",
           });
         }
 
@@ -170,14 +170,14 @@ const verifyAutoReplyActionTicket = async (
           body: stepAutoReplyAtual.reply,
           fromMe: true,
           read: true,
-          sendType: "bot"
+          sendType: "bot",
         };
         await CreateMessageSystemService({
           msg: messageData,
           tenantId: ticket.tenantId,
           ticket,
           sendType: messageData.sendType,
-          status: "pending"
+          status: "pending",
         });
         // await SetTicketMessagesAsRead(ticket);
       }

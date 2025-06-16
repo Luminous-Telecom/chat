@@ -4,14 +4,14 @@ module.exports = {
   up: async (queryInterface: QueryInterface) => {
     const tableInfo = await queryInterface.describeTable("Tenants");
 
-    if (!tableInfo || !tableInfo["maxUsers"]) {
+    if (!tableInfo || !tableInfo.maxUsers) {
       await queryInterface.addColumn("Tenants", "maxUsers", {
         type: DataTypes.INTEGER,
         allowNull: true,
       });
     }
 
-    if (!tableInfo || !tableInfo["maxConnections"]) {
+    if (!tableInfo || !tableInfo.maxConnections) {
       await queryInterface.addColumn("Tenants", "maxConnections", {
         type: DataTypes.INTEGER,
         allowNull: true,

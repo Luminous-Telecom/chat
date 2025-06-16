@@ -5,7 +5,7 @@ import { readFile } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
 import {
   AccountRepositoryCurrentUserResponseUser,
-  AccountRepositoryLoginResponseLogged_in_user
+  AccountRepositoryLoginResponseLogged_in_user,
 } from "instagram-private-api";
 import { IgApiClientMQTT } from "instagram_mqtt";
 import { join } from "path";
@@ -50,18 +50,18 @@ const InstagramSendMessagesSystem = async (
         });
         const voice: Buffer = await readFile(newAudioPath);
         sendedMessage = await threadEntity.broadcastVoice({
-          file: voice
+          file: voice,
         });
       }
       if (message.mediaType === "image") {
         const photo = await sharp(file).jpeg().toBuffer();
         sendedMessage = await threadEntity.broadcastPhoto({
-          file: photo
+          file: photo,
         });
       }
       if (message.mediaType === "video") {
         sendedMessage = await threadEntity.broadcastVideo({
-          video: file
+          video: file,
         });
       }
       logger.info("sendMessage media");
@@ -82,7 +82,7 @@ const InstagramSendMessagesSystem = async (
       timestamp: message.timestamp,
       messageId: sendedMessage.item_id,
       status: "sended",
-      ack: 1
+      ack: 1,
     };
 
     logger.info("Message Update ok");

@@ -8,7 +8,6 @@ import { RefreshTokenService } from "../services/AuthServices/RefreshTokenServic
 import { getIO } from "../libs/socket";
 import User from "../models/User";
 
-
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const io = getIO();
 
@@ -16,7 +15,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const { token, user, refreshToken, usuariosOnline } = await AuthUserService({
     email,
-    password
+    password,
   });
 
   SendRefreshToken(res, refreshToken);
@@ -31,7 +30,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     tenantId: user.tenantId,
     queues: user.queues,
     usuariosOnline,
-    configs: user.configs
+    configs: user.configs,
   };
 
   io.emit(`${params.tenantId}:users`, {
@@ -40,8 +39,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
       username: params.username,
       email: params.email,
       isOnline: true,
-      lastLogin: new Date()
-    }
+      lastLogin: new Date(),
+    },
   });
 
   return res.status(200).json(params);
@@ -86,8 +85,8 @@ export const logout = async (
       username: userLogout?.name,
       email: userLogout?.email,
       isOnline: false,
-      lastLogout: new Date()
-    }
+      lastLogout: new Date(),
+    },
   });
 
   // SendRefreshToken(res, refreshToken);

@@ -6,8 +6,8 @@ module.exports = {
       queryInterface.changeColumn("Contacts", "instagramPK", {
         type: DataTypes.BIGINT,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
@@ -16,8 +16,8 @@ module.exports = {
       queryInterface.changeColumn("Contacts", "instagramPK", {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
-  }
+  },
 };

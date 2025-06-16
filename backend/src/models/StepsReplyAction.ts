@@ -9,7 +9,7 @@ import {
   BelongsTo,
   ForeignKey,
   AutoIncrement,
-  Default
+  Default,
 } from "sequelize-typescript";
 import User from "./User";
 import StepsReply from "./StepsReply";

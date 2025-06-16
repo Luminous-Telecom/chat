@@ -3,7 +3,7 @@ import AppError from "../../../errors/AppError";
 
 const DeleteStepsReplyActionService = async (id: string): Promise<void> => {
   const stepsReplyAction = await StepsReplyAction.findOne({
-    where: { id }
+    where: { id },
   });
 
   if (!stepsReplyAction) {

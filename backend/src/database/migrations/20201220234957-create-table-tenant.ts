@@ -7,31 +7,31 @@ module.exports = {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        allowNull: false
+        allowNull: false,
       },
       status: {
         type: DataTypes.STRING,
         defaultValue: "active",
-        allowNull: false
+        allowNull: false,
       },
       ownerId: {
         type: DataTypes.INTEGER,
         references: { model: "Users", key: "id" },
         onUpdate: "CASCADE",
-        onDelete: "restrict"
+        onDelete: "restrict",
       },
       createdAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
+        allowNull: false,
       },
       updatedAt: {
         type: DataTypes.DATE(6),
-        allowNull: false
-      }
+        allowNull: false,
+      },
     });
   },
 
   down: (queryInterface: QueryInterface) => {
     return queryInterface.dropTable("Tenants");
-  }
+  },
 };

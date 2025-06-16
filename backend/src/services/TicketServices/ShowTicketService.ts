@@ -9,7 +9,7 @@ interface Request {
 }
 const ShowTicketService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<Ticket> => {
   const ticket = await Ticket.findByPk(id, {
     include: [
@@ -21,20 +21,20 @@ const ShowTicketService = async ({
           "tags",
           {
             association: "wallets",
-            attributes: ["id", "name"]
-          }
-        ]
+            attributes: ["id", "name"],
+          },
+        ],
       },
       {
         model: User,
         as: "user",
-        attributes: ["id", "name"]
+        attributes: ["id", "name"],
       },
       {
         association: "whatsapp",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (!ticket || ticket.tenantId !== tenantId) {

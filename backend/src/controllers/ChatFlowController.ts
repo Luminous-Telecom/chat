@@ -73,7 +73,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     name: req.body.name,
     isActive: true,
     userId: +req.user.id,
-    tenantId
+    tenantId,
   };
 
   // const schema = Yup.object().shape({
@@ -114,7 +114,7 @@ export const update = async (
     name: req.body.name,
     isActive: req.body.isReactive,
     userId: +req.user.id,
-    tenantId
+    tenantId,
   };
 
   // const schema = Yup.object().shape({
@@ -133,7 +133,7 @@ export const update = async (
   const chatFlow = await UpdateChatFlowService({
     chatFlowData: newFlow,
     chatFlowId,
-    tenantId
+    tenantId,
   });
 
   return res.status(200).json(chatFlow);

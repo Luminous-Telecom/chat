@@ -13,7 +13,7 @@ import {
   ForeignKey,
   BelongsTo,
   BelongsToMany,
-  DataType
+  DataType,
 } from "sequelize-typescript";
 import Campaign from "./Campaign";
 import CampaignContacts from "./CampaignContacts";

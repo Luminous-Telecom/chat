@@ -24,7 +24,7 @@ export const CheckServiceMessenger = async (
   res: Response
 ): Promise<Response> => {
   const challenge = req.query["hub.challenge"];
-  //console.log("WEBHOOK_VERIFIED");
+  // console.log("WEBHOOK_VERIFIED");
   return res.status(200).send(challenge);
 };
 

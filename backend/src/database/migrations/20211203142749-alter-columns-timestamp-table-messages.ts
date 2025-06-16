@@ -5,7 +5,7 @@ module.exports = {
     return queryInterface.changeColumn("Messages", "timestamp", {
       type: DataTypes.BIGINT,
       allowNull: true,
-      defaultValue: null
+      defaultValue: null,
     });
   },
 
@@ -13,7 +13,7 @@ module.exports = {
     return queryInterface.changeColumn("Messages", "timestamp", {
       type: DataTypes.INTEGER,
       allowNull: true,
-      defaultValue: null
+      defaultValue: null,
     });
-  }
+  },
 };

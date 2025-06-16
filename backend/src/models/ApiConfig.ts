@@ -8,7 +8,7 @@ import {
   PrimaryKey,
   Default,
   BelongsTo,
-  ForeignKey
+  ForeignKey,
 } from "sequelize-typescript";
 import { v4 as uuidV4 } from "uuid";
 import User from "./User";

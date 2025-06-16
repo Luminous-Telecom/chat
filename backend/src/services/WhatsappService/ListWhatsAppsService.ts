@@ -5,9 +5,9 @@ const ListWhatsAppsService = async (
 ): Promise<Whatsapp[]> => {
   const whatsapps = await Whatsapp.findAll({
     where: {
-      tenantId
+      tenantId,
       // type: "w"
-    }
+    },
   });
 
   return whatsapps;

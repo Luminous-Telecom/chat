@@ -10,8 +10,8 @@ export default {
     removeOnFail: false,
     jobId: "VerifyTicketsChatBotInactives",
     repeat: {
-      every: 5 * 60 * 1000
-    }
+      every: 5 * 60 * 1000,
+    },
   },
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async handle() {
@@ -23,5 +23,5 @@ export default {
       logger.error({ message: "Error send messages", error });
       throw new Error(error);
     }
-  }
+  },
 };

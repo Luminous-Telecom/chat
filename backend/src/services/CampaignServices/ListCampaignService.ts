@@ -8,11 +8,11 @@ interface Request {
 }
 
 const ListCampaignService = async ({
-  tenantId
+  tenantId,
 }: Request): Promise<Campaign[]> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
-    tenantId
+    tenantId,
   };
 
   const campaignData = await Campaign.findAll({
@@ -21,42 +21,42 @@ const ListCampaignService = async ({
       include: [
         [
           Sequelize.fn("COUNT", Sequelize.col("campaignContacts.id")),
-          "contactsCount"
+          "contactsCount",
         ],
         [
           Sequelize.literal(
             '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 0 )'
           ),
-          "pendentesEnvio"
+          "pendentesEnvio",
         ],
         [
           Sequelize.literal(
             '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 1 )'
           ),
-          "pendentesEntrega"
+          "pendentesEntrega",
         ],
         [
           Sequelize.literal(
             '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 2 )'
           ),
-          "recebidas"
+          "recebidas",
         ],
         [
           Sequelize.literal(
             '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 3 )'
           ),
-          "lidas"
-        ]
-      ]
+          "lidas",
+        ],
+      ],
     },
     include: [
       {
         model: CampaignContacts,
-        attributes: []
-      }
+        attributes: [],
+      },
     ],
     group: ["Campaign.id"],
-    order: [["start", "ASC"]]
+    order: [["start", "ASC"]],
   });
 
   return campaignData;

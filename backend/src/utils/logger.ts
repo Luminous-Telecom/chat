@@ -35,20 +35,20 @@ const logger = winston.createLogger({
           }
           return `${level}: ${timestamp} ${message}`;
         })
-      )
+      ),
     }),
     new winston.transports.File({
       filename: "./logs/app.logg",
       level: "error",
       handleExceptions: true,
       maxsize: 10485760,
-      maxFiles: 10
+      maxFiles: 10,
     }),
     new winston.transports.Http({
       level: "warn",
-      format: winston.format.json()
-    })
-  ]
+      format: winston.format.json(),
+    }),
+  ],
 });
 
 export { logger };

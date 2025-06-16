@@ -12,7 +12,7 @@ interface Request {
 }
 
 const ListAutoReplyService = async ({
-  tenantId
+  tenantId,
 }: Request): Promise<Response> => {
   let includeCondition: Includeable[];
   // eslint-disable-next-line prefer-const
@@ -31,18 +31,18 @@ const ListAutoReplyService = async ({
             "queueId",
             "userIdDestination",
             "nextStepId",
-            "replyDefinition"
-          ]
-        }
+            "replyDefinition",
+          ],
+        },
       ],
       as: "stepsReply",
-      attributes: ["id", "reply", "idAutoReply", "userId", "initialStep"]
-    }
+      attributes: ["id", "reply", "idAutoReply", "userId", "initialStep"],
+    },
   ];
   const autoReply = await AutoReply.findAll({
     include: includeCondition,
     where: { tenantId },
-    order: [[{ model: StepsReply, as: "stepsReply" }, "id", "ASC"]]
+    order: [[{ model: StepsReply, as: "stepsReply" }, "id", "ASC"]],
   });
 
   return { autoReply };

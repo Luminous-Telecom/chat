@@ -1,4 +1,10 @@
-import { proto, WASocket, AnyMessageContent, WAMessageKey, WASocketEvents } from '@whiskeysockets/baileys';
+import {
+  proto,
+  WASocket,
+  AnyMessageContent,
+  WAMessageKey,
+  WASocketEvents,
+} from "@whiskeysockets/baileys";
 
 // Mapeamento de tipos do Baileys para whatsapp-web.js
 export interface BaileysMessage extends proto.IWebMessageInfo {
@@ -50,10 +56,14 @@ export interface BaileysChat {
 export interface BaileysClient extends WASocket {
   id: number;
   getContactById: (id: string) => Promise<BaileysContact>;
-  sendMessage: (to: string, content: any, options?: any) => Promise<BaileysMessage>;
+  sendMessage: (
+    to: string,
+    content: any,
+    options?: any
+  ) => Promise<BaileysMessage>;
   getNumberId: (number: string) => Promise<{ _serialized: string }>;
   logout: () => Promise<void>;
-  ev: WASocket['ev'];
+  ev: WASocket["ev"];
 }
 
 // Tipos para eventos

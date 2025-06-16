@@ -26,7 +26,7 @@ export const StartWhatsAppSessionVerify = async (
         const io = getIO();
         io.emit(`${whatsapp?.tenantId}:whatsappSession`, {
           action: "update",
-          session: whatsapp
+          session: whatsapp,
         });
         const wbot = await initWbot(whatsapp);
         wbotMessageListener(wbot);

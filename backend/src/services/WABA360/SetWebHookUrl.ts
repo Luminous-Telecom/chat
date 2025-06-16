@@ -17,8 +17,8 @@ const SetWebHookUrl = async ({ url, apiKey }: Request): Promise<boolean> => {
       data: { url },
       headers: {
         "D360-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     });
     return true;
   } catch (error) {

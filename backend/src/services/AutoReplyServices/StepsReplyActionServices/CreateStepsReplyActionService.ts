@@ -20,7 +20,7 @@ const CreateStepsReplyActionService = async ({
   queueId,
   userIdDestination,
   nextStepId,
-  replyDefinition
+  replyDefinition,
 }: Request): Promise<StepsReplyAction> => {
   const stepsReplyAction = await StepsReplyAction.create({
     stepReplyId,
@@ -30,7 +30,7 @@ const CreateStepsReplyActionService = async ({
     queueId,
     userIdDestination,
     nextStepId,
-    replyDefinition
+    replyDefinition,
   });
 
   return stepsReplyAction;

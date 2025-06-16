@@ -13,10 +13,10 @@ interface Request {
 
 const DeleteChatFlowService = async ({
   id,
-  tenantId
+  tenantId,
 }: Request): Promise<void> => {
   const cahtFlow = await ChatFlow.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!cahtFlow) {
@@ -25,11 +25,11 @@ const DeleteChatFlowService = async ({
 
   await cahtFlow.update({
     isActive: false,
-    isDeleted: true
+    isDeleted: true,
   });
 
   await cahtFlow.reload({
-    attributes: ["isActive", "isDeleted"]
+    attributes: ["isActive", "isDeleted"],
   });
 };
 

@@ -23,14 +23,14 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const newReply: FastReplyData = {
     ...req.body,
     userId: req.user.id,
-    tenantId
+    tenantId,
   };
 
   const schema = Yup.object().shape({
     key: Yup.string().required(),
     message: Yup.string().required(),
     userId: Yup.number().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -62,13 +62,13 @@ export const update = async (
   const fastReplyData: FastReplyData = {
     ...req.body,
     userId: req.user.id,
-    tenantId
+    tenantId,
   };
 
   const schema = Yup.object().shape({
     key: Yup.string().required(),
     message: Yup.string().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -80,7 +80,7 @@ export const update = async (
   const { fastReplyId } = req.params;
   const queueObj = await UpdateFastReplyService({
     fastReplyData,
-    fastReplyId
+    fastReplyId,
   });
 
   return res.status(200).json(queueObj);

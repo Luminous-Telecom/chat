@@ -5,8 +5,8 @@ module.exports = {
     return Promise.all([
       queryInterface.addConstraint("Contacts", ["number", "tenantId"], {
         type: "unique",
-        name: "unique_constraint_contact_number_tenant"
-      })
+        name: "unique_constraint_contact_number_tenant",
+      }),
     ]);
   },
 
@@ -15,7 +15,7 @@ module.exports = {
       queryInterface.removeConstraint(
         "Contacts",
         "unique_constraint_contact_number_tenant"
-      )
+      ),
     ]);
-  }
+  },
 };

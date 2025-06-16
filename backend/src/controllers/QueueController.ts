@@ -29,7 +29,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   const schema = Yup.object().shape({
     queue: Yup.string().required(),
     userId: Yup.number().required(),
-    tenantId: Yup.number().required()
+    tenantId: Yup.number().required(),
   });
 
   try {
@@ -63,7 +63,7 @@ export const update = async (
   const schema = Yup.object().shape({
     queue: Yup.string().required(),
     isActive: Yup.boolean().required(),
-    userId: Yup.number().required()
+    userId: Yup.number().required(),
   });
 
   try {
@@ -75,7 +75,7 @@ export const update = async (
   const { queueId } = req.params;
   const queueObj = await UpdateQueueService({
     queueData,
-    queueId
+    queueId,
   });
 
   return res.status(200).json(queueObj);
@@ -95,34 +95,39 @@ export const remove = async (
   return res.status(200).json({ message: "Queue deleted" });
 };
 
-export const getUnreadCount = async (req: Request, res: Response): Promise<Response> => {
+export const getUnreadCount = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const { tenantId } = req.user;
-    
+
     const unreadCount = await Ticket.findAll({
       where: {
         tenantId,
         unreadMessages: {
-          [Op.gt]: 0
-        }
+          [Op.gt]: 0,
+        },
       },
       attributes: [
-        'queueId',
-        [fn('SUM', col('unreadMessages')), 'unreadCount']
+        "queueId",
+        [fn("SUM", col("unreadMessages")), "unreadCount"],
       ],
-      group: ['queueId', 'queue.id', 'queue.queue'],
+      group: ["queueId", "queue.id", "queue.queue"],
       include: [
         {
           model: Queue,
-          as: 'queue',
-          attributes: ['id', 'queue']
-        }
-      ]
+          as: "queue",
+          attributes: ["id", "queue"],
+        },
+      ],
     });
 
     return res.status(200).json({ queues: unreadCount });
   } catch (error) {
-     console.error('Error in getUnreadCount:', error);
-     return res.status(500).json({ error: 'Internal server error', details: error.message });
-   }
- };
+    console.error("Error in getUnreadCount:", error);
+    return res
+      .status(500)
+      .json({ error: "Internal server error", details: error.message });
+  }
+};

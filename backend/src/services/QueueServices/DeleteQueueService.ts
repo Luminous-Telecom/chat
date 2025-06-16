@@ -8,7 +8,7 @@ interface Request {
 
 const DeleteQueueService = async ({ id, tenantId }: Request): Promise<void> => {
   const queue = await Queue.findOne({
-    where: { id, tenantId }
+    where: { id, tenantId },
   });
 
   if (!queue) {

@@ -33,7 +33,7 @@ const UpdateTicketService = async ({
   ticketData,
   ticketId,
   isTransference,
-  userIdRequest
+  userIdRequest,
 }: Request): Promise<Response> => {
   const { status, userId, tenantId, queueId } = ticketData;
 
@@ -48,20 +48,20 @@ const UpdateTicketService = async ({
           "tags",
           {
             association: "wallets",
-            attributes: ["id", "name"]
-          }
-        ]
+            attributes: ["id", "name"],
+          },
+        ],
       },
       {
         model: User,
         as: "user",
-        attributes: ["id", "name"]
+        attributes: ["id", "name"],
       },
       {
         association: "whatsapp",
-        attributes: ["id", "name"]
-      }
-    ]
+        attributes: ["id", "name"],
+      },
+    ],
   });
 
   if (!ticket) {
@@ -88,7 +88,7 @@ const UpdateTicketService = async ({
   const data: any = {
     status: statusData,
     queueId,
-    userId
+    userId,
   };
 
   // se atendimento for encerrado, informar data da finalização
@@ -110,7 +110,7 @@ const UpdateTicketService = async ({
     await CreateLogTicketService({
       userId: userIdRequest,
       ticketId,
-      type: "open"
+      type: "open",
     });
   }
 
@@ -119,7 +119,7 @@ const UpdateTicketService = async ({
     await CreateLogTicketService({
       userId: userIdRequest,
       ticketId,
-      type: "closed"
+      type: "closed",
     });
   }
 
@@ -128,7 +128,7 @@ const UpdateTicketService = async ({
     await CreateLogTicketService({
       userId: userIdRequest,
       ticketId,
-      type: "pending"
+      type: "pending",
     });
   }
 
@@ -137,14 +137,14 @@ const UpdateTicketService = async ({
     await CreateLogTicketService({
       userId: userIdRequest,
       ticketId,
-      type: "transfered"
+      type: "transfered",
     });
     // recebeu o atendimento tansferido
     if (userId) {
       await CreateLogTicketService({
         userId,
         ticketId,
-        type: "receivedTransfer"
+        type: "receivedTransfer",
       });
     }
   }
@@ -159,14 +159,14 @@ const UpdateTicketService = async ({
     socketEmit({
       tenantId,
       type: "notification:new",
-      payload: ticket
+      payload: ticket,
     });
   }
 
   socketEmit({
     tenantId,
     type: "ticket:update",
-    payload: ticket
+    payload: ticket,
   });
 
   return { ticket, oldStatus, oldUserId };

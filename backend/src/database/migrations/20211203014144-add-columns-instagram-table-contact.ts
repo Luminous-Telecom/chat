@@ -6,14 +6,14 @@ module.exports = {
       queryInterface.addColumn("Contacts", "instagramPK", {
         type: DataTypes.INTEGER,
         allowNull: true,
-        defaultValue: null
-      })
+        defaultValue: null,
+      }),
     ]);
   },
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.removeColumn("Contacts", "instagramPK")
+      queryInterface.removeColumn("Contacts", "instagramPK"),
     ]);
-  }
+  },
 };

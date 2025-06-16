@@ -9,7 +9,7 @@ const AdminListSettingsService = async (
   }
   const settings = await Setting.findAll({
     where: whereCondition,
-    order: [["id", "ASC"]]
+    order: [["id", "ASC"]],
   });
 
   return settings;
