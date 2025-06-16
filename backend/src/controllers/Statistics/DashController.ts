@@ -192,14 +192,6 @@ export const getDashTicketsInstances = async (
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
-  console.log("Requisição recebida:", {
-    tenantId,
-    userId,
-    userProfile,
-    startDate: query.startDate,
-    endDate: query.endDate
-  });
-
   try {
     const data = await DashTicketsInstances({
       startDate: query.startDate,
@@ -209,12 +201,7 @@ export const getDashTicketsInstances = async (
       userProfile
     });
 
-    console.log("Dados retornados do serviço:", data);
-
-    if (!data) {
-      console.log("Nenhum dado retornado do serviço");
-      return res.status(200).json([]);
-    }
+    if (!data) return res.status(200).json([]);
 
     return res.status(200).json(data);
   } catch (error) {
