@@ -269,57 +269,9 @@ export const getBaileysSession = (
   return isUsable ? session : undefined;
 };
 
-// Add a function to force session restart
-export const restartBaileysSession = async (
-  whatsappId: number
-): Promise<BaileysClient | null> => {
-  try {
-    const whatsapp = await Whatsapp.findByPk(whatsappId);
-    if (!whatsapp) {
-      baseLogger.error(`WhatsApp instance ${whatsappId} not found`);
-      return null;
-    }
-
-    baseLogger.info(`Force restarting session for ${whatsapp.name}`);
-
-    // Clean up existing session
-    await removeBaileysSession(whatsappId);
-
-    // Clear session directory to force fresh start
-    const sessionDir = join(
-      __dirname,
-      "..",
-      "..",
-      "session",
-      `session-${whatsappId}`
-    );
-    try {
-      await rm(sessionDir, { recursive: true, force: true });
-      baseLogger.info("Cleared session directory for fresh start");
-    } catch (err) {
-      baseLogger.warn(`Could not clear session directory: ${err}`);
-    }
-
-    // Reset database status
-    await whatsapp.update({
-      status: "DISCONNECTED",
-      qrcode: "",
-      retries: 0
-    });
-
-    // Initialize new session
-    const newSession = await initBaileys(whatsapp);
-    sessions.push(newSession);
-
-    return newSession;
-  } catch (err) {
-    baseLogger.error(`Error restarting session ${whatsappId}: ${err}`);
-    return null;
-  }
-};
-
+// ===== MOVIDAS: Funções auxiliares para antes de initBaileys =====
 // Função auxiliar para reconectar de forma segura
-const safeReconnect = async (wbot: any, whatsapp: Whatsapp): Promise<void> => {
+async function safeReconnect(wbot: any, whatsapp: Whatsapp): Promise<void> {
   try {
     baseLogger.info(`Iniciando reconexão segura para ${whatsapp.name}`);
 
@@ -330,6 +282,7 @@ const safeReconnect = async (wbot: any, whatsapp: Whatsapp): Promise<void> => {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Em vez de tentar usar connect/end, vamos reinicializar a sessão
+    // eslint-disable-next-line no-use-before-define
     const newSession = await initBaileys(whatsapp);
 
     // Atualizar a sessão na lista de sessões ativas
@@ -345,13 +298,13 @@ const safeReconnect = async (wbot: any, whatsapp: Whatsapp): Promise<void> => {
     baseLogger.error(`Erro durante reconexão segura: ${err}`);
     throw err;
   }
-};
+}
 
 // Add this function after the clearReconnectionTimeout function
-const handleWsUndefined = async (
+async function handleWsUndefined(
   whatsappId: number,
   whatsapp: Whatsapp
-): Promise<void> => {
+): Promise<void> {
   const check = wsUndefinedChecks.get(whatsappId) || {
     count: 0,
     lastCheck: Date.now(),
@@ -395,6 +348,7 @@ const handleWsUndefined = async (
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Attempt to reinitialize
+    // eslint-disable-next-line no-use-before-define
     const newSession = await initBaileys(whatsapp);
     sessions.push(newSession);
 
@@ -408,12 +362,13 @@ const handleWsUndefined = async (
     check.isHandling = false;
     wsUndefinedChecks.set(whatsappId, check);
   }
-};
+}
 
-export const initBaileys = async (
+// ===== MOVIDA: Definição da função initBaileys para antes de seu uso =====
+export async function initBaileys(
   whatsapp: Whatsapp,
   phoneNumber?: string
-): Promise<BaileysClient> => {
+): Promise<BaileysClient> {
   try {
     // Prevent multiple simultaneous initializations for the same session
     if (initializingSession.has(whatsapp.id)) {
@@ -1097,6 +1052,55 @@ export const initBaileys = async (
       retries: (whatsapp.retries || 0) + 1
     });
     throw err;
+  }
+}
+
+// Add a function to force session restart
+export const restartBaileysSession = async (
+  whatsappId: number
+): Promise<BaileysClient | null> => {
+  try {
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (!whatsapp) {
+      baseLogger.error(`WhatsApp instance ${whatsappId} not found`);
+      return null;
+    }
+
+    baseLogger.info(`Force restarting session for ${whatsapp.name}`);
+
+    // Clean up existing session
+    await removeBaileysSession(whatsappId);
+
+    // Clear session directory to force fresh start
+    const sessionDir = join(
+      __dirname,
+      "..",
+      "..",
+      "session",
+      `session-${whatsappId}`
+    );
+    try {
+      await rm(sessionDir, { recursive: true, force: true });
+      baseLogger.info("Cleared session directory for fresh start");
+    } catch (err) {
+      baseLogger.warn(`Could not clear session directory: ${err}`);
+    }
+
+    // Reset database status
+    await whatsapp.update({
+      status: "DISCONNECTED",
+      qrcode: "",
+      retries: 0
+    });
+
+    // Initialize new session
+    const newSession = await initBaileys(whatsapp);
+    sessions.push(newSession);
+
+    return newSession;
+  } catch (err) {
+    baseLogger.error(`Error restarting session ${whatsappId}: ${err}`);
+    return null;
   }
 };
 

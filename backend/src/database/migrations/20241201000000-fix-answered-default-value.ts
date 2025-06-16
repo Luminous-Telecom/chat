@@ -12,7 +12,7 @@ module.exports = {
     await queryInterface.changeColumn("Tickets", "answered", {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-      allowNull: false,
+      allowNull: false
     });
   },
 
@@ -21,7 +21,7 @@ module.exports = {
     await queryInterface.changeColumn("Tickets", "answered", {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
-      allowNull: false,
+      allowNull: false
     });
-  },
+  }
 };
