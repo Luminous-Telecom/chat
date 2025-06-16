@@ -73,6 +73,8 @@
               color="primary"
               icon="mdi-refresh"
               label="Atualizar"
+              :loading="isLoading"
+              :disable="isLoading"
               @click="loadData"
             />
           </div>
@@ -336,8 +338,8 @@
 
 <script setup>
 import '../../css/dashboard.css'
-import { ref, onMounted, onUnmounted, reactive } from 'vue'
-import { Notify } from 'quasar'
+import { ref, onMounted, onUnmounted, reactive, watch } from 'vue'
+import { Notify, debounce } from 'quasar'
 import groupBy from 'lodash/groupBy'
 import {
   Chart,
@@ -514,6 +516,24 @@ const solidColors = [
   '#607D8B' // cinza azulado
 ]
 
+// Adicionar uma variável para controlar se já está carregando
+const isLoading = ref(false)
+
+// Função utilitária para garantir formato de data correto
+function formatDateOnly (dateStr) {
+  if (!dateStr) return ''
+  return dateStr.split('T')[0]
+}
+
+// Função para preparar params antes de cada requisição
+function getParams () {
+  return {
+    ...params,
+    startDate: formatDateOnly(params.startDate),
+    endDate: formatDateOnly(params.endDate)
+  }
+}
+
 const listarFilas = async () => {
   try {
     const { data } = await ListarFilas()
@@ -525,9 +545,8 @@ const listarFilas = async () => {
 
 const getDashTicketsAndTimes = async () => {
   try {
-    const res = await GetDashTicketsAndTimes(params)
+    const res = await GetDashTicketsAndTimes(getParams())
     const data = (res?.data && res.data[0]) || {}
-
     ticketsAndTimes.value = {
       qtd_total_atendimentos: data.qtd_total_atendimentos || 0,
       qtd_demanda_ativa: data.qtd_demanda_ativa || 0,
@@ -542,7 +561,7 @@ const getDashTicketsAndTimes = async () => {
 }
 
 const getDashTicketsEvolutionChannels = () => {
-  GetDashTicketsEvolutionChannels(params).then(res => {
+  GetDashTicketsEvolutionChannels(getParams()).then(res => {
     ticketsEvolutionChannels.value = res.data || []
 
     if (!Array.isArray(ticketsEvolutionChannels.value) || ticketsEvolutionChannels.value.length === 0) {
@@ -652,7 +671,7 @@ const getDashTicketsEvolutionChannels = () => {
 
 const loadTicketsEvolutionByPeriod = async () => {
   try {
-    const response = await GetDashTicketsEvolutionByPeriod(params)
+    const response = await GetDashTicketsEvolutionByPeriod(getParams())
     if (response?.data && response.data.length > 0) {
       const sortedData = [...response.data].sort((a, b) => new Date(a.date) - new Date(b.date))
       const dates = sortedData.map(item => item.date)
@@ -807,7 +826,7 @@ const loadTicketsEvolutionByPeriod = async () => {
 
 const getDashTicketsPerUsersDetail = async () => {
   try {
-    const res = await GetDashTicketsPerUsersDetail(params)
+    const res = await GetDashTicketsPerUsersDetail(getParams())
     if (res?.data) {
       ticketsPerUsersDetail.value = res.data
     }
@@ -820,72 +839,174 @@ const getDashTicketsPerUsersDetail = async () => {
   }
 }
 
-const loadTicketsEvolutionByQueue = async () => {
+const loadTicketsEvolutionByQueue = async (customParams = null) => {
   try {
-    const response = await GetDashTicketsEvolutionByQueue(params)
+    const paramsToSend = customParams || getParams()
+    const response = await GetDashTicketsEvolutionByQueue(paramsToSend)
 
-    if (response?.data && response.data.length > 0) {
-      // Tratar caso especial: resposta vem como objeto 'queues'
-      let dataArr = response.data
-      if (Array.isArray(dataArr) && dataArr.length === 1 && dataArr[0].queues && typeof dataArr[0].queues === 'object') {
-        // Extrair as filas do objeto 'queues'
-        dataArr = Object.entries(dataArr[0].queues).map(([queue, qtd]) => ({
-          queue: queue || 'Não definido',
-          count: Number(qtd) || 0
-        }))
-      }
-      // Adaptar para aceitar queue/count, label/qtd ou qualquer campo de nome para fila e quantidade
-      const validData = dataArr
-        .filter(item => item && (item.queue || item.label || item.fila) && (item.count || item.qtd))
-        .map(item => ({
-          queue: item.queue || item.label || item.fila || 'Não definido',
-          count: Number(item.count || item.qtd) || 0
-        }))
-      if (validData.length === 0) {
-        console.warn('Nenhum dado válido de filas encontrado')
-        return
-      }
+    if (!response?.data) {
+      console.warn('Dados de distribuição por fila não disponíveis')
+      return
+    }
 
-      const labels = validData.map(item => item.queue || 'Não definido')
-      const values = validData.map(item => item.count || 0)
-      const colors = validData.map((_, index) => solidColors[index % solidColors.length])
-      if (ChartTicketsEvolutionByQueue.value) {
-        ChartTicketsEvolutionByQueue.value.destroy()
-      }
-      const ctx = document.getElementById('ticketsEvolutionByQueue')
-      if (ctx) {
-        ChartTicketsEvolutionByQueue.value = createChart(ctx, 'doughnut', {
-          labels,
-          datasets: [{
-            data: values,
-            backgroundColor: colors,
-            borderColor: '#22242e',
-            borderWidth: 0,
-            borderRadius: 8,
-            spacing: 1
-          }]
-        }, {
+    // Tratar diferentes formatos possíveis de resposta
+    let dataArr = response.data
+    if (Array.isArray(dataArr) && dataArr.length === 1 && dataArr[0].queues && typeof dataArr[0].queues === 'object') {
+      // Formato: [{ queues: { fila1: qtd1, fila2: qtd2, ... } }]
+      dataArr = Object.entries(dataArr[0].queues).map(([queue, qtd]) => ({
+        queue: queue || 'Não definido',
+        count: Number(qtd) || 0
+      }))
+    } else if (Array.isArray(dataArr)) {
+      // Formato: [{ queue: 'fila1', count: qtd1 }, { queue: 'fila2', count: qtd2 }, ...]
+      // ou [{ label: 'fila1', qtd: qtd1 }, { label: 'fila2', qtd: qtd2 }, ...]
+      // ou [{ date: '2025-06-15', queues: { fila1: qtd1, ... } }, { date: '2025-06-16', queues: { fila1: qtd2, ... } }]
 
-          plugins: {
-            legend: {
-              position: 'right'
-            }
+      // Se os dados vierem separados por data, precisamos agrupar
+      if (dataArr.length > 0 && dataArr[0].date && dataArr[0].queues) {
+        // Agrupar dados por fila e somar as quantidades
+        const queueTotals = {}
+
+        dataArr.forEach(dayData => {
+          if (dayData.queues && typeof dayData.queues === 'object') {
+            Object.entries(dayData.queues).forEach(([queue, qtd]) => {
+              const queueName = queue || 'Não definido'
+              queueTotals[queueName] = (queueTotals[queueName] || 0) + Number(qtd || 0)
+            })
           }
         })
+
+        // Converter o objeto de totais em array
+        dataArr = Object.entries(queueTotals).map(([queue, count]) => ({
+          queue,
+          count
+        }))
+      } else {
+        // Formato normal, apenas mapear os dados
+        dataArr = dataArr.map(item => ({
+          queue: item.queue || item.label || item.fila || 'Não definido',
+          count: Number(item.count || item.qtd || item.quantity || 0) || 0
+        }))
       }
+    } else if (typeof dataArr === 'object') {
+      // Formato: { fila1: qtd1, fila2: qtd2, ... }
+      dataArr = Object.entries(dataArr).map(([queue, qtd]) => ({
+        queue: queue || 'Não definido',
+        count: Number(qtd) || 0
+      }))
+    } else {
+      console.warn('Formato de dados de filas não reconhecido')
+      return
     }
+
+    // Agrupar dados por fila e somar as quantidades (caso ainda haja duplicatas)
+    const queueTotals = {}
+    dataArr.forEach(item => {
+      if (item && item.queue) {
+        const queueName = item.queue
+        queueTotals[queueName] = (queueTotals[queueName] || 0) + (Number(item.count) || 0)
+      }
+    })
+
+    // Converter para array e ordenar
+    const validData = Object.entries(queueTotals)
+      .map(([queue, count]) => ({ queue, count }))
+      .filter(item => item.count > 0)
+      .sort((a, b) => b.count - a.count)
+
+    if (validData.length === 0) {
+      console.warn('Nenhum dado válido de filas encontrado')
+      return
+    }
+
+    const labels = validData.map(item => item.queue)
+    const values = validData.map(item => item.count)
+    const colors = validData.map((_, index) => solidColors[index % solidColors.length])
+
+    // Destruir gráfico existente
+    if (ChartTicketsEvolutionByQueue.value) {
+      ChartTicketsEvolutionByQueue.value.destroy()
+      ChartTicketsEvolutionByQueue.value = null
+    }
+
+    const ctx = document.getElementById('ticketsEvolutionByQueue')
+    if (!ctx) {
+      console.warn('Canvas de distribuição por fila não encontrado')
+      return
+    }
+
+    // Criar novo gráfico com dados processados
+    ChartTicketsEvolutionByQueue.value = createChart(ctx, 'doughnut', {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderColor: '#22242e',
+        borderWidth: 0,
+        borderRadius: 8,
+        spacing: 1
+      }]
+    }, {
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: {
+              size: 12
+            },
+            padding: 20,
+            generateLabels: function (chart) {
+              const datasets = chart.data.datasets
+              return chart.data.labels.map((label, i) => ({
+                text: `${label}: ${datasets[0].data[i]} atendimentos`,
+                fillStyle: datasets[0].backgroundColor[i],
+                hidden: false,
+                lineCap: 'butt',
+                lineDash: [],
+                lineDashOffset: 0,
+                lineJoin: 'miter',
+                lineWidth: 1,
+                strokeStyle: datasets[0].backgroundColor[i],
+                pointStyle: 'circle',
+                rotation: 0
+              }))
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const label = context.label || ''
+              const value = context.raw || 0
+              const total = context.dataset.data.reduce((a, b) => a + b, 0)
+              const percentage = ((value / total) * 100).toFixed(1)
+              return `${label}: ${value} atendimentos (${percentage}%)`
+            }
+          }
+        }
+      }
+    })
   } catch (error) {
-    console.error('Erro ao carregar dados de evolução por fila:', error)
+    console.error('Erro ao carregar dados de distribuição por fila:', error)
     Notify.create({
       type: 'negative',
-      message: 'Erro ao carregar dados de evolução por fila'
+      message: 'Erro ao carregar dados de distribuição por fila'
     })
+    throw error
   }
 }
 
-const loadTicketsInstances = async () => {
+const loadTicketsInstances = async (customParams = null) => {
   try {
-    const response = await GetDashTicketsInstances(params)
+    const paramsToSend = customParams || getParams()
+
+    // Destruir o gráfico existente antes de fazer a nova requisição
+    if (ChartTicketsInstances.value) {
+      ChartTicketsInstances.value.destroy()
+      ChartTicketsInstances.value = null
+    }
+
+    const response = await GetDashTicketsInstances(paramsToSend)
 
     if (!response?.data || !Array.isArray(response.data)) {
       console.warn('Dados de instâncias inválidos ou vazios')
@@ -908,44 +1029,46 @@ const loadTicketsInstances = async () => {
     const values = validData.map(item => item.count || 0)
     const colors = validData.map((_, index) => solidColors[index % solidColors.length])
 
-    destroyChart(ChartTicketsInstances)
-
     const ctx = document.getElementById('ticketsInstances')
     if (!ctx) {
       console.warn('Canvas de instâncias não encontrado')
       return
     }
 
-    ChartTicketsInstances.value = createChart(ctx, 'doughnut', {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: colors,
-        borderColor: '#22242e',
-        borderWidth: 0,
-        borderRadius: 8,
-        spacing: 1
-      }]
-    }, {
-
-      plugins: {
-        legend: {
-          position: 'right'
+    // Criar novo gráfico apenas se tivermos dados válidos
+    if (labels.length > 0 && values.length > 0) {
+      ChartTicketsInstances.value = createChart(ctx, 'doughnut', {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderColor: '#22242e',
+          borderWidth: 0,
+          borderRadius: 8,
+          spacing: 1
+        }]
+      }, {
+        plugins: {
+          legend: {
+            position: 'right'
+          }
         }
-      }
-    })
+      })
+    }
   } catch (error) {
     console.error('Erro ao carregar dados de instâncias:', error)
     Notify.create({
       type: 'negative',
       message: 'Erro ao carregar dados de instâncias'
     })
+    throw error // Propagar o erro para o loadDataWithParams
   }
 }
 
-const loadTicketsQueue = async () => {
+const loadTicketsQueue = async (customParams = null) => {
   try {
-    const response = await GetDashTicketsQueue(params)
+    const paramsToSend = customParams || getParams()
+    const response = await GetDashTicketsQueue(paramsToSend)
     if (response?.data && response.data.length > 0) {
       const labels = response.data.map(item => item.queue)
       const values = response.data.map(item => item.count)
@@ -984,9 +1107,10 @@ const loadTicketsQueue = async () => {
   }
 }
 
-const loadTicketsChannels = async () => {
+const loadTicketsChannels = async (customParams = null) => {
   try {
-    const response = await GetDashTicketsChannels(params)
+    const paramsToSend = customParams || getParams()
+    const response = await GetDashTicketsChannels(paramsToSend)
     if (!response?.data) {
       console.warn('Dados de canais não disponíveis')
       return
@@ -1046,22 +1170,41 @@ const loadTicketsChannels = async () => {
 }
 
 const loadData = async () => {
+  await loadDataWithParams(getParams())
+}
+
+// Modificar a função loadDataWithParams para melhor controle de loading
+const loadDataWithParams = async (customParams) => {
+  // Se já estiver carregando, aguarda um momento e tenta novamente
+  if (isLoading.value) {
+    // Aguarda 100ms e tenta novamente
+    await new Promise(resolve => setTimeout(resolve, 100))
+    if (isLoading.value) {
+      return
+    }
+  }
+
   try {
-    // Verificar se params está definido
-    if (!params.startDate || !params.endDate) {
+    isLoading.value = true
+
+    if (!customParams.startDate || !customParams.endDate) {
       throw new Error('Parâmetros não definidos')
     }
 
-    // Carregar dados em paralelo com tratamento de erro individual
-    const loadPromises = [
-      loadTicketsChannels(),
-      loadTicketsQueue(),
-      loadTicketsEvolutionByPeriod(),
-      getDashTicketsPerUsersDetail(),
-      getDashTicketsAndTimes(),
-      getDashTicketsEvolutionChannels(),
-      loadTicketsEvolutionByQueue()
-    ]
+    // Usar um Set para garantir que não há chamadas duplicadas
+    const loadFunctions = new Set([
+      () => loadTicketsChannels(customParams),
+      () => loadTicketsQueue(customParams),
+      () => loadTicketsEvolutionByPeriod(customParams),
+      () => getDashTicketsPerUsersDetail(customParams),
+      () => getDashTicketsAndTimes(customParams),
+      () => getDashTicketsEvolutionChannels(customParams),
+      () => loadTicketsEvolutionByQueue(customParams),
+      () => loadTicketsInstances(customParams)
+    ])
+
+    // Converter Set para Array e executar as promessas
+    const loadPromises = Array.from(loadFunctions).map(fn => fn())
 
     // Usar Promise.allSettled para lidar com erros individuais
     const results = await Promise.allSettled(loadPromises)
@@ -1081,6 +1224,9 @@ const loadData = async () => {
       type: 'negative',
       message: 'Erro ao carregar dados do dashboard'
     })
+  } finally {
+    // Garantir que o loading seja resetado mesmo em caso de erro
+    isLoading.value = false
   }
 }
 
@@ -1481,7 +1627,6 @@ onMounted(async () => {
     await loadData()
     await loadChannelEvolutionData()
     await loadTicketsEvolutionByPeriod()
-    await loadTicketsInstances()
     await loadTicketsEvolutionByQueue()
     await loadTicketsChannels()
   } catch (error) {
@@ -1492,4 +1637,25 @@ onMounted(async () => {
     })
   }
 })
+
+// Modificar o watch para ser mais resiliente
+watch(
+  () => [params.startDate, params.endDate],
+  debounce(async ([start, end]) => {
+    if (!start || !end) return
+
+    const formattedStart = start.split('T')[0]
+    const formattedEnd = end.split('T')[0]
+
+    // Em vez de modificar params diretamente, vamos apenas chamar loadData com as datas formatadas
+    const paramsToSend = {
+      ...params,
+      startDate: formattedStart,
+      endDate: formattedEnd
+    }
+
+    // Carregar dados com os parâmetros formatados
+    await loadDataWithParams(paramsToSend)
+  }, 300)
+)
 </script>
