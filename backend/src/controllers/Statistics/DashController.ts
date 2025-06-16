@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ParsedQs } from "qs";
 // import * as Yup from "yup";
 import DashTicketsAndTimes from "../../services/Statistics/DashTicketsAndTimes";
 import DashTicketsChannels from "../../services/Statistics/DashTicketsChannels";
@@ -9,11 +10,32 @@ import DashTicketsQueue from "../../services/Statistics/DashTicketsQueue";
 import DashTicketsInstances from "../../services/Statistics/DashTicketsInstances";
 import DashTicketsEvolutionByQueue from "../../services/Statistics/DashTicketsEvolutionByQueue";
 // import AppError from "../errors/AppError";
-import { IndexQuery } from "../helpers/IndexQuery";
 
 type IndexQuery = {
   startDate: string;
   endDate: string;
+  queuesIds?: number[];
+};
+
+const validateQuery = (query: ParsedQs): IndexQuery => {
+  const { startDate, endDate, queuesIds } = query;
+  
+  if (!startDate || !endDate) {
+    throw new Error("startDate e endDate são obrigatórios");
+  }
+
+  let parsedQueuesIds: number[] | undefined;
+  if (queuesIds) {
+    parsedQueuesIds = Array.isArray(queuesIds)
+      ? queuesIds.map(Number)
+      : [Number(queuesIds)];
+  }
+
+  return {
+    startDate: startDate as string,
+    endDate: endDate as string,
+    queuesIds: parsedQueuesIds
+  };
 };
 
 export const getDashTicketsAndTimes = async (
@@ -21,13 +43,13 @@ export const getDashTicketsAndTimes = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
   const data = await DashTicketsAndTimes({
-    startDate,
-    endDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
     tenantId,
     userId,
     userProfile
@@ -41,13 +63,13 @@ export const getDashTicketsChannels = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
   const data = await DashTicketsChannels({
-    startDate,
-    endDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
     tenantId,
     userId,
     userProfile
@@ -61,13 +83,13 @@ export const getDashTicketsEvolutionChannels = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
   const data = await DashTicketsEvolutionChannels({
-    startDate,
-    endDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
     tenantId,
     userId,
     userProfile
@@ -81,13 +103,13 @@ export const getDashTicketsEvolutionByPeriod = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
   const data = await DashTicketsEvolutionByPeriod({
-    startDate,
-    endDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
     tenantId,
     userId,
     userProfile
@@ -101,13 +123,13 @@ export const getDashTicketsPerUsersDetail = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
   const data = await DashTicketsPerUsersDetail({
-    startDate,
-    endDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
     tenantId,
     userId,
     userProfile
@@ -121,13 +143,13 @@ export const getDashTicketsQueue = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
   const data = await DashTicketsQueue({
-    startDate,
-    endDate,
+    startDate: query.startDate,
+    endDate: query.endDate,
     tenantId,
     userId,
     userProfile
@@ -142,13 +164,13 @@ export const getDashTicketsEvolutionByQueue = async (
 ): Promise<Response> => {
   try {
     const { tenantId } = req.user;
-    const { startDate, endDate } = req.query as IndexQuery;
+    const query = validateQuery(req.query);
     const userId = req.user.id;
     const userProfile = req.user.profile;
 
     const data = await DashTicketsEvolutionByQueue({
-      startDate,
-      endDate,
+      startDate: query.startDate,
+      endDate: query.endDate,
       tenantId,
       userId,
       userProfile
@@ -156,8 +178,8 @@ export const getDashTicketsEvolutionByQueue = async (
 
     return res.json(data);
   } catch (error) {
-    console.error('Erro ao buscar evolução por fila:', error);
-    return res.status(500).json({ error: 'Erro ao buscar evolução por fila' });
+    console.error("Erro ao buscar evolução por fila:", error);
+    return res.status(500).json({ error: "Erro ao buscar evolução por fila" });
   }
 };
 
@@ -166,7 +188,7 @@ export const getDashTicketsInstances = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { startDate, endDate } = req.query as IndexQuery;
+  const query = validateQuery(req.query);
   const userId = req.user.id;
   const userProfile = req.user.profile;
 
@@ -174,14 +196,14 @@ export const getDashTicketsInstances = async (
     tenantId,
     userId,
     userProfile,
-    startDate,
-    endDate
+    startDate: query.startDate,
+    endDate: query.endDate
   });
 
   try {
     const data = await DashTicketsInstances({
-      startDate,
-      endDate,
+      startDate: query.startDate,
+      endDate: query.endDate,
       tenantId,
       userId,
       userProfile
