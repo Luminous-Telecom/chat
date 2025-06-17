@@ -115,7 +115,7 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100%;
-  color: #666;
+  color: var(--text-color-secondary);
   font-size: 14px;
 }
 </style>

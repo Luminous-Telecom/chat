@@ -187,7 +187,7 @@ export default {
 }
 
 .index h2 {
-  color: #666;
+  color: var(--text-color-secondary);
   margin-bottom: 200px;
 }
 

@@ -509,7 +509,7 @@ export default {
 .loading-text {
   font-size: 16px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-color-secondary);
   letter-spacing: -0.025em;
 }
 
@@ -555,14 +555,14 @@ export default {
   .step-title {
     font-size: 12px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-color-primary);
     margin-bottom: 1px;
     letter-spacing: -0.025em;
   }
 
   .step-desc {
     font-size: 10px;
-    color: #64748b;
+    color: var(--text-color-secondary);
     font-weight: 400;
   }
 }
@@ -570,7 +570,7 @@ export default {
 .help-text {
   text-align: center;
   font-size: 9px;
-  color: #64748b;
+  color: var(--text-color-secondary);
   margin-bottom: 6px;
   font-weight: 400;
 }

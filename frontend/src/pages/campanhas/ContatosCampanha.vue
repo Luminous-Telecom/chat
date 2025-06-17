@@ -582,7 +582,7 @@ export default {
   .q-table__top,
   .q-table__bottom,
   thead tr:first-child th /* bg color is important for th; just specify one */
-    background-color: #fff
+    background-color: var(--background-color-paper)
 
   /* Dark mode styles */
   body.body--dark .q-table__top,

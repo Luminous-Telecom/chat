@@ -415,7 +415,7 @@ export default {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   padding: 12px 16px;
   border-radius: 12px;
-  border-left: 4px solid #1976d2;
+  border-left: 4px solid var(--primary-color);
   white-space: pre-wrap;
   word-wrap: break-word;
   max-height: 150px;
@@ -478,7 +478,7 @@ export default {
   .message-preview {
     background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
     color: $dark-text-primary;
-    border-left-color: #42a5f5;
+    border-left-color: var(--primary-color);
   }
 
   .q-scroll-area {

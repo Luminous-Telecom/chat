@@ -1,135 +1,60 @@
 <template>
   <div>
-    <q-card
-      flat
-      class="q-pa-sm q-pb-md"
-    >
-      <q-card-section
-        style="min-height: 100px"
-        class="q-pa-none"
-      >
-        <q-file
-          style="display: none"
-          :loading="loading"
-          rounded
-          label="Mídia composição mensagem"
-          ref="PickerFileMessage"
-          v-model="file"
-          class="col-grow"
-          bg-color="blue-grey-1"
-          input-style="max-height: 30vh"
-          outlined
-          clearable
-          autogrow
-          append
-          :max-files="1"
-          counter
-          :max-file-size="10242880"
-          :max-total-size="10242880"
+    <q-card flat class="q-pa-sm q-pb-md">
+      <q-card-section style="min-height: 100px" class="q-pa-none">
+        <q-file style="display: none" :loading="loading" rounded label="Mídia composição mensagem"
+          ref="PickerFileMessage" v-model="file" class="col-grow" bg-color="blue-grey-1" input-style="max-height: 30vh"
+          outlined clearable autogrow append :max-files="1" counter :max-file-size="10242880" :max-total-size="10242880"
           accept=".txt, .jpg, .png, image/jpeg, .jpeg, image/*, .pdf, .doc, .docx, .xls, .xlsx, .zip, .ppt, .pptx, .mp4, .mp3"
-          @rejected="onRejectedFiles"
-          @input="getMediaUrl"
-        />
-        <q-btn
-          v-if="!$attrs.element.data.type "
-          icon="mdi-file-plus-outline"
-          @click="$refs.PickerFileMessage.pickFiles()"
-          round
-          flat
-          size="lg"
-          class="bg-grey-3 z-max q-pa-lg absolute-center"
-        />
+          @rejected="onRejectedFiles" @input="getMediaUrl" />
+        <q-btn v-if="!$attrs.element.data.type" icon="mdi-file-plus-outline"
+          @click="$refs.PickerFileMessage.pickFiles()" round flat size="lg"
+          class="bg-grey-3 z-max q-pa-lg absolute-center" />
 
         <div class="text-center full-width hide-scrollbar no-scroll">
-          <iframe
-            v-if="cMediaUrl && $attrs.element.data.type === 'application/pdf'"
-            frameBorder="0"
-            scrolling="no"
+          <iframe v-if="cMediaUrl && $attrs.element.data.type === 'application/pdf'" frameBorder="0" scrolling="no"
             style="
               max-height: 150px;
               overflow-y: hidden;
               -ms-overflow-y: hidden;
-            "
-            class="no-scroll hide-scrollbar"
-            :src="cMediaUrl"
-          >
+            " class="no-scroll hide-scrollbar" :src="cMediaUrl">
             Faça download do PDF
             <!-- alt : <a href="mensagem.cMediaUrl"></a> -->
           </iframe>
-          <video
-            v-if="cMediaUrl && $attrs.element.data.type.indexOf('video') != -1"
-            :src="cMediaUrl"
-            controls
-            class="q-mt-md"
-            style="objectFit: cover;
+          <video v-if="cMediaUrl && $attrs.element.data.type.indexOf('video') != -1" :src="cMediaUrl" controls
+            class="q-mt-md" style="objectFit: cover;
                   width: 330px;
                   height: 150px;
                   borderTopLeftRadius: 8px;
                   borderTopRightRadius: 8px;
                   borderBottomLeftRadius: 8px;
-                  borderBottomRightRadius: 8px;"
-            type="video/mp4"
-          >
+                  borderBottomRightRadius: 8px;" type="video/mp4">
           </video>
-          <audio
-            v-if="cMediaUrl && $attrs.element.data.type.indexOf('audio') != -1"
-            class="q-mt-md full-width"
-            controls
-          >
-            <source
-              :src="cMediaUrl"
-              type="audio/ogg"
-            />
+          <audio v-if="cMediaUrl && $attrs.element.data.type.indexOf('audio') != -1" class="q-mt-md full-width"
+            controls>
+            <source :src="cMediaUrl" type="audio/ogg" />
           </audio>
 
-          <q-img
-            v-if="cMediaUrl && $attrs.element.data.type.indexOf('image') != -1"
-            @click="abrirModalImagem=true"
-            :src="cMediaUrl"
-            spinner-color="primary"
-            height="150px"
-            width="100%"
-            id="imagemfield"
-            style="cursor: pointer; "
-          />
+          <q-img v-if="cMediaUrl && $attrs.element.data.type.indexOf('image') != -1" @click="abrirModalImagem = true"
+            :src="cMediaUrl" spinner-color="primary" height="150px" width="100%" id="imagemfield"
+            style="cursor: pointer; " />
 
         </div>
-        <VueEasyLightbox
-          v-if="cMediaUrl && $attrs.element.data.type.indexOf('image') != -1"
-          :visible="abrirModalImagem"
-          :imgs="cMediaUrl"
-          :index="1"
-          @hide="abrirModalImagem = false;"
-        />
+        <VueEasyLightbox v-if="cMediaUrl && $attrs.element.data.type.indexOf('image') != -1" :visible="abrirModalImagem"
+          :imgs="cMediaUrl" :index="1" @hide="abrirModalImagem = false;" />
         <div v-if="getFileIcon($attrs.element.data.name)">
-          <q-icon
-            size="80px"
-            :name="getFileIcon($attrs.element.data.name)"
-          />
+          <q-icon size="80px" :name="getFileIcon($attrs.element.data.name)" />
         </div>
-        <div
-          v-if="cMediaUrl"
-          class="text-bold flex flex-inline flex-center items-center"
-        >
-          <div
-            style="max-width: 340px"
-            class="ellipsis"
-          >
+        <div v-if="cMediaUrl" class="text-bold flex flex-inline flex-center items-center">
+          <div style="max-width: 340px" class="ellipsis">
             {{ $attrs.element.data.name }}
             <q-tooltip>
               {{ $attrs.element.data.name }}
             </q-tooltip>
 
           </div>
-          <q-btn
-            v-if="cMediaUrl"
-            flat
-            class="bg-padrao btn-rounded q-ma-sm"
-            color="primary"
-            no-caps
-            icon="mdi-image-edit-outline"
-            @click="$refs.PickerFileMessage.pickFiles()"
-          >
+          <q-btn v-if="cMediaUrl" flat class="bg-padrao btn-rounded q-ma-sm" color="primary" no-caps
+            icon="mdi-image-edit-outline" @click="$refs.PickerFileMessage.pickFiles()">
             <q-tooltip>
               Substituir Arquivo
             </q-tooltip>
@@ -249,7 +174,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-#imagemfield > .q-img__content > div {
+#imagemfield>.q-img__content>div {
   padding: 0 !important;
   background: none; // rgba(0, 0, 0, 0.47);
 }

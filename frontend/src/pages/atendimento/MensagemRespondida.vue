@@ -11,7 +11,11 @@
       class="text-weight-medium fit q-ma-none"
       id="chat-message-resp"
       style="min-width: 100px; max-width: 350px"
-      :bg-color="mensagem.fromMe ? 'grey-2' : $q.dark.isActive ? 'blue-2' : 'blue-1' "
+      :class="{
+        'q-message-text--deleted': mensagem.isDeleted,
+        'q-message-text--group': isGroupLabel(mensagem),
+        'q-message-text--media': ['image', 'video', 'audio'].includes(mensagem.mediaType)
+      }"
     >
       <!-- @click="focarElemento(mensagem)" -->
 
@@ -234,12 +238,68 @@ export default {
 <style lang="scss">
 .message-image {
   cursor: pointer;
-  max-width: 240px;
-  max-height: 150px;
   object-fit: cover;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+// Estilos específicos para mensagens de resposta
+#chat-message-resp {
+  .q-message-text {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+
+    &::before {
+      display: none !important;
+    }
+  }
+
+  .q-message-text--received {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-left: 3px solid var(--primary-color) !important;
+  }
+
+  .q-message-text--sent {
+    background: rgba(37, 211, 102, 0.1) !important;
+    border-left: 3px solid var(--primary-color) !important;
+  }
+
+  .q-message-text--deleted {
+    background: rgba(0, 0, 0, 0.03) !important;
+    color: var(--text-color-secondary) !important;
+    opacity: 0.6;
+    font-style: italic;
+  }
+}
+
+// Modo escuro para mensagens de resposta
+.body--dark #chat-message-resp {
+  .q-message-text {
+    background: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .q-message-text--received {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-left-color: var(--primary-color) !important;
+  }
+
+  .q-message-text--sent {
+    background: rgba(37, 211, 102, 0.2) !important;
+    border-left-color: var(--primary-color) !important;
+  }
+
+  .q-message-text--deleted {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-color-secondary) !important;
+    opacity: 0.6;
+  }
 }
 </style>

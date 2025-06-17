@@ -1113,8 +1113,8 @@ export default {
   margin-left: -15px
   height: 40px
   width: 15px
-  background-color: #fbfbfb
-  border: 1px solid rgb(220, 227, 232)
+  background-color: var(--background-color-paper)
+  border: 1px solid var(--border-color)
   border-right: none
   z-index: 0
 

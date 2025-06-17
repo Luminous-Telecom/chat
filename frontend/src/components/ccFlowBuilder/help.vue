@@ -1,10 +1,5 @@
 <template>
-  <q-dialog
-    title="帮助"
-    v-model="dialogVisible"
-    width="70%"
-    customClass="flowHelp"
-  >
+  <q-dialog title="帮助" v-model="dialogVisible" width="70%" customClass="flowHelp">
     <el-tabs tab-position="left">
       <el-tab-pane label="如何新增">
         <el-divider content-position="left">如何新增</el-divider>

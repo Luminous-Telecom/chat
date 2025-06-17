@@ -519,7 +519,7 @@ audio {
   position: relative;
   outline: 0;
   border: 0;
-  color: black;
+  color: var(--text-color-primary);
   text-align: center;
   height: 1.5em;
   opacity: 0.8;
@@ -540,12 +540,12 @@ audio {
     content: attr(data-content);
     position: relative;
     display: inline-block;
-    color: black;
+    color: var(--text-color-primary);
     font-size: 16px;
     font-weight: 600;
     padding: 0 0.5em;
     line-height: 1.5em;
-    background-color: $grey;
+    background-color: var(--background-color-paper);
     border-radius: 15px;
   }
 }
@@ -557,7 +557,8 @@ audio {
 
 .textContentItemDeleted {
   font-style: italic;
-  color: rgba(0, 0, 0, 0.36);
+  color: var(--text-color-secondary);
+  opacity: 0.6;
   overflow-wrap: break-word;
   // padding: 3px 80px 6px 6px;
 }
@@ -565,13 +566,13 @@ audio {
 .replyginContactMsgSideColor {
   flex: none;
   width: 4px;
-  background-color: #35cd96;
+  background-color: var(--primary-color);
 }
 
 .replyginSelfMsgSideColor {
   flex: none;
   width: 4px;
-  background-color: #6bcbef;
+  background-color: var(--primary-color);
 }
 
 .replyginMsgBody {
@@ -584,7 +585,7 @@ audio {
 
 .messageContactName {
   display: flex;
-  color: #6bcbef;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
