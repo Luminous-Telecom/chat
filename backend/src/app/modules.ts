@@ -37,7 +37,15 @@ export default async function modules(app): Promise<void> {
 
   app.use(
     "/public",
-    expressInstance.static(path.resolve(__dirname, "..", "..", "public"))
+    expressInstance.static(path.resolve(__dirname, "..", "..", "public"), {
+      setHeaders: (res, path) => {
+        // Configurar headers específicos para PDFs
+        if (path.endsWith('.pdf')) {
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', 'inline');
+        }
+      }
+    })
   );
 
   app.use(routes);

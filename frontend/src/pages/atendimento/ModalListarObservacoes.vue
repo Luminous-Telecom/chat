@@ -40,7 +40,7 @@
                 <div v-if="obs.anexo && isImage(obs.anexo)" style="margin-bottom: 24px;">
                   <q-img
                     :src="getAnexoUrl(obs.anexo)"
-                    style="max-width: 200px; max-height: 200px; display: block; margin-top: 8px;"
+                    style="max-width: 150px; max-height: 150px; display: block; margin-top: 8px; object-fit: cover; border-radius: 8px;"
                     class="rounded-borders cursor-pointer"
                     @click="abrirModalImagem(obs.anexo)"
                     @error="() => console.error('ModalListarObservacoes - Erro ao carregar imagem:', obs.anexo)"

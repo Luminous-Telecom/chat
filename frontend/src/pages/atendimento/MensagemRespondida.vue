@@ -77,8 +77,8 @@
             :src="mensagem.mediaUrl"
             spinner-color="primary"
             height="60px"
-            width="130px"
-            style="cursor: pointer;"
+            width="100px"
+            style="cursor: pointer; max-width: 100px; object-fit: cover; border-radius: 8px;"
           />
           <VueEasyLightbox
             moveDisabled
