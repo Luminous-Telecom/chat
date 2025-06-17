@@ -894,7 +894,9 @@ export default {
 
       this.$nextTick(() => {
         // utilizar refs do layout
-        this.$refs.audioNotificationPlay.play()
+        if (this.$refs.audioNotificationPlay) {
+          this.$refs.audioNotificationPlay.play()
+        }
       })
     },
     async listarConfiguracoes () {
