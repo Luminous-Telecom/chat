@@ -29,6 +29,10 @@ export default {
     if (usuario?.configs?.isDark) {
       this.$q.dark.set(usuario?.configs?.isDark)
     }
+
+    // Definir título padrão da aplicação
+    document.title = 'Chat - Sistema de Atendimento'
+
     //   document.onclick = function () {
     //     this.idleSecondsCounter = 0
     //   }

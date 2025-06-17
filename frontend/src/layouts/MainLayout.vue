@@ -191,7 +191,7 @@ import { RealizarLogout } from 'src/service/login'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
 import { ContarTicketsPendentesPorFila } from 'src/service/filas'
-import { tocarSomNotificacao } from 'src/helpers/helpersNotifications'
+import { tocarSomNotificacao, atualizarTituloGuia } from 'src/helpers/helpersNotifications'
 
 const socket = socketIO()
 
@@ -557,6 +557,10 @@ export default {
           )
         }
       })
+    },
+    // Método para atualizar o título da guia
+    atualizarTituloGuia () {
+      atualizarTituloGuia(this.notifications, this.notifications_p)
     }
   },
   async mounted () {
@@ -570,6 +574,24 @@ export default {
     await this.conectarSocket(this.usuario)
     // Request notification permission on first user interaction
     this.requestNotificationPermissionOnInteraction()
+
+    // Atualizar título da guia inicialmente
+    this.atualizarTituloGuia()
+  },
+  watch: {
+    // Watcher para monitorar mudanças nas notificações e atualizar o título da guia
+    notifications: {
+      handler () {
+        this.atualizarTituloGuia()
+      },
+      deep: true
+    },
+    notifications_p: {
+      handler () {
+        this.atualizarTituloGuia()
+      },
+      deep: true
+    }
   },
   destroyed () {
     socket.disconnect()

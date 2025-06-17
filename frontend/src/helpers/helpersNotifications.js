@@ -81,3 +81,14 @@ export const inicializarServicoAudio = () => {
 export const destruirServicoAudio = () => {
   audioNotificationService.destroy()
 }
+
+// Função para atualizar o título da guia com notificações
+export const atualizarTituloGuia = (notifications, notifications_p) => {
+  const totalNotificacoes = (parseInt(notifications?.count || 0) + parseInt(notifications_p?.count || 0))
+
+  if (totalNotificacoes > 0) {
+    document.title = `(${totalNotificacoes}) Chat - Sistema de Atendimento`
+  } else {
+    document.title = 'Chat - Sistema de Atendimento'
+  }
+}
