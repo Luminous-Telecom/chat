@@ -161,7 +161,10 @@ export default {
       try {
         const { data } = await ConsultarTickets(params)
         this.countTickets = data.count // count total de tickets no status
-        this.$store.commit('LOAD_TICKETS', { type: this.status, tickets: data.tickets })
+        this.$store.commit('LOAD_TICKETS', {
+          tickets: data.tickets,
+          filters: params
+        })
         this.hasMore = data.hasMore
       } catch (err) {
         this.$notificarErro('Algum problema', err)
@@ -227,7 +230,17 @@ export default {
 
         if (data.action === 'update' && shouldUpdateTicket(data.ticket)) {
           // console.log('[DEBUG] Atualizando ticket:', data.ticket)
-          this.$store.commit('UPDATE_TICKET', { type: this.status, ticket: data.ticket })
+          this.$store.commit('UPDATE_TICKET', {
+            ticket: data.ticket,
+            filters: {
+              status: [this.status],
+              showAll: this.showAll,
+              withUnreadMessages: this.withUnreadMessages,
+              isNotAssignedUser: this.isNotAssignedUser,
+              includeNotQueueDefined: this.includeNotQueueDefined,
+              queuesIds: this.queuesIds
+            }
+          })
         }
 
         if (data.action === 'update' && notBelongsToUserQueues(data.ticket)) {

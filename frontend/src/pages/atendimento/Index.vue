@@ -1309,7 +1309,10 @@ export default {
       try {
         const { data } = await ConsultarTickets(params)
         this.countTickets = data.count // count total de tickets no status
-        this.$store.commit('LOAD_TICKETS', data.tickets)
+        this.$store.commit('LOAD_TICKETS', {
+          tickets: data.tickets,
+          filters: this.pesquisaTickets
+        })
         this.$store.commit('SET_HAS_MORE', data.hasMore)
       } catch (err) {
         this.$notificarErro('Algum problema', err)

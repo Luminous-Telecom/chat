@@ -9,7 +9,7 @@ const orderMessages = (messages) => {
   return [...newMessages]
 }
 
-const checkTicketFilter = (ticket) => {
+const checkTicketFilter = (ticket, currentFilters = null) => {
   const filtroPadrao = {
     searchParam: '',
     pageNumber: 1,
@@ -40,7 +40,9 @@ const checkTicketFilter = (ticket) => {
     const conf = configuracoes?.find(c => c.key === 'NotViewAssignedTickets')
     return (conf?.value === 'enabled')
   }
-  const filtros = JSON.parse(localStorage.getItem('filtrosAtendimento')) || filtroPadrao
+
+  // Usar filtros atuais se fornecidos, senão usar localStorage
+  const filtros = currentFilters || JSON.parse(localStorage.getItem('filtrosAtendimento')) || filtroPadrao
   const usuario = JSON.parse(localStorage.getItem('usuario'))
   const UserQueues = JSON.parse(localStorage.getItem('queues'))
   const filasCadastradas = JSON.parse(localStorage.getItem('filasCadastradas') || '[]')
@@ -60,7 +62,7 @@ const checkTicketFilter = (ticket) => {
     return true
   }
 
-  // se status do ticket diferente do staatus filtrado, retornar false
+  // se status do ticket diferente do status filtrado, retornar false
   if (filtros.status.length > 0 && !filtros.status.includes(ticket.status)) {
     return false
   }
@@ -168,12 +170,14 @@ const atendimentoTicket = {
       //  ticketsCount: payload.length,
       //  payload: payload
       // })
-      const tickets = payload
-      if (payload.length) {
+      const tickets = payload.tickets || payload
+      const currentFilters = payload.filters || null
+
+      if (tickets.length) {
         tickets.forEach(ticket => {
           const ticketIndex = state.tickets.findIndex(t => t.id === ticket.id)
           if (ticketIndex !== -1) {
-            if (checkTicketFilter(ticket)) {
+            if (checkTicketFilter(ticket, currentFilters)) {
               // console.log('[DEBUG] Atualizando ticket existente:', ticket.id)
               state.tickets[ticketIndex] = ticket
               if (ticket.unreadMessages > 0) {
@@ -184,7 +188,7 @@ const atendimentoTicket = {
               state.tickets.splice(ticketIndex, 1)
             }
           } else {
-            if (checkTicketFilter(ticket)) {
+            if (checkTicketFilter(ticket, currentFilters)) {
               // console.log('[DEBUG] Adicionando novo ticket:', ticket.id)
               state.tickets.push(ticket)
             } else {
@@ -220,50 +224,53 @@ const atendimentoTicket = {
     // OK
     UPDATE_TICKET (state, payload) {
       // console.log('[DEBUG] UPDATE_TICKET mutation chamada:', payload.id)
-      const ticketIndex = state.tickets.findIndex(t => t.id === payload.id)
+      const ticketData = payload.ticket || payload
+      const currentFilters = payload.filters || null
+
+      const ticketIndex = state.tickets.findIndex(t => t.id === ticketData.id)
       if (ticketIndex !== -1) {
         // atualizar ticket se encontrado
         const tickets = [...state.tickets]
         tickets[ticketIndex] = {
           ...tickets[ticketIndex],
-          ...payload,
+          ...ticketData,
           // ajustar informações por conta das mudanças no front
-          username: payload?.user?.name || payload?.username || tickets[ticketIndex].username,
-          profilePicUrl: payload?.contact?.profilePicUrl || payload?.profilePicUrl || tickets[ticketIndex].profilePicUrl,
-          name: payload?.contact?.name || payload?.name || tickets[ticketIndex].name
+          username: ticketData?.user?.name || ticketData?.username || tickets[ticketIndex].username,
+          profilePicUrl: ticketData?.contact?.profilePicUrl || ticketData?.profilePicUrl || tickets[ticketIndex].profilePicUrl,
+          name: ticketData?.contact?.name || ticketData?.name || tickets[ticketIndex].name
         }
-        if (checkTicketFilter(tickets[ticketIndex])) {
-          // console.log('[DEBUG] Atualizando ticket existente no UPDATE_TICKET:', payload.id)
+        if (checkTicketFilter(tickets[ticketIndex], currentFilters)) {
+          // console.log('[DEBUG] Atualizando ticket existente no UPDATE_TICKET:', ticketData.id)
           state.tickets = tickets
         } else {
-          // console.log('[DEBUG] Removendo ticket no UPDATE_TICKET (não passou no filtro):', payload.id)
+          // console.log('[DEBUG] Removendo ticket no UPDATE_TICKET (não passou no filtro):', ticketData.id)
           tickets.splice(ticketIndex, 1)
           state.tickets = tickets
         }
 
         // atualizar se ticket focado
-        if (state.ticketFocado.id == payload.id) {
+        if (state.ticketFocado.id == ticketData.id) {
           state.ticketFocado = {
             ...state.ticketFocado,
-            ...payload
+            ...ticketData
             // conservar as informações do contato
             // contact: state.ticketFocado.contact
           }
         }
       } else {
-        if (checkTicketFilter(payload)) {
-          // console.log('[DEBUG] Adicionando novo ticket no UPDATE_TICKET:', payload.id)
+        if (checkTicketFilter(ticketData, currentFilters)) {
+          // console.log('[DEBUG] Adicionando novo ticket no UPDATE_TICKET:', ticketData.id)
           const tickets = [...state.tickets]
           tickets.unshift({
-            ...payload,
+            ...ticketData,
             // ajustar informações por conta das mudanças no front
-            username: payload?.user?.name || payload?.username,
-            profilePicUrl: payload?.contact?.profilePicUrl || payload?.profilePicUrl,
-            name: payload?.contact?.name || payload?.name
+            username: ticketData?.user?.name || ticketData?.username,
+            profilePicUrl: ticketData?.contact?.profilePicUrl || ticketData?.profilePicUrl,
+            name: ticketData?.contact?.name || ticketData?.name
           })
           state.tickets = tickets
         } else {
-          // console.log('[DEBUG] Ticket não adicionado no UPDATE_TICKET (não passou no filtro):', payload.id)
+          // console.log('[DEBUG] Ticket não adicionado no UPDATE_TICKET (não passou no filtro):', ticketData.id)
         }
       }
     },
