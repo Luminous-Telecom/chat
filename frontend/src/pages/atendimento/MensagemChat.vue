@@ -222,23 +222,14 @@
               </q-btn>
             </template>
             <template v-if=" mensagem.mediaType === 'image' ">
-              <!-- @click="buscarImageCors(mensagem.mediaUrl)" -->
-              <q-img
-                @click=" urlMedia = mensagem.mediaUrl; abrirModalImagem = true "
-                :src=" mensagem.mediaUrl "
-                spinner-color="primary"
-                height="150px"
-                width="330px"
-                class="q-mt-md"
-                style="cursor: pointer;"
-              />
-              <VueEasyLightbox
-                moveDisabled
-                :visible=" abrirModalImagem "
-                :imgs=" urlMedia "
-                :index=" mensagem.ticketId || 1 "
-                @hide=" abrirModalImagem = false "
-              />
+              <div v-viewer>
+                <img
+                  :src="mensagem.mediaUrl"
+                  class="img-preview-chat"
+                  style="cursor: pointer; max-width: 480px; max-height: 320px; border-radius: 14px;"
+                  alt="imagem do chat"
+                />
+              </div>
             </template>
             <template v-if=" mensagem.mediaType === 'video' ">
               <video
@@ -337,7 +328,6 @@
 import { mapGetters, mapMutations } from 'vuex'
 import mixinCommon from './mixinCommon'
 import axios from 'axios'
-import VueEasyLightbox from 'vue-easy-lightbox'
 import MensagemRespondida from './MensagemRespondida'
 const downloadImageCors = axios.create({
   baseURL: process.env.VUE_URL_API,
@@ -424,7 +414,6 @@ export default {
     }
   },
   components: {
-    VueEasyLightbox,
     MensagemRespondida
   },
   methods: {
