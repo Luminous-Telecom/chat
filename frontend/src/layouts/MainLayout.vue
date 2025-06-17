@@ -37,63 +37,53 @@
                 color="red"
                 text-color="white"
                 floating
-                v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) > 0"
+                v-if="hasErrorNotifications"
               >
-                {{ parseInt(notifications.count) + parseInt(notifications_p.count) }}
+                {{ errorNotificationsCount }}
               </q-badge>
             </q-item-section>
             <q-item-section>
-              <q-item-label>Notificações</q-item-label>
+              <q-item-label>Alertas</q-item-label>
             </q-item-section>
             <q-menu anchor="top right" self="top left">
               <q-list style="min-width: 300px">
-                <q-item v-if="(parseInt(notifications.count) + parseInt(notifications_p.count)) == 0">
+                <q-item v-if="!hasErrorNotifications">
                   <q-item-section style="cursor: pointer;">
-                    Nada de novo por aqui!
-                  </q-item-section>
-                </q-item>
-                <q-item v-if="parseInt(notifications_p.count) > 0">
-                  <q-item-section
-                    avatar
-                    @click="() => $router.push({ name: 'atendimento' })"
-                    style="cursor: pointer;"
-                  >
-                    <q-avatar
-                      style="width: 60px; height: 60px"
-                      color="blue"
-                      text-color="white"
-                    >
-                      {{ notifications_p.count }}
-                    </q-avatar>
-                  </q-item-section>
-                  <q-item-section
-                    @click="() => $router.push({ name: 'atendimento' })"
-                    style="cursor: pointer;"
-                  >
-                    Clientes pendentes na fila
+                    Nenhum alerta ativo!
                   </q-item-section>
                 </q-item>
                 <q-item
-                  v-for="ticket in notifications.tickets"
-                  :key="ticket.id"
+                  v-for="errorNotification in errorNotifications"
+                  :key="errorNotification.id"
                   style="border-bottom: 1px solid #ddd; margin: 5px;"
                 >
                   <q-item-section
                     avatar
-                    @click="abrirAtendimentoExistente(ticket.name, ticket)"
+                    @click="abrirDetalhesErro(errorNotification)"
                     style="cursor: pointer;"
                   >
-                    <q-avatar style="width: 60px; height: 60px">
-                      <img :src="ticket.profilePicUrl">
+                    <q-avatar
+                      style="width: 60px; height: 60px"
+                      color="red"
+                      text-color="white"
+                    >
+                      <q-icon name="mdi-alert" size="2rem" />
                     </q-avatar>
                   </q-item-section>
                   <q-item-section
-                    @click="abrirAtendimentoExistente(ticket.name, ticket)"
+                    @click="abrirDetalhesErro(errorNotification)"
                     style="cursor: pointer;"
                   >
                     <q-list>
-                      <q-item style="text-align:center; font-size: 17px; font-weight: bold; min-height: 0">{{ ticket.name }}</q-item>
-                      <q-item style="min-height: 0; padding-top: 0"><b>Mensagem: </b> {{ ticket.lastMessage }}</q-item>
+                      <q-item style="text-align:center; font-size: 17px; font-weight: bold; min-height: 0; color: red;">
+                        {{ errorNotification.title }}
+                      </q-item>
+                      <q-item style="min-height: 0; padding-top: 0">
+                        <b>Erro: </b> {{ errorNotification.message }}
+                      </q-item>
+                      <q-item style="min-height: 0; padding-top: 0; font-size: 12px; color: grey;">
+                        {{ errorNotification.timestamp }}
+                      </q-item>
                     </q-list>
                   </q-item-section>
                 </q-item>
@@ -192,6 +182,7 @@ import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
 import { ContarTicketsPendentesPorFila } from 'src/service/filas'
 import { tocarSomNotificacao, atualizarTituloGuia } from 'src/helpers/helpersNotifications'
+import errorNotificationService from 'src/services/errorNotificationService'
 
 const socket = socketIO()
 
@@ -325,11 +316,14 @@ export default {
       ],
       menuDataAdmin: objMenuAdmin,
       ticketsList: [],
-      queueTicketCounts: {}
+      queueTicketCounts: {},
+      hasErrorNotifications: false,
+      errorNotificationsCount: 0,
+      errorNotifications: []
     }
   },
   computed: {
-    ...mapGetters(['notifications', 'notifications_p', 'whatsapps']),
+    ...mapGetters(['notifications', 'notifications_p', 'whatsapps', 'errorNotifications', 'errorNotificationsCount', 'hasErrorNotifications']),
     cProblemaConexao () {
       const idx = this.whatsapps.findIndex(w =>
         ['PAIRING', 'TIMEOUT', 'DISCONNECTED'].includes(w.status)
@@ -561,6 +555,57 @@ export default {
     // Método para atualizar o título da guia
     atualizarTituloGuia () {
       atualizarTituloGuia(this.notifications, this.notifications_p)
+    },
+    async abrirDetalhesErro (errorNotification) {
+      // Implemente a lógica para abrir detalhes do erro
+      console.log('Abrir detalhes do erro:', errorNotification)
+    },
+    // Métodos para gerenciar notificações de erro
+    adicionarNotificacaoErro (tipo, titulo, mensagem, detalhes = null) {
+      const errorNotification = {
+        id: Date.now() + Math.random(),
+        tipo,
+        title: titulo,
+        message: mensagem,
+        details: detalhes,
+        timestamp: new Date().toLocaleString('pt-BR'),
+        resolved: false
+      }
+
+      this.$store.commit('ADD_ERROR_NOTIFICATION', errorNotification)
+
+      // Mostrar notificação visual
+      this.$q.notify({
+        type: 'negative',
+        message: titulo,
+        caption: mensagem,
+        position: 'top',
+        timeout: 8000,
+        actions: [
+          { label: 'Ver Detalhes', color: 'white', handler: () => this.abrirDetalhesErro(errorNotification) },
+          { label: 'OK', color: 'white' }
+        ]
+      })
+    },
+    removerNotificacaoErro (errorId) {
+      this.$store.commit('REMOVE_ERROR_NOTIFICATION', errorId)
+    },
+    limparNotificacoesErro () {
+      this.$store.commit('CLEAR_ERROR_NOTIFICATIONS')
+    },
+    // Verificar problemas de conexão e adicionar notificações
+    verificarProblemasConexao () {
+      const errors = errorNotificationService.checkWhatsAppConnectionErrors(this.whatsapps)
+
+      // Adicionar notificações para cada erro
+      errors.forEach(error => {
+        this.adicionarNotificacaoErro(
+          error.tipo,
+          error.title,
+          error.message,
+          error.details
+        )
+      })
     }
   },
   async mounted () {
@@ -577,6 +622,12 @@ export default {
 
     // Atualizar título da guia inicialmente
     this.atualizarTituloGuia()
+
+    // Iniciar monitoramento de erros
+    errorNotificationService.startMonitoring()
+
+    // Verificar problemas de conexão iniciais
+    this.verificarProblemasConexao()
   },
   watch: {
     // Watcher para monitorar mudanças nas notificações e atualizar o título da guia
@@ -591,10 +642,53 @@ export default {
         this.atualizarTituloGuia()
       },
       deep: true
+    },
+    // Watcher para monitorar mudanças nos WhatsApps e adicionar notificações de erro
+    whatsapps: {
+      handler (newWhatsapps, oldWhatsapps) {
+        if (!oldWhatsapps) return
+
+        // Verificar se houve mudança de status para problemas
+        newWhatsapps.forEach((whatsapp, index) => {
+          const oldWhatsapp = oldWhatsapps[index]
+          if (oldWhatsapp && oldWhatsapp.status !== whatsapp.status) {
+            // Se mudou para um status problemático, adicionar notificação
+            if (['DISCONNECTED', 'TIMEOUT', 'PAIRING'].includes(whatsapp.status)) {
+              let titulo = ''
+              let mensagem = ''
+
+              switch (whatsapp.status) {
+                case 'DISCONNECTED':
+                  titulo = 'Conexão Desconectada'
+                  mensagem = `WhatsApp ${whatsapp.name} foi desconectado`
+                  break
+                case 'TIMEOUT':
+                  titulo = 'Timeout de Conexão'
+                  mensagem = `WhatsApp ${whatsapp.name} apresentou timeout`
+                  break
+                case 'PAIRING':
+                  titulo = 'Problema de Emparelhamento'
+                  mensagem = `WhatsApp ${whatsapp.name} com problema de emparelhamento`
+                  break
+              }
+
+              this.adicionarNotificacaoErro(
+                'conexao',
+                titulo,
+                mensagem,
+                { whatsappId: whatsapp.id, whatsappName: whatsapp.name }
+              )
+            }
+          }
+        })
+      },
+      deep: true
     }
   },
   destroyed () {
     socket.disconnect()
+    // Parar monitoramento de erros
+    errorNotificationService.stopMonitoring()
   }
 }
 </script>
