@@ -26,6 +26,12 @@ class AudioNotificationService {
     this.audioElement.preload = this.preload
     this.audioElement.type = 'audio/mp3'
 
+    // Configurações de segurança para evitar reprodução automática
+    this.audioElement.muted = true
+    this.audioElement.autoplay = false
+    this.audioElement.controls = false
+    this.audioElement.loop = false
+
     return this.audioElement
   }
 
@@ -47,11 +53,18 @@ class AudioNotificationService {
     try {
       const audio = this.initAudioElement()
 
-      // Resetar o áudio antes de tentar tocar
+      // Apenas verificar se o áudio pode ser reproduzido sem tocar
+      // Isso é suficiente para obter permissão em navegadores modernos
       audio.pause()
       audio.currentTime = 0
 
-      await audio.play()
+      // Tentar carregar o áudio sem tocar
+      await new Promise((resolve, reject) => {
+        audio.addEventListener('canplaythrough', resolve, { once: true })
+        audio.addEventListener('error', reject, { once: true })
+        audio.load()
+      })
+
       this.audioPermissionGranted = true
       return true
     } catch (error) {
@@ -94,6 +107,9 @@ class AudioNotificationService {
       audio.pause()
       audio.currentTime = 0
 
+      // Desmutar o áudio para tocar
+      audio.muted = false
+
       // Aguardar um pequeno delay para garantir que o reset foi aplicado
       setTimeout(async () => {
         try {
@@ -103,6 +119,7 @@ class AudioNotificationService {
           // Resetar o flag quando o áudio terminar
           audio.addEventListener('ended', () => {
             // Áudio terminou naturalmente
+            audio.muted = true // Mutar novamente após tocar
           }, { once: true })
 
           // Timeout de segurança para garantir que o áudio não fique travado
@@ -111,13 +128,16 @@ class AudioNotificationService {
               audio.pause()
               audio.currentTime = 0
             }
+            audio.muted = true // Mutar novamente por segurança
           }, 4000) // 4 segundos (mais que a duração do áudio)
         } catch (error) {
           console.error('Erro ao tocar áudio de notificação:', error)
+          audio.muted = true // Mutar novamente em caso de erro
         }
       }, 50) // Delay reduzido para 50ms
     } catch (error) {
       console.error('Erro ao preparar áudio de notificação:', error)
+      audio.muted = true // Mutar novamente em caso de erro
     }
   }
 

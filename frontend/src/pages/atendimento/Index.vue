@@ -682,7 +682,7 @@ import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
 import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
-import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio } from 'src/helpers/helpersNotifications'
+import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
 
 export default {
   name: 'IndexAtendimento',
@@ -1363,6 +1363,9 @@ export default {
         audio.volume = 0.7 // Definir volume para 70%
         audio.preload = 'auto' // Carregar automaticamente
       }
+    },
+    markFirstLoadComplete () {
+      // Add any additional logic you want to execute when first load is complete
     }
   },
   beforeMount () {
@@ -1383,12 +1386,20 @@ export default {
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
 
-    // Inicializar o serviço de áudio
+    // Inicializar o serviço de áudio (sem tocar som)
     inicializarServicoAudio()
 
-    // Adicionar evento de clique para solicitar permissão de áudio
+    // Marcar primeira carga como concluída após 3 segundos
+    setTimeout(() => {
+      this.markFirstLoadComplete()
+    }, 3000)
+
+    // Adicionar evento de clique para solicitar permissão de áudio apenas quando necessário
     document.addEventListener('click', async () => {
-      await this.requestAudioPermission()
+      // Só solicitar permissão se ainda não tiver
+      if (!temPermissaoAudio()) {
+        await this.requestAudioPermission()
+      }
     }, { once: true })
 
     // Carregar filtros do localStorage

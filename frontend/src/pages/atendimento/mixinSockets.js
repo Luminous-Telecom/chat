@@ -31,7 +31,10 @@ export default {
       processingMessages: new Set(), // Set para controlar mensagens em processamento
       ultimoStatusMensagem: new Map(), // Mapa para rastrear último status da mensagem
       ultimaAtualizacaoNaoLidas: new Map(), // Mapa para rastrear última atualização de não lidas
-      ultimoAck: new Map() // Mapa para rastrear último ack de cada mensagem
+      ultimoAck: new Map(), // Mapa para rastrear último ack de cada mensagem
+      debounceTimeout: null,
+      isFirstLoad: true, // Controle para primeira carga
+      createdTimestamp: null // Novo campo para armazenar o timestamp de criação
     }
   },
   computed: {
@@ -40,6 +43,7 @@ export default {
     }
   },
   created () {
+    this.createdTimestamp = Date.now()
     // Criar versões com debounce das funções de atualização
     this.atualizarStatusMensagemComDebounce = debounce(this.atualizarStatusMensagem, DEBOUNCE_TIME)
     this.atualizarNaoLidasComDebounce = debounce(this.atualizarNaoLidas, DEBOUNCE_TIME)
@@ -132,7 +136,11 @@ export default {
 
             if (shouldNotify) {
               // console.log('[DEBUG] Enviando notificação para mensagem:', data.payload)
-              self.handlerNotifications(data.payload)
+
+              // Não tocar som na primeira carga (primeiros 3 segundos)
+              if (!self.isFirstLoad || (Date.now() - self.createdTimestamp) > 3000) {
+                self.handlerNotifications(data.payload)
+              }
             }
 
             // Garantir que temos o ID do ticket no payload
@@ -477,6 +485,10 @@ export default {
           unreadMessages
         }
       })
+    },
+    // Marcar que a primeira carga foi concluída
+    markFirstLoadComplete () {
+      this.isFirstLoad = false
     }
   }
 }
