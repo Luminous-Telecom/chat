@@ -50,7 +50,7 @@ export const tocarSomNotificacao = async () => {
   await audioNotificationService.playNotificationSound()
 }
 
-export const tocarSomNotificacaoComVolume = async (volume = 0.7) => {
+export const tocarSomNotificacaoComVolume = async (volume = 1.0) => {
   await audioNotificationService.playNotificationSoundWithVolume(volume)
 }
 
