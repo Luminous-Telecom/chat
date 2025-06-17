@@ -346,20 +346,29 @@ export default {
     // Adicionar computed para menuData com badge
     cMenuData () {
       return this.menuData.map(menu => {
-        // Adicionar badge para atendimentos na fila (tickets pendentes)
+        // Badge para atendimentos na fila (tickets pendentes)
         if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
-          // Calcular total de forma mais direta e segura
           let totalPending = 0
-          // FORÇAR OBJETO PURO AQUI
           const counts = Object.assign({}, this.queueTicketCounts || {})
-
-          // Usar Object.values para evitar problemas de reatividade
           const values = Object.values(counts)
           totalPending = values.reduce((sum, count) => {
             return sum + (parseInt(count) || 0)
           }, 0)
-
           return { ...menu, badge: totalPending > 0 ? totalPending : 0 }
+        }
+        // Badge para atendimentos em andamento com mensagens não lidas
+        if (menu.routeName === 'atendimento' && menu.query?.status === 'open') {
+          // notifications.tickets = tickets em andamento
+          let totalUnread = 0
+          if (this.notifications && Array.isArray(this.notifications.tickets)) {
+            totalUnread = this.notifications.tickets.reduce((sum, ticket) => {
+              if (ticket.status === 'open' && ticket.unreadMessages > 0) {
+                return sum + 1
+              }
+              return sum
+            }, 0)
+          }
+          return { ...menu, badge: totalUnread > 0 ? totalUnread : 0 }
         }
         return menu
       })
