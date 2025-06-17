@@ -18,6 +18,7 @@ import { tocarSomNotificacao } from 'src/helpers/helpersNotifications'
 ### Funções disponíveis
 
 #### `tocarSomNotificacao()`
+
 Toca o som de notificação padrão.
 
 ```javascript
@@ -25,6 +26,7 @@ await tocarSomNotificacao()
 ```
 
 #### `tocarSomNotificacaoComVolume(volume)`
+
 Toca o som de notificação com volume personalizado (0.0 a 1.0).
 
 ```javascript
@@ -32,6 +34,7 @@ await tocarSomNotificacaoComVolume(0.5) // 50% do volume
 ```
 
 #### `pararSomNotificacao()`
+
 Para o som de notificação em reprodução.
 
 ```javascript
@@ -39,6 +42,7 @@ pararSomNotificacao()
 ```
 
 #### `solicitarPermissaoAudio()`
+
 Solicita permissão para reproduzir áudio.
 
 ```javascript
@@ -46,6 +50,7 @@ const temPermissao = await solicitarPermissaoAudio()
 ```
 
 #### `temPermissaoAudio()`
+
 Verifica se tem permissão para reproduzir áudio.
 
 ```javascript
@@ -53,6 +58,7 @@ const temPermissao = temPermissaoAudio()
 ```
 
 #### `definirVolumeNotificacao(volume)`
+
 Define o volume padrão para notificações (0.0 a 1.0).
 
 ```javascript
@@ -60,6 +66,7 @@ definirVolumeNotificacao(0.8) // 80% do volume
 ```
 
 #### `definirIntervaloMinimoNotificacao(interval)`
+
 Define o intervalo mínimo entre notificações em milissegundos.
 
 ```javascript
@@ -67,6 +74,7 @@ definirIntervaloMinimoNotificacao(1000) // 1 segundo
 ```
 
 #### `inicializarServicoAudio()`
+
 Inicializa o serviço de áudio.
 
 ```javascript
@@ -74,6 +82,7 @@ inicializarServicoAudio()
 ```
 
 #### `destruirServicoAudio()`
+
 Destrói o serviço de áudio e limpa recursos.
 
 ```javascript
@@ -126,4 +135,4 @@ Para migrar componentes existentes:
 2. Remover propriedades relacionadas ao áudio do `data()`
 3. Remover métodos de áudio locais
 4. Importar e usar as funções do `helpersNotifications.js`
-5. Inicializar o serviço no `mounted()` 
+5. Inicializar o serviço no `mounted()`
