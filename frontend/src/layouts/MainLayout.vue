@@ -445,15 +445,15 @@ export default {
       socket.on(`${usuario.tenantId}:chat:updateOnlineBubbles`, data => {
         this.$store.commit('SET_USERS_APP', data)
       })
-      // Socket para atualizar contadores de tickets por fila
+      // Socket para atualizar contadores de tickets por fila e notificações
       socket.on(`${usuario.tenantId}:ticketList`, async data => {
-        if (data.type === 'ticket:update' || data.type === 'notification:new') {
-          await this.buscarContadoresTicketsPorFila()
-        }
-
-        // Atualizar notificações quando mensagens são marcadas como lidas
-        if (data.type === 'chat:messagesRead') {
+        if (
+          data.type === 'ticket:update' ||
+          data.type === 'notification:new' ||
+          data.type === 'chat:messagesRead'
+        ) {
           await this.consultarTickets()
+          await this.buscarContadoresTicketsPorFila()
         }
       })
     },
