@@ -741,6 +741,23 @@ export default {
       atendimentos: [],
       countTickets: 0,
       searchTickets: '',
+      audioPermissionGranted: false, // Nova propriedade para controlar permissão de áudio
+      isAudioPlaying: false, // Nova propriedade para controlar se o áudio está sendo tocado
+      isPlayingAudio: false, // Propriedade para controlar se está tocando áudio (sistema de fila)
+      audioQueue: [], // Fila de notificações de áudio
+      audioThrottle: {
+        lastPlayed: 0,
+        minInterval: 500 // Intervalo mínimo entre notificações (500ms)
+      },
+      mensagensRapidas: [],
+      modalEtiquestas: false,
+      exibirModalLogs: false,
+      logsTicket: [],
+      modalObservacao: false,
+      modalListarObservacoes: false,
+      modalListarMensagensAgendadas: false,
+      modalAgendarMensagem: false,
+      observacoes: [],
       pesquisaTickets: {
         searchParam: '',
         pageNumber: 1,
@@ -753,16 +770,7 @@ export default {
         includeNotQueueDefined: true
       },
       filas: [],
-      etiquetas: [],
-      mensagensRapidas: [],
-      modalEtiquestas: false,
-      exibirModalLogs: false,
-      logsTicket: [],
-      modalObservacao: false,
-      modalListarObservacoes: false,
-      modalListarMensagensAgendadas: false,
-      modalAgendarMensagem: false,
-      observacoes: []
+      etiquetas: []
     }
   },
   computed: {
@@ -806,6 +814,95 @@ export default {
     }
   },
   methods: {
+    // Método para solicitar permissão de áudio
+    async requestAudioPermission () {
+      if (this.audioPermissionGranted) {
+        return true
+      }
+
+      try {
+        // Tentar tocar o áudio para solicitar permissão
+        if (this.$refs.audioNotificationPlay) {
+          // Resetar o áudio antes de tentar tocar
+          this.$refs.audioNotificationPlay.pause()
+          this.$refs.audioNotificationPlay.currentTime = 0
+
+          await this.$refs.audioNotificationPlay.play()
+          this.audioPermissionGranted = true
+          return true
+        }
+      } catch (error) {
+        if (error.name === 'NotAllowedError') {
+          // Permissão negada pelo usuário
+          return false
+        } else {
+          console.error('Erro ao solicitar permissão de áudio:', error)
+          return false
+        }
+      }
+
+      return false
+    },
+
+    // Método para verificar se o áudio está carregado
+    checkAudioLoaded () {
+      if (this.$refs.audioNotificationPlay) {
+        const audio = this.$refs.audioNotificationPlay
+
+        // Verificar se o áudio está pronto
+        if (audio.readyState >= 2) {
+          return true
+        } else {
+          return false
+        }
+      }
+      return false
+    },
+
+    // Método para tocar áudio de notificação
+    playNotificationSound () {
+      if (!this.audioPermissionGranted) {
+        this.requestAudioPermission()
+        return
+      }
+
+      this.$nextTick(() => {
+        if (this.$refs.audioNotificationPlay) {
+          // Verificar se o áudio está carregado
+          if (!this.checkAudioLoaded()) {
+            setTimeout(() => {
+              this.playNotificationSound()
+            }, 500)
+            return
+          }
+
+          // Resetar o áudio imediatamente para permitir reprodução rápida
+          this.$refs.audioNotificationPlay.pause()
+          this.$refs.audioNotificationPlay.currentTime = 0
+
+          // Aguardar um pequeno delay para garantir que o reset foi aplicado
+          setTimeout(() => {
+            this.$refs.audioNotificationPlay.play().then(() => {
+              // Resetar o flag quando o áudio terminar
+              this.$refs.audioNotificationPlay.addEventListener('ended', () => {
+                // Áudio terminou naturalmente
+              }, { once: true })
+
+              // Timeout de segurança para garantir que o áudio não fique travado
+              setTimeout(() => {
+                if (!this.$refs.audioNotificationPlay.paused) {
+                  this.$refs.audioNotificationPlay.pause()
+                  this.$refs.audioNotificationPlay.currentTime = 0
+                }
+              }, 4000) // 4 segundos (mais que a duração do áudio)
+            }).catch((error) => {
+              console.error('Erro ao tocar áudio de notificação:', error)
+            })
+          }, 50) // Delay reduzido para 50ms
+        }
+      })
+    },
+
     logTicketDebug (ticketData) {
     },
     toggleStatus (status) {
@@ -850,33 +947,46 @@ export default {
     },
 
     handlerNotifications (data) {
-      // Check if notifications are supported and permission is granted
-      if (!('Notification' in window)) {
+      // Tocar áudio de notificação para cada mensagem recebida
+      this.playNotificationSound()
+
+      // Verificar se deve mostrar notificação do navegador
+      // Verificar se data tem a estrutura esperada
+      if (!data) {
+        console.warn('Dados de notificação vazios:', data)
         return
       }
 
-      if (Notification.permission === 'granted') {
-        this.showNotification(data)
-      } else if (Notification.permission === 'default') {
-        // Request permission only when user interacts with a notification
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            this.showNotification(data)
-          }
-        })
-      }
-    },
+      // A estrutura real dos dados é diferente - data é a própria mensagem
+      const message = data
+      const ticket = data.ticket
+      const contact = ticket?.contact
 
-    showNotification (data) {
+      // Verificar se temos os dados necessários
+      if (!message || !ticket || !contact) {
+        console.warn('Estrutura de dados incompleta para notificação:', { message, ticket, contact })
+        return
+      }
+
+      // Só mostrar notificação se não for do usuário atual e não estiver lida
+      if (message.fromMe || message.read) {
+        return
+      }
+
+      // Verificar se notificações são suportadas
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        return
+      }
+
       const options = {
-        body: `${data.body} - ${format(new Date(), 'HH:mm')}`,
-        icon: data.ticket.contact.profilePicUrl,
-        tag: data.ticket.id,
+        body: `${message.body} - ${format(new Date(), 'HH:mm')}`,
+        icon: contact.profilePicUrl,
+        tag: ticket.id,
         renotify: true
       }
 
       const notification = new Notification(
-        `Mensagem de ${data.ticket.contact.name}`,
+        `Mensagem de ${contact.name}`,
         options
       )
 
@@ -887,79 +997,14 @@ export default {
       notification.onclick = e => {
         e.preventDefault()
         window.focus()
-        this.$store.dispatch('AbrirChatMensagens', data.ticket)
+        this.$store.dispatch('AbrirChatMensagens', ticket)
         this.$router.push({ name: 'atendimento' })
         // history.push(`/tickets/${ticket.id}`);
       }
-
-      this.$nextTick(() => {
-        // utilizar refs do layout
-        if (this.$refs.audioNotificationPlay) {
-          this.$refs.audioNotificationPlay.play()
-        }
-      })
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()
       localStorage.setItem('configuracoes', JSON.stringify(data))
-    },
-    onScroll (info) {
-      if (info.verticalPercentage <= 0.85) return
-      this.onLoadMore()
-    },
-    editContact (contactId) {
-      this.selectedContactId = contactId
-      this.modalContato = true
-    },
-    contatoEditado (contato) {
-      this.$store.commit('UPDATE_TICKET_FOCADO_CONTACT', contato)
-    },
-    async consultarTickets (paramsInit = {}) {
-      const params = {
-        ...this.pesquisaTickets,
-        ...paramsInit
-      }
-
-      // Garantir que status seja sempre um array simples
-      if (params.status && Array.isArray(params.status)) {
-        params.status = params.status.filter(s => typeof s === 'string')
-      }
-
-      try {
-        const { data } = await ConsultarTickets(params)
-        this.countTickets = data.count // count total de tickets no status
-        this.$store.commit('LOAD_TICKETS', data.tickets)
-        this.$store.commit('SET_HAS_MORE', data.hasMore)
-      } catch (err) {
-        this.$notificarErro('Algum problema', err)
-        console.error(err)
-      }
-      // return () => clearTimeout(delayDebounceFn)
-    },
-    async BuscarTicketFiltro () {
-      this.$store.commit('RESET_TICKETS')
-      this.loading = true
-      localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
-      this.pesquisaTickets = {
-        ...this.pesquisaTickets,
-        pageNumber: 1
-      }
-      await this.consultarTickets(this.pesquisaTickets)
-      this.loading = false
-      this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
-    },
-    async onLoadMore () {
-      if (this.tickets.length === 0 || !this.hasMore || this.loading) {
-        return
-      }
-      try {
-        this.loading = true
-        this.pesquisaTickets.pageNumber++
-        await this.consultarTickets()
-        this.loading = false
-      } catch (error) {
-        this.loading = false
-      }
     },
     async listarFilas () {
       const { data } = await ListarFilas()
@@ -1292,7 +1337,6 @@ export default {
       return (yiq >= 128) ? '#000000' : '#ffffff'
     },
     abrirModalObservacao () {
-      console.log('Index - Abrindo modal, ticketFocado:', this.ticketFocado)
       if (!this.ticketFocado?.id) {
         this.$q.notify({
           type: 'warning',
@@ -1337,12 +1381,6 @@ export default {
       this.modalAgendarMensagem = true
     },
     handleMensagemAgendada (dadosMensagem) {
-      console.log('handleMensagemAgendada chamado com:', dadosMensagem)
-      this.$q.notify({
-        type: 'positive',
-        message: 'Mensagem agendada com sucesso!',
-        position: 'top'
-      })
       this.modalAgendarMensagem = false
       // Aqui você pode adicionar lógica para atualizar a lista de mensagens agendadas
       // Por exemplo, recarregar o ticket ou fazer uma nova consulta
@@ -1350,6 +1388,72 @@ export default {
     abrirAnexo (anexo) {
       const url = `${process.env.VUE_URL_API}/public/sent/${anexo}`
       window.open(url, '_blank')
+    },
+    async consultarTickets (paramsInit = {}) {
+      const params = {
+        ...this.pesquisaTickets,
+        ...paramsInit
+      }
+
+      // Garantir que status seja sempre um array simples
+      if (params.status && Array.isArray(params.status)) {
+        params.status = params.status.filter(s => typeof s === 'string')
+      }
+
+      try {
+        const { data } = await ConsultarTickets(params)
+        this.countTickets = data.count // count total de tickets no status
+        this.$store.commit('LOAD_TICKETS', data.tickets)
+        this.$store.commit('SET_HAS_MORE', data.hasMore)
+      } catch (err) {
+        this.$notificarErro('Algum problema', err)
+        console.error(err)
+      }
+      // return () => clearTimeout(delayDebounceFn)
+    },
+    async BuscarTicketFiltro () {
+      this.$store.commit('RESET_TICKETS')
+      this.loading = true
+      localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
+      this.pesquisaTickets = {
+        ...this.pesquisaTickets,
+        pageNumber: 1
+      }
+      await this.consultarTickets(this.pesquisaTickets)
+      this.loading = false
+      this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
+    },
+    async onLoadMore () {
+      if (this.tickets.length === 0 || !this.hasMore || this.loading) {
+        return
+      }
+      try {
+        this.loading = true
+        this.pesquisaTickets.pageNumber++
+        await this.consultarTickets()
+        this.loading = false
+      } catch (error) {
+        this.loading = false
+      }
+    },
+    onScroll (info) {
+      if (info.verticalPercentage <= 0.85) return
+      this.onLoadMore()
+    },
+    editContact (contactId) {
+      this.selectedContactId = contactId
+      this.modalContato = true
+    },
+    contatoEditado (contato) {
+      this.$store.commit('UPDATE_TICKET_FOCADO_CONTACT', contato)
+    },
+    // Método para carregar o áudio
+    loadAudio () {
+      if (this.$refs.audioNotificationPlay) {
+        const audio = this.$refs.audioNotificationPlay
+        audio.volume = 0.7 // Definir volume para 70%
+        audio.preload = 'auto' // Carregar automaticamente
+      }
     }
   },
   beforeMount () {
@@ -1365,6 +1469,19 @@ export default {
     this.$root.$on('infor-cabecalo-chat:acao-menu', this.setValueMenu)
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
+
+    // Carregar o áudio
+    this.$nextTick(() => {
+      this.loadAudio()
+    })
+
+    // Adicionar evento de clique para solicitar permissão de áudio
+    document.addEventListener('click', async () => {
+      if (!this.audioPermissionGranted) {
+        await this.requestAudioPermission()
+      } else {
+      }
+    }, { once: true })
 
     // Carregar filtros do localStorage
     const filtrosLocalStorage = JSON.parse(localStorage.getItem('filtrosAtendimento'))

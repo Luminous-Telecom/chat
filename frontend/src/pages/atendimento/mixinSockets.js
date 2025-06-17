@@ -133,7 +133,14 @@ export default {
             if (shouldNotify) {
               // console.log('[DEBUG] Enviando notificação para mensagem:', data.payload)
               self.handlerNotifications(data.payload)
+            } else {
+              // Tocar áudio mesmo quando não mostrar notificação do navegador
+              // (para mensagens que não atendem aos critérios de notificação)
+              if (self.audioPermissionGranted) {
+                self.playNotificationSound()
+              }
             }
+
             // Garantir que temos o ID do ticket no payload
             const ticketId = data.payload.ticket?.id
             if (!ticketId) {
