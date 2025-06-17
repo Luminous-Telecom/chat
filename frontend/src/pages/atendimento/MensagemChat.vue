@@ -30,13 +30,24 @@
           :stamp="dataInWords(mensagem.createdAt)"
           :sent="mensagem.fromMe"
           class="text-weight-medium"
-          :bg-color="mensagem.fromMe ? 'grey-2' : $q.dark.isActive ? 'blue-2' : 'blue-1'"
-          :class="{ pulseIdentications: identificarMensagem == `chat-message-${mensagem.id}` }"
+          :class="{
+            'pulseIdentications': identificarMensagem == `chat-message-${mensagem.id}`,
+            'q-message-text--scheduled': mensagem.scheduleDate,
+            'q-message-text--deleted': mensagem.isDeleted,
+            'q-message-text--quoted': mensagem.quotedMsg,
+            'q-message-text--group': isGroupLabel(mensagem),
+            'q-message-text--media': ['image', 'video', 'audio'].includes(mensagem.mediaType),
+            'q-message-text--audio': mensagem.mediaType === 'audio',
+            'q-message-text--document': mensagem.mediaType === 'application',
+            'q-message-text--contact': mensagem.mediaType === 'vcard',
+            'q-message-text--forwarded': mensagem.isForwarded,
+            'q-message-text--edited': mensagem.isEdited
+          }"
         >
           <!-- :bg-color="mensagem.fromMe ? 'grey-2' : 'secondary' " -->
           <div
             style="min-width: 100px; max-width: 350px;"
-            :style="mensagem.isDeleted ? 'color: rgba(0, 0, 0, 0.36) !important;' : ''"
+            :style="mensagem.isDeleted ? 'color: var(--text-color-secondary) !important; opacity: 0.6;' : ''"
           >
             <q-checkbox
               v-if="ativarMultiEncaminhamento"
@@ -102,7 +113,7 @@
             <div
               v-if="isGroupLabel(mensagem)"
               class="q-mb-sm"
-              style="display: flex; color: rgb(59 23 251); font-weight: 500;"
+              style="display: flex; color: var(--primary-color); font-weight: 500;"
             >
               {{ isGroupLabel(mensagem) }}
             </div>
@@ -111,7 +122,6 @@
               :class="{ 'textContentItem': !mensagem.isDeleted, 'textContentItemDeleted': mensagem.isDeleted }"
             >
               <MensagemRespondida
-                style="max-width: 240px; max-height: 150px"
                 class="row justify-center"
                 @mensagem-respondida:focar-mensagem="focarMensagem"
                 :mensagem="mensagem.quotedMsg"
@@ -185,9 +195,8 @@
               :color=" mensagem.ack >= 3 ? 'blue-12' : '' "
             />
             <template v-if=" mensagem.mediaType === 'audio' ">
-              <div style="width: 330px; height: 300px">
+              <div>
                 <audio
-                  class="q-mt-md full-width"
                   controls
                   ref="audioMessage"
                   controlsList="nodownload noplaybackrate volume novolume"
@@ -573,6 +582,26 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    getStatusIcon (ack) {
+      const icons = {
+        0: 'mdi-clock-outline',
+        1: 'mdi-check',
+        2: 'mdi-check-all',
+        3: 'mdi-check-all',
+        4: 'mdi-check-all'
+      }
+      return icons[ack] || 'mdi-clock-outline'
+    },
+    getStatusClass (ack) {
+      const classes = {
+        0: 'sent',
+        1: 'delivered',
+        2: 'delivered',
+        3: 'read',
+        4: 'read'
+      }
+      return classes[ack] || 'sent'
     }
   },
   watch: {

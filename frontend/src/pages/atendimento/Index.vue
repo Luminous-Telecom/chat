@@ -1613,11 +1613,11 @@ export default {
   }
 
   .contact-name {
-    color: #ffffff;
+    color: var(--text-color-primary);
   }
 
   .contact-number {
-    color: #4ade80;
+    color: var(--primary-color);
 
     &:hover {
       background: rgba(74, 222, 128, 0.15);
@@ -1633,11 +1633,11 @@ export default {
   }
 
   .detail-icon {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--primary-color) !important;
   }
 
   .detail-text {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--primary-color) !important;
   }
 
   .action-card {
@@ -1651,12 +1651,12 @@ export default {
   }
 
   .tags-title {
-    color: #ffffff;
+    color: var(--text-color-primary);
   }
 
   .modern-tooltip {
-    background: rgba(255, 255, 255, 0.9) !important;
-    color: #1a1a1a !important;
+    background: var(--background-color-paper) !important;
+    color: var(--text-color-primary) !important;
   }
 
   .clickable-protocol {
@@ -1700,7 +1700,7 @@ export default {
 }
 
 .contact-info-card {
-  background: white;
+  background: var(--background-color-paper);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: none;
@@ -1727,7 +1727,7 @@ export default {
 .contact-profile-avatar {
   width: 50px;
   height: 50px;
-  border: 2px solid white;
+  border: 2px solid var(--background-color-paper);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
@@ -1739,7 +1739,7 @@ export default {
 .contact-name {
   font-size: 14px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color-primary);
   margin-bottom: 2px;
   max-width: 180px;
   white-space: nowrap;
@@ -1749,7 +1749,7 @@ export default {
 
 .contact-number {
   font-size: 12px;
-  color: #25D366;
+  color: var(--primary-color);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1763,7 +1763,7 @@ export default {
   text-overflow: ellipsis;
 
   &:hover {
-    background: rgba(37, 211, 102, 0.1);
+    background: rgba(74, 222, 128, 0.15);
     transform: scale(1.02);
    }
  }
@@ -1782,25 +1782,25 @@ export default {
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--background-color-default);
   border-radius: 4px;
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--background-color-paper);
     transform: translateX(1px);
   }
 }
 
 .detail-icon {
-  color: #6c757d;
+  color: var(--text-color-secondary);
   margin-right: 8px;
   font-size: 14px;
 }
 
 .detail-text {
   font-size: 11px;
-  color: #495057;
+  color: var(--text-color-secondary);
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
@@ -1830,7 +1830,7 @@ export default {
 }
 
 .tags-card {
-  background: white;
+  background: var(--background-color-paper);
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   margin-top: 8px;
@@ -1844,7 +1844,7 @@ export default {
 .tags-title {
   font-size: 13px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-color-primary);
   display: flex;
   align-items: center;
 }
@@ -1854,8 +1854,8 @@ export default {
 }
 
  .modern-tooltip {
-  background: #2c3e50;
-  color: white;
+  background: var(--background-color-paper) !important;
+  color: var(--text-color-primary) !important;
   border-radius: 6px;
   padding: 8px 12px;
   font-weight: 500;
@@ -1899,9 +1899,10 @@ export default {
   width: 100%;
   padding: 6px 10px;
   padding-right: 40px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: var(--background-color-paper);
+  color: var(--text-color-primary);
   font-size: 16px;
   outline: none;
   transition: all 0.3s ease;
@@ -1913,19 +1914,19 @@ export default {
 }
 
 .custom-search-input:focus {
-  border-color: #1976d2;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
 .custom-search-input::placeholder {
-  color: #6c757d;
+  color: var(--text-color-secondary);
   font-weight: 400;
 }
 
 .search-icon {
   position: absolute;
   right: 12px;
-  color: #6c757d;
+  color: var(--text-color-secondary);
   pointer-events: none;
 }
 
@@ -1933,7 +1934,7 @@ export default {
 .body--dark .custom-search-input {
   background-color: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 /* Estilos elegantes para seleção de etiquetas */
@@ -1978,15 +1979,16 @@ export default {
   text-align: center;
   padding: 16px;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: var(--background-color-default);
 }
 
 .custom-tag-selector {
   height: 32px !important;
   min-height: 32px !important;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background-color: #fafafa;
+  background-color: var(--background-color-paper);
+  color: var(--text-color-primary);
   justify-content: flex-start;
   text-transform: none;
   font-weight: normal;
@@ -1994,8 +1996,8 @@ export default {
 }
 
 .custom-tag-selector:hover {
-  background-color: #f5f5f5;
-  border-color: #1976d2;
+  background-color: var(--background-color-default);
+  border-color: var(--primary-color);
 }
 
 .selected-tags-container {
@@ -2017,7 +2019,7 @@ export default {
 }
 
 .tag-option-item:hover {
-  background-color: #f5f5f5;
+  background-color: var(--background-color-default);
 }
 
 .elegant-chip {
@@ -2033,7 +2035,7 @@ export default {
 .body--dark .custom-tag-selector {
   border-color: $dark-border;
   background-color: $dark-secondary;
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .custom-tag-selector:hover {
@@ -2047,7 +2049,7 @@ export default {
 }
 
 .body--dark .tag-option-item {
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .tag-option-item:hover {
@@ -2056,20 +2058,21 @@ export default {
 
 .body--dark .elegant-chip {
   background-color: $dark-tertiary;
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .elegant-chip .q-icon {
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 /* Wallet selector styles */
 .custom-wallet-selector {
   height: 32px !important;
   min-height: 32px !important;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background-color: #fafafa;
+  background-color: var(--background-color-paper);
+  color: var(--text-color-primary);
   justify-content: flex-start;
   text-transform: none;
   font-weight: normal;
@@ -2077,8 +2080,8 @@ export default {
 }
 
 .custom-wallet-selector:hover {
-  background-color: #f5f5f5;
-  border-color: #1976d2;
+  background-color: var(--background-color-default);
+  border-color: var(--primary-color);
 }
 
 .selected-wallets-container {
@@ -2116,7 +2119,7 @@ export default {
 .body--dark .custom-wallet-selector {
   border-color: $dark-border;
   background-color: $dark-secondary;
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .custom-wallet-selector:hover {
@@ -2125,7 +2128,7 @@ export default {
 }
 
 .body--dark .wallet-title {
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .wallet-menu {
@@ -2134,11 +2137,11 @@ export default {
 }
 
 .body--dark .wallet-option-item {
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .wallet-option-item:hover {
-  background-color: #4a5568;
+  background-color: var(--background-color-default);
 }
 
 /* Enhanced scroll area customization */
@@ -2303,7 +2306,7 @@ export default {
 .scheduled-messages-container .text-body1 {
   font-size: 13px;
   font-weight: 600;
-  color: #1976d2;
+  color: var(--primary-color);
   display: flex;
   align-items: center;
 }
@@ -2320,8 +2323,8 @@ export default {
   border-radius: 8px;
   margin-bottom: 8px;
   padding: 12px;
-  background: #ffffff;
-  border: 1px solid #e3f2fd;
+  background: var(--background-color-paper);
+  border: 1px solid rgba(25, 118, 210, 0.2);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -2343,8 +2346,8 @@ export default {
 }
 
 .scheduled-messages-container .q-item:hover {
-  background: linear-gradient(135deg, #f3e5f5 0%, #e3f2fd 100%);
-  border-color: #1976d2;
+  background: linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(227, 242, 253, 0.5) 100%);
+  border-color: var(--primary-color);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
 }
@@ -2375,7 +2378,7 @@ export default {
 .observations-container .text-body1 {
   font-size: 13px;
   font-weight: 600;
-  color: #2e7d32;
+  color: var(--primary-color);
   display: flex;
   align-items: center;
 }
@@ -2392,8 +2395,8 @@ export default {
   border-radius: 8px;
   margin-bottom: 8px;
   padding: 12px;
-  background: #ffffff;
-  border: 1px solid #e8f5e8;
+  background: var(--background-color-paper);
+  border: 1px solid rgba(46, 125, 50, 0.2);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -2415,8 +2418,8 @@ export default {
 }
 
 .observations-container .q-item:hover {
-  background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
-  border-color: #2e7d32;
+  background: linear-gradient(135deg, rgba(241, 248, 233, 0.5) 0%, rgba(232, 245, 232, 0.5) 100%);
+  border-color: var(--primary-color);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
 }
@@ -2442,7 +2445,7 @@ export default {
 .body--dark .scheduled-messages-container .q-item {
   background: $dark-tertiary;
   border-color: $dark-border;
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .scheduled-messages-container .q-item::before {
@@ -2466,7 +2469,7 @@ export default {
 .body--dark .observations-container .q-item {
   background: $dark-tertiary;
   border-color: $dark-border;
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .observations-container .q-item::before {
@@ -2549,7 +2552,7 @@ export default {
  }
 
 .body--dark .extra-info-title {
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .extra-info-container {
@@ -2559,7 +2562,7 @@ export default {
 
 .body--dark .extra-info-item {
   border-bottom-color: $dark-border;
-  color: #ffffff;
+  color: var(--text-color-primary);
 }
 
 .body--dark .extra-info-item:hover {
@@ -2586,8 +2589,8 @@ export default {
 
 /* Botão de contatos */
 .contacts-btn {
-  background-color: #f5f5f5;
-  color: #1976d2;
+  background-color: var(--background-color-default);
+  color: var(--primary-color);
   border: 1px solid rgba(25, 118, 210, 0.2);
   transition: all 0.3s ease;
   width: 40px;
@@ -2595,8 +2598,8 @@ export default {
 }
 
 .contacts-btn:hover {
-  background-color: #1976d2;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-color-primary);
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
 }
@@ -2608,12 +2611,12 @@ export default {
 /* Modo escuro para o botão de contatos */
 .body--dark .contacts-btn {
   background-color: rgba(255, 255, 255, 0.1);
-  color: $dark-accent;
+  color: var(--primary-color);
   border-color: rgba(144, 202, 249, 0.3);
 }
 
 .body--dark .contacts-btn:hover {
-  background-color: $dark-accent;
-  color: #121212;
+  background-color: var(--primary-color);
+  color: var(--text-color-primary);
 }
 </style>
