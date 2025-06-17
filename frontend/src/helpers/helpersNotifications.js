@@ -1,4 +1,5 @@
 import { Notify } from 'quasar'
+import audioNotificationService from 'src/services/audioNotificationService'
 
 export const notificarErro = (error) => {
   const errorMessage = error?.response?.data?.error || error?.message || 'Ocorreu um erro inesperado'
@@ -42,4 +43,41 @@ export const notificarAviso = (message, title = 'Aviso') => {
       { label: 'OK', color: 'white' }
     ]
   })
+}
+
+// Funções de notificação de áudio
+export const tocarSomNotificacao = async () => {
+  await audioNotificationService.playNotificationSound()
+}
+
+export const tocarSomNotificacaoComVolume = async (volume = 0.7) => {
+  await audioNotificationService.playNotificationSoundWithVolume(volume)
+}
+
+export const pararSomNotificacao = () => {
+  audioNotificationService.stopNotificationSound()
+}
+
+export const solicitarPermissaoAudio = async () => {
+  return await audioNotificationService.requestAudioPermission()
+}
+
+export const temPermissaoAudio = () => {
+  return audioNotificationService.hasAudioPermission()
+}
+
+export const definirVolumeNotificacao = (volume) => {
+  audioNotificationService.setVolume(volume)
+}
+
+export const definirIntervaloMinimoNotificacao = (interval) => {
+  audioNotificationService.setMinInterval(interval)
+}
+
+export const inicializarServicoAudio = () => {
+  audioNotificationService.initAudioElement()
+}
+
+export const destruirServicoAudio = () => {
+  audioNotificationService.destroy()
 }

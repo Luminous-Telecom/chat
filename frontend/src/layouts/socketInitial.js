@@ -1,7 +1,8 @@
 const usuario = JSON.parse(localStorage.getItem('usuario'))
 import Router from 'src/router/index'
-import { socketIO } from '../utils/socket'
+import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
+import { tocarSomNotificacao } from 'src/helpers/helpersNotifications'
 
 const socket = socketIO()
 
@@ -43,6 +44,10 @@ export default {
             image: data.payload.ticket.contact.profilePicUrl,
             icon: data.payload.ticket.contact.profilePicUrl
           })
+
+          // Tocar som de notificação usando o serviço centralizado
+          tocarSomNotificacao()
+
           // Atualiza notificações de mensagem
           const params = {
             searchParam: '',

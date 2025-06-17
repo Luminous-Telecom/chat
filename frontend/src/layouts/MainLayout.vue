@@ -169,12 +169,6 @@
         <router-view />
       </q-page>
     </q-page-container>
-    <audio ref="audioNotification">
-      <source
-        :src="alertSound"
-        type="audio/mp3"
-      >
-    </audio>
     <ModalUsuario
       :isProfile="true"
       :modalUsuario.sync="modalUsuario"
@@ -188,7 +182,6 @@ import cSystemVersion from '../components/cSystemVersion.vue'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
 import EssentialLink from 'components/EssentialLink.vue'
 import socketInitial from './socketInitial'
-import alertSound from 'src/assets/sound.mp3'
 import { format } from 'date-fns'
 const username = localStorage.getItem('username')
 import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
@@ -198,6 +191,7 @@ import { RealizarLogout } from 'src/service/login'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
 import { ContarTicketsPendentesPorFila } from 'src/service/filas'
+import { tocarSomNotificacao } from 'src/helpers/helpersNotifications'
 
 const socket = socketIO()
 
@@ -324,7 +318,6 @@ export default {
       userProfile: 'user',
       modalUsuario: false,
       usuario: {},
-      alertSound,
       leftDrawerOpen: true, // Alterado de false para true
       menuData: [
         ...objMenu.filter(item => item.routeName === 'dashboard'),
@@ -427,10 +420,9 @@ export default {
         this.$store.dispatch('AbrirChatMensagens', ticket)
         this.$router.push({ name: 'atendimento' })
       }
-      this.$nextTick(() => {
-        // utilizar refs do layout
-        this.$refs.audioNotification.play()
-      })
+
+      // Tocar som de notificação usando o serviço centralizado
+      tocarSomNotificacao()
     },
     async abrirModalUsuario () {
       this.modalUsuario = true

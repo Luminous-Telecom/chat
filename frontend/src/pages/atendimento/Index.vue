@@ -648,12 +648,6 @@
       />
 
     </q-layout>
-    <audio ref="audioNotificationPlay">
-      <source
-        :src="alertSound"
-        type="audio/mp3"
-      >
-    </audio>
   </div>
 </template>
 
@@ -671,7 +665,6 @@ const profile = localStorage.getItem('profile')
 const username = localStorage.getItem('username')
 const usuario = JSON.parse(localStorage.getItem('usuario'))
 import StatusWhatsapp from 'src/components/StatusWhatsapp'
-import alertSound from 'src/assets/sound.mp3'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
 import { debounce } from 'quasar'
 import { format } from 'date-fns'
@@ -689,6 +682,7 @@ import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
 import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
+import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio } from 'src/helpers/helpersNotifications'
 
 export default {
   name: 'IndexAtendimento',
@@ -723,7 +717,6 @@ export default {
       messagesLog,
       configuracoes: [],
       debounce,
-      alertSound,
       usuario,
       usuarios: [],
       username,
@@ -741,14 +734,6 @@ export default {
       atendimentos: [],
       countTickets: 0,
       searchTickets: '',
-      audioPermissionGranted: false, // Nova propriedade para controlar permissão de áudio
-      isAudioPlaying: false, // Nova propriedade para controlar se o áudio está sendo tocado
-      isPlayingAudio: false, // Propriedade para controlar se está tocando áudio (sistema de fila)
-      audioQueue: [], // Fila de notificações de áudio
-      audioThrottle: {
-        lastPlayed: 0,
-        minInterval: 500 // Intervalo mínimo entre notificações (500ms)
-      },
       mensagensRapidas: [],
       modalEtiquestas: false,
       exibirModalLogs: false,
@@ -816,91 +801,12 @@ export default {
   methods: {
     // Método para solicitar permissão de áudio
     async requestAudioPermission () {
-      if (this.audioPermissionGranted) {
-        return true
-      }
-
-      try {
-        // Tentar tocar o áudio para solicitar permissão
-        if (this.$refs.audioNotificationPlay) {
-          // Resetar o áudio antes de tentar tocar
-          this.$refs.audioNotificationPlay.pause()
-          this.$refs.audioNotificationPlay.currentTime = 0
-
-          await this.$refs.audioNotificationPlay.play()
-          this.audioPermissionGranted = true
-          return true
-        }
-      } catch (error) {
-        if (error.name === 'NotAllowedError') {
-          // Permissão negada pelo usuário
-          return false
-        } else {
-          console.error('Erro ao solicitar permissão de áudio:', error)
-          return false
-        }
-      }
-
-      return false
-    },
-
-    // Método para verificar se o áudio está carregado
-    checkAudioLoaded () {
-      if (this.$refs.audioNotificationPlay) {
-        const audio = this.$refs.audioNotificationPlay
-
-        // Verificar se o áudio está pronto
-        if (audio.readyState >= 2) {
-          return true
-        } else {
-          return false
-        }
-      }
-      return false
+      return await solicitarPermissaoAudio()
     },
 
     // Método para tocar áudio de notificação
-    playNotificationSound () {
-      if (!this.audioPermissionGranted) {
-        this.requestAudioPermission()
-        return
-      }
-
-      this.$nextTick(() => {
-        if (this.$refs.audioNotificationPlay) {
-          // Verificar se o áudio está carregado
-          if (!this.checkAudioLoaded()) {
-            setTimeout(() => {
-              this.playNotificationSound()
-            }, 500)
-            return
-          }
-
-          // Resetar o áudio imediatamente para permitir reprodução rápida
-          this.$refs.audioNotificationPlay.pause()
-          this.$refs.audioNotificationPlay.currentTime = 0
-
-          // Aguardar um pequeno delay para garantir que o reset foi aplicado
-          setTimeout(() => {
-            this.$refs.audioNotificationPlay.play().then(() => {
-              // Resetar o flag quando o áudio terminar
-              this.$refs.audioNotificationPlay.addEventListener('ended', () => {
-                // Áudio terminou naturalmente
-              }, { once: true })
-
-              // Timeout de segurança para garantir que o áudio não fique travado
-              setTimeout(() => {
-                if (!this.$refs.audioNotificationPlay.paused) {
-                  this.$refs.audioNotificationPlay.pause()
-                  this.$refs.audioNotificationPlay.currentTime = 0
-                }
-              }, 4000) // 4 segundos (mais que a duração do áudio)
-            }).catch((error) => {
-              console.error('Erro ao tocar áudio de notificação:', error)
-            })
-          }, 50) // Delay reduzido para 50ms
-        }
-      })
+    async playNotificationSound () {
+      await tocarSomNotificacao()
     },
 
     logTicketDebug (ticketData) {
@@ -1470,17 +1376,12 @@ export default {
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
 
-    // Carregar o áudio
-    this.$nextTick(() => {
-      this.loadAudio()
-    })
+    // Inicializar o serviço de áudio
+    inicializarServicoAudio()
 
     // Adicionar evento de clique para solicitar permissão de áudio
     document.addEventListener('click', async () => {
-      if (!this.audioPermissionGranted) {
-        await this.requestAudioPermission()
-      } else {
-      }
+      await this.requestAudioPermission()
     }, { once: true })
 
     // Carregar filtros do localStorage
