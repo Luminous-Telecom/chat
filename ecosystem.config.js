@@ -10,9 +10,9 @@ module.exports = {
         NODE_ENV: 'development',
         PORT: 3000
       },
-      watch: true,
+      watch: false,
       watch_delay: 1000,
-      ignore_watch: ['node_modules', 'logs', '.git'],
+      ignore_watch: ['node_modules', 'logs', '.git', 'session'],
       watch_options: {
         followSymlinks: false
       }
