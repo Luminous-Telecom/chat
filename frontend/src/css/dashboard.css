@@ -321,7 +321,6 @@ body.body--dark .chart-title {
   flex-shrink: 0;
 }
 .custom-legend .legend-label {
-  margin-right: 6px;
   color: #fff;
   font-weight: 400;
   font-size: 0.7rem;
