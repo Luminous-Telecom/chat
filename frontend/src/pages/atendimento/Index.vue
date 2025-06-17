@@ -708,13 +708,17 @@ export default {
   },
   data () {
     const query = this.$route.query
-    // Para página de tickets não atendidos, incluir tanto 'open' quanto 'pending'
+    // Para página de tickets não atendidos, usar apenas 'pending'
     let initialStatus
     if (query.status === 'pending') {
-      initialStatus = ['open', 'pending']
+      initialStatus = ['pending']
     } else {
       initialStatus = query.status ? [query.status] : ['open']
     }
+
+    // Garantir que seja sempre um array simples
+    initialStatus = initialStatus.filter(s => typeof s === 'string')
+
     return {
       messagesLog,
       configuracoes: [],
@@ -745,7 +749,7 @@ export default {
         count: null,
         queuesIds: [],
         withUnreadMessages: false,
-        isNotAssignedUser: initialStatus.includes('pending') || this.$route.query.status === 'pending',
+        isNotAssignedUser: false, // Sempre false inicialmente
         includeNotQueueDefined: true
       },
       filas: [],
@@ -821,8 +825,10 @@ export default {
 
       // Para status que inclui 'pending' (tickets não atendidos), sempre aplicar filtro de tickets não atribuídos
       if (currentStatus && (currentStatus.includes('pending') || this.$route.query.status === 'pending')) {
-        this.pesquisaTickets.isNotAssignedUser = true
-        this.pesquisaTickets.showAll = false
+        // Para tickets pendentes, mostrar todos os tickets pendentes (não apenas os não atribuídos)
+        this.pesquisaTickets.isNotAssignedUser = false
+        this.pesquisaTickets.showAll = true // Permitir ver todos os tickets pendentes
+        this.pesquisaTickets.withUnreadMessages = false
         this.pesquisaTickets.queuesIds = []
       } else {
         // Para outros status (incluindo 'open'), aplicar filtros baseado no modo selecionado
@@ -910,6 +916,11 @@ export default {
       const params = {
         ...this.pesquisaTickets,
         ...paramsInit
+      }
+
+      // Garantir que status seja sempre um array simples
+      if (params.status && Array.isArray(params.status)) {
+        params.status = params.status.filter(s => typeof s === 'string')
       }
 
       try {
@@ -1356,17 +1367,30 @@ export default {
     // Carregar filtros do localStorage
     const filtrosLocalStorage = JSON.parse(localStorage.getItem('filtrosAtendimento'))
     if (filtrosLocalStorage) {
+      // Determinar o status correto
+      let statusToUse
+      if (this.$route.query.status === 'pending') {
+        statusToUse = ['pending']
+      } else if (this.$route.query.status) {
+        statusToUse = [this.$route.query.status]
+      } else {
+        statusToUse = filtrosLocalStorage.status || ['open']
+      }
+
+      // Garantir que seja sempre um array simples
+      statusToUse = statusToUse.filter(s => typeof s === 'string')
+
       this.pesquisaTickets = {
         ...filtrosLocalStorage,
-        // Manter o status da query da rota se existir
-        status: this.$route.query.status === 'pending' ? ['open', 'pending'] : (this.$route.query.status ? [this.$route.query.status] : filtrosLocalStorage.status)
+        status: statusToUse
       }
 
       // Aplicar filtro de tickets não atendidos para status 'pending' ou quando vier da rota de tickets não atendidos
       const currentStatus = this.pesquisaTickets.status
       if ((currentStatus && currentStatus.includes('pending')) || this.$route.query.status === 'pending') {
-        this.pesquisaTickets.isNotAssignedUser = true
-        this.pesquisaTickets.showAll = false
+        // Para tickets pendentes, mostrar todos os tickets pendentes (não apenas os não atribuídos)
+        this.pesquisaTickets.isNotAssignedUser = false
+        this.pesquisaTickets.showAll = true // Permitir ver todos os tickets pendentes
         this.pesquisaTickets.withUnreadMessages = false
         this.pesquisaTickets.queuesIds = []
       }
@@ -1425,7 +1449,7 @@ export default {
         // Só atualiza o status se estivermos na rota de atendimento
         if (newRoute.name === 'atendimento') {
           if (newStatus) {
-            this.pesquisaTickets.status = [newStatus]
+            this.pesquisaTickets.status = [newStatus].filter(s => typeof s === 'string')
           } else {
             // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
             this.pesquisaTickets.status = ['open']

@@ -102,28 +102,26 @@ export const getUnreadCount = async (
   try {
     const { tenantId } = req.user;
 
-    const unreadCount = await Ticket.findAll({
+    // Contar tickets pendentes (não atendidos) por fila
+    const pendingTicketsCount = await Ticket.findAll({
       where: {
         tenantId,
-        unreadMessages: {
-          [Op.gt]: 0,
-        },
+        status: "pending", // Tickets não atendidos
       },
       attributes: [
         "queueId",
-        [fn("SUM", col("unreadMessages")), "unreadCount"],
+        [fn("COUNT", col("id")), "count"], // Contar tickets ao invés de somar mensagens
       ],
-      group: ["queueId", "queue.id", "queue.queue"],
-      include: [
-        {
-          model: Queue,
-          as: "queue",
-          attributes: ["id", "queue"],
-        },
-      ],
+      group: ["queueId"],
     });
 
-    return res.status(200).json({ queues: unreadCount });
+    // Formatar os dados para o frontend
+    const formattedQueues = pendingTicketsCount.map(item => ({
+      queueId: item.queueId,
+      count: parseInt(item.getDataValue('count') || '0'),
+    }));
+
+    return res.status(200).json({ queues: formattedQueues });
   } catch (error) {
     console.error("Error in getUnreadCount:", error);
     return res

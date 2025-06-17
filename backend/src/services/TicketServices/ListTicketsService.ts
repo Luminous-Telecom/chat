@@ -45,6 +45,16 @@ const ListTicketsService = async ({
   tenantId,
   profile,
 }: Request): Promise<Response> => {
+  // Se o filtro for apenas 'pending', forçar showAll
+  if (status && status.length === 1 && status[0] === "pending") {
+    showAll = "true";
+  }
+
+  // Se o filtro incluir 'pending' e for admin, garantir que showAll seja true
+  if (status && status.includes("pending") && profile === "admin") {
+    showAll = "true";
+  }
+
   // check is admin
   const isAdminShowAll = showAll == "true" && profile === "admin";
   const isUnread =
@@ -72,7 +82,10 @@ const ListTicketsService = async ({
   }
 
   if (isAdminShowAll) {
-    status = ["open", "pending", "closed"];
+    // Não substituir o status se for apenas 'pending'
+    if (!status || !status.includes("pending") || status.length > 1) {
+      status = ["open", "pending", "closed"];
+    }
   }
 
   // Verificar se existem filas cadastradas, caso contrário,
@@ -195,13 +208,13 @@ const ListTicketsService = async ({
   jsonb_build_object('id', w.id, 'name', w."name") whatsapp,
   t.*
   from "Tickets" t
-  inner join "Whatsapps" w on (w.id = t."whatsappId")
+  left join "Whatsapps" w on (w.id = t."whatsappId")
   left join "Contacts" c on (t."contactId" = c.id)
   left join "Users" u on (u.id = t."userId")
   left join "Queues" q on (t."queueId" = q.id)
   where t."tenantId" = :tenantId
   and c."tenantId" = :tenantId
-  and t.status in ( :status )
+  and t.status in (:status)
   and (( :isShowAll = 'N' and  (
     (:isExistsQueueTenant = 'S' and (t."queueId" in ( :queuesIdsUser ) or (:isNotAssigned = 'S' and t."queueId" is null)))
     or t."userId" = :userId or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )

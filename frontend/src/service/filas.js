@@ -30,7 +30,7 @@ export function DeletarFila (data) {
   })
 }
 
-export function ContarTicketsNaoLidosPorFila () {
+export function ContarTicketsPendentesPorFila () {
   return request({
     url: '/queue/unread-count',
     method: 'get'

@@ -1,4 +1,4 @@
-import { ConsultarDadosTicket, LocalizarMensagens } from 'src/service/tickets'
+import { ConsultarDadosTicket, LocalizarMensagens, ConsultarTickets } from 'src/service/tickets'
 import { Notify } from 'quasar'
 import router from 'src/router'
 import { orderBy } from 'lodash'
@@ -648,11 +648,41 @@ const atendimentoTicket = {
     },
     removeProcessingMessage ({ commit }, messageId) {
       commit('REMOVE_PROCESSING_MESSAGE', messageId)
+    },
+    async consultarTickets (paramsInit = {}) {
+      const params = {
+        ...this.pesquisaTickets,
+        ...paramsInit
+      }
+
+      // Garantir que status seja sempre um array simples
+      if (params.status && Array.isArray(params.status)) {
+        params.status = params.status.filter(s => typeof s === 'string')
+      }
+
+      try {
+        const { data } = await ConsultarTickets(params)
+        // ADICIONAR LOG AQUI
+        console.log('Tickets recebidos:', data.tickets)
+        if (data.tickets && data.tickets.length) {
+          data.tickets.forEach(t => console.log('Ticket:', t.id, 'Status:', t.status))
+        }
+        this.countTickets = data.count // count total de tickets no status
+        this.$store.commit('LOAD_TICKETS', data.tickets)
+        this.$store.commit('SET_HAS_MORE', data.hasMore)
+      } catch (err) {
+        this.$notificarErro('Algum problema', err)
+        console.error(err)
+      }
     }
   },
   getters: {
     getTickets: state => status => {
-      return state.tickets.filter(t => t.status === status)
+      const filteredTickets = state.tickets.filter(t => t.status === status)
+      console.log('Chamando getTickets para status:', status)
+      console.log('Tickets no state:', state.tickets.map(t => ({ id: t.id, status: t.status })))
+      console.log('Tickets filtrados:', filteredTickets)
+      return filteredTickets
     },
     messagesByTicket: state => state.messagesByTicket || {},
     isMessageProcessing: state => messageId => state.processingMessages.has(messageId)

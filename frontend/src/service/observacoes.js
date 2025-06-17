@@ -1,7 +1,5 @@
 import request from './request'
 
-console.log('API URL:', process.env.VUE_URL_API)
-
 /**
  * @typedef {Object} TicketObservation
  * @property {number} id - ID da observação

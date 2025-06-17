@@ -197,7 +197,7 @@ import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { RealizarLogout } from 'src/service/login'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
-import { ContarTicketsNaoLidosPorFila } from 'src/service/filas'
+import { ContarTicketsPendentesPorFila } from 'src/service/filas'
 
 const socket = socketIO()
 
@@ -356,31 +356,23 @@ export default {
     cUsersApp () {
       return this.$store.state.usersApp
     },
-    cObjMenu () {
-      if (this.cProblemaConexao) {
-        return objMenu.map(menu => {
-          if (menu.routeName === 'sessoes') {
-            menu.color = 'negative'
-          }
-          return menu
-        })
-      }
-      return objMenu.map(menu => {
-        // Adicionar badge para atendimentos na fila
-        if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
-          const totalPending = Object.values(this.queueTicketCounts).reduce((sum, count) => sum + count, 0)
-          return { ...menu, badge: totalPending }
-        }
-        return menu
-      })
-    },
     // Adicionar computed para menuData com badge
     cMenuData () {
       return this.menuData.map(menu => {
-        // Adicionar badge para atendimentos na fila
+        // Adicionar badge para atendimentos na fila (tickets pendentes)
         if (menu.routeName === 'atendimento' && menu.query?.status === 'pending') {
-          const totalPending = Object.values(this.queueTicketCounts).reduce((sum, count) => sum + count, 0)
-          return { ...menu, badge: totalPending }
+          // Calcular total de forma mais direta e segura
+          let totalPending = 0
+          // FORÇAR OBJETO PURO AQUI
+          const counts = Object.assign({}, this.queueTicketCounts || {})
+
+          // Usar Object.values para evitar problemas de reatividade
+          const values = Object.values(counts)
+          totalPending = values.reduce((sum, count) => {
+            return sum + (parseInt(count) || 0)
+          }, 0)
+
+          return { ...menu, badge: totalPending > 0 ? totalPending : 0 }
         }
         return menu
       })
@@ -485,14 +477,18 @@ export default {
     },
     async buscarContadoresTicketsPorFila () {
       try {
-        const { data } = await ContarTicketsNaoLidosPorFila()
+        const { data } = await ContarTicketsPendentesPorFila()
         const counts = {}
-        data.queues.forEach(queue => {
-          counts[queue.queueId] = queue.count
-        })
-        this.queueTicketCounts = counts
+        if (data.queues && Array.isArray(data.queues)) {
+          data.queues.forEach(queue => {
+            const queueKey = queue.queueId || 'sem-fila'
+            counts[queueKey] = Number(queue.count) || 0
+          })
+        }
+        // Garantir que não há reatividade indesejada
+        this.queueTicketCounts = Object.assign({}, counts)
       } catch (error) {
-        // Erro ao buscar contadores
+        this.queueTicketCounts = {}
       }
     },
     async consultarTickets () {
