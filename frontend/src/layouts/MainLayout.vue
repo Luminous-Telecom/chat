@@ -450,6 +450,11 @@ export default {
         if (data.type === 'ticket:update' || data.type === 'notification:new') {
           await this.buscarContadoresTicketsPorFila()
         }
+
+        // Atualizar notificações quando mensagens são marcadas como lidas
+        if (data.type === 'chat:messagesRead') {
+          await this.consultarTickets()
+        }
       })
     },
     atualizarUsuario () {

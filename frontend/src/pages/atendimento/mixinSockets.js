@@ -303,20 +303,37 @@ export default {
           }
 
           if (data.type === 'chat:messagesRead') {
+            // console.log('[DEBUG] Processando chat:messagesRead:', data.payload)
             const ticketId = data.payload.ticketId
-            if (!ticketId) {
-              console.warn('[socketTicketList] ID do ticket ausente no payload de messagesRead:', data.payload)
-              return
-            }
+            const unreadMessages = data.payload.unreadMessages
 
-            // Usar o valor do backend diretamente
-            self.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
-              type: self.status,
-              ticket: {
-                id: ticketId,
-                unreadMessages: data.payload.unreadMessages
-              }
+            // Atualizar contagem de mensagens não lidas do ticket
+            self.atualizarNaoLidas({
+              ticketId,
+              unreadMessages,
+              type: self.status
             })
+
+            // Atualizar notificações para refletir a mudança
+            const params = {
+              searchParam: '',
+              pageNumber: 1,
+              status: ['open'],
+              showAll: false,
+              count: null,
+              queuesIds: [],
+              withUnreadMessages: true,
+              isNotAssignedUser: false,
+              includeNotQueueDefined: true
+            }
+            try {
+              const { data } = await ConsultarTickets(params)
+              self.countTickets = data.count
+              self.$store.commit('UPDATE_NOTIFICATIONS', data)
+            } catch (err) {
+              console.error('[DEBUG] Erro ao consultar tickets após chat:messagesRead:', err)
+              self.$notificarErro('Algum problema', err)
+            }
           }
 
           if (data.type === 'ticket:update') {

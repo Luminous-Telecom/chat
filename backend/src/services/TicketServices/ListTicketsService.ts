@@ -82,9 +82,12 @@ const ListTicketsService = async ({
   }
 
   if (isAdminShowAll) {
-    // Não substituir o status se for apenas 'pending'
-    if (!status || !status.includes("pending") || status.length > 1) {
+    // Não substituir o status se for apenas 'pending' ou se já tiver status específico
+    if (!status || (!status.includes("pending") && status.length > 1)) {
       status = ["open", "pending", "closed"];
+    } else if (status && status.length === 1 && status[0] === "pending") {
+      // Se for apenas 'pending', manter apenas 'pending' (não incluir 'closed')
+      status = ["pending"];
     }
   }
 

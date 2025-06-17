@@ -84,7 +84,18 @@ export const destruirServicoAudio = () => {
 
 // Função para atualizar o título da guia com notificações
 export const atualizarTituloGuia = (notifications, notifications_p) => {
-  const totalNotificacoes = (parseInt(notifications?.count || 0) + parseInt(notifications_p?.count || 0))
+  // Calcular total de mensagens não lidas dos tickets em andamento (open)
+  const ticketsOpen = notifications?.tickets || []
+  const totalUnreadOpen = ticketsOpen.reduce((total, ticket) => {
+    return total + (ticket.unreadMessages || 0)
+  }, 0)
+
+  // Calcular total de tickets pendentes (pending)
+  const ticketsPending = notifications_p?.tickets || []
+  const totalPending = ticketsPending.length
+
+  // Total geral de notificações
+  const totalNotificacoes = totalUnreadOpen + totalPending
 
   if (totalNotificacoes > 0) {
     document.title = `(${totalNotificacoes}) Lumos Suite`
