@@ -7,6 +7,9 @@ import cDateTimePick from 'src/components/cDateTimePick'
 import { format, parseISO } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
 import { UpdateConfiguracoesUsuarios } from 'src/service/user'
+import Vue from 'vue'
+import Viewer from 'v-viewer'
+import 'viewerjs/dist/viewer.css'
 
 const formatarValorMoeda = (num, black = false, intl = {}) => {
   const config = {
@@ -90,6 +93,8 @@ const setConfigsUsuario = ({ isDark }) => {
 
   localStorage.setItem('usuario', JSON.stringify({ ...usuario, configs: data }))
 }
+
+Vue.use(Viewer)
 
 export default ({
   Vue
