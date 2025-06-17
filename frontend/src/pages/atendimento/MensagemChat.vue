@@ -544,8 +544,18 @@ export default {
     },
     async markUnreadMessagesAsRead () {
       if (!this.ticketFocado || !this.ticketFocado.id) return
-      if (this.unreadMessages.length === 0) return
       if (this.loading) return
+
+      // Verificar se realmente há mensagens não lidas
+      const hasUnreadMessages = this.unreadMessages.length > 0 || this.ticketFocado.unreadMessages > 0
+      if (!hasUnreadMessages) {
+        return
+      }
+
+      // Verificar se já foi marcado como lido recentemente
+      if (this.ticketFocado.unreadMessages === 0) {
+        return
+      }
 
       this.loading = true
       try {
@@ -560,7 +570,6 @@ export default {
         })
       } catch (err) {
         console.error('[markUnreadMessagesAsRead] Erro ao marcar mensagens como lidas:', err)
-        this.$notificarErro('Erro ao marcar mensagens como lidas', err)
       } finally {
         this.loading = false
       }
@@ -569,19 +578,14 @@ export default {
   watch: {
     ticketFocado: {
       handler (newTicket) {
-        if (newTicket) {
-          this.markUnreadMessagesAsRead()
+        if (newTicket && newTicket.id) {
+          // Marcar mensagens como lidas apenas uma vez quando o ticket muda
+          this.$nextTick(() => {
+            this.markUnreadMessagesAsRead()
+          })
         }
       },
       immediate: true
-    },
-    mensagens: {
-      handler (newMessages) {
-        if (newMessages.length > 0) {
-          this.markUnreadMessagesAsRead()
-        }
-      },
-      deep: true
     }
   },
   mounted () {
