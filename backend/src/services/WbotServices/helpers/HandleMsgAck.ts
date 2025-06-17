@@ -59,7 +59,22 @@ export const HandleMsgAck = async (
     });
 
     if (messages.length === 0) {
-      logger.warn(`[HandleMsgAck] No message found for ID ${messageId}`);
+      // Só loga warning se for uma mensagem recente (últimos 5 minutos)
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const recentMessage = await Message.findOne({
+        where: {
+          fromMe: true,
+          isDeleted: false,
+          createdAt: {
+            [Op.gte]: fiveMinutesAgo,
+          },
+        },
+        order: [["createdAt", "DESC"]],
+      });
+
+      if (recentMessage) {
+        logger.warn(`[HandleMsgAck] No message found for ID ${messageId}, but found recent messages. Possible sync issue.`);
+      }
       await t.rollback();
       return;
     }

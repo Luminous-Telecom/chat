@@ -416,6 +416,10 @@ const atendimentoTicket = {
     },
     // OK
     UPDATE_MESSAGES (state, payload) {
+      // Não adicionar status como mensagem: só processar se for mensagem real
+      if (!payload.body && !payload.mediaType && !payload.mediaUrl) {
+        return
+      }
       // Criar um cache de mensagens por ticket se não existir
       if (!state.messagesByTicket) {
         state.messagesByTicket = {}

@@ -104,20 +104,16 @@ export const setupAdditionalHandlers = (
           });
 
           if (!currentMessage) {
-            logger.warn(
-              `[messages.update] No message found for ID ${messageId}, searching in recent messages...`
-            );
-
-            // Busca em mensagens recentes (últimas 5 minutos)
-            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            // Busca em mensagens recentes (últimas 10 minutos) com mais critérios
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
             const recentMessage = await Message.findOne({
               where: {
                 fromMe: true,
                 isDeleted: false,
                 createdAt: {
-                  [Op.gte]: fiveMinutesAgo,
+                  [Op.gte]: tenMinutesAgo,
                 },
-                // Não atualiza se já tiver um messageId e for diferente
+                // Busca por messageId nulo ou igual
                 [Op.or]: [
                   { messageId: null },
                   { messageId },
@@ -146,6 +142,24 @@ export const setupAdditionalHandlers = (
               currentMessage = recentMessage;
               await currentMessage.reload();
             } else {
+              // Só loga warning se for uma mensagem realmente recente (últimos 2 minutos)
+              const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+              const veryRecentMessage = await Message.findOne({
+                where: {
+                  fromMe: true,
+                  isDeleted: false,
+                  createdAt: {
+                    [Op.gte]: twoMinutesAgo,
+                  },
+                },
+                order: [["createdAt", "DESC"]],
+              });
+
+              if (veryRecentMessage) {
+                logger.warn(
+                  `[messages.update] No message found for ID ${messageId}, but found recent messages. Possible sync issue.`
+                );
+              }
               continue;
             }
           }

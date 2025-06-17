@@ -248,16 +248,16 @@ export const getBaileysSession = (
   const wsState = (session as any)?.ws?.readyState;
   const connectionState = (session as any)?.connection;
 
-  // Log current state for debugging
-  baseLogger.debug(
-    `Session ${whatsappId} state - connection: ${connectionState}, ws: ${wsState}`
-  );
+  // Log current state for debugging (só quando há problemas)
+  if (connectionState === "close" || connectionState === "connecting") {
+    baseLogger.debug(
+      `Session ${whatsappId} state - connection: ${connectionState}, ws: ${wsState}`
+    );
+  }
 
   // ===== NOVA ABORDAGEM: Verificação controlada e limitada =====
   if (connectionState === "open" && wsState === undefined) {
-    baseLogger.debug(
-      `Session ${whatsappId} has connection open but ws undefined`
-    );
+    // Estado normal durante reconexões, não precisa logar
     return session;
   }
 

@@ -60,22 +60,11 @@ const VerifyMediaMessage = async (
     });
 
     if (existingMessage) {
-      logger.info(
-        `[VerifyMediaMessage] Message ${msg.id.id} already exists in database, skipping`
-      );
       processingMessages.delete(msg.id.id);
       return existingMessage;
     }
 
     const quotedMsg = await VerifyQuotedMessage(msg, ticket);
-
-    if (quotedMsg) {
-      logger.info(
-        `[VerifyMediaMessage] Mensagem citada encontrada: ${quotedMsg.id}`
-      );
-    } else {
-      logger.info("[VerifyMediaMessage] Nenhuma mensagem citada encontrada");
-    }
 
     // Verificar se a mensagem tem mídia antes de tentar baixar
     // Permitir tentativa de download mesmo se hasMedia for false para alguns tipos de mensagem
@@ -84,17 +73,8 @@ const VerifyMediaMessage = async (
       logger.warn(
         `[VerifyMediaMessage] Message ${msg.id.id} has no media content for ticket ${ticket.id}`
       );
-      logger.info(
-        `[VerifyMediaMessage] Message type: ${msg.type}, hasMedia: ${msg.hasMedia}`
-      );
-      logger.info(`[VerifyMediaMessage] Message body: ${msg.body}`);
       return;
     }
-
-    // Log inicial para debug
-    logger.info(
-      `Starting media download for message ID: ${msg.id.id}, type: ${msg.type}`
-    );
 
     // Tentar baixar a mídia com retry
     let media: MediaData | null = null;
@@ -104,12 +84,6 @@ const VerifyMediaMessage = async (
 
     while (retryCount < maxRetries && !media) {
       try {
-        logger.info(
-          `Attempt ${retryCount + 1} to download media for message ID: ${
-            msg.id.id
-          }`
-        );
-
         // Tentar diferentes métodos de download
         let downloadResult: any = null;
         if (retryCount === 0) {
@@ -132,13 +106,6 @@ const VerifyMediaMessage = async (
         // Verificar se o resultado é um Buffer (Baileys) ou objeto MediaData (WhatsApp Web.js)
         if (downloadResult) {
           if (Buffer.isBuffer(downloadResult)) {
-            // Baileys retorna Buffer diretamente
-            logger.info(
-              `Successfully downloaded media buffer for message ID: ${
-                msg.id.id
-              } on attempt ${retryCount + 1}, size: ${downloadResult.length}`
-            );
-
             const detectedMimetype =
               msg.message?.imageMessage?.mimetype ||
               msg.message?.videoMessage?.mimetype ||
@@ -165,12 +132,6 @@ const VerifyMediaMessage = async (
             } as MediaData;
             break;
           } else if (downloadResult.data) {
-            // WhatsApp Web.js retorna objeto com propriedade data
-            logger.info(
-              `Successfully downloaded media object for message ID: ${
-                msg.id.id
-              } on attempt ${retryCount + 1}`
-            );
             media = downloadResult as MediaData;
             break;
           } else {
@@ -223,9 +184,6 @@ const VerifyMediaMessage = async (
 
         // Esperar um pouco antes de tentar novamente, com tempo crescente
         const waitTime = 1000 * Math.pow(2, retryCount); // Exponential backoff
-        logger.info(
-          `Waiting ${waitTime}ms before next attempt for message ID: ${msg.id.id}`
-        );
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
@@ -323,9 +281,6 @@ const VerifyMediaMessage = async (
     try {
       const filePath = join(receivedDir, filename);
       await writeFileAsync(filePath, fileData);
-      logger.info(
-        `Media file saved successfully in received folder: ${filename}`
-      );
     } catch (err) {
       logger.error(
         `ERR_WAPP_DOWNLOAD_MEDIA:: Error saving media file for message ID: ${msg.id.id}: ${err}`
