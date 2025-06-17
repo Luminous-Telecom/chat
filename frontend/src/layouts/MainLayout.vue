@@ -631,6 +631,27 @@ export default {
     // Request notification permission on first user interaction
     this.requestNotificationPermissionOnInteraction()
 
+    // Listener global para novas mensagens (chat:create)
+    socket.on(`${this.usuario.tenantId}:ticketList`, data => {
+      if (data.type === 'chat:create') {
+        if (data.payload.fromMe) return
+        // Tocar som de notificação para mensagens recebidas de outros contatos
+        this.$nextTick(() => {
+          this.$q.notify({
+            message: 'Nova mensagem recebida',
+            color: 'info',
+            timeout: 1000
+          })
+        })
+        // Tocar áudio
+        this.$nextTick(() => {
+          import('src/helpers/helpersNotifications').then(mod => {
+            mod.tocarSomNotificacao()
+          })
+        })
+      }
+    })
+
     // Atualizar título da guia inicialmente
     this.atualizarTituloGuia()
 
