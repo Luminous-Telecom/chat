@@ -853,9 +853,6 @@ export default {
     },
 
     handlerNotifications (data) {
-      // Tocar áudio de notificação para cada mensagem recebida
-      this.playNotificationSound()
-
       // Verificar se deve mostrar notificação do navegador
       // Verificar se data tem a estrutura esperada
       if (!data) {
@@ -874,10 +871,13 @@ export default {
         return
       }
 
-      // Só mostrar notificação se não for do usuário atual e não estiver lida
+      // Só mostrar notificação e tocar som se não for do usuário atual e não estiver lida
       if (message.fromMe || message.read) {
         return
       }
+
+      // Tocar áudio de notificação para cada mensagem recebida de outro usuário
+      this.playNotificationSound()
 
       // Verificar se notificações são suportadas
       if (!('Notification' in window) || Notification.permission !== 'granted') {

@@ -35,8 +35,8 @@ export default {
 
       socket.on(`${usuario.tenantId}:ticketList`, async data => {
         if (data.type === 'chat:create') {
-          if (data.payload.ticket.userId !== userId) return
           if (data.payload.fromMe) return
+          if (data.payload.ticket.userId !== userId) return
           // eslint-disable-next-line no-unused-vars
           const message = new self.Notification('Contato: ' + data.payload.ticket.contact.name, {
             body: 'Mensagem: ' + data.payload.body,

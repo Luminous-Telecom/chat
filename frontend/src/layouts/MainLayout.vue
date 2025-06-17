@@ -316,10 +316,7 @@ export default {
       ],
       menuDataAdmin: objMenuAdmin,
       ticketsList: [],
-      queueTicketCounts: {},
-      hasErrorNotifications: false,
-      errorNotificationsCount: 0,
-      errorNotifications: []
+      queueTicketCounts: {}
     }
   },
   computed: {

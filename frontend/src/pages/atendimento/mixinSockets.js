@@ -4,7 +4,6 @@ import checkTicketFilter from 'src/utils/checkTicketFilter'
 import { socketIO } from 'src/utils/socket'
 import { ConsultarTickets } from 'src/service/tickets'
 import { debounce } from 'quasar'
-import { tocarSomNotificacao } from 'src/helpers/helpersNotifications'
 
 const socket = socketIO()
 const DEBOUNCE_TIME = 300 // Manter em 300ms para ser responsivo mas evitar duplicações
@@ -134,10 +133,6 @@ export default {
             if (shouldNotify) {
               // console.log('[DEBUG] Enviando notificação para mensagem:', data.payload)
               self.handlerNotifications(data.payload)
-            } else {
-              // Tocar áudio mesmo quando não mostrar notificação do navegador
-              // (para mensagens que não atendem aos critérios de notificação)
-              tocarSomNotificacao()
             }
 
             // Garantir que temos o ID do ticket no payload
