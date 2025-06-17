@@ -22,6 +22,12 @@ export default {
           this.$store.commit('TICKET_FOCADO', {})
           this.$store.commit('SET_HAS_MORE', true)
           this.$store.dispatch('AbrirChatMensagens', ticket)
+          // Emitir evento global para trocar filtro na tela principal
+          this.$root.$emit('trocar-para-meus-atendimentos')
+          if (this.$parent && this.$parent.pesquisaTickets && this.$parent.setFilterMode) {
+            this.$parent.pesquisaTickets.status = ['open']
+            this.$parent.setFilterMode('meus')
+          }
         })
         .catch(error => {
           this.loading = false

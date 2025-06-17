@@ -1375,6 +1375,10 @@ export default {
     }
   },
   async mounted () {
+    this.$root.$on('trocar-para-meus-atendimentos', () => {
+      this.pesquisaTickets.status = ['open']
+      this.setFilterMode('meus')
+    })
     this.$root.$on('infor-cabecalo-chat:acao-menu', this.setValueMenu)
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.socketTicketList()
