@@ -87,8 +87,8 @@ export const atualizarTituloGuia = (notifications, notifications_p) => {
   const totalNotificacoes = (parseInt(notifications?.count || 0) + parseInt(notifications_p?.count || 0))
 
   if (totalNotificacoes > 0) {
-    document.title = `(${totalNotificacoes}) Chat - Sistema de Atendimento`
+    document.title = `(${totalNotificacoes}) Lumos Suite`
   } else {
-    document.title = 'Chat - Sistema de Atendimento'
+    document.title = 'Lumos Suite'
   }
 }
