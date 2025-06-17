@@ -721,3 +721,52 @@ body.body--dark
     max-width: 95vw !important
     width: 100% !important
     box-sizing: border-box
+
+.inputEnvioMensagem
+  background: rgba(255,255,255,0.12)
+  border: none
+  border-radius: 18px
+  padding: 10px 16px
+  font-size: 15px
+  color: var(--text-color-primary)
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04)
+  transition: box-shadow 0.2s, background 0.2s
+
+  &:focus
+    outline: none
+    background: rgba(255,255,255,0.18)
+    box-shadow: 0 2px 8px rgba(25,118,210,0.10)
+
+  &::placeholder
+    color: var(--text-color-secondary)
+    opacity: 0.7
+    font-size: 15px
+
+.body--dark .inputEnvioMensagem
+  background: rgba(30,32,44,0.7)
+  color: var(--text-color-primary)
+
+  &:focus
+    background: rgba(30,32,44,0.9)
+    box-shadow: 0 2px 8px rgba(25,118,210,0.18)
+
+.inputEnvioMensagem + .q-field__bottom
+  display: none !important
+
+// Balão de mensagem recebida (claro)
+.messageLeft,
+.q-message-text--received
+  background: #d4ddea !important
+  color: var(--text-color-primary) !important
+
+// Balão de mensagem recebida (escuro)
+body.body--dark .messageLeft,
+body.body--dark .q-message-text--received
+  background: var(--dark-tertiary) !important
+  color: var(--text-color-primary) !important
+
+.q-message-text--received:last-child:before
+  border-bottom: 8px solid #d4ddea !important
+
+.body--dark .q-message-text--received:last-child:before
+  border-bottom: 8px solid var(--dark-tertiary) !important
