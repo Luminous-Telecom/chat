@@ -2,7 +2,7 @@ import { QueryInterface, DataTypes } from "sequelize";
 
 module.exports = {
   up: async (queryInterface: QueryInterface) => {
-    const tableInfo = await queryInterface.describeTable("Tenants");
+    const tableInfo = await queryInterface.describeTable("Tenants") as any;
 
     if (!tableInfo || !tableInfo.maxUsers) {
       await queryInterface.addColumn("Tenants", "maxUsers", {

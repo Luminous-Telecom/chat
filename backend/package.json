@@ -20,7 +20,8 @@
     "pm2:stop": "pm2 stop ecosystem.config.js",
     "pm2:delete": "pm2 delete ecosystem.config.js",
     "pm2:logs": "pm2 logs",
-    "pm2:monit": "pm2 monit"
+    "pm2:monit": "pm2 monit",
+    "clear-sessions": "ts-node src/utils/clearCorruptedSessions.ts"
   },
   "engines": {
     "node": ">=18"

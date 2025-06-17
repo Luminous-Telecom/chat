@@ -26,10 +26,6 @@ const CreateMessageService = async ({
   tenantId,
 }: Request): Promise<Message> => {
   try {
-    logger.info(
-      `[CreateMessageService] Criando/atualizando mensagem: ${messageData.messageId}, ticketId: ${messageData.ticketId}`
-    );
-
     // Verificar se a mensagem já existe
     const msg = await Message.findOne({
       where: { messageId: messageData.messageId, tenantId },
@@ -37,33 +33,18 @@ const CreateMessageService = async ({
 
     // Log para depuração da mensagem citada
     if (messageData.quotedMsgId) {
-      logger.info(
-        `[CreateMessageService] Mensagem com citação. QuotedMsgId: ${messageData.quotedMsgId}`
-      );
 
       // Verificar se a mensagem citada existe
       const quotedMsg = await Message.findByPk(messageData.quotedMsgId);
       if (quotedMsg) {
-        logger.info(
-          `[CreateMessageService] Mensagem citada encontrada: ${quotedMsg.id}`
-        );
       } else {
-        logger.warn(
-          `[CreateMessageService] Mensagem citada não encontrada: ${messageData.quotedMsgId}`
-        );
       }
     }
 
     // Criar ou atualizar a mensagem
     if (!msg) {
-      logger.info(
-        `[CreateMessageService] Criando nova mensagem: ${messageData.messageId}`
-      );
       await Message.create({ ...messageData, tenantId });
     } else {
-      logger.info(
-        `[CreateMessageService] Atualizando mensagem existente: ${messageData.messageId}`
-      );
       await msg.update(messageData);
     }
 
@@ -101,13 +82,7 @@ const CreateMessageService = async ({
 
     // Verificar se a mensagem citada foi carregada corretamente
     if (messageData.quotedMsgId && message.quotedMsg) {
-      logger.info(
-        `[CreateMessageService] Relação com mensagem citada estabelecida com sucesso: ${message.quotedMsg.id}`
-      );
     } else if (messageData.quotedMsgId) {
-      logger.warn(
-        `[CreateMessageService] Relação com mensagem citada não foi estabelecida para: ${messageData.quotedMsgId}`
-      );
     }
 
     // Emitir evento via socket
@@ -117,9 +92,6 @@ const CreateMessageService = async ({
       payload: message,
     });
 
-    logger.info(
-      `[CreateMessageService] Mensagem criada/atualizada com sucesso: ${message.id}`
-    );
     return message;
   } catch (err) {
     logger.error(

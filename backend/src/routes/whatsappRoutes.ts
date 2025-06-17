@@ -24,4 +24,23 @@ whatsappRoutes.delete(
   WhatsAppController.remove
 );
 
+// Novas rotas para gerenciamento de sessões
+whatsappRoutes.post(
+  "/whatsapp/:whatsappId/regenerate-session",
+  isAuth,
+  WhatsAppController.regenerateSession
+);
+
+whatsappRoutes.post(
+  "/whatsapp/clear-all-sessions",
+  isAuth,
+  WhatsAppController.clearAllSessions
+);
+
+whatsappRoutes.get(
+  "/whatsapp/sessions/status",
+  isAuth,
+  WhatsAppController.getSessionsStatus
+);
+
 export default whatsappRoutes;

@@ -48,6 +48,22 @@ const HandleBaileysMessage = async (
           return;
         }
 
+        // Verificar se é um erro de criptografia de grupo
+        const isGroup = msg.key.remoteJid?.endsWith("@g.us");
+        if (isGroup && !msg.message) {
+          logger.warn(
+            `[HandleBaileysMessage] Mensagem de grupo sem conteúdo - possível erro de criptografia: ${msg.key.remoteJid}`
+          );
+          
+          // Log do erro de criptografia para monitoramento
+          logger.error(
+            `[HandleBaileysMessage] Erro de criptografia detectado para grupo: ${msg.key.remoteJid}. Considere regenerar a sessão.`
+          );
+          
+          resolve();
+          return;
+        }
+
         const whatsapp = await ShowWhatsAppService({ id: wbot.id });
         const { tenantId } = whatsapp;
 
@@ -66,7 +82,6 @@ const HandleBaileysMessage = async (
           where: { key: "ignoreGroupMsg", tenantId },
         });
 
-        const isGroup = msg.key.remoteJid?.endsWith("@g.us");
         if (Settingdb?.value === "enabled" && isGroup) {
           resolve();
           return;
@@ -178,7 +193,6 @@ const attemptSessionReconnect = async (
     // Tentar processar mensagem novamente
     const newWbot = getBaileysSession(whatsapp.id);
     if (newWbot) {
-      logger.info("[HandleBaileysMessage] Retrying with new session");
       return HandleBaileysMessage(msg, newWbot);
     }
   } catch (reconnectErr) {
@@ -306,9 +320,6 @@ const processMessage = async (
     }
 
     if (message) {
-      logger.info(
-        `[HandleBaileysMessage] Successfully created message ${message.id} for ticket ${ticket.id}`
-      );
     } else {
       logger.warn(
         `[HandleBaileysMessage] Failed to create message for ticket ${ticket.id} - message type: ${messageType}`

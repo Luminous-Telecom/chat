@@ -168,23 +168,12 @@ const CreateMessageSystemService = async ({
   idFront,
 }: Request): Promise<void> => {
   try {
-    // Log do payload recebido
-    logger.info("[DEBUG] CreateMessageSystemService - Payload recebido:", {
-      quotedMsgId: msg.quotedMsgId,
-      quotedMsg: msg.quotedMsg,
-      body: msg.body,
-      type: msg.type,
-    });
-
     // Buscar a mensagem citada para obter o messageId do WhatsApp
     let quotedMsgMessageId: string | undefined;
     if (msg.quotedMsg?.id) {
       const quotedMessage = await Message.findByPk(msg.quotedMsg.id);
       if (quotedMessage) {
         quotedMsgMessageId = quotedMessage.messageId;
-        logger.info(
-          `[DEBUG] CreateMessageSystemService - Found quoted message WhatsApp ID: ${quotedMsgMessageId}`
-        );
       }
     }
 
@@ -207,13 +196,6 @@ const CreateMessageSystemService = async ({
       ack: scheduleDate ? 0 : 1,
       messageId: msg.messageId || null,
     };
-
-    // Log do messageData antes de processar
-    logger.info("[DEBUG] CreateMessageSystemService - baseMessageData:", {
-      quotedMsgId: baseMessageData.quotedMsgId,
-      body: baseMessageData.body,
-      type: baseMessageData.mediaType,
-    });
 
     if (medias && medias.length > 0) {
       await processMediaMessages(
@@ -345,12 +327,6 @@ const processTextMessage = async (
   userId?: string | number
 ): Promise<void> => {
   try {
-    // Log antes de enviar mensagem
-    logger.info("[DEBUG] processTextMessage - Enviando mensagem:", {
-      quotedMsgId: messageData.quotedMsgId,
-      body: messageData.body,
-    });
-
     // Buscar o contato
     const contact = await Contact.findByPk(ticket.contactId);
     if (!contact) {
@@ -425,9 +401,6 @@ const finalizeMessage = async (
   tenantId: string | number
 ): Promise<void> => {
   try {
-    // Log antes de buscar mensagem
-    logger.info("[DEBUG] finalizeMessage - Buscando mensagem:", { messageId });
-
     // Garantir que messageId é uma string ou número
     const id = String(messageId);
 
@@ -446,13 +419,6 @@ const finalizeMessage = async (
           include: ["contact"],
         },
       ],
-    });
-
-    // Log após buscar mensagem
-    logger.info("[DEBUG] finalizeMessage - Mensagem encontrada:", {
-      id: messageCreated?.id,
-      quotedMsgId: messageCreated?.quotedMsgId,
-      quotedMsg: messageCreated?.quotedMsg ? "present" : "missing",
     });
 
     if (!messageCreated) {

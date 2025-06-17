@@ -32,14 +32,7 @@ const VerifyMessage = async (
       status: "received",
     };
 
-    logger.debug(
-      `[VerifyMessage] Dados da mensagem: ${JSON.stringify({
-        messageId: messageData.messageId,
-        ticketId: messageData.ticketId,
-        fromMe: messageData.fromMe,
-        quotedMsgId: messageData.quotedMsgId,
-      })}`
-    );
+
 
     // Calcular contador de mensagens não lidas
     const currentUnread = await Message.count({

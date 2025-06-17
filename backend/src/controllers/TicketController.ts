@@ -230,10 +230,6 @@ export const markAllAsRead = async (
   const { ticketId } = req.params;
   const { tenantId } = req.user;
 
-  logger.info(
-    `[markAllAsRead] Iniciando marcação de todas as mensagens como lidas. TicketId: ${ticketId}, TenantId: ${tenantId}`
-  );
-
   try {
     const ticket = await ShowTicketService({ id: ticketId, tenantId });
     if (!ticket) {
@@ -243,11 +239,8 @@ export const markAllAsRead = async (
       return res.status(404).json({ error: "Ticket not found" });
     }
 
-    logger.info(
-      "[markAllAsRead] Ticket encontrado, marcando mensagens como lidas"
-    );
+
     await SetTicketMessagesAsRead(ticket, true);
-    logger.info("[markAllAsRead] Mensagens marcadas como lidas com sucesso");
 
     return res.status(200).json({ message: "All messages marked as read" });
   } catch (error) {

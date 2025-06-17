@@ -222,6 +222,16 @@ export const removeBaileysSession = async (
       // Remove from sessions array
       sessions.splice(sessionIndex, 1);
       baseLogger.info(`Session ${whatsappId} removed from active sessions`);
+
+      // Limpar o monitor da sessão se existir
+      try {
+        if ((session as any).sessionMonitor) {
+          clearInterval((session as any).sessionMonitor);
+          baseLogger.info(`Session monitor cleared for WhatsApp ID: ${whatsappId}`);
+        }
+      } catch (monitorErr) {
+        baseLogger.warn(`Error clearing session monitor: ${monitorErr}`);
+      }
     } catch (err) {
       baseLogger.error(`Error cleaning up session ${whatsappId}: ${err}`);
     }
@@ -479,8 +489,13 @@ export async function initBaileys(
       keepAliveIntervalMs: 15000,
       qrTimeout: phoneNumber ? 0 : 60000,
       getMessage: async () => undefined,
-      shouldIgnoreJid: () => false,
+      shouldIgnoreJid: (jid) => {
+        // Verificar se jid é válido antes de usar includes
+        return jid && typeof jid === 'string' && jid.includes('@broadcast') ? true : false;
+      },
       linkPreviewImageThumbnailWidth: 0,
+      // Configurações específicas para melhorar tratamento de grupos e criptografia
+      fireInitQueries: true,
       transactionOpts: {
         maxCommitRetries: phoneNumber ? 10 : 5,
         delayBetweenTriesMs: phoneNumber ? 5000 : 3000
@@ -866,6 +881,56 @@ export async function initBaileys(
     // Remove from initializing set after successful initialization
     initializingSession.delete(whatsapp.id);
 
+    // Monitoramento do estado da sessão
+    const sessionMonitor = setInterval(async () => {
+      try {
+        const connectionState = (wbot as any)?.connection;
+        const wsExists = !!(wbot as any)?.ws;
+        
+        // Se a sessão está marcada como conectada mas não tem WebSocket
+        if (connectionState === "open" && !wsExists) {
+          baseLogger.warn(
+            `[Session Monitor] Session ${whatsapp.name} has open connection but no WebSocket - attempting recovery`
+          );
+          
+          // Tentar regenerar a sessão
+          try {
+            await regenerateSessionForCryptoIssues(whatsapp.id);
+            baseLogger.info(
+              `[Session Monitor] Session ${whatsapp.name} regenerated successfully`
+            );
+          } catch (regenerateErr) {
+            baseLogger.error(
+              `[Session Monitor] Failed to regenerate session ${whatsapp.name}: ${regenerateErr}`
+            );
+          }
+        }
+        
+        // Se a sessão está undefined, tentar reconectar
+        if (connectionState === undefined && !wsExists) {
+          baseLogger.warn(
+            `[Session Monitor] Session ${whatsapp.name} has undefined state - attempting reconnection`
+          );
+          
+          try {
+            await safeReconnect(wbot, whatsapp);
+            baseLogger.info(
+              `[Session Monitor] Session ${whatsapp.name} reconnected successfully`
+            );
+          } catch (reconnectErr) {
+            baseLogger.error(
+              `[Session Monitor] Failed to reconnect session ${whatsapp.name}: ${reconnectErr}`
+            );
+          }
+        }
+      } catch (err) {
+        baseLogger.error(`[Session Monitor] Error monitoring session ${whatsapp.name}: ${err}`);
+      }
+    }, 30000); // Verificar a cada 30 segundos
+
+    // Limpar o monitor quando a sessão for removida
+    (wbot as any).sessionMonitor = sessionMonitor;
+
     // Se phoneNumber estiver presente, implemente o fluxo de pairing code
     if (phoneNumber) {
       baseLogger.info(`Iniciando autenticação via número: ${phoneNumber}`);
@@ -1121,6 +1186,66 @@ export const getSessionCount = (): number => {
 export const isSessionConnected = (whatsappId: number): boolean => {
   const session = getBaileysSession(whatsappId);
   return session ? (session as any)?.connection === "open" : false;
+};
+
+// Função para regenerar sessão quando há problemas de criptografia
+export const regenerateSessionForCryptoIssues = async (
+  whatsappId: number
+): Promise<BaileysClient | null> => {
+  try {
+    const whatsapp = await Whatsapp.findByPk(whatsappId);
+    if (!whatsapp) {
+      baseLogger.error(`WhatsApp instance ${whatsappId} not found`);
+      return null;
+    }
+
+    baseLogger.warn(
+      `Regenerando sessão para resolver problemas de criptografia: ${whatsapp.name}`
+    );
+
+    // Limpar sessão existente
+    await removeBaileysSession(whatsappId);
+
+    // Limpar diretório da sessão para forçar nova autenticação
+    const sessionDir = join(
+      __dirname,
+      "..",
+      "..",
+      "session",
+      `session-${whatsappId}`
+    );
+    try {
+      await rm(sessionDir, { recursive: true, force: true });
+      baseLogger.info("Diretório da sessão limpo para regeneração");
+    } catch (err) {
+      baseLogger.warn(`Não foi possível limpar diretório da sessão: ${err}`);
+    }
+
+    // Resetar status no banco
+    await whatsapp.update({
+      status: "DISCONNECTED",
+      qrcode: "",
+      retries: 0
+    });
+
+    // Aguardar um momento antes de reinicializar
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Inicializar nova sessão
+    const newSession = await initBaileys(whatsapp);
+    sessions.push(newSession);
+
+    baseLogger.info(
+      `Sessão regenerada com sucesso para ${whatsapp.name}`
+    );
+
+    return newSession;
+  } catch (err) {
+    baseLogger.error(
+      `Erro ao regenerar sessão ${whatsappId}: ${err}`
+    );
+    return null;
+  }
 };
 
 export { sessions };

@@ -10,9 +10,7 @@ const VerifyQuotedMessage = async (
 ): Promise<Message | null> => {
   try {
     if (!msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-      logger.debug(
-        "[VerifyQuotedMessage] No quoted message found in message context"
-      );
+
       return null;
     }
 
@@ -21,9 +19,7 @@ const VerifyQuotedMessage = async (
     const quotedId = contextInfo.stanzaId;
     const quotedParticipant = contextInfo.participant;
 
-    logger.info(
-      `[VerifyQuotedMessage] Procurando mensagem citada com ID: ${quotedId}, participante: ${quotedParticipant}`
-    );
+
 
     // Tentar encontrar a mensagem pelo messageId
     let quotedMsg = await Message.findOne({
@@ -42,9 +38,7 @@ const VerifyQuotedMessage = async (
 
     // Se não encontrar pelo messageId, tentar pelo id
     if (!quotedMsg && quotedId) {
-      logger.info(
-        `[VerifyQuotedMessage] Tentando encontrar mensagem pelo ID direto: ${quotedId}`
-      );
+
       quotedMsg = await Message.findOne({
         where: {
           id: quotedId,
@@ -62,20 +56,14 @@ const VerifyQuotedMessage = async (
 
     // Verificar se encontrou a mensagem
     if (!quotedMsg) {
-      logger.warn(
-        `[VerifyQuotedMessage] Mensagem citada não encontrada para ID: ${quotedId}`
-      );
+
       return null;
     }
 
-    logger.info(
-      `[VerifyQuotedMessage] Mensagem citada encontrada: ${quotedMsg.id}, messageId: ${quotedMsg.messageId}`
-    );
+
     return quotedMsg;
   } catch (error) {
-    logger.error(
-      `[VerifyQuotedMessage] Erro ao verificar mensagem citada: ${error}`
-    );
+
     return null;
   }
 };

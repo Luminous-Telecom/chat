@@ -50,11 +50,6 @@ export const SendWhatsAppMessage = async (
     let messageToUpdate: Message;
 
     if (existingMessage) {
-      logger.info(
-        `[SendWhatsAppMessage] Found existing message ${
-          existingMessage.id
-        } from ${existingMessage.createdAt.toISOString()}, reusing it`
-      );
       if (existingMessage.status === "error") {
         await existingMessage.update(
           {
@@ -66,25 +61,6 @@ export const SendWhatsAppMessage = async (
       }
       messageToUpdate = existingMessage;
     } else {
-      logger.info(
-        `[SendWhatsAppMessage] Creating new message in database: ${JSON.stringify(
-          {
-            ticketId: ticket.id,
-            body,
-            contactId: contact.id,
-            fromMe: true,
-            read: true,
-            mediaType: media ? "document" : "chat",
-            timestamp: Date.now(),
-            quotedMsgId: quotedMsg?.id || null,
-            status: "pending",
-            ack: 0,
-            messageId: null,
-            tenantId: ticket.tenantId,
-          }
-        )}`
-      );
-
       messageToUpdate = await Message.create(
         {
           ticketId: ticket.id,
@@ -102,10 +78,6 @@ export const SendWhatsAppMessage = async (
         },
         { transaction: t }
       );
-
-      logger.info(
-        `[SendWhatsAppMessage] Message created in database with ID: ${messageToUpdate.id}, quotedMsgId: ${messageToUpdate.quotedMsgId}`
-      );
     }
 
     // Prepara as opções da mensagem incluindo a citação se houver
@@ -114,9 +86,6 @@ export const SendWhatsAppMessage = async (
     };
 
     if (quotedMsg?.messageId) {
-      logger.info(
-        `[SendWhatsAppMessage] Adding quote to message. Quoted message ID: ${quotedMsg.messageId}`
-      );
       messageOptions.quoted = {
         key: {
           remoteJid: number,
@@ -129,10 +98,6 @@ export const SendWhatsAppMessage = async (
       };
     }
 
-    // Envia a mensagem
-    logger.info(
-      `[SendWhatsAppMessage] Preparing to send message to chatId: ${number}`
-    );
     const sentMessage = await wbot.sendMessage(
       number,
       {
@@ -157,9 +122,6 @@ export const SendWhatsAppMessage = async (
 
     await t.commit();
 
-    logger.info(
-      `[SendWhatsAppMessage] Message sent successfully. ID: ${messageId}, Status: ${status}`
-    );
     return messageToUpdate;
   } catch (error) {
     await t.rollback();
