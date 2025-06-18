@@ -1,6 +1,7 @@
 import { format, parseISO, parseJSON } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
 import { mapGetters } from 'vuex'
+import { hasEmojis, twemojiParse } from '../../utils/emojiUtils'
 
 export default {
   computed: {
@@ -31,12 +32,18 @@ export default {
       }
     },
     farmatarMensagemWhatsapp (body) {
-      if (!body) return
+      if (!body) return ''
+
       let format = body
+
+      // Verificar se contém emojis
+      const containsEmojis = hasEmojis(body)
+
       function is_aplhanumeric (c) {
         var x = c.charCodeAt()
         return !!(((x >= 65 && x <= 90) || (x >= 97 && x <= 122) || (x >= 48 && x <= 57)))
       }
+
       function whatsappStyles (format, wildcard, opTag, clTag) {
         var indices = []
         for (var i = 0; i < format.length; i++) {
@@ -59,10 +66,20 @@ export default {
         })
         return format
       }
+
+      // Aplicar estilos do WhatsApp
       format = whatsappStyles(format, '_', '<i>', '</i>')
       format = whatsappStyles(format, '*', '<b>', '</b>')
       format = whatsappStyles(format, '~', '<s>', '</s>')
+
+      // Processar quebras de linha
       format = format.replace(/\n/gi, '<br>')
+
+      // Se contém emojis, processar para melhor exibição com Twemoji
+      if (containsEmojis) {
+        format = twemojiParse(format)
+      }
+
       return format
     },
     formatarData (data, formato = 'dd/MM/yyyy') {

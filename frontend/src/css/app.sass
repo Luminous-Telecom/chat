@@ -5,6 +5,35 @@
 *
   font-family: 'Nunito', sans-serif
 
+// Configurações para melhor exibição de emojis
+.emoji, .emoticon, [data-emoji]
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
+  font-size: 1.1em
+  line-height: 1
+  vertical-align: middle
+
+// Melhorar exibição de emojis em mensagens
+.q-message-container, .messageLeft, .messageRight, .quotedMsg
+  .emoji, .emoticon, [data-emoji]
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
+    font-size: 1.2em
+    line-height: 1
+    vertical-align: middle
+    display: inline-block
+
+// Configurações específicas para o VEmojiPicker
+.v-emoji-picker
+  .emoji
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif !important
+    font-size: 1.5em !important
+    line-height: 1 !important
+    vertical-align: middle !important
+
+// Fallback para emojis não suportados
+@supports not (font-variant-emoji: emoji)
+  .emoji, .emoticon, [data-emoji]
+    font-family: 'Segoe UI Symbol', 'Arial Unicode MS', 'Lucida Sans Unicode', sans-serif
+
 body
   color: $content-color
   font-size: 1rem
@@ -794,3 +823,13 @@ body.body--dark .q-message-text--received
 .body--dark .q-img-preview,
 .body--dark .img-preview-chat
   background: rgba(30,32,44,0.7)
+
+.emoji
+  height: 1.2em
+  width: 1.2em
+  min-width: 1em
+  min-height: 1em
+  max-width: 1.5em
+  max-height: 1.5em
+  vertical-align: -0.2em
+  display: inline-block

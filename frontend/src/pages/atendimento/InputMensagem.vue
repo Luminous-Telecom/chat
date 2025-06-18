@@ -138,14 +138,7 @@
               self="bottom middle"
               :offset="[5, 40]"
             >
-              <VEmojiPicker
-                style="width: 40vw"
-                :showSearch="false"
-                :emojisByRow="20"
-                labelSearch="Localizar..."
-                lang="pt-BR"
-                @select="onInsertSelectEmoji"
-              />
+              <emoji-picker @emoji-click="onEmojiSelect" style="width: 340px;" />
             </q-menu>
           </q-btn>
           <q-btn
@@ -186,7 +179,6 @@
             v-show="!cMostrarEnvioArquivo"
             class="col-grow q-mx-xs text-grey-10 inputEnvioMensagem"
             bg-color="grey-2"
-            color="grey-7"
             placeholder="Digita sua mensagem"
             input-style="max-height: 30vh"
             autogrow
@@ -196,6 +188,10 @@
             v-model="textChat"
             :value="textChat"
             @paste="handleInputPaste"
+            :counter="textChat.length > 3000"
+            :maxlength="4096"
+            :hint="textChat.length > 3000 ? `${textChat.length}/4096 caracteres` : ''"
+            :color="textChat.length > 3500 ? 'warning' : textChat.length > 4000 ? 'negative' : 'grey-7'"
           >
             <template
               v-slot:prepend
@@ -217,14 +213,7 @@
                   self="bottom middle"
                   :offset="[5, 40]"
                 >
-                  <VEmojiPicker
-                    style="width: 40vw"
-                    :showSearch="false"
-                    :emojisByRow="20"
-                    labelSearch="Localizar..."
-                    lang="pt-BR"
-                    @select="onInsertSelectEmoji"
-                  />
+                  <emoji-picker @emoji-click="onEmojiSelect" style="width: 340px;" />
                 </q-menu>
               </q-btn>
             </template>
@@ -417,10 +406,11 @@
 import { LocalStorage, uid } from 'quasar'
 import mixinCommon from './mixinCommon'
 import { EnviarMensagemTexto } from 'src/service/tickets'
-import { VEmojiPicker } from 'v-emoji-picker'
+// import { VEmojiPicker } from 'v-emoji-picker' // Removido pois não é mais utilizado
 import { mapGetters } from 'vuex'
 import RecordingTimer from './RecordingTimer'
 import MicRecorder from 'mic-recorder-to-mp3'
+import 'emoji-picker-element'
 const Mp3Recorder = new MicRecorder({
   bitRate: 128,
   sampleRate: 44100
@@ -445,7 +435,6 @@ export default {
     }
   },
   components: {
-    VEmojiPicker,
     RecordingTimer
   },
   data () {
@@ -663,6 +652,30 @@ export default {
         throw new Error('Mensagem Inexistente')
       }
 
+      // Verificar se a mensagem é muito grande
+      const maxLength = 4096 // Limite do WhatsApp
+      if (this.textChat.trim().length > maxLength) {
+        this.$q.notify({
+          html: true,
+          message: `Mensagem muito grande! <br>
+          <ul>
+            <li>Limite máximo: ${maxLength} caracteres</li>
+            <li>Sua mensagem: ${this.textChat.trim().length} caracteres</li>
+            <li>Excesso: ${this.textChat.trim().length - maxLength} caracteres</li>
+          </ul>
+          <strong>Dica:</strong> Divida sua mensagem em partes menores.`,
+          type: 'warning',
+          progress: true,
+          position: 'top',
+          actions: [{
+            icon: 'close',
+            round: true,
+            color: 'white'
+          }]
+        })
+        throw new Error(`Mensagem muito grande. Máximo ${maxLength} caracteres permitidos.`)
+      }
+
       if (this.textChat.trim() && this.textChat.trim().startsWith('/')) {
         let search = this.textChat.trim().toLowerCase()
         search = search.replace('/', '')
@@ -800,6 +813,10 @@ export default {
     handleSign (state) {
       this.sign = state
       LocalStorage.set('sign', this.sign)
+    },
+    onEmojiSelect (emoji) {
+      this.textChat += emoji.data
+      this.$refs.inputEnvioMensagem.focus()
     }
   },
   async mounted () {
