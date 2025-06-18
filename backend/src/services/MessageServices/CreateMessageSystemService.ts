@@ -22,6 +22,59 @@ import GetTicketWbot from "../../helpers/GetTicketWbot";
 const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(fs.mkdir);
 
+// Função para dividir mensagens muito grandes
+const splitLargeMessage = (body: string, maxLength: number = 4096): string[] => {
+  if (body.length <= maxLength) {
+    return [body];
+  }
+
+  const messages: string[] = [];
+  let currentMessage = '';
+  const lines = body.split('\n');
+
+  for (const line of lines) {
+    // Se a linha individual é maior que o limite, dividir por palavras
+    if (line.length > maxLength) {
+      const words = line.split(' ');
+      for (const word of words) {
+        if ((currentMessage + word).length > maxLength) {
+          if (currentMessage.trim()) {
+            messages.push(currentMessage.trim());
+            currentMessage = word + ' ';
+          } else {
+            // Palavra individual muito grande, dividir por caracteres
+            for (let i = 0; i < word.length; i += maxLength) {
+              messages.push(word.substring(i, i + maxLength));
+            }
+            currentMessage = '';
+          }
+        } else {
+          currentMessage += word + ' ';
+        }
+      }
+    } else {
+      // Verificar se adicionar esta linha excederia o limite
+      if ((currentMessage + line + '\n').length > maxLength) {
+        if (currentMessage.trim()) {
+          messages.push(currentMessage.trim());
+          currentMessage = line + '\n';
+        } else {
+          currentMessage = line + '\n';
+        }
+      } else {
+        currentMessage += line + '\n';
+      }
+    }
+  }
+
+  // Adicionar a última mensagem se houver conteúdo
+  if (currentMessage.trim()) {
+    messages.push(currentMessage.trim());
+  }
+
+  return messages;
+};
+
 interface MessageData {
   ticketId: number;
   body: string;
@@ -336,50 +389,74 @@ const processTextMessage = async (
       throw new AppError("ERR_CONTACT_NOT_FOUND");
     }
 
-    // Enviar mensagem e obter a mensagem criada
-    let sentMessage: any = {};
-    if (!messageData.scheduleDate) {
-      // Buscar o objeto da mensagem citada usando quotedMsgId
-      let quotedMsg: Message | undefined;
-      if (messageData.quotedMsgId) {
-        const found = await Message.findByPk(messageData.quotedMsgId);
-        if (found) quotedMsg = found;
+    // Dividir mensagem se for muito grande
+    const messageParts = splitLargeMessage(messageData.body);
+    logger.info(
+      `[CreateMessageSystemService] Mensagem dividida em ${messageParts.length} partes`
+    );
+
+    // Enviar cada parte da mensagem
+    for (let i = 0; i < messageParts.length; i++) {
+      const partBody = messageParts[i];
+      const isLastPart = i === messageParts.length - 1;
+      
+      // Criar dados da mensagem para esta parte
+      const partMessageData = {
+        ...messageData,
+        body: partBody,
+        // Adicionar indicador de parte se houver múltiplas partes
+        body: messageParts.length > 1 ? `(${i + 1}/${messageParts.length}) ${partBody}` : partBody,
+      };
+
+      let sentMessage: any = {};
+      if (!messageData.scheduleDate) {
+        // Buscar o objeto da mensagem citada usando quotedMsgId (apenas na primeira parte)
+        let quotedMsg: Message | undefined;
+        if (messageData.quotedMsgId && i === 0) {
+          const found = await Message.findByPk(messageData.quotedMsgId);
+          if (found) quotedMsg = found;
+        }
+
+        sentMessage = await SendWhatsAppMessage(
+          contact,
+          ticket,
+          partMessageData.body,
+          quotedMsg
+        );
+      } else {
+        // Se for mensagem agendada, criar sem enviar
+        sentMessage = await Message.create({
+          ...partMessageData,
+          status: "pending",
+          messageId: null,
+          ack: 0,
+          mediaType: "chat",
+          userId,
+        });
       }
 
-      sentMessage = await SendWhatsAppMessage(
-        contact,
-        ticket,
-        messageData.body,
-        quotedMsg
-      );
-    } else {
-      // Se for mensagem agendada, criar sem enviar
-      sentMessage = await Message.create({
-        ...messageData,
-        status: "pending",
-        messageId: null,
-        ack: 0,
-        mediaType: "chat",
-        userId,
-      });
-    }
+      // Extrair o ID da mensagem
+      const messageId = sentMessage.id?.id || sentMessage.id;
+      if (!messageId) {
+        throw new Error("ERR_MESSAGE_ID_NOT_FOUND");
+      }
 
-    // Extrair o ID da mensagem
-    const messageId = sentMessage.id?.id || sentMessage.id;
-    if (!messageId) {
-      throw new Error("ERR_MESSAGE_ID_NOT_FOUND");
-    }
+      // Buscar mensagem completa e notificar
+      await finalizeMessage(messageId, ticket, tenantId);
 
-    // Buscar mensagem completa e notificar
-    await finalizeMessage(messageId, ticket, tenantId);
+      // Registrar atividade do usuário se houver userId
+      if (userId) {
+        await UserMessagesLog.create({
+          messageId,
+          userId,
+          tenantId,
+        });
+      }
 
-    // Registrar atividade do usuário se houver userId
-    if (userId) {
-      await UserMessagesLog.create({
-        messageId,
-        userId,
-        tenantId,
-      });
+      // Pequena pausa entre mensagens para evitar spam
+      if (!isLastPart && !messageData.scheduleDate) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
   } catch (error) {
     logger.error(
