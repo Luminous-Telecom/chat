@@ -406,7 +406,6 @@
 import { LocalStorage, uid } from 'quasar'
 import mixinCommon from './mixinCommon'
 import { EnviarMensagemTexto } from 'src/service/tickets'
-// import { VEmojiPicker } from 'v-emoji-picker' // Removido pois não é mais utilizado
 import { mapGetters } from 'vuex'
 import RecordingTimer from './RecordingTimer'
 import MicRecorder from 'mic-recorder-to-mp3'
@@ -515,27 +514,28 @@ export default {
         this.$refs.inputEnvioMensagem.focus()
       }, 300)
     },
-    onInsertSelectEmoji (emoji) {
-      const self = this
-      var tArea = this.$refs.inputEnvioMensagem.$refs.input
-      // get cursor's position:
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-
-      // filter:
-      if (!emoji.data) {
+    onEmojiSelect (event) {
+      // O emoji está em event.detail.unicode ou event.detail.emoji
+      const emoji = event.detail.unicode || event.detail.emoji
+      if (!emoji) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
         return
       }
-
-      // insert:
-      self.txtContent = this.textChat
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.textChat = self.txtContent
-      // move cursor:
+      const textarea = this.$refs.inputEnvioMensagem.$refs.input
+      if (!textarea) return
+      const startPos = textarea.selectionStart
+      const endPos = textarea.selectionEnd
+      const tmpStr = textarea.value || this.textChat
+      const newValue = tmpStr.substring(0, startPos) + emoji + tmpStr.substring(endPos, tmpStr.length)
+      this.textChat = newValue
       setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
+        textarea.selectionStart = textarea.selectionEnd = startPos + emoji.length
+        textarea.focus()
       }, 10)
     },
     abrirEnvioArquivo (event) {
@@ -813,10 +813,6 @@ export default {
     handleSign (state) {
       this.sign = state
       LocalStorage.set('sign', this.sign)
-    },
-    onEmojiSelect (emoji) {
-      this.textChat += emoji.data
-      this.$refs.inputEnvioMensagem.focus()
     }
   },
   async mounted () {
