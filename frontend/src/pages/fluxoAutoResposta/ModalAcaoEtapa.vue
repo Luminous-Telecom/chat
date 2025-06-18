@@ -156,6 +156,7 @@
 const userId = +localStorage.getItem('userId')
 import { CriarAcaoEtapa, EditarAcaoEtapa } from 'src/service/autoResposta'
 import { VEmojiPicker } from 'v-emoji-picker'
+import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 
 export default {
   name: 'ModalAcaoEtapa',
@@ -275,25 +276,24 @@ export default {
       this.fecharModal()
     },
     onInsertSelectEmoji (emoji) {
-      const self = this
-      var tArea = this.$refs.inputEnvioMensagem
-      // get cursor's position:
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-      // filter:
-      if (!emoji.data) {
-        return
+      const textarea = this.$refs.inputEnvioMensagem
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.acaoEtapa.replyDefinition = newValue
+        },
+        this.acaoEtapa.replyDefinition
+      )
+
+      if (!success) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
-      // insert:
-      self.txtContent = this.acaoEtapa.replyDefinition
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.acaoEtapa.replyDefinition = self.txtContent
-      // move cursor:
-      setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
-      }, 10)
     }
   }
 

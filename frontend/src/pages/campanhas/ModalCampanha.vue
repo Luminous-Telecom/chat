@@ -343,6 +343,8 @@ import MensagemChat from 'src/pages/atendimento/MensagemChat'
 import { mapGetters } from 'vuex'
 import { CriarCampanha, AlterarCampanha } from 'src/service/campanhas'
 import { parseISO, startOfDay } from 'date-fns'
+import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
+
 const isValidDate = (v) => {
   return startOfDay(new Date(parseISO(v))).getTime() >= startOfDay(new Date()).getTime()
 }
@@ -473,25 +475,24 @@ export default {
   },
   methods: {
     onInsertSelectEmoji (emoji, ref) {
-      const self = this
-      var tArea = this.$refs[ref]
-      // get cursor's position:
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-      // filter:
-      if (!emoji.data) {
-        return
+      const textarea = this.$refs[ref]
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.campanha[ref] = newValue
+        },
+        this.campanha[ref]
+      )
+
+      if (!success) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
-      // insert:
-      self.txtContent = this.campanha[ref]
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.campanha[ref] = self.txtContent
-      // move cursor:
-      setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
-      }, 10)
     },
     resetarCampanha () {
       this.campanha = {

@@ -840,6 +840,7 @@ import MessageField from './messageField'
 import MediaField from './mediaField.vue'
 import { VEmojiPicker } from 'v-emoji-picker'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
+import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 export default {
   components: {
     MessageField,
@@ -972,38 +973,44 @@ export default {
       })
     },
     onInsertSelectEmojiSaudacao (emoji) {
-      const self = this
-      var tArea = this.$refs.inputEnvioMensagemSaudacao
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-      if (!emoji.data) {
-        return
+      const textarea = this.$refs.inputEnvioMensagemSaudacao
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.node.configurations.welcomeMessage.message = newValue
+        },
+        this.node.configurations.welcomeMessage.message
+      )
+
+      if (!success) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
-      self.txtContent = this.node.configurations.welcomeMessage.message
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.node.configurations.welcomeMessage.message = self.txtContent
-      setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
-      }, 10)
     },
     onInsertSelectEmojiNotOptionsSelectMessage (emoji) {
-      const self = this
-      var tArea = this.$refs.inputEnvioMensagemnotOptionsSelectMessage
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-      if (!emoji.data) {
-        return
+      const textarea = this.$refs.inputEnvioMensagemnotOptionsSelectMessage
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.node.configurations.notOptionsSelectMessage.message = newValue
+        },
+        this.node.configurations.notOptionsSelectMessage.message
+      )
+
+      if (!success) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
-      self.txtContent = this.node.configurations.notOptionsSelectMessage.message
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.node.configurations.notOptionsSelectMessage.message = self.txtContent
-      setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
-      }, 10)
     },
     addLineStep (nextStepId, idx) {
       if (this.node.conditions[idx]?.queueId) {

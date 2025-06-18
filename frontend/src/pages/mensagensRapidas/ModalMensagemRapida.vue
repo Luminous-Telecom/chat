@@ -96,6 +96,7 @@
 
 <script>
 import { VEmojiPicker } from 'v-emoji-picker'
+import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 
 import { CriarMensagemRapida, AlterarMensagemRapida } from 'src/service/mensagensRapidas'
 export default {
@@ -123,25 +124,24 @@ export default {
   },
   methods: {
     onInsertSelectEmoji (emoji) {
-      const self = this
-      var tArea = this.$refs.inputEnvioMensagem
-      // get cursor's position:
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-      // filter:
-      if (!emoji.data) {
-        return
+      const textarea = this.$refs.inputEnvioMensagem
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.mensagemRapida.message = newValue
+        },
+        this.mensagemRapida.message
+      )
+
+      if (!success) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
-      // insert:
-      self.txtContent = this.mensagemRapida.message
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.mensagemRapida.message = self.txtContent
-      // move cursor:
-      setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
-      }, 10)
     },
     fecharModal () {
       this.$emit('update:mensagemRapidaEmEdicao', { id: null })

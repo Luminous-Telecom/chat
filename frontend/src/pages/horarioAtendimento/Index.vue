@@ -178,6 +178,7 @@
 <script>
 import { VEmojiPicker } from 'v-emoji-picker'
 import { MostrarHorariosAtendiemento, AtualizarHorariosAtendiemento, AtualizarMensagemHorariosAtendiemento } from 'src/service/empresas'
+import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 export default {
   name: 'HorarioAtendimento',
   components: { VEmojiPicker },
@@ -202,25 +203,24 @@ export default {
   },
   methods: {
     onInsertSelectEmoji (emoji) {
-      const self = this
-      var tArea = this.$refs.inputEnvioMensagem
-      // get cursor's position:
-      var startPos = tArea.selectionStart,
-        endPos = tArea.selectionEnd,
-        cursorPos = startPos,
-        tmpStr = tArea.value
-      // filter:
-      if (!emoji.data) {
-        return
+      const textarea = this.$refs.inputEnvioMensagem
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.messageBusinessHours = newValue
+        },
+        this.messageBusinessHours
+      )
+
+      if (!success) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
       }
-      // insert:
-      self.txtContent = this.messageBusinessHours
-      self.txtContent = tmpStr.substring(0, startPos) + emoji.data + tmpStr.substring(endPos, tmpStr.length)
-      this.messageBusinessHours = self.txtContent
-      // move cursor:
-      setTimeout(() => {
-        tArea.selectionStart = tArea.selectionEnd = cursorPos + emoji.data.length
-      }, 10)
     },
     async listarMensagemHorariosAtendimento () {
       const { data } = await MostrarHorariosAtendiemento()

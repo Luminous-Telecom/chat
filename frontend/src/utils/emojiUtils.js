@@ -116,6 +116,86 @@ export function twemojiParse (text) {
   })
 }
 
+/**
+ * Extrai o caractere emoji de diferentes estruturas de objeto do VEmojiPicker
+ * @param {Object|string} emoji - Objeto emoji do VEmojiPicker ou string
+ * @returns {string|null} - Caractere emoji ou null se não encontrado
+ */
+export const extractEmojiChar = (emoji) => {
+  if (!emoji) return null
+
+  // Se já é uma string, retorna diretamente
+  if (typeof emoji === 'string') {
+    return emoji
+  }
+
+  // Se é um objeto, tenta diferentes propriedades possíveis
+  if (typeof emoji === 'object') {
+    // Propriedades comuns do VEmojiPicker
+    const possibleProps = [
+      'data', // VEmojiPicker v2.3.1
+      'emoji', // VEmojiPicker v2.x
+      'char', // VEmojiPicker v1.x
+      'unicode', // VEmojiPicker v1.x
+      'character', // VEmojiPicker v1.x
+      'symbol', // VEmojiPicker v1.x
+      'native' // VEmojiPicker v2.x
+    ]
+
+    for (const prop of possibleProps) {
+      if (emoji[prop]) {
+        return emoji[prop]
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Insere emoji em um textarea na posição do cursor
+ * @param {Object} emoji - Objeto emoji do VEmojiPicker
+ * @param {HTMLElement} textarea - Elemento textarea
+ * @param {Function} updateCallback - Função para atualizar o valor do campo
+ * @param {string} currentValue - Valor atual do campo
+ * @returns {boolean} - True se inserido com sucesso
+ */
+export const insertEmojiInTextarea = (emoji, textarea, updateCallback, currentValue = '') => {
+  const emojiChar = extractEmojiChar(emoji)
+
+  if (!emojiChar) {
+    console.warn('Não foi possível extrair o emoji do objeto:', emoji)
+    return false
+  }
+
+  if (!textarea) {
+    console.warn('Elemento textarea não encontrado')
+    return false
+  }
+
+  // Obter posição do cursor
+  const startPos = textarea.selectionStart
+  const endPos = textarea.selectionEnd
+  const cursorPos = startPos
+  const tmpStr = textarea.value || currentValue
+
+  // Inserir emoji
+  const newValue = tmpStr.substring(0, startPos) + emojiChar + tmpStr.substring(endPos, tmpStr.length)
+
+  // Atualizar valor
+  if (updateCallback && typeof updateCallback === 'function') {
+    updateCallback(newValue)
+  }
+
+  // Mover cursor
+  setTimeout(() => {
+    textarea.selectionStart = textarea.selectionEnd = cursorPos + emojiChar.length
+    textarea.focus()
+  }, 10)
+
+  return true
+}
+
 export default {
   hasEmojis,
   countEmojis,
@@ -125,5 +205,7 @@ export default {
   isEmoji,
   formatTextWithEmojis,
   emojiPickerConfig,
-  twemojiParse
+  twemojiParse,
+  extractEmojiChar,
+  insertEmojiInTextarea
 }
