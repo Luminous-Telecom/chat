@@ -24,11 +24,35 @@ const getMediaType = (mimetype: string | undefined): string => {
 
 const getFileExtension = (mimetype: string | undefined): string => {
   if (!mimetype) return "bin";
-  const parts = mimetype.split("/");
-  if (parts.length < 2) return "bin";
-  const [_, ext] = parts;
-  const [cleanExt] = ext.split(";");
-  return cleanExt || "bin";
+  const ext = mimetype.split("/")[1];
+  return ext ? ext.split(";")[0] : "bin";
+};
+
+// Função para criar nomes de arquivo seguros
+const createSafeFilename = (originalName: string, timestamp: number, ext: string): string => {
+  // Se não há nome original ou é muito longo, usar timestamp
+  if (!originalName || originalName.length > 50) {
+    return `${timestamp}.${ext}`;
+  }
+
+  // Limpar o nome do arquivo removendo caracteres problemáticos
+  let safeName = originalName
+    .replace(/[<>:"/\\|?*]/g, '') // Remover caracteres inválidos para arquivos
+    .replace(/\s+/g, '_') // Substituir espaços por underscores
+    .replace(/[^\w\-_.]/g, '') // Manter apenas letras, números, hífens, underscores e pontos
+    .substring(0, 50); // Limitar a 50 caracteres
+
+  // Se o nome ficou vazio após a limpeza, usar timestamp
+  if (!safeName || safeName.trim() === '') {
+    return `${timestamp}.${ext}`;
+  }
+
+  // Adicionar extensão se não tiver
+  if (!safeName.includes('.')) {
+    safeName += `.${ext}`;
+  }
+
+  return safeName;
 };
 
 interface MediaData {
@@ -232,7 +256,13 @@ const VerifyMediaMessage = async (
       return;
     }
 
-    const filename = media.filename || `${new Date().getTime()}.${ext}`;
+    // Criar nome de arquivo seguro
+    const timestamp = new Date().getTime();
+    const filename = createSafeFilename(media.filename || msg.body || '', timestamp, ext);
+    
+    logger.info(
+      `[VerifyMediaMessage] Created safe filename: ${filename} for message ID: ${msg.id.id}`
+    );
 
     let fileData: Buffer;
     try {

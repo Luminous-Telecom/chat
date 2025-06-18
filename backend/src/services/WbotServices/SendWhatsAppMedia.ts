@@ -8,6 +8,35 @@ import UserMessagesLog from "../../models/UserMessagesLog";
 import { logger } from "../../utils/logger";
 import Message from "../../models/Message";
 import socketEmit from "../../helpers/socketEmit";
+import { join } from "path";
+import Contact from "../../models/Contact";
+
+// Função para criar nomes de arquivo seguros
+const createSafeFilename = (originalName: string, timestamp: number, ext: string): string => {
+  // Se não há nome original ou é muito longo, usar timestamp
+  if (!originalName || originalName.length > 50) {
+    return `${timestamp}.${ext}`;
+  }
+
+  // Limpar o nome do arquivo removendo caracteres problemáticos
+  let safeName = originalName
+    .replace(/[<>:"/\\|?*]/g, '') // Remover caracteres inválidos para arquivos
+    .replace(/\s+/g, '_') // Substituir espaços por underscores
+    .replace(/[^\w\-_.]/g, '') // Manter apenas letras, números, hífens, underscores e pontos
+    .substring(0, 50); // Limitar a 50 caracteres
+
+  // Se o nome ficou vazio após a limpeza, usar timestamp
+  if (!safeName || safeName.trim() === '') {
+    return `${timestamp}.${ext}`;
+  }
+
+  // Adicionar extensão se não tiver
+  if (!safeName.includes('.')) {
+    safeName += `.${ext}`;
+  }
+
+  return safeName;
+};
 
 interface Request {
   media: Express.Multer.File;
@@ -43,6 +72,15 @@ const SendWhatsAppMedia = async (
     const mimeType = mime.lookup(media.filename) || "application/octet-stream";
     logger.info(`[SendWhatsAppMedia] Tipo de mídia detectado: ${mimeType}`);
 
+    // Criar nome de arquivo seguro
+    const timestamp = new Date().getTime();
+    const ext = mimeType.split('/')[1]?.split(';')[0] || 'bin';
+    const safeFilename = createSafeFilename(media.filename || media.originalname || '', timestamp, ext);
+    
+    logger.info(
+      `[SendWhatsAppMedia] Created safe filename: ${safeFilename} from original: ${media.filename}`
+    );
+
     let sentMessage;
     const isAudio = mimeType && mimeType.startsWith("audio/");
     const mediaType = mimeType.startsWith("image/")
@@ -56,13 +94,13 @@ const SendWhatsAppMedia = async (
     // Criar a mensagem no banco de dados primeiro
     const messageData = {
       ticketId: ticket.id,
-      body: body || media.originalname || media.filename,
+      body: body || media.originalname || safeFilename,
       contactId: ticket.contactId,
       fromMe: true,
       read: true,
       mediaType,
-      mediaUrl: `sent/${media.filename}`,
-      mediaName: media.filename,
+      mediaUrl: `sent/${safeFilename}`,
+      mediaName: safeFilename,
       originalName: media.originalname,
       timestamp: new Date().getTime(),
       status: "sended",
@@ -163,7 +201,7 @@ const SendWhatsAppMedia = async (
         // Se falhar, tenta enviar como documento
         sentMessage = await wbot.sendMessage(`${numberToSend}@c.us`, {
           document: fileBuffer,
-          fileName: media.filename,
+          fileName: safeFilename,
           mimetype: mimeType,
           caption: body,
         });
@@ -263,7 +301,7 @@ const SendWhatsAppMedia = async (
     } else {
       sentMessage = await wbot.sendMessage(`${numberToSend}@c.us`, {
         document: fileBuffer,
-        fileName: media.filename,
+        fileName: safeFilename,
         mimetype: mimeType,
         caption: body,
       });
