@@ -339,8 +339,7 @@
               :class=" { 'q-mt-sm': mensagem.mediaType !== 'chat' } "
               class="q-message-container row items-end no-wrap"
             >
-              <div v-html=" farmatarMensagemWhatsapp(mensagem.body) ">
-              </div>
+              <div>{{ farmatarMensagemWhatsapp(mensagem.body) }}</div>
             </div>
           </div>
         </q-chat-message>

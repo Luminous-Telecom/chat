@@ -102,13 +102,17 @@
                 self="bottom middle"
                 :offset="[5, 40]"
               >
-                <VEmojiPicker
-                  style="width: 40vw"
-                  :showSearch="false"
-                  :emojisByRow="20"
-                  labelSearch="Localizar..."
-                  lang="pt-BR"
-                  @select="onInsertSelectEmoji"
+                <Picker
+                  :theme="$q.dark.isActive ? 'dark' : 'light'"
+                  :locale="'pt'"
+                  :previewPosition="'none'"
+                  :perLine="9"
+                  :showPreview="false"
+                  :showSkinTones="true"
+                  :showCategoryButtons="true"
+                  :showSearch="true"
+                  style="width: 420px"
+                  @emoji-select="onEmojiSelectMart"
                 />
               </q-menu>
             </q-btn>
@@ -153,14 +157,16 @@
 </template>
 
 <script>
+import { Picker } from 'emoji-mart-vue'
+import 'emoji-mart-vue/css/emoji-mart.css'
 const userId = +localStorage.getItem('userId')
 import { CriarAcaoEtapa, EditarAcaoEtapa } from 'src/service/autoResposta'
-import { VEmojiPicker } from 'v-emoji-picker'
-import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 
 export default {
   name: 'ModalAcaoEtapa',
-  components: { VEmojiPicker },
+  components: {
+    Picker
+  },
   props: {
     modalAcaoEtapa: {
       type: Boolean,
@@ -275,25 +281,11 @@ export default {
       }
       this.fecharModal()
     },
-    onInsertSelectEmoji (emoji) {
-      const textarea = this.$refs.inputEnvioMensagem
-      const success = insertEmojiInTextarea(
-        emoji,
-        textarea,
-        (newValue) => {
-          this.acaoEtapa.replyDefinition = newValue
-        },
-        this.acaoEtapa.replyDefinition
-      )
-
-      if (!success) {
-        this.$q.notify({
-          type: 'warning',
-          message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
-          timeout: 3000
-        })
-      }
+    onEmojiSelectMart (emoji) {
+      // emoji.native contém o caractere emoji selecionado
+      this.onInsertSelectEmoji
+        ? this.onInsertSelectEmoji(emoji.native, 'inputEnvioMensagem')
+        : this.$emit('emoji-click', emoji.native)
     }
   }
 

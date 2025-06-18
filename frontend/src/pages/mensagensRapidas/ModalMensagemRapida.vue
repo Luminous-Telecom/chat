@@ -45,14 +45,7 @@
                 self="bottom middle"
                 :offset="[5, 40]"
               >
-                <VEmojiPicker
-                  style="width: 40vw"
-                  :showSearch="false"
-                  :emojisByRow="20"
-                  labelSearch="Localizar..."
-                  lang="pt-BR"
-                  @select="onInsertSelectEmoji"
-                />
+                <emoji-picker @emoji-click="onEmojiSelect" style="width: 40vw" />
               </q-menu>
             </q-btn>
           </div>
@@ -95,13 +88,11 @@
 </template>
 
 <script>
-import { VEmojiPicker } from 'v-emoji-picker'
-import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
-
 import { CriarMensagemRapida, AlterarMensagemRapida } from 'src/service/mensagensRapidas'
+import 'emoji-picker-element'
+
 export default {
   name: 'ModalMensagemRapida',
-  components: { VEmojiPicker },
   props: {
     modalMensagemRapida: {
       type: Boolean,
@@ -123,25 +114,28 @@ export default {
     }
   },
   methods: {
-    onInsertSelectEmoji (emoji) {
-      const textarea = this.$refs.inputEnvioMensagem
-      const success = insertEmojiInTextarea(
-        emoji,
-        textarea,
-        (newValue) => {
-          this.mensagemRapida.message = newValue
-        },
-        this.mensagemRapida.message
-      )
-
-      if (!success) {
+    onEmojiSelect (event) {
+      const emoji = event.detail.unicode || event.detail.emoji
+      if (!emoji) {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
           position: 'top',
           timeout: 3000
         })
+        return
       }
+      const textarea = this.$refs.inputEnvioMensagem
+      if (!textarea) return
+      const startPos = textarea.selectionStart
+      const endPos = textarea.selectionEnd
+      const tmpStr = textarea.value || this.mensagemRapida.message
+      const newValue = tmpStr.substring(0, startPos) + emoji + tmpStr.substring(endPos, tmpStr.length)
+      this.mensagemRapida.message = newValue
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = startPos + emoji.length
+        textarea.focus()
+      }, 10)
     },
     fecharModal () {
       this.$emit('update:mensagemRapidaEmEdicao', { id: null })

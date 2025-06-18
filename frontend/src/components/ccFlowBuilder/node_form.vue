@@ -410,20 +410,10 @@
                       <q-tooltip>
                         Emoji
                       </q-tooltip>
-                      <q-menu
-                        anchor="top right"
-                        self="bottom middle"
-                        :offset="[5, 40]"
-                      >
-                        <VEmojiPicker
-                          style="width: 40vw"
-                          :showSearch="false"
-                          :emojisByRow="20"
-                          labelSearch="Localizar..."
-                          lang="pt-BR"
-                          @select="onInsertSelectEmojiSaudacao"
-                        />
-                      </q-menu>
+                      <emoji-picker
+                        style="width: 40vw"
+                        @emoji-click="onInsertSelectEmojiSaudacao"
+                      />
                     </q-btn>
                   </div>
                   <textarea
@@ -479,20 +469,10 @@
                       <q-tooltip>
                         Emoji
                       </q-tooltip>
-                      <q-menu
-                        anchor="top right"
-                        self="bottom middle"
-                        :offset="[5, 40]"
-                      >
-                        <VEmojiPicker
-                          style="width: 40vw"
-                          :showSearch="false"
-                          :emojisByRow="20"
-                          labelSearch="Localizar..."
-                          lang="pt-BR"
-                          @select="onInsertSelectEmojiNotOptionsSelectMessage"
-                        />
-                      </q-menu>
+                      <emoji-picker
+                        style="width: 40vw"
+                        @emoji-click="onInsertSelectEmojiNotOptionsSelectMessage"
+                      />
                     </q-btn>
                   </div>
                   <textarea
@@ -838,13 +818,12 @@
 import { uid } from 'quasar'
 import MessageField from './messageField'
 import MediaField from './mediaField.vue'
-import { VEmojiPicker } from 'v-emoji-picker'
+import 'emoji-picker-element'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 export default {
   components: {
     MessageField,
-    VEmojiPicker,
     MediaField
   },
   props: {
@@ -972,7 +951,18 @@ export default {
         this.node.conditions = nConditions
       })
     },
-    onInsertSelectEmojiSaudacao (emoji) {
+    onInsertSelectEmojiSaudacao (event) {
+      // O emoji está em event.detail.unicode ou event.detail.emoji
+      const emoji = event.detail?.unicode || event.detail?.emoji || event.emoji || event.unicode || event.i || event.data
+      if (!emoji) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
+        return
+      }
       const textarea = this.$refs.inputEnvioMensagemSaudacao
       const success = insertEmojiInTextarea(
         emoji,
@@ -992,7 +982,18 @@ export default {
         })
       }
     },
-    onInsertSelectEmojiNotOptionsSelectMessage (emoji) {
+    onInsertSelectEmojiNotOptionsSelectMessage (event) {
+      // O emoji está em event.detail.unicode ou event.detail.emoji
+      const emoji = event.detail?.unicode || event.detail?.emoji || event.emoji || event.unicode || event.i || event.data
+      if (!emoji) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
+        return
+      }
       const textarea = this.$refs.inputEnvioMensagemnotOptionsSelectMessage
       const success = insertEmojiInTextarea(
         emoji,

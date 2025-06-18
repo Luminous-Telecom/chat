@@ -138,7 +138,19 @@
               self="bottom middle"
               :offset="[5, 40]"
             >
-              <emoji-picker @emoji-click="onEmojiSelect" style="width: 340px;" />
+              <Picker
+                :theme="pickerTheme"
+                :key="pickerTheme"
+                :locale="'pt'"
+                :previewPosition="'none'"
+                :perLine="9"
+                :showPreview="false"
+                :showSkinTones="true"
+                :showCategoryButtons="true"
+                :showSearch="true"
+                style="width: 420px"
+                @emoji-select="onEmojiSelectMart"
+              />
             </q-menu>
           </q-btn>
           <q-btn
@@ -213,7 +225,19 @@
                   self="bottom middle"
                   :offset="[5, 40]"
                 >
-                  <emoji-picker @emoji-click="onEmojiSelect" style="width: 340px;" />
+                  <Picker
+                    :theme="pickerTheme"
+                    :key="pickerTheme"
+                    :locale="'pt'"
+                    :previewPosition="'none'"
+                    :perLine="9"
+                    :showPreview="false"
+                    :showSkinTones="true"
+                    :showCategoryButtons="true"
+                    :showSearch="true"
+                    style="width: 420px"
+                    @emoji-select="onEmojiSelectMart"
+                  />
                 </q-menu>
               </q-btn>
             </template>
@@ -409,12 +433,14 @@ import { EnviarMensagemTexto } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import RecordingTimer from './RecordingTimer'
 import MicRecorder from 'mic-recorder-to-mp3'
-import 'emoji-picker-element'
+import { Picker } from 'emoji-mart-vue'
+import 'emoji-mart-vue/css/emoji-mart.css'
+import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
+
 const Mp3Recorder = new MicRecorder({
   bitRate: 128,
   sampleRate: 44100
 })
-import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 
 export default {
   name: 'InputMensagem',
@@ -434,7 +460,8 @@ export default {
     }
   },
   components: {
-    RecordingTimer
+    RecordingTimer,
+    Picker
   },
   data () {
     return {
@@ -468,6 +495,9 @@ export default {
         search = search.replace('/', '')
       }
       return !search ? this.mensagensRapidas : this.mensagensRapidas.filter(r => r.key.toLowerCase().indexOf(search) !== -1)
+    },
+    pickerTheme () {
+      return this.$q.dark.isActive ? 'dark' : 'light'
     }
   },
   watch: {
@@ -514,29 +544,11 @@ export default {
         this.$refs.inputEnvioMensagem.focus()
       }, 300)
     },
-    onEmojiSelect (event) {
-      // O emoji está em event.detail.unicode ou event.detail.emoji
-      const emoji = event.detail.unicode || event.detail.emoji
-      if (!emoji) {
-        this.$q.notify({
-          type: 'warning',
-          message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
-          timeout: 3000
-        })
-        return
-      }
-      const textarea = this.$refs.inputEnvioMensagem.$refs.input
-      if (!textarea) return
-      const startPos = textarea.selectionStart
-      const endPos = textarea.selectionEnd
-      const tmpStr = textarea.value || this.textChat
-      const newValue = tmpStr.substring(0, startPos) + emoji + tmpStr.substring(endPos, tmpStr.length)
-      this.textChat = newValue
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = startPos + emoji.length
-        textarea.focus()
-      }, 10)
+    onEmojiSelectMart (emoji) {
+      // emoji.native contém o caractere emoji selecionado
+      this.onInsertSelectEmoji
+        ? this.onInsertSelectEmoji(emoji.native, 'inputEnvioMensagem')
+        : this.$emit('emoji-click', emoji.native)
     },
     abrirEnvioArquivo (event) {
       this.textChat = ''

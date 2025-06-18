@@ -10,8 +10,10 @@
                 Emoji
               </q-tooltip>
               <q-menu anchor="top right" self="bottom middle" :offset="[5, 40]">
-                <VEmojiPicker style="width: 40vw" :showSearch="false" :emojisByRow="20" labelSearch="Localizar..."
-                  lang="pt-BR" @select="onInsertSelectEmoji" />
+                <emoji-picker
+                  style="width: 40vw"
+                  @emoji-click="onInsertSelectEmoji"
+                />
               </q-menu>
             </q-btn>
             <q-btn round flat dense>
@@ -40,12 +42,12 @@
 </template>
 
 <script>
-import { VEmojiPicker } from 'v-emoji-picker'
+import 'emoji-picker-element'
 import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 
 export default {
   name: 'MessageField',
-  components: { VEmojiPicker },
+  components: { },
   data () {
     return {
       variaveis: [
@@ -56,7 +58,18 @@ export default {
     }
   },
   methods: {
-    onInsertSelectEmoji (emoji) {
+    onInsertSelectEmoji (event) {
+      // O emoji está em event.detail.unicode ou event.detail.emoji
+      const emoji = event.detail?.unicode || event.detail?.emoji || event.emoji || event.unicode || event.i || event.data
+      if (!emoji) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
+        return
+      }
       const textarea = this.$refs.inputEnvioMensagem
       const success = insertEmojiInTextarea(
         emoji,

@@ -147,13 +147,9 @@
                   self="bottom middle"
                   :offset="[5, 40]"
                 >
-                  <VEmojiPicker
+                  <emoji-picker
                     style="width: 40vw"
-                    :showSearch="false"
-                    :emojisByRow="20"
-                    labelSearch="Localizar..."
-                    lang="pt-BR"
-                    @select="(v) => onInsertSelectEmoji(v, 'message1')"
+                    @emoji-click="(e) => onInsertSelectEmoji(e, 'message1')"
                   />
                 </q-menu>
               </q-btn>
@@ -197,13 +193,9 @@
                   self="bottom middle"
                   :offset="[5, 40]"
                 >
-                  <VEmojiPicker
+                  <emoji-picker
                     style="width: 40vw"
-                    :showSearch="false"
-                    :emojisByRow="20"
-                    labelSearch="Localizar..."
-                    lang="pt-BR"
-                    @select="(v) => onInsertSelectEmoji(v, 'message2')"
+                    @emoji-click="(e) => onInsertSelectEmoji(e, 'message2')"
                   />
                 </q-menu>
               </q-btn>
@@ -247,13 +239,9 @@
                   self="bottom middle"
                   :offset="[5, 40]"
                 >
-                  <VEmojiPicker
+                  <emoji-picker
                     style="width: 40vw"
-                    :showSearch="false"
-                    :emojisByRow="20"
-                    labelSearch="Localizar..."
-                    lang="pt-BR"
-                    @select="(v) => onInsertSelectEmoji(v, 'message3')"
+                    @emoji-click="(e) => onInsertSelectEmoji(e, 'message3')"
                   />
                 </q-menu>
               </q-btn>
@@ -336,7 +324,6 @@
 
 <script>
 import { required } from 'vuelidate/lib/validators'
-import { VEmojiPicker } from 'v-emoji-picker'
 import axios from 'axios'
 import cMolduraCelular from 'src/components/cMolduraCelular'
 import MensagemChat from 'src/pages/atendimento/MensagemChat'
@@ -344,6 +331,7 @@ import { mapGetters } from 'vuex'
 import { CriarCampanha, AlterarCampanha } from 'src/service/campanhas'
 import { parseISO, startOfDay } from 'date-fns'
 import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
+import 'emoji-picker-element'
 
 const isValidDate = (v) => {
   return startOfDay(new Date(parseISO(v))).getTime() >= startOfDay(new Date()).getTime()
@@ -359,7 +347,7 @@ const downloadImageCors = axios.create({
 
 export default {
   name: 'ModalCampanha',
-  components: { VEmojiPicker, cMolduraCelular, MensagemChat },
+  components: { cMolduraCelular, MensagemChat },
   props: {
     modalCampanha: {
       type: Boolean,
@@ -474,7 +462,17 @@ export default {
     }
   },
   methods: {
-    onInsertSelectEmoji (emoji, ref) {
+    onInsertSelectEmoji (event, ref) {
+      const emoji = event.detail?.unicode || event.detail?.emoji || event.emoji || event.unicode || event.i || event.data
+      if (!emoji) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
+        return
+      }
       const textarea = this.$refs[ref]
       const success = insertEmojiInTextarea(
         emoji,
@@ -484,7 +482,6 @@ export default {
         },
         this.campanha[ref]
       )
-
       if (!success) {
         this.$q.notify({
           type: 'warning',
