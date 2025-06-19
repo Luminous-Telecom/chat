@@ -1,6 +1,7 @@
 import { format, parseISO, parseJSON } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
 import { mapGetters } from 'vuex'
+import { processEmojis } from 'src/utils/emojiUtils'
 
 export default {
   computed: {
@@ -71,8 +72,8 @@ export default {
       // Processar quebras de linha
       format = format.replace(/\n/gi, '<br>')
 
-      // Não processar emojis com Twemoji - manter como caracteres Unicode normais
-      // Isso evita o problema de emojis sendo exibidos como tags HTML
+      // Processar emojis convertendo para SVG usando Twemoji
+      format = processEmojis(format)
 
       return format
     },

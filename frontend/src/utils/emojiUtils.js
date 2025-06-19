@@ -27,16 +27,15 @@ export const countEmojis = (text) => {
 }
 
 /**
- * Processa texto para melhorar a exibição de emojis
+ * Processa texto para melhorar a exibição de emojis convertendo para SVG
  * @param {string} text - Texto para processar
- * @returns {string} - Texto processado com classes CSS para emojis
+ * @returns {string} - Texto processado com emojis como SVG
  */
 export const processEmojis = (text) => {
   if (!text || typeof text !== 'string') return text
 
-  return text.replace(EMOJI_REGEX, (emoji) => {
-    return `<span class="emoji" data-emoji="${emoji}" title="${emoji}">${emoji}</span>`
-  })
+  // Usa twemojiParse para converter emojis para SVG
+  return twemojiParse(text)
 }
 
 /**
@@ -101,15 +100,27 @@ export const emojiPickerConfig = {
 }
 
 /**
- * Processa texto para exibir emojis como caracteres Unicode normais
- * @param {string} text
- * @returns {string} Texto com emojis como caracteres Unicode
+ * Converte emojis Unicode para SVG usando Twemoji
+ * @param {string} text - Texto contendo emojis
+ * @returns {string} Texto com emojis convertidos para SVG
  */
 export function twemojiParse (text) {
   if (!text || typeof text !== 'string') return text
 
-  // Retorna o texto original sem converter emojis em imagens
-  // Isso evita o problema de emojis sendo exibidos como tags HTML
+  // Converte emojis para SVG usando Twemoji
+  if (typeof window !== 'undefined' && window.twemoji) {
+    return window.twemoji.parse(text, {
+      folder: 'svg',
+      ext: '.svg',
+      base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/',
+      className: 'emoji-svg',
+      attributes: () => ({
+        style: 'height: 1.2em; width: 1.2em; vertical-align: -0.1em; display: inline-block;'
+      })
+    })
+  }
+
+  // Fallback: retorna o texto original se Twemoji não estiver disponível
   return text
 }
 

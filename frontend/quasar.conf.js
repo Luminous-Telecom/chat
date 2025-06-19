@@ -22,7 +22,8 @@ module.exports = function (ctx) {
     boot: [
       'vuelidate',
       'ccComponents',
-      'axios'
+      'axios',
+      'twemoji'
     ],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
