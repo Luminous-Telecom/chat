@@ -1,7 +1,6 @@
 import { format, parseISO, parseJSON } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
 import { mapGetters } from 'vuex'
-import { hasEmojis, twemojiParse } from '../../utils/emojiUtils'
 
 export default {
   computed: {
@@ -35,9 +34,6 @@ export default {
       if (!body) return ''
 
       let format = body
-
-      // Verificar se contém emojis
-      const containsEmojis = hasEmojis(body)
 
       function is_aplhanumeric (c) {
         var x = c.charCodeAt()
@@ -75,10 +71,8 @@ export default {
       // Processar quebras de linha
       format = format.replace(/\n/gi, '<br>')
 
-      // Se contém emojis, processar para melhor exibição com Twemoji
-      if (containsEmojis) {
-        format = twemojiParse(format)
-      }
+      // Não processar emojis com Twemoji - manter como caracteres Unicode normais
+      // Isso evita o problema de emojis sendo exibidos como tags HTML
 
       return format
     },

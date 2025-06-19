@@ -5,21 +5,22 @@
 *
   font-family: 'Nunito', sans-serif
 
-// Configurações para melhor exibição de emojis
-.emoji, .emoticon, [data-emoji]
+// Configurações para melhor exibição de emojis como caracteres Unicode
+.emoji
   font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
   font-size: 1.1em
   line-height: 1
   vertical-align: middle
+  display: inline
 
 // Melhorar exibição de emojis em mensagens
 .q-message-container, .messageLeft, .messageRight, .quotedMsg
-  .emoji, .emoticon, [data-emoji]
+  .emoji
     font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
     font-size: 1.2em
     line-height: 1
     vertical-align: middle
-    display: inline-block
+    display: inline
 
 // Configurações específicas para o VEmojiPicker
 .v-emoji-picker
@@ -31,7 +32,7 @@
 
 // Fallback para emojis não suportados
 @supports not (font-variant-emoji: emoji)
-  .emoji, .emoticon, [data-emoji]
+  .emoji
     font-family: 'Segoe UI Symbol', 'Arial Unicode MS', 'Lucida Sans Unicode', sans-serif
 
 body
