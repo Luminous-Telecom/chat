@@ -102,53 +102,6 @@
             v-if="cticket.status == 'closed'"
           />
 
-          <q-btn-dropdown
-            split
-            color="primary"
-            no-caps
-            rounded
-            @click="$emit('updateTicket:retornar')"
-            icon="mdi-replay"
-            label="Fila"
-            v-if="cticket.status == 'open'"
-          >
-            <q-list>
-              <q-item
-                v-close-popup
-                @click="$emit('updateTicket:retornar')"
-                clickable
-              >
-                <q-item-section avatar>
-                  <q-avatar
-                    icon="mdi-replay"
-                    color="negative"
-                    text-color="white"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>Fila</q-item-label>
-                  <q-item-label caption>Retornar aos pendentes</q-item-label>
-                </q-item-section>
-              </q-item>
-
-              <q-item
-                v-close-popup
-                @click="listarFilas"
-                clickable
-              >
-                <q-item-section avatar>
-                  <q-avatar
-                    icon="mdi-transfer"
-                    color="primary"
-                    text-color="white"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>Transferir</q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-btn-dropdown>
         </div>
       </q-toolbar>
       <q-separator />
@@ -173,13 +126,15 @@
               rounded
               outlined
               v-model="filaSelecionada"
-              :options="filas"
+              :options="opcoesFilas"
               emit-value
               map-options
               option-value="id"
-              option-label="queue"
-              label="Fila de destino"
+              option-label="label"
+              label="Fila de destino (opcional)"
               class="full-width"
+              :loading="filas.length === 0"
+              clearable
             />
           </div>
           <div class="col-12">
@@ -188,13 +143,14 @@
               dense
               outlined
               v-model="usuarioSelecionado"
-              :options="usuarios.filter(filterUsers)"
+              :options="usuariosFiltrados"
               emit-value
               map-options
               option-value="id"
               option-label="name"
               label="Usuário destino"
               class="full-width"
+              :loading="usuarios.length === 0"
             />
           </div>
         </q-card-section>
@@ -211,6 +167,7 @@
             label="Salvar"
             color="positive"
             @click="confirmarTransferenciaTicket"
+            :disable="!usuarioSelecionado"
           />
         </q-card-actions>
       </q-card>
@@ -232,7 +189,8 @@ export default {
       usuarioSelecionado: null,
       filaSelecionada: null,
       usuarios: [],
-      filas: []
+      filas: [],
+      usuariosFiltrados: []
     }
   },
   computed: {
@@ -245,6 +203,22 @@ export default {
         user: { name: '' }
       }
       return Object.keys(this.ticketFocado).includes('contact') ? this.ticketFocado : infoDefault
+    },
+    opcoesFilas () {
+      const opcoes = [
+        { id: null, label: 'Sem fila específica' }
+      ]
+
+      if (this.filas && this.filas.length > 0) {
+        this.filas.forEach(fila => {
+          opcoes.push({
+            id: fila.id,
+            label: fila.queue || `Fila ${fila.id}`
+          })
+        })
+      }
+
+      return opcoes
     }
   },
   methods: {
@@ -257,20 +231,25 @@ export default {
     },
     filterUsers (element, index, array) {
       const fila = this.filaSelecionada
-      if (fila == null) return true
-      const queues_valid = element.queues.filter(function (element, index, array) {
-        return (element.id == fila)
+      if (fila == null || fila === '') {
+        return true
+      }
+      if (!element.queues || !Array.isArray(element.queues)) {
+        return true
+      }
+      const queues_valid = element.queues.filter(function (queue, index, array) {
+        return (queue.id == fila)
       })
-      return (queues_valid.length > 0)
+      return queues_valid.length > 0
     },
     async listarFilas () {
       try {
         const { data } = await ListarFilas()
         this.filas = data
+        await this.listarUsuarios()
         this.modalTransferirTicket = true
-        this.listarUsuarios()
       } catch (error) {
-        console.error(error)
+        console.error('Erro ao carregar filas:', error)
         this.$notificarErro('Problema ao carregar filas', error)
       }
     },
@@ -278,47 +257,91 @@ export default {
       try {
         const { data } = await ListarUsuarios()
         this.usuarios = data.users
-        this.modalTransferirTicket = true
+        this.usuariosFiltrados = this.usuarios.filter(this.filterUsers)
       } catch (error) {
-        console.error(error)
+        console.error('Erro ao carregar usuários:', error)
         this.$notificarErro('Problema ao carregar usuários', error)
       }
     },
     async confirmarTransferenciaTicket () {
-      if (!this.filaSelecionada) return
-      // if (!this.usuarioSelecionado) return
+      try {
+        if (!this.usuarioSelecionado) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Selecione um usuário de destino',
+            progress: true,
+            actions: [{
+              icon: 'close',
+              round: true,
+              color: 'white'
+            }]
+          })
+          return
+        }
 
-      if (this.ticketFocado.userId === this.usuarioSelecionado && this.ticketFocado.userId != null) {
-        this.$q.notify({
-          type: 'info',
-          message: 'Ticket já pertece ao usuário selecionado.',
-          progress: true,
-          actions: [{
-            icon: 'close',
-            round: true,
-            color: 'white'
-          }]
-        })
-        return
-      }
-      if (this.ticketFocado.userId === userId && userId === this.usuarioSelecionado) {
-        this.$q.notify({
-          type: 'info',
-          message: 'Ticket já pertece ao seu usuário',
-          progress: true,
-          actions: [{
-            icon: 'close',
-            round: true,
-            color: 'white'
-          }]
-        })
-        return
-      }
+        // Verificar se o ticket já pertence ao usuário selecionado
+        if (this.ticketFocado.userId === this.usuarioSelecionado && this.ticketFocado.userId != null) {
+          this.$q.notify({
+            type: 'info',
+            message: 'Ticket já pertence ao usuário selecionado.',
+            progress: true,
+            actions: [{
+              icon: 'close',
+              round: true,
+              color: 'white'
+            }]
+          })
+          return
+        }
 
-      if (this.ticketFocado.queueId === this.filaSelecionada && this.ticketFocado.userId === this.usuarioSelecionado) {
+        // Verificar se o ticket já pertence ao usuário atual
+        if (this.ticketFocado.userId === userId && userId === this.usuarioSelecionado) {
+          this.$q.notify({
+            type: 'info',
+            message: 'Ticket já pertence ao seu usuário',
+            progress: true,
+            actions: [{
+              icon: 'close',
+              round: true,
+              color: 'white'
+            }]
+          })
+          return
+        }
+
+        // Verificar se o ticket já está na mesma fila e usuário
+        if (this.ticketFocado.queueId === this.filaSelecionada && this.ticketFocado.userId === this.usuarioSelecionado) {
+          this.$q.notify({
+            type: 'info',
+            message: 'Ticket já pertence a esta fila e usuário',
+            progress: true,
+            actions: [{
+              icon: 'close',
+              round: true,
+              color: 'white'
+            }]
+          })
+          return
+        }
+
+        // Preparar dados para transferência
+        const dadosTransferencia = {
+          userId: this.usuarioSelecionado,
+          status: 'open',
+          isTransference: 1
+        }
+
+        // Adicionar fila apenas se foi selecionada
+        if (this.filaSelecionada) {
+          dadosTransferencia.queueId = this.filaSelecionada
+        }
+
+        // Realizar a transferência
+        await AtualizarTicket(this.ticketFocado.id, dadosTransferencia)
+
         this.$q.notify({
-          type: 'info',
-          message: 'Ticket já pertece a esta fila e usuário',
+          type: 'positive',
+          message: 'Ticket transferido com sucesso!',
           progress: true,
           actions: [{
             icon: 'close',
@@ -326,27 +349,45 @@ export default {
             color: 'white'
           }]
         })
-        return
+
+        // Limpar o modal e resetar os dados
+        this.modalTransferirTicket = false
+        this.usuarioSelecionado = null
+        this.filaSelecionada = null
+
+        // Limpar o ticket focado para forçar atualização
+        this.$store.commit('TICKET_FOCADO', {})
+
+        // Emitir evento para atualizar a lista de tickets
+        this.$root.$emit('ticket:transferido')
+      } catch (error) {
+        console.error('Erro ao transferir ticket:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao transferir ticket. Tente novamente.',
+          progress: true,
+          actions: [{
+            icon: 'close',
+            round: true,
+            color: 'white'
+          }]
+        })
       }
-      await AtualizarTicket(this.ticketFocado.id, {
-        userId: this.usuarioSelecionado,
-        queueId: this.filaSelecionada,
-        status: this.usuarioSelecionado == null ? 'pending' : 'open',
-        isTransference: 1
-      })
-      this.$q.notify({
-        type: 'positive',
-        message: 'Ticket transferido.',
-        progress: true,
-        actions: [{
-          icon: 'close',
-          round: true,
-          color: 'white'
-        }]
-      })
-      this.modalTransferirTicket = false
-      this.$store.commit('TICKET_FOCADO', {})
     }
+  },
+  watch: {
+    filaSelecionada: {
+      handler (newVal) {
+        this.usuariosFiltrados = this.usuarios.filter(this.filterUsers)
+      },
+      immediate: true
+    }
+  },
+  mounted () {
+    this.$root.$on('infor-cabecalo-chat:transferir-ticket', this.listarFilas)
+  },
+  beforeDestroy () {
+    this.$root.$off('infor-cabecalo-chat:transferir-ticket', this.listarFilas)
   }
 }
 </script>

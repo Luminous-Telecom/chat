@@ -1458,6 +1458,7 @@ export default {
     })
     this.$root.$on('infor-cabecalo-chat:acao-menu', this.setValueMenu)
     this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
+    this.$root.$on('ticket:transferido', this.consultarTickets)
     this.socketTicketList()
 
     // Inicializar o serviço de áudio (sem tocar som)
@@ -1538,7 +1539,8 @@ export default {
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
     this.$root.$off('infor-cabecalo-chat:acao-menu', this.setValueMenu)
-    this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
+    this.$root.$off('update-ticket:info-contato', this.setValueMenuContact)
+    this.$root.$off('ticket:transferido', this.consultarTickets)
     // this.socketDisconnect()
     this.$store.commit('TICKET_FOCADO', {})
   },
