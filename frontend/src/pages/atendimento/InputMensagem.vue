@@ -149,7 +149,7 @@
                 :showCategoryButtons="true"
                 :showSearch="true"
                 style="width: 420px"
-                @emoji-select="onEmojiSelectMart"
+                @select="onEmojiSelectMart"
               />
             </q-menu>
           </q-btn>
@@ -236,7 +236,7 @@
                     :showCategoryButtons="true"
                     :showSearch="true"
                     style="width: 420px"
-                    @emoji-select="onEmojiSelectMart"
+                    @select="onEmojiSelectMart"
                   />
                 </q-menu>
               </q-btn>
@@ -436,6 +436,7 @@ import MicRecorder from 'mic-recorder-to-mp3'
 import { Picker } from 'emoji-mart-vue'
 import 'emoji-mart-vue/css/emoji-mart.css'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
+import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
 
 const Mp3Recorder = new MicRecorder({
   bitRate: 128,
@@ -545,45 +546,24 @@ export default {
       }, 300)
     },
     onEmojiSelectMart (emoji) {
-      console.log('Emoji selecionado:', emoji)
+      const textarea = this.$refs.inputEnvioMensagem
+      const success = insertEmojiInTextarea(
+        emoji,
+        textarea,
+        (newValue) => {
+          this.textChat = newValue
+        },
+        this.textChat
+      )
 
-      // emoji.native contém o caractere emoji selecionado
-      const emojiChar = emoji.native
-
-      if (!emojiChar) {
-        console.warn('Nenhum emoji encontrado:', emoji)
+      if (!success) {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
           position: 'top',
           timeout: 3000
         })
-        return
       }
-
-      // Inserir emoji no textarea
-      const textarea = this.$refs.inputEnvioMensagem
-      if (!textarea) {
-        console.warn('Textarea não encontrado')
-        return
-      }
-
-      // Obter posição do cursor
-      const startPos = textarea.selectionStart
-      const endPos = textarea.selectionEnd
-      const currentValue = this.textChat || ''
-
-      // Inserir emoji na posição do cursor
-      const newValue = currentValue.substring(0, startPos) + emojiChar + currentValue.substring(endPos)
-      this.textChat = newValue
-
-      // Mover cursor para depois do emoji
-      this.$nextTick(() => {
-        textarea.focus()
-        textarea.selectionStart = textarea.selectionEnd = startPos + emojiChar.length
-      })
-
-      console.log('Emoji inserido com sucesso:', emojiChar)
     },
     abrirEnvioArquivo (event) {
       this.textChat = ''
