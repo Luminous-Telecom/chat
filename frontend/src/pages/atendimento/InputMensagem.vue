@@ -134,9 +134,12 @@
               Emoji
             </q-tooltip>
             <q-menu
+              v-model="showEmojiPicker1"
               anchor="top right"
               self="bottom middle"
               :offset="[5, 40]"
+              :auto-close="false"
+              persistent
             >
               <Picker
                 :theme="pickerTheme"
@@ -222,9 +225,12 @@
                   Emoji
                 </q-tooltip>
                 <q-menu
+                  v-model="showEmojiPicker2"
                   anchor="top right"
                   self="bottom middle"
                   :offset="[5, 40]"
+                  :auto-close="false"
+                  persistent
                 >
                   <Picker
                     :theme="pickerTheme"
@@ -481,7 +487,9 @@ export default {
       arquivos: [],
       textChat: '',
       sign: false,
-      scheduleDate: null
+      scheduleDate: null,
+      showEmojiPicker1: false,
+      showEmojiPicker2: false
     }
   },
   computed: {
