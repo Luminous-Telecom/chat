@@ -356,13 +356,6 @@
       <small>Debug: Status = {{ ticketFocado.status }}, ID = {{ ticketFocado.id }}</small>
     </div>
 
-    <template v-if="ticketFocado.status !== 'pending'">
-      <!-- Conteúdo principal do chat -->
-      <p
-        v-if="!cMostrarEnvioArquivo"
-        class="row col text-caption text-blue-grey-10"
-      >Quebra linha/Parágrafo: Shift + Enter ||| Enviar Mensagem: Enter</p>
-    </template>
   </div>
 </template>
 
