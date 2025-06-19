@@ -137,6 +137,7 @@
               anchor="top right"
               self="bottom middle"
               :offset="[5, 40]"
+              :auto-close="false"
             >
               <Picker
                 :theme="pickerTheme"
@@ -224,6 +225,7 @@
                   anchor="top right"
                   self="bottom middle"
                   :offset="[5, 40]"
+                  :auto-close="false"
                 >
                   <Picker
                     :theme="pickerTheme"
@@ -547,15 +549,15 @@ export default {
     },
     onEmojiSelectMart (emoji) {
       const textarea = this.$refs.inputEnvioMensagem
-      
-      // Garantir que o textarea tenha foco e posição do cursor válida
+
+      // Garantir que o textarea tenha foco antes de inserir o emoji
       textarea.focus()
-      
-      // Se não há posição de cursor válida, inserir no final
-      if (textarea.selectionStart === 0 && textarea.selectionEnd === 0 && this.textChat.length > 0) {
+
+      // Se não há posição de cursor válida e há texto, inserir no final
+      if ((textarea.selectionStart === 0 && textarea.selectionEnd === 0) && this.textChat.length > 0) {
         textarea.selectionStart = textarea.selectionEnd = this.textChat.length
       }
-      
+
       const success = insertEmojiInTextarea(
         emoji,
         textarea,
