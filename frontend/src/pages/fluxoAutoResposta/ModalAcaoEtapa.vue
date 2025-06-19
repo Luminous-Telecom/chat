@@ -101,6 +101,7 @@
                 anchor="top right"
                 self="bottom middle"
                 :offset="[5, 40]"
+                ref="emojiPicker"
               >
                 <Picker
                   :theme="$q.dark.isActive ? 'dark' : 'light'"
@@ -281,6 +282,42 @@ export default {
       }
       this.fecharModal()
     },
+    // Método para fechar o modal de emojis quando clicar fora
+    handleClickOutsideEmojiPicker (event) {
+      // Verificar se o clique foi fora do modal de emojis
+      const emojiPicker = this.$refs.emojiPicker
+
+      // Verificar se o clique foi no botão que abre o emoji picker
+      const isEmojiButton = event.target.closest('.q-btn') &&
+                           event.target.closest('.q-btn').querySelector('.mdi-emoticon-happy-outline')
+
+      // Verificar se o clique foi dentro do emoji picker
+      const isInsideEmojiPicker = emojiPicker && emojiPicker.$el && emojiPicker.$el.contains(event.target)
+
+      // Verificar se o clique foi em elementos específicos do emoji picker
+      const isEmojiPickerElement = event.target.closest('emoji-picker') ||
+                                  event.target.closest('.emoji-mart') ||
+                                  event.target.closest('.emoji-mart-emoji') ||
+                                  event.target.closest('.emoji-mart-category') ||
+                                  event.target.closest('.emoji-mart-search') ||
+                                  event.target.closest('.emoji-mart-scroll') ||
+                                  event.target.closest('.emoji-mart-category-label') ||
+                                  event.target.closest('.emoji-mart-preview') ||
+                                  event.target.closest('.emoji-mart-skin-swatches') ||
+                                  event.target.closest('button[data-emoji]') ||
+                                  event.target.closest('[data-emoji]') ||
+                                  event.target.closest('.emoji') ||
+                                  event.target.closest('.emoji-picker') ||
+                                  event.target.closest('.emoji-picker-element')
+
+      // Se clicou fora do emoji picker, não foi no botão e não foi em elementos do emoji picker, fechar o modal
+      if (!isInsideEmojiPicker && !isEmojiButton && !isEmojiPickerElement) {
+        // Fechar o modal de emoji (q-menu)
+        if (emojiPicker && emojiPicker.hide) {
+          emojiPicker.hide()
+        }
+      }
+    },
     onEmojiSelectMart (emoji) {
       console.log('Emoji selecionado:', emoji)
 
@@ -322,8 +359,15 @@ export default {
 
       console.log('Emoji inserido com sucesso:', emojiChar)
     }
+  },
+  mounted () {
+    // Adicionar event listener para fechar o modal ao clicar fora
+    document.addEventListener('click', this.handleClickOutsideEmojiPicker)
+  },
+  beforeDestroy () {
+    // Remover event listener ao destruir o componente
+    document.removeEventListener('click', this.handleClickOutsideEmojiPicker)
   }
-
 }
 </script>
 

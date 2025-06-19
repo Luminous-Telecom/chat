@@ -146,6 +146,7 @@
                   anchor="top right"
                   self="bottom middle"
                   :offset="[5, 40]"
+                  ref="emojiPicker1"
                 >
                   <emoji-picker
                     style="width: 40vw"
@@ -192,6 +193,7 @@
                   anchor="top right"
                   self="bottom middle"
                   :offset="[5, 40]"
+                  ref="emojiPicker2"
                 >
                   <emoji-picker
                     style="width: 40vw"
@@ -238,6 +240,7 @@
                   anchor="top right"
                   self="bottom middle"
                   :offset="[5, 40]"
+                  ref="emojiPicker3"
                 >
                   <emoji-picker
                     style="width: 40vw"
@@ -462,6 +465,46 @@ export default {
     }
   },
   methods: {
+    // Método para fechar o modal de emojis quando clicar fora
+    handleClickOutsideEmojiPicker (event) {
+      // Verificar se o clique foi fora do modal de emojis
+      const emojiPicker1 = this.$refs.emojiPicker1
+      const emojiPicker2 = this.$refs.emojiPicker2
+      const emojiPicker3 = this.$refs.emojiPicker3
+
+      // Verificar se o clique foi no botão que abre o emoji picker
+      const isEmojiButton = event.target.closest('.q-btn') &&
+                           event.target.closest('.q-btn').querySelector('.mdi-emoticon-happy-outline')
+
+      // Verificar se o clique foi dentro de algum emoji picker
+      const isInsideEmojiPicker = (emojiPicker1 && emojiPicker1.$el && emojiPicker1.$el.contains(event.target)) ||
+                                 (emojiPicker2 && emojiPicker2.$el && emojiPicker2.$el.contains(event.target)) ||
+                                 (emojiPicker3 && emojiPicker3.$el && emojiPicker3.$el.contains(event.target))
+
+      // Verificar se o clique foi em elementos específicos do emoji picker
+      const isEmojiPickerElement = event.target.closest('emoji-picker') ||
+                                  event.target.closest('.emoji-mart') ||
+                                  event.target.closest('.emoji-mart-emoji') ||
+                                  event.target.closest('.emoji-mart-category') ||
+                                  event.target.closest('.emoji-mart-search') ||
+                                  event.target.closest('.emoji-mart-scroll') ||
+                                  event.target.closest('.emoji-mart-category-label') ||
+                                  event.target.closest('.emoji-mart-preview') ||
+                                  event.target.closest('.emoji-mart-skin-swatches') ||
+                                  event.target.closest('button[data-emoji]') ||
+                                  event.target.closest('[data-emoji]') ||
+                                  event.target.closest('.emoji') ||
+                                  event.target.closest('.emoji-picker') ||
+                                  event.target.closest('.emoji-picker-element')
+
+      // Se clicou fora do emoji picker, não foi no botão e não foi em elementos do emoji picker, fechar os modais
+      if (!isInsideEmojiPicker && !isEmojiButton && !isEmojiPickerElement) {
+        // Fechar os modais de emoji (q-menu)
+        if (emojiPicker1 && emojiPicker1.hide) emojiPicker1.hide()
+        if (emojiPicker2 && emojiPicker2.hide) emojiPicker2.hide()
+        if (emojiPicker3 && emojiPicker3.hide) emojiPicker3.hide()
+      }
+    },
     onInsertSelectEmoji (event, ref) {
       const emoji = event.detail?.unicode || event.detail?.emoji || event.emoji || event.unicode || event.i || event.data
       if (!emoji) {
@@ -606,8 +649,15 @@ export default {
         this.$notificarErro('Algum problema ao criar campanha', error)
       }
     }
+  },
+  mounted () {
+    // Adicionar event listener para fechar modal de emojis quando clicar fora
+    document.addEventListener('click', this.handleClickOutsideEmojiPicker)
+  },
+  beforeDestroy () {
+    // Remover event listener para fechar modal de emojis
+    document.removeEventListener('click', this.handleClickOutsideEmojiPicker)
   }
-
 }
 </script>
 
