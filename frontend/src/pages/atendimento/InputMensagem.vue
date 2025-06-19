@@ -573,7 +573,7 @@ export default {
           timeout: 3000
         })
       }
-    }
+    },
     abrirEnvioArquivo (event) {
       this.textChat = ''
       this.abrirFilePicker = true
