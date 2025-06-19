@@ -640,13 +640,6 @@
         @nova-mensagem-agendada="abrirModalAgendarMensagem"
       />
 
-      <ModalAgendarMensagem
-        :value.sync="modalAgendarMensagem"
-        :ticket-id="ticketFocado.id || null"
-        :mensagens-rapidas="mensagensRapidas"
-        @mensagem-agendada="handleMensagemAgendada"
-      />
-
     </q-layout>
   </div>
 </template>
@@ -681,7 +674,7 @@ import ModalObservacao from './ModalObservacao.vue'
 import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
-import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
+
 import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
 
 export default {
@@ -697,8 +690,8 @@ export default {
     MensagemChat,
     ModalObservacao,
     ModalListarObservacoes,
-    ModalListarMensagensAgendadas,
-    ModalAgendarMensagem
+    ModalListarMensagensAgendadas
+
   },
   data () {
     const query = this.$route.query
@@ -741,7 +734,7 @@ export default {
       modalObservacao: false,
       modalListarObservacoes: false,
       modalListarMensagensAgendadas: false,
-      modalAgendarMensagem: false,
+
       observacoes: [],
       pesquisaTickets: {
         searchParam: '',
@@ -1284,13 +1277,12 @@ export default {
         })
         return
       }
-      this.modalAgendarMensagem = true
+      // Emite evento global para abrir o modal do cabeçalho do chat
+      this.$root.$emit('abrir:modalAgendamentoMensagem')
+      // Remove a abertura do modal local para evitar dois modais abertos
+      // this.modalAgendarMensagem = true
     },
-    handleMensagemAgendada (dadosMensagem) {
-      this.modalAgendarMensagem = false
-      // Aqui você pode adicionar lógica para atualizar a lista de mensagens agendadas
-      // Por exemplo, recarregar o ticket ou fazer uma nova consulta
-    },
+
     abrirAnexo (anexo) {
       const url = `${process.env.VUE_URL_API}/public/sent/${anexo}`
       window.open(url, '_blank')

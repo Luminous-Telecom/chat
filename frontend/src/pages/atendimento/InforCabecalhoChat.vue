@@ -92,18 +92,6 @@
           class="q-gutter-xs q-pr-sm"
           v-if="Value(cticket.contact, 'name')"
         >
-          <q-btn
-            @click="$emit('abrir:modalAgendamentoMensagem')"
-            icon="mdi-message-text-clock-outline"
-            color="black"
-            rounded
-            :disable="cticket.status == 'closed'"
-          >
-            <q-tooltip content-class="bg-grey-9 text-bold">
-              Agendamento de mensagem
-            </q-tooltip>
-          </q-btn>
-
           <q-btn-dropdown
             split
             color="positive"

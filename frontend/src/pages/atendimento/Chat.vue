@@ -7,7 +7,7 @@
       @updateTicket:resolver="atualizarStatusTicket('closed')"
       @updateTicket:retornar="atualizarStatusTicket('pending')"
       @updateTicket:reabrir="atualizarStatusTicket('open')"
-      @abrir:modalAgendamentoMensagem="modalAgendamentoMensagem = true"
+
     />
 
     <q-scroll-area
@@ -481,6 +481,9 @@ export default {
         .catch(e => {
           this.$notificarErro('Não foi possível encaminhar mensagem. Tente novamente em alguns minutos!', e)
         })
+    },
+    abrirModalAgendamento () {
+      this.modalAgendamentoMensagem = true
     }
   },
   created () {
@@ -488,7 +491,14 @@ export default {
     this.socketTicket()
   },
   mounted () {
+    this.$root.$on('scrollToBottomMessageChat', this.scrollToBottom)
+    this.$root.$on('abrir:modalAgendamentoMensagem', this.abrirModalAgendamento)
     this.socketMessagesList()
+    this.scrollToBottom()
+  },
+  beforeDestroy () {
+    this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
+    this.$root.$off('abrir:modalAgendamentoMensagem', this.abrirModalAgendamento)
   },
   destroyed () {
     this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
