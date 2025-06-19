@@ -129,6 +129,7 @@
             :disable="cDisableActions"
             class="bg-padrao btn-rounded q-mx-xs"
             :color="$q.dark.isActive ? 'white' : ''"
+            @click="saveCursorPosition"
           >
             <q-tooltip content-class="text-bold">
               Emoji
@@ -220,6 +221,7 @@
                 dense
                 round
                 :color="$q.dark.isActive ? 'white' : ''"
+                @click="saveCursorPosition"
               >
                 <q-tooltip content-class="text-bold">
                   Emoji
@@ -489,7 +491,8 @@ export default {
       sign: false,
       scheduleDate: null,
       showEmojiPicker1: false,
-      showEmojiPicker2: false
+      showEmojiPicker2: false,
+      savedCursorPosition: undefined
     }
   },
   computed: {
@@ -549,6 +552,14 @@ export default {
         this.$refs.inputEnvioMensagem.focus()
       }
     },
+    saveCursorPosition () {
+      // Salvar a posição atual do cursor antes de abrir o emoji picker
+      const textarea = this.$refs.inputEnvioMensagem
+      if (textarea && textarea.$el && textarea.$el.querySelector('textarea')) {
+        const textareaElement = textarea.$el.querySelector('textarea')
+        this.savedCursorPosition = textareaElement.selectionStart
+      }
+    },
     mensagemRapidaSelecionada (mensagem) {
       this.textChat = mensagem
       setTimeout(() => {
@@ -568,8 +579,11 @@ export default {
         // Garantir que o textarea tenha foco antes de inserir o emoji
         textarea.focus()
 
-        // Se não há posição de cursor válida e há texto, inserir no final
-        if ((textarea.selectionStart === 0 && textarea.selectionEnd === 0) && this.textChat.length > 0) {
+        // Restaurar posição do cursor salva ou definir para o final se não houver posição salva
+        if (this.savedCursorPosition !== undefined) {
+          textarea.selectionStart = textarea.selectionEnd = this.savedCursorPosition
+        } else if (this.textChat.length > 0) {
+          // Se não há posição salva e há texto, inserir no final
           textarea.selectionStart = textarea.selectionEnd = this.textChat.length
         }
 
@@ -590,6 +604,9 @@ export default {
             timeout: 3000
           })
         }
+
+        // Limpar posição salva após usar
+        this.savedCursorPosition = undefined
       } catch (error) {
         console.error('Erro ao inserir emoji:', error)
       }
