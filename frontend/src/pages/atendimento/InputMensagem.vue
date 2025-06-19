@@ -107,85 +107,7 @@
         </div>
 
         <template v-if="!isRecordingAudio">
-          <q-btn
-            v-if="$q.screen.width > 500"
-            flat
-            dense
-            @click="abrirEnvioArquivo"
-            icon="mdi-paperclip"
-            :disable="cDisableActions"
-            class="bg-padrao btn-rounded q-mx-xs"
-            :color="$q.dark.isActive ? 'white' : ''"
-          >
-            <q-tooltip content-class="text-bold">
-              Enviar arquivo
-            </q-tooltip>
-          </q-btn>
-          <q-btn
-            v-if="$q.screen.width > 500"
-            flat
-            dense
-            icon="mdi-emoticon-happy-outline"
-            :disable="cDisableActions"
-            class="bg-padrao btn-rounded q-mx-xs"
-            :color="$q.dark.isActive ? 'white' : ''"
-            @click="saveCursorPosition"
-          >
-            <q-tooltip content-class="text-bold">
-              Emoji
-            </q-tooltip>
-            <q-menu
-              v-model="showEmojiPicker1"
-              anchor="top right"
-              self="bottom middle"
-              :offset="[5, 40]"
-              :auto-close="false"
-              persistent
-              ref="emojiPicker1"
-            >
-              <Picker
-                :theme="pickerTheme"
-                :key="pickerTheme"
-                :locale="'pt'"
-                :previewPosition="'none'"
-                :perLine="9"
-                :showPreview="false"
-                :showSkinTones="true"
-                :showCategoryButtons="true"
-                :showSearch="true"
-                style="width: 420px"
-                @select="onEmojiSelectMart"
-                @click.stop.prevent
-              />
-            </q-menu>
-          </q-btn>
-          <q-btn
-            v-if="$q.screen.width > 500"
-            flat
-            dense
-            @click="handlSendLinkVideo"
-            icon="mdi-message-video"
-            :disable="cDisableActions"
-            class="bg-padrao btn-rounded q-mx-xs"
-            :color="$q.dark.isActive ? 'white' : ''"
-          >
-            <q-tooltip content-class="text-bold">
-              Enviar link para videoconferencia
-            </q-tooltip>
-          </q-btn>
-          <q-toggle
-            keep-color
-            v-model="sign"
-            dense
-            @input="handleSign"
-            class="q-mx-sm q-ml-md"
-            :color="sign ? 'positive' : 'black'"
-            type="toggle"
-          >
-            <q-tooltip>
-              {{ sign ? 'Desativar' : 'Ativar' }} Assinatura
-            </q-tooltip>
-          </q-toggle>
+
           <q-input
             hide-bottom-space
             :loading="loading"
@@ -193,28 +115,23 @@
             ref="inputEnvioMensagem"
             id="inputEnvioMensagem"
             type="textarea"
-            @keydown.exact.enter.prevent="() => textChat.trim().length ? enviarMensagem() : ''"
-            v-show="!cMostrarEnvioArquivo"
-            class="col-grow q-mx-xs text-grey-10 inputEnvioMensagem"
-            bg-color="grey-2"
-            placeholder="Digita sua mensagem"
-            input-style="max-height: 30vh"
+            placeholder="Mensagem"
+            input-style="background: rgba(255,255,255,0.12); border: none; border-radius: 18px; padding: 10px 16px; font-size: 15px; color: var(--text-color-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, background 0.2s;"
             autogrow
             rounded
             dense
             outlined
             v-model="textChat"
             :value="textChat"
-            @paste="handleInputPaste"
-            :counter="textChat.length > 3000"
+            @keydown.exact.enter.prevent="() => textChat.trim().length ? enviarMensagem() : ''"
+            @keydown.shift.enter.stop=""
+            v-show="!cMostrarEnvioArquivo"
+            class="col-grow q-mx-xs text-grey-10 inputEnvioMensagem"
+            bg-color="grey-2"
             :maxlength="4096"
-            :hint="textChat.length > 3000 ? `${textChat.length}/4096 caracteres` : ''"
             :color="textChat.length > 3500 ? 'warning' : textChat.length > 4000 ? 'negative' : 'grey-7'"
           >
-            <template
-              v-slot:prepend
-              v-if="$q.screen.width < 500"
-            >
+            <template v-slot:prepend>
               <q-btn
                 flat
                 icon="mdi-emoticon-happy-outline"
@@ -224,9 +141,7 @@
                 :color="$q.dark.isActive ? 'white' : ''"
                 @click="saveCursorPosition"
               >
-                <q-tooltip content-class="text-bold">
-                  Emoji
-                </q-tooltip>
+                <q-tooltip content-class="text-bold">Emoji</q-tooltip>
                 <q-menu
                   v-model="showEmojiPicker2"
                   anchor="top right"
@@ -252,22 +167,16 @@
                   />
                 </q-menu>
               </q-btn>
-            </template>
-            <template v-slot:append>
               <q-btn
                 flat
-                @click="abrirEnvioArquivo"
                 icon="mdi-paperclip"
                 :disable="cDisableActions"
                 dense
                 round
-                v-if="$q.screen.width < 500"
-                class="bg-padrao btn-rounded"
                 :color="$q.dark.isActive ? 'white' : ''"
+                @click="abrirEnvioArquivo"
               >
-                <q-tooltip content-class=" text-bold">
-                  Enviar arquivo
-                </q-tooltip>
+                <q-tooltip content-class="text-bold">Enviar arquivo</q-tooltip>
               </q-btn>
               <q-btn
                 dense
@@ -276,9 +185,54 @@
                 icon="mdi-message-flash-outline"
                 @click="visualizarMensagensRapidas = !visualizarMensagensRapidas"
               >
-                <q-tooltip content-class="text-bold">
-                  Mensagens Rápidas
-                </q-tooltip>
+                <q-tooltip content-class="text-bold">Mensagens Rápidas</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                dense
+                round
+                icon="mdi-message-video"
+                :disable="cDisableActions"
+                :color="$q.dark.isActive ? 'white' : ''"
+                @click="handlSendLinkVideo"
+              >
+                <q-tooltip content-class="text-bold">Enviar link para videoconferência</q-tooltip>
+              </q-btn>
+              <q-toggle
+                keep-color
+                v-model="sign"
+                dense
+                @input="handleSign"
+                class="q-ml-md"
+                :color="sign ? 'positive' : 'black'"
+                type="toggle"
+              >
+                <q-tooltip>{{ sign ? 'Desativar' : 'Ativar' }} Assinatura</q-tooltip>
+              </q-toggle>
+            </template>
+            <template v-slot:append>
+              <q-btn
+                v-if="textChat || cMostrarEnvioArquivo"
+                ref="btnEnviarMensagem"
+                @click="enviarMensagem"
+                :disabled="ticketFocado.status !== 'open'"
+                flat
+                icon="mdi-send"
+                class="bg-padrao btn-rounded q-mx-xs"
+                :color="$q.dark.isActive ? 'white' : ''"
+              >
+                <q-tooltip content-class=" text-bold">Enviar Mensagem</q-tooltip>
+              </q-btn>
+              <q-btn
+                v-if="!textChat && !cMostrarEnvioArquivo && !isRecordingAudio"
+                @click="handleSartRecordingAudio"
+                :disabled="cDisableActions"
+                flat
+                icon="mdi-microphone"
+                class="bg-padrao btn-rounded q-mx-xs"
+                :color="$q.dark.isActive ? 'white' : ''"
+              >
+                <q-tooltip content-class="text-bold">Gravar Áudio</q-tooltip>
               </q-btn>
             </template>
           </q-input>
@@ -306,33 +260,7 @@
             accept=".txt, .xml, .jpg, .png, image/jpeg, .pdf, .doc, .docx, .mp4, .xls, .xlsx, .jpeg, .zip, .ppt, .pptx, .mp3, .wav, .ogg, .m4a, audio/*, image/*"
             @rejected="onRejectedFiles"
           />
-          <q-btn
-            v-if="textChat || cMostrarEnvioArquivo"
-            ref="btnEnviarMensagem"
-            @click="enviarMensagem"
-            :disabled="ticketFocado.status !== 'open'"
-            flat
-            icon="mdi-send"
-            class="bg-padrao btn-rounded q-mx-xs"
-            :color="$q.dark.isActive ? 'white' : ''"
-          >
-            <q-tooltip content-class=" text-bold">
-              Enviar Mensagem
-            </q-tooltip>
-          </q-btn>
-          <q-btn
-            v-if="!textChat && !cMostrarEnvioArquivo && !isRecordingAudio"
-            @click="handleSartRecordingAudio"
-            :disabled="cDisableActions"
-            flat
-            icon="mdi-microphone"
-            class="bg-padrao btn-rounded q-mx-xs"
-            :color="$q.dark.isActive ? 'white' : ''"
-          >
-            <q-tooltip content-class="text-bold">
-              Gravar Áudio
-            </q-tooltip>
-          </q-btn>
+
         </template>
         <template v-else>
           <div class="full-width items-center row justify-end ">
