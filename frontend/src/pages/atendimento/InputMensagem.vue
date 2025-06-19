@@ -3,8 +3,8 @@
     <!-- Botão de iniciar atendimento para tickets pending -->
     <template v-if="ticketFocado.status === 'pending'">
       <div
-        style="min-height: 80px"
-        class="row q-pb-md q-pt-sm bg-white justify-center items-center text-grey-9 relative-position"
+        style="padding-top: 8px; padding-bottom: 8px"
+        class="row bg-white justify-center items-center text-grey-9 relative-position"
       >
         <q-btn
           push
@@ -83,8 +83,8 @@
       </div>
 
       <div
-        style="min-height: 80px"
-        class="row q-pb-md q-pt-sm bg-white justify-start items-center text-grey-9 relative-position"
+        style="padding-top: 10px; padding-bottom: 10px"
+        class="row bg-white justify-start items-center text-grey-9 relative-position"
       >
         <div
           class="row col-12 q-pa-sm"
