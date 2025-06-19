@@ -137,7 +137,6 @@
               anchor="top right"
               self="bottom middle"
               :offset="[5, 40]"
-              :auto-close="false"
             >
               <Picker
                 :theme="pickerTheme"
@@ -151,6 +150,7 @@
                 :showSearch="true"
                 style="width: 420px"
                 @select="onEmojiSelectMart"
+                @click.stop.prevent
               />
             </q-menu>
           </q-btn>
@@ -225,7 +225,6 @@
                   anchor="top right"
                   self="bottom middle"
                   :offset="[5, 40]"
-                  :auto-close="false"
                 >
                   <Picker
                     :theme="pickerTheme"
@@ -239,6 +238,7 @@
                     :showSearch="true"
                     style="width: 420px"
                     @select="onEmojiSelectMart"
+                    @click.stop.prevent
                   />
                 </q-menu>
               </q-btn>
@@ -547,33 +547,43 @@ export default {
         this.$refs.inputEnvioMensagem.focus()
       }, 300)
     },
-    onEmojiSelectMart (emoji) {
-      const textarea = this.$refs.inputEnvioMensagem
+    onEmojiSelectMart (emoji, event) {
+      try {
+        // Prevent event propagation to avoid closing the modal
+        if (event) {
+          event.stopPropagation()
+          event.preventDefault()
+        }
 
-      // Garantir que o textarea tenha foco antes de inserir o emoji
-      textarea.focus()
+        const textarea = this.$refs.inputEnvioMensagem
 
-      // Se não há posição de cursor válida e há texto, inserir no final
-      if ((textarea.selectionStart === 0 && textarea.selectionEnd === 0) && this.textChat.length > 0) {
-        textarea.selectionStart = textarea.selectionEnd = this.textChat.length
-      }
+        // Garantir que o textarea tenha foco antes de inserir o emoji
+        textarea.focus()
 
-      const success = insertEmojiInTextarea(
-        emoji,
-        textarea,
-        (newValue) => {
-          this.textChat = newValue
-        },
-        this.textChat
-      )
+        // Se não há posição de cursor válida e há texto, inserir no final
+        if ((textarea.selectionStart === 0 && textarea.selectionEnd === 0) && this.textChat.length > 0) {
+          textarea.selectionStart = textarea.selectionEnd = this.textChat.length
+        }
 
-      if (!success) {
-        this.$q.notify({
-          type: 'warning',
-          message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
-          timeout: 3000
-        })
+        const success = insertEmojiInTextarea(
+          emoji,
+          textarea,
+          (newValue) => {
+            this.textChat = newValue
+          },
+          this.textChat
+        )
+
+        if (!success) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Erro ao inserir emoji. Tente novamente.',
+            position: 'top',
+            timeout: 3000
+          })
+        }
+      } catch (error) {
+        console.error('Erro ao inserir emoji:', error)
       }
     },
     abrirEnvioArquivo (event) {
