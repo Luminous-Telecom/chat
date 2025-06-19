@@ -92,39 +92,31 @@
           class="q-gutter-xs q-pr-sm"
           v-if="Value(cticket.contact, 'name')"
         >
-          <q-btn-dropdown
-            split
-            color="positive"
+          <q-btn
+            color="amber-6"
             no-caps
             rounded
-            @click="$emit('updateTicket:resolver')"
-            icon="mdi-comment-check"
-            label="Resolver"
-            :disable-main-btn="cticket.status == 'closed'"
+            @click="$emit('updateTicket:reabrir')"
+            icon="mdi-reload"
+            label="Reabrir"
+            v-if="cticket.status == 'closed'"
+          />
+
+          <q-btn-dropdown
+            split
+            color="primary"
+            no-caps
+            rounded
+            @click="$emit('updateTicket:retornar')"
+            icon="mdi-replay"
+            label="Fila"
+            v-if="cticket.status == 'open'"
           >
             <q-list>
-              <q-item
-                clickable
-                v-close-popup
-                v-if="cticket.status == 'closed'"
-                @click="$emit('updateTicket:reabrir')"
-              >
-                <q-item-section avatar>
-                  <q-avatar
-                    icon="mdi-reload"
-                    color="amber-6"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>Reabrir Ticket</q-item-label>
-                </q-item-section>
-              </q-item>
-
               <q-item
                 v-close-popup
                 @click="$emit('updateTicket:retornar')"
                 clickable
-                v-if="cticket.status == 'open'"
               >
                 <q-item-section avatar>
                   <q-avatar
@@ -138,11 +130,11 @@
                   <q-item-label caption>Retornar aos pendentes</q-item-label>
                 </q-item-section>
               </q-item>
+
               <q-item
                 v-close-popup
                 @click="listarFilas"
                 clickable
-                v-if="cticket.status != 'closed'"
               >
                 <q-item-section avatar>
                   <q-avatar

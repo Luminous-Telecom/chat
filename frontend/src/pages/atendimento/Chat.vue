@@ -4,10 +4,8 @@
     :style="style"
   >
     <InforCabecalhoChat
-      @updateTicket:resolver="atualizarStatusTicket('closed')"
       @updateTicket:retornar="atualizarStatusTicket('pending')"
       @updateTicket:reabrir="atualizarStatusTicket('open')"
-
     />
 
     <q-scroll-area

@@ -269,6 +269,47 @@
               </q-card-section>
             </q-card>
 
+            <!-- Botão Encerrar Ticket -->
+            <div class="q-mt-md"></div>
+            <q-card class="action-card" v-if="ticketFocado.status !== 'closed'">
+              <q-card-section class="action-section">
+                <q-btn
+                  flat
+                  color="positive"
+                  label="Encerrar Ticket"
+                  @click="resolverTicket"
+                  class="full-width"
+                />
+              </q-card-section>
+            </q-card>
+
+            <!-- Botões de Ação -->
+            <div class="q-mt-md"></div>
+            <q-card class="action-card" v-if="ticketFocado.status !== 'closed'">
+              <q-card-section class="action-section">
+                <div class="row q-gutter-sm">
+                  <div class="col">
+                    <q-btn
+                      flat
+                      color="primary"
+                      label="Transferir"
+                      @click="abrirModalTransferirTicket"
+                      class="full-width"
+                    />
+                  </div>
+                  <div class="col">
+                    <q-btn
+                      flat
+                      color="info"
+                      label="Timeline"
+                      @click="abrirModalTimeline"
+                      class="full-width"
+                    />
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+
             <!-- Espaçamento entre botões -->
             <div class="q-mt-md"></div>
             <!-- Tags selecionadas -->
@@ -650,6 +691,7 @@ import ItemTicket from './ItemTicket'
 import { ConsultarLogsTicket, ConsultarTickets, DeletarMensagem } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import mixinSockets from './mixinSockets'
+import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import socketInitial from 'src/layouts/socketInitial'
 import ModalNovoTicket from './ModalNovoTicket'
 import { ListarFilas } from 'src/service/filas'
@@ -680,7 +722,7 @@ import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, 
 export default {
   name: 'IndexAtendimento',
 
-  mixins: [mixinSockets, socketInitial],
+  mixins: [mixinSockets, mixinAtualizarStatusTicket, socketInitial],
   components: {
     ItemTicket,
     ModalNovoTicket,
@@ -1283,6 +1325,18 @@ export default {
       // this.modalAgendarMensagem = true
     },
 
+    resolverTicket () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para resolver',
+          position: 'top'
+        })
+        return
+      }
+      this.atualizarStatusTicket('closed')
+    },
+
     abrirAnexo (anexo) {
       const url = `${process.env.VUE_URL_API}/public/sent/${anexo}`
       window.open(url, '_blank')
@@ -1358,6 +1412,34 @@ export default {
     },
     markFirstLoadComplete () {
       // Add any additional logic you want to execute when first load is complete
+    },
+    abrirModalTransferirTicket () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para transferir',
+          position: 'top'
+        })
+        return
+      }
+      // Emitir evento para abrir modal de transferência
+      this.$root.$emit('infor-cabecalo-chat:transferir-ticket')
+    },
+    abrirModalTimeline () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para ver o timeline',
+          position: 'top'
+        })
+        return
+      }
+      // Implementar lógica do timeline aqui
+      this.$q.notify({
+        type: 'info',
+        message: 'Funcionalidade de timeline em desenvolvimento',
+        position: 'top'
+      })
     }
   },
   beforeMount () {
