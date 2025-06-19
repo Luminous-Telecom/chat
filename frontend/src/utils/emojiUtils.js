@@ -114,8 +114,8 @@ export function twemojiParse (text) {
 }
 
 /**
- * Extrai o caractere emoji de diferentes estruturas de objeto do VEmojiPicker
- * @param {Object|string} emoji - Objeto emoji do VEmojiPicker ou string
+ * Extrai o caractere emoji de diferentes estruturas de objeto do emoji-picker-element
+ * @param {Object|string} emoji - Objeto emoji do emoji-picker-element ou string
  * @returns {string|null} - Caractere emoji ou null se não encontrado
  */
 export const extractEmojiChar = (emoji) => {
@@ -128,12 +128,13 @@ export const extractEmojiChar = (emoji) => {
 
   // Se é um objeto, tenta diferentes propriedades possíveis
   if (typeof emoji === 'object') {
-    // Propriedades comuns do VEmojiPicker
+    // Para emoji-picker-element v1.26.3, o emoji está em event.detail
+    // Propriedades comuns do emoji-picker-element
     const possibleProps = [
+      'unicode', // emoji-picker-element v1.26.3
+      'emoji', // emoji-picker-element v1.26.3 (alternativo)
       'data', // VEmojiPicker v2.3.1
-      'emoji', // VEmojiPicker v2.x
       'char', // VEmojiPicker v1.x
-      'unicode', // VEmojiPicker v1.x
       'character', // VEmojiPicker v1.x
       'symbol', // VEmojiPicker v1.x
       'native' // VEmojiPicker v2.x
@@ -143,6 +144,12 @@ export const extractEmojiChar = (emoji) => {
       if (emoji[prop]) {
         return emoji[prop]
       }
+    }
+
+    // Se não encontrou nas propriedades, tenta acessar diretamente
+    // Para emoji-picker-element, o emoji pode estar no próprio objeto
+    if (emoji.unicode) {
+      return emoji.unicode
     }
   }
 

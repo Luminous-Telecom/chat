@@ -545,10 +545,45 @@ export default {
       }, 300)
     },
     onEmojiSelectMart (emoji) {
+      console.log('Emoji selecionado:', emoji)
+
       // emoji.native contém o caractere emoji selecionado
-      this.onInsertSelectEmoji
-        ? this.onInsertSelectEmoji(emoji.native, 'inputEnvioMensagem')
-        : this.$emit('emoji-click', emoji.native)
+      const emojiChar = emoji.native
+
+      if (!emojiChar) {
+        console.warn('Nenhum emoji encontrado:', emoji)
+        this.$q.notify({
+          type: 'warning',
+          message: 'Erro ao inserir emoji. Tente novamente.',
+          position: 'top',
+          timeout: 3000
+        })
+        return
+      }
+
+      // Inserir emoji no textarea
+      const textarea = this.$refs.inputEnvioMensagem
+      if (!textarea) {
+        console.warn('Textarea não encontrado')
+        return
+      }
+
+      // Obter posição do cursor
+      const startPos = textarea.selectionStart
+      const endPos = textarea.selectionEnd
+      const currentValue = this.textChat || ''
+
+      // Inserir emoji na posição do cursor
+      const newValue = currentValue.substring(0, startPos) + emojiChar + currentValue.substring(endPos)
+      this.textChat = newValue
+
+      // Mover cursor para depois do emoji
+      this.$nextTick(() => {
+        textarea.focus()
+        textarea.selectionStart = textarea.selectionEnd = startPos + emojiChar.length
+      })
+
+      console.log('Emoji inserido com sucesso:', emojiChar)
     },
     abrirEnvioArquivo (event) {
       this.textChat = ''

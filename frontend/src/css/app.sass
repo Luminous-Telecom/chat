@@ -839,3 +839,28 @@ emoji-picker,
 emoji-picker *
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", Emoji, sans-serif !important
   font-size: 1.2em
+
+// Garantir que o emoji-picker seja clicável
+emoji-picker
+  z-index: 9999 !important
+  pointer-events: auto !important
+  position: relative !important
+
+  *
+    pointer-events: auto !important
+
+  button
+    cursor: pointer !important
+    pointer-events: auto !important
+
+  .emoji
+    cursor: pointer !important
+    pointer-events: auto !important
+
+// Garantir que o q-menu não interfira
+.q-menu
+  z-index: 9998 !important
+
+  emoji-picker
+    z-index: 9999 !important
+    pointer-events: auto !important
