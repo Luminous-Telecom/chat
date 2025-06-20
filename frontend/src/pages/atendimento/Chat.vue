@@ -9,33 +9,12 @@
     />
 
     <q-scroll-area
-      ref="scrollContainer"
-      class="scroll-y "
+      :thumb-style="thumbStyle"
+      :bar-style="barStyle"
       :style="cStyleScroll"
       @scroll="scrollArea"
+      ref="scrollAreaMessageChat"
     >
-      <transition
-        appear
-        enter-active-class="animated fadeIn"
-        leave-active-class="animated fadeOut"
-      >
-        <infinite-loading
-          v-if="cMessages.length"
-          @infinite="onLoadMore"
-          direction="top"
-          :identificador="ticketFocado.id"
-          spinner="spiral"
-        >
-          <div slot="no-results">
-            <div v-if="!cMessages.length">
-              Sem resultados :(
-            </div>
-          </div>
-          <div slot="no-more">
-            Nada mais a carregar :)
-          </div>
-        </infinite-loading>
-      </transition>
       <MensagemChat
         :replyingMessage.sync="replyingMessage"
         :mensagens="cMessages"
@@ -343,7 +322,6 @@ import MensagemChat from './MensagemChat'
 import InputMensagem from './InputMensagem'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import mixinSockets from './mixinSockets'
-import InfiniteLoading from 'vue-infinite-loading'
 import { ListarContatos } from 'src/service/contatos'
 import { EncaminharMensagem } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
@@ -357,8 +335,7 @@ export default {
   components: {
     InforCabecalhoChat,
     MensagemChat,
-    InputMensagem,
-    InfiniteLoading
+    InputMensagem
   },
   data () {
     return {
@@ -366,10 +343,6 @@ export default {
       loading: false,
       exibirContato: false,
       heigthInputMensagem: 0,
-      params: {
-        ticketId: null,
-        pageNumber: 1
-      },
       agendamentoMensagem: {
         scheduleDate: ''
       },
@@ -391,6 +364,7 @@ export default {
     cMessages () {
       // eslint-disable-next-line vue/no-side-effects-in-computed-properties
       this.replyingMessage = null
+
       return this.mensagensTicket
     },
     style () {
@@ -401,31 +375,31 @@ export default {
       const loading = 0 // this.loading ? 72 : 0
       const add = this.heigthInputMensagem + loading
       return `min-height: calc(100vh - ${62 + add}px); height: calc(100vh - ${62 + add}px); width: 100%`
+    },
+    thumbStyle () {
+      return {
+        right: '4px',
+        borderRadius: '5px',
+        backgroundColor: '#027be3',
+        width: '5px',
+        opacity: 0.75
+      }
+    },
+    barStyle () {
+      return {
+        right: '2px',
+        borderRadius: '9px',
+        backgroundColor: '#027be3',
+        width: '9px',
+        opacity: 0.2
+      }
     }
   },
   methods: {
     async onResizeInputMensagem (size) {
       this.heigthInputMensagem = size.height
     },
-    async onLoadMore (infiniteState) {
-      if (this.loading) return
 
-      if (!this.hasMore || !this.ticketFocado?.id) {
-        return infiniteState.complete()
-      }
-
-      try {
-        this.loading = true
-        this.params.ticketId = this.ticketFocado.id
-        this.params.pageNumber += 1
-        await this.$store.dispatch('LocalizarMensagensTicket', this.params)
-        this.loading = false
-        infiniteState.loaded()
-      } catch (error) {
-        infiniteState.complete()
-      }
-      this.loading = false
-    },
     scrollArea (e) {
       this.hideOptions = true
       setTimeout(() => {

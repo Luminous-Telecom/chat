@@ -124,7 +124,7 @@
       <q-page-container>
         <router-view
           :mensagensRapidas="mensagensRapidas"
-          :key="`router-${ticketFocado.id || 'empty'}`"
+          :key="`router-${ticketFocado.id || 'empty'}-${$route.name}-${$route.params.ticketId || ''}`"
         ></router-view>
       </q-page-container>
 
@@ -1384,12 +1384,8 @@ export default {
         params.status = params.status.filter(s => typeof s === 'string')
       }
 
-      // console.log('[consultarTickets] Enviando parâmetros para backend:', params)
-
       try {
         const { data } = await ConsultarTickets(params)
-        // console.log('[consultarTickets] Recebidos', data.tickets.length, 'tickets do backend')
-        // console.log('[consultarTickets] Status dos tickets recebidos:', data.tickets.map(t => ({ id: t.id, status: t.status })))
 
         this.countTickets = data.count // count total de tickets no status
         this.$store.commit('LOAD_TICKETS', {
@@ -1404,7 +1400,10 @@ export default {
       // return () => clearTimeout(delayDebounceFn)
     },
     async BuscarTicketFiltro () {
-      // Reset completo para evitar mistura de tickets de diferentes status
+      // Preservar o ticket focado atual
+      const ticketFocadoAtual = this.$store.getters.ticketFocado
+
+      // Reset completo dos tickets para garantir lista limpa
       this.$store.commit('RESET_TICKETS')
 
       this.loading = true
@@ -1414,10 +1413,18 @@ export default {
         pageNumber: 1
       }
 
-      // console.log('[BuscarTicketFiltro] Buscando tickets com filtros:', this.pesquisaTickets)
       await this.consultarTickets(this.pesquisaTickets)
       this.loading = false
       this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
+
+      // Se havia um ticket focado e ele ainda existe após a busca, mantê-lo focado
+      if (ticketFocadoAtual?.id) {
+        const ticketAindaExiste = this.tickets.find(t => t.id === ticketFocadoAtual.id)
+        if (ticketAindaExiste) {
+          // Manter o ticket focado se ele ainda está na lista
+          this.$store.commit('TICKET_FOCADO', ticketFocadoAtual)
+        }
+      }
     },
     async onLoadMore () {
       if (this.tickets.length === 0 || !this.hasMore || this.loading) {
@@ -1576,7 +1583,18 @@ export default {
     this.$root.$off('update-ticket:info-contato', this.setValueMenuContact)
     this.$root.$off('ticket:transferido', this.consultarTickets)
     // this.socketDisconnect()
-    this.$store.commit('TICKET_FOCADO', {})
+
+    // Só limpar o ticket focado se estivermos realmente saindo da área de atendimento
+    // e não apenas navegando entre diferentes status de atendimento
+    const nextRoute = this.$router.currentRoute
+    const isLeavingAttendanceArea = !nextRoute ||
+                                    !nextRoute.path.includes('/atendimento') ||
+                                    nextRoute.name === 'login' ||
+                                    nextRoute.name === 'home-dashboard'
+
+    if (isLeavingAttendanceArea) {
+      this.$store.commit('TICKET_FOCADO', {})
+    }
   },
   watch: {
     searchTickets: {
@@ -1594,8 +1612,18 @@ export default {
       handler (newRoute, oldRoute) {
         const newStatus = newRoute.query.status
 
-        // Só atualiza o status se estivermos na rota de atendimento
-        if (newRoute.name === 'atendimento') {
+        // Atualizar status se estivermos em qualquer rota de atendimento (atendimento, chat-empty, chat)
+        const atendimentoRoutes = ['atendimento', 'chat-empty', 'chat']
+        if (atendimentoRoutes.includes(newRoute.name)) {
+          // Se estamos na rota pai sem rota filha, navegar para chat-empty
+          if (newRoute.name === 'atendimento' && !newRoute.params.ticketId && newRoute.path === '/atendimento') {
+            this.$router.replace({
+              name: 'chat-empty',
+              query: newRoute.query // Preservar query parameters
+            })
+            return
+          }
+
           let statusToSet
           if (newStatus) {
             statusToSet = [newStatus].filter(s => typeof s === 'string')
@@ -1609,7 +1637,6 @@ export default {
           const statusChanged = JSON.stringify(statusToSet) !== JSON.stringify(currentStatus)
 
           if (statusChanged) {
-            // console.log('[ROUTE CHANGE] Status mudou de', currentStatus, 'para', statusToSet)
             this.pesquisaTickets.status = statusToSet
 
             // Aplicar filtros específicos baseado no status
@@ -1619,20 +1646,21 @@ export default {
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
-              // console.log('[ROUTE CHANGE] Aplicando filtros para tickets pendentes')
             } else if (statusToSet.includes('open')) {
-              // Para tickets em andamento: filtro padrão (meus atendimentos)
+              // Para tickets em andamento: filtro padrão (meus tickets)
               this.pesquisaTickets.showAll = false
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
-              // console.log('[ROUTE CHANGE] Aplicando filtros para tickets em andamento')
+            } else if (statusToSet.includes('closed')) {
+              // Para tickets fechados: mostrar todos
+              this.pesquisaTickets.showAll = true
+              this.pesquisaTickets.isNotAssignedUser = false
+              this.pesquisaTickets.withUnreadMessages = false
+              this.pesquisaTickets.queuesIds = []
             }
 
-            // Forçar reset da paginação ao mudar status
-            this.pesquisaTickets.pageNumber = 1
-
-            // Buscar tickets do novo status
+            // Buscar com os novos filtros
             this.BuscarTicketFiltro()
           }
         }

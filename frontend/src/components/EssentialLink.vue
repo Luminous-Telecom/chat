@@ -4,7 +4,7 @@
     v-ripple
     :active="isActive"
     active-class="bg-blue-1 text-grey-8 text-bold menu-link-active-item-top"
-    @click="$router.push({ name: routeName, query: query }).catch(err => { if (err.name !== 'NavigationDuplicated') throw err })"
+    @click="handleNavigation"
     class="houverList"
     :class="{'text-negative text-bolder': color === 'negative'}"
   >
@@ -80,7 +80,13 @@ export default {
       return this.$route.name
     },
     isActive () {
-      if (this.routeName !== this.$route.name) {
+      // Para rotas de atendimento, considerar ativo se estivermos em 'atendimento', 'chat-empty' ou 'chat'
+      if (this.routeName === 'atendimento') {
+        const atendimentoRoutes = ['atendimento', 'chat-empty', 'chat']
+        if (!atendimentoRoutes.includes(this.$route.name)) {
+          return false
+        }
+      } else if (this.routeName !== this.$route.name) {
         return false
       }
 
@@ -97,6 +103,27 @@ export default {
       }
 
       return true
+    }
+  },
+  methods: {
+    handleNavigation () {
+      // Se for navegação para atendimento, ir diretamente para chat-empty
+      if (this.routeName === 'atendimento') {
+        this.$router.push({
+          name: 'chat-empty',
+          query: this.query
+        }).catch(err => {
+          if (err.name !== 'NavigationDuplicated') throw err
+        })
+      } else {
+        // Para outras rotas, navegação normal
+        this.$router.push({
+          name: this.routeName,
+          query: this.query
+        }).catch(err => {
+          if (err.name !== 'NavigationDuplicated') throw err
+        })
+      }
     }
   }
 }

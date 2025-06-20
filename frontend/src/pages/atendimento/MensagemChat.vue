@@ -1,5 +1,6 @@
 <template>
   <div class="q-pa-md">
+
     <transition-group
       appear
       enter-active-class="animated fadeIn"

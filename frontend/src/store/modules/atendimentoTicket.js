@@ -1,5 +1,4 @@
 import { ConsultarDadosTicket, LocalizarMensagens } from 'src/service/tickets'
-import { Notify } from 'quasar'
 import router from 'src/router'
 import { orderBy } from 'lodash'
 import { parseISO } from 'date-fns'
@@ -581,6 +580,7 @@ const atendimentoTicket = {
   actions: {
     async LocalizarMensagensTicket ({ commit, dispatch }, params) {
       const mensagens = await LocalizarMensagens(params)
+
       // commit('TICKET_FOCADO', mensagens.data.ticket)
       commit('SET_HAS_MORE', mensagens.data.hasMore)
       // commit('UPDATE_TICKET_CONTACT', mensagens.data.ticket.contact)
@@ -603,87 +603,32 @@ const atendimentoTicket = {
           scheduledMessages: []
         })
         await commit('RESET_MESSAGE')
+
         const ticket = await ConsultarDadosTicket(data)
 
         // Garantir que o ticket seja um objeto primitivo e tenha a estrutura correta
         const ticketData = JSON.parse(JSON.stringify(ticket.data))
 
-        // Garantir que arrays importantes existam e sejam inicializados corretamente
-        if (!ticketData.contact) {
-          ticketData.contact = {
-            tags: [],
-            wallets: [],
-            extraInfo: []
-          }
-        } else {
-          // Garantir que os arrays dentro de contact existam
-          ticketData.contact.tags = Array.isArray(ticketData.contact.tags) ? ticketData.contact.tags : []
-          ticketData.contact.wallets = Array.isArray(ticketData.contact.wallets) ? ticketData.contact.wallets : []
-          ticketData.contact.extraInfo = Array.isArray(ticketData.contact.extraInfo) ? ticketData.contact.extraInfo : []
-        }
+        // Garantir estruturas essenciais
+        if (!ticketData.contact) ticketData.contact = {}
+        if (!ticketData.contact.tags) ticketData.contact.tags = []
+        if (!ticketData.contact.wallets) ticketData.contact.wallets = []
+        if (!ticketData.contact.extraInfo) ticketData.contact.extraInfo = []
+        if (!ticketData.scheduledMessages) ticketData.scheduledMessages = []
 
-        // Garantir que scheduledMessages seja um array
-        ticketData.scheduledMessages = Array.isArray(ticketData.scheduledMessages) ? ticketData.scheduledMessages : []
+        commit('TICKET_FOCADO', ticketData)
 
-        // CORREÇÃO: Aplicar as mesmas correções de chaves únicas
-        ticketData.scheduledMessages = ticketData.scheduledMessages.map((msg, idx) => ({
-          ...msg,
-          id: msg.id || `scheduled-${ticketData.id || 'unknown'}-${idx}-${Date.now()}`,
-          uniqueKey: `msg-${msg.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        }))
-
-        if (ticketData.contact.extraInfo) {
-          ticketData.contact.extraInfo = ticketData.contact.extraInfo.map((info, idx) => ({
-            ...info,
-            key: info.key || `extra-info-${ticketData.id || 'unknown'}-${idx}`,
-            uniqueKey: `info-${info.key || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }))
-        }
-
-        if (ticketData.contact.tags) {
-          ticketData.contact.tags = ticketData.contact.tags.map((tag, idx) => ({
-            ...tag,
-            id: tag.id || `tag-${ticketData.id || 'unknown'}-${idx}`,
-            uniqueKey: `tag-${tag.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }))
-        }
-
-        if (ticketData.contact.wallets) {
-          ticketData.contact.wallets = ticketData.contact.wallets.map((wallet, idx) => ({
-            ...wallet,
-            id: wallet.id || `wallet-${ticketData.id || 'unknown'}-${idx}`,
-            uniqueKey: `wallet-${wallet.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }))
-        }
-
-        await commit('TICKET_FOCADO', ticketData)
-
-        const params = {
-          ticketId: data.id,
-          pageNumber: 1
-        }
+        // Carregar mensagens
+        const params = { ticketId: data.ticketId || data.id, pageNumber: 1 }
         await dispatch('LocalizarMensagensTicket', params)
 
-        await router.push({ name: 'chat', params, query: { t: new Date().getTime() } })
+        // Navegar para o chat
+        router.push({
+          name: 'chat',
+          params: { ticketId: ticketData.id }
+        })
       } catch (error) {
-        // posteriormente é necessário investigar o motivo de está caindo em erro
-        if (!error) return
-        const errorMsg = error?.response?.data?.error
-        if (errorMsg) {
-          Notify.create({
-            type: 'negative',
-            message: error.response.data.error,
-            progress: true,
-            position: 'bottom-right'
-          })
-        } else {
-          Notify.create({
-            type: 'negative',
-            message: `Ops... Ocorreu um problema não identificado. ${JSON.stringify(error)}`,
-            progress: true,
-            position: 'bottom-right'
-          })
-        }
+        console.error('Erro ao abrir chat:', error)
       }
     },
     addProcessingMessage ({ commit }, messageId) {
@@ -692,32 +637,6 @@ const atendimentoTicket = {
     removeProcessingMessage ({ commit }, messageId) {
       commit('REMOVE_PROCESSING_MESSAGE', messageId)
     }
-  },
-  getters: {
-    getTickets: state => status => {
-      if (!status) return state.tickets
-
-      const filteredTickets = state.tickets.filter(t => {
-        // Se status for um array, verificar se inclui o status do ticket
-        if (Array.isArray(status)) {
-          return status.includes(t.status)
-        }
-        // Se status for string, comparar diretamente
-        return t.status === status
-      })
-
-      // Log apenas em desenvolvimento
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[getTickets] Status solicitado:', status)
-        console.log('[getTickets] Total tickets no state:', state.tickets.length)
-        console.log('[getTickets] Tickets filtrados:', filteredTickets.length)
-      }
-
-      return filteredTickets
-    },
-    messagesByTicket: state => state.messagesByTicket || {},
-    isMessageProcessing: state => messageId => state.processingMessages.has(messageId),
-    mensagensTicket: state => state.mensagens || []
   }
 }
 
