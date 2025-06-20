@@ -195,6 +195,23 @@
                         >
                         </div>
 
+                        <!-- Botões Interativos -->
+                        <template v-if="mensagem.mediaType === 'buttonsMessage' && mensagem.dataPayload && mensagem.dataPayload.buttons">
+                          <div class="row q-gutter-sm justify-start q-mt-sm">
+                            <q-btn
+                              v-for="(button, btnIndex) in mensagem.dataPayload.buttons"
+                              :key="btnIndex"
+                              dense
+                              outline
+                              no-caps
+                              color="primary"
+                              class="q-px-sm"
+                              :label="button.buttonText?.displayText || 'Botão'"
+                              disable
+                            />
+                          </div>
+                        </template>
+
                         <div class="row items-center justify-end q-message-meta-container">
                           <div class="q-message-meta">
                             <span class="text-caption">{{ formatarData(mensagem.createdAt, 'HH:mm') }}</span>

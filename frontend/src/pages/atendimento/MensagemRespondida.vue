@@ -153,7 +153,7 @@
         </template>
         <div
           v-linkified
-          v-if="!['vcard', 'application', 'audio', 'image', 'video' ].includes(mensagem.mediaType)"
+          v-if="!['vcard', 'application', 'audio', 'image', 'video'].includes(mensagem.mediaType)"
           :class="{'q-mt-sm': mensagem.mediaType !== 'chat'}"
           class="q-message-container row items-end no-wrap ellipsis-3-lines"
         >
