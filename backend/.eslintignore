@@ -1,3 +1,11 @@
 /*.js
 node_modules
 dist
+
+# Ignorar arquivos específicos
+src/services/MessageServices/CreateMessageSystemService.ts
+
+# Ignorar pastas inteiras se quiser
+# src/services/
+# dist/
+# node_modules/

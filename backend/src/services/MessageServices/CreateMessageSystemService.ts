@@ -1,4 +1,3 @@
-/* eslint-disable prefer-destructuring */
 import fs from "fs";
 import { promisify } from "util";
 import { join } from "path";
@@ -23,7 +22,10 @@ const writeFileAsync = promisify(fs.writeFile);
 const mkdirAsync = promisify(fs.mkdir);
 
 // Função para dividir mensagens muito grandes
-const splitLargeMessage = (body: string, maxLength: number = 4096): string[] => {
+const splitLargeMessage = (
+  body: string,
+  maxLength = 4096
+): string[] => {
   if (body.length <= maxLength) {
     return [body];
   }
@@ -53,16 +55,17 @@ const splitLargeMessage = (body: string, maxLength: number = 4096): string[] => 
         }
       }
     } else {
-      // Verificar se adicionar esta linha excederia o limite
-      if ((currentMessage + line + '\n').length > maxLength) {
+      const newMessageLength = currentMessage.length + line.length + 1; // +1 para '\n'
+      
+      if (newMessageLength > maxLength) {
         if (currentMessage.trim()) {
           messages.push(currentMessage.trim());
-          currentMessage = line + '\n';
+          currentMessage = `${line}\n`;
         } else {
-          currentMessage = line + '\n';
+          currentMessage = `${line}\n`;
         }
       } else {
-        currentMessage += line + '\n';
+        currentMessage = `${currentMessage}${line}\n`;
       }
     }
   }
