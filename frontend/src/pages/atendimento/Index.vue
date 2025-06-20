@@ -94,6 +94,8 @@
 
         <q-scroll-area
           ref="scrollAreaTickets"
+          :thumb-style="thumbStyle"
+          :bar-style="barStyle"
           style="height: calc(100% - 130px)"
           @scroll="onScroll"
         >
@@ -138,7 +140,11 @@
       >
 
         <q-separator />
-        <q-scroll-area style="height: calc(100vh - 60px)">
+        <q-scroll-area
+          :thumb-style="thumbStyle"
+          :bar-style="barStyle"
+          style="height: calc(100vh - 60px)"
+        >
           <div class="contact-data-container">
             <!-- Espaçamento antes das informações do contato -->
             <div class="q-mt-md"></div>
@@ -493,7 +499,11 @@
                   <q-tooltip>Nova Mensagem Agendada</q-tooltip>
                 </q-btn>
               </div>
-              <q-scroll-area style="height: 200px">
+              <q-scroll-area
+                :thumb-style="thumbStyle"
+                :bar-style="barStyle"
+                style="height: 200px"
+              >
                 <q-list>
                   <q-item v-for="(message, idx) in ticketFocado.scheduledMessages.slice(0, 3)" :key="message.uniqueKey || `scheduled-message-${message.id || idx}`" class="q-mb-sm">
                     <q-item-section>
@@ -558,7 +568,11 @@
                   <q-tooltip>Nova Observação</q-tooltip>
                 </q-btn>
               </div>
-              <q-scroll-area style="height: 200px">
+              <q-scroll-area
+                :thumb-style="thumbStyle"
+                :bar-style="barStyle"
+                style="height: 200px"
+              >
                 <q-list>
                   <q-item v-for="obs in observacoes.slice(0, 3)" :key="obs.id" class="q-mb-sm">
                     <q-item-section>
@@ -857,6 +871,22 @@ export default {
       if (!showAll && !queuesIds?.length && !withUnreadMessages) return 'meus'
 
       return null
+    },
+    thumbStyle () {
+      return {
+        borderRadius: '5px',
+        backgroundColor: '#1a202c',
+        width: '5px',
+        opacity: 0.75
+      }
+    },
+    barStyle () {
+      return {
+        borderRadius: '0px',
+        backgroundColor: 'transparent',
+        width: '5px',
+        opacity: 0.2
+      }
     }
   },
   methods: {
