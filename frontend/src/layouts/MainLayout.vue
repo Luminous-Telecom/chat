@@ -640,6 +640,7 @@ export default {
           this.$q.notify({
             message: 'Nova mensagem recebida',
             color: 'info',
+            position: 'bottom-right',
             timeout: 1000
           })
         })

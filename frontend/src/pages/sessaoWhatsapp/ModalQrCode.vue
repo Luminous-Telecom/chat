@@ -223,7 +223,7 @@ export default {
     },
     conectarPorNumero () {
       if (!this.selectedCountry || !this.phoneNumber) {
-        this.$q.notify({ type: 'negative', message: 'Preencha o país e o número!' })
+        this.$q.notify({ type: 'negative', message: 'Preencha o país e o número!', position: 'bottom-right' })
         return
       }
       const numeroCompleto = this.selectedCountry + this.phoneNumber.replace(/\D/g, '')
