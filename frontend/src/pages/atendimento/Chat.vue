@@ -378,19 +378,17 @@ export default {
     },
     thumbStyle () {
       return {
-        right: '4px',
         borderRadius: '5px',
-        backgroundColor: '#027be3',
+        backgroundColor: '#1a202c',
         width: '5px',
         opacity: 0.75
       }
     },
     barStyle () {
       return {
-        right: '2px',
-        borderRadius: '9px',
-        backgroundColor: '#027be3',
-        width: '9px',
+        borderRadius: '0px',
+        backgroundColor: 'transparent',
+        width: '5px',
         opacity: 0.2
       }
     }
@@ -581,16 +579,6 @@ audio {
   cursor: pointer;
   z-index: 99;
 }
-
-// /* CSS Logilcs */
-// #message-box {
-//   &:empty ~ #submit-button {
-//     display: none;
-//   } /*when textbox empty show microhpone*/
-//   &:not(:empty) ~ #voice-button {
-//     display: none;
-//   } /*when textbox with texy show submit button*/
-// }
 
 .fade-enter-active,
 .fade-leave-active {

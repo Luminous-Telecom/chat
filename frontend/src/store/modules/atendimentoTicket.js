@@ -165,39 +165,29 @@ const atendimentoTicket = {
     },
     // OK
     LOAD_TICKETS (state, payload) {
-      // console.log('[DEBUG] LOAD_TICKETS mutation chamada:', {
-      //  ticketsCount: payload.length,
-      //  payload: payload
-      // })
       const tickets = payload.tickets || payload
       const currentFilters = payload.filters || null
 
-      if (tickets.length) {
-        tickets.forEach(ticket => {
-          const ticketIndex = state.tickets.findIndex(t => t.id === ticket.id)
-          if (ticketIndex !== -1) {
-            if (checkTicketFilter(ticket, currentFilters)) {
-              // console.log('[DEBUG] Atualizando ticket existente:', ticket.id)
-              state.tickets[ticketIndex] = ticket
-              if (ticket.unreadMessages > 0) {
-                state.tickets[ticketIndex].unreadMessages = ticket.unreadMessages
-              }
-            } else {
-              // console.log('[DEBUG] Removendo ticket que não passou no filtro:', ticket.id)
-              state.tickets.splice(ticketIndex, 1)
-            }
+      // Filtrar tickets válidos
+      const validTickets = tickets.filter(ticket =>
+        checkTicketFilter(ticket, currentFilters)
+      )
+
+      // Se for primeira página (pageNumber === 1), substituir toda a lista
+      // Caso contrário, adicionar aos existentes (paginação)
+      if (currentFilters && currentFilters.pageNumber === 1) {
+        state.tickets = validTickets
+      } else {
+        // Para paginação, apenas adicionar novos tickets únicos
+        validTickets.forEach(ticket => {
+          const existingIndex = state.tickets.findIndex(t => t.id === ticket.id)
+          if (existingIndex !== -1) {
+            state.tickets[existingIndex] = ticket
           } else {
-            if (checkTicketFilter(ticket, currentFilters)) {
-              // console.log('[DEBUG] Adicionando novo ticket:', ticket.id)
-              state.tickets.push(ticket)
-            } else {
-              // console.log('[DEBUG] Ticket não passou no filtro, não adicionado:', ticket.id)
-            }
+            state.tickets.push(ticket)
           }
         })
       }
-      // Note: hasMore is handled separately via SET_HAS_MORE mutation
-      // state.hasMore will be set by the separate SET_HAS_MORE commit in Index.vue
     },
     RESET_TICKETS (state, statusFilter = null) {
       state.hasMore = true

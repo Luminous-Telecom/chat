@@ -124,7 +124,7 @@
       <q-page-container>
         <router-view
           :mensagensRapidas="mensagensRapidas"
-          :key="`router-${ticketFocado.id || 'empty'}-${$route.name}-${$route.params.ticketId || ''}`"
+          key="static-chat"
         ></router-view>
       </q-page-container>
 
@@ -1400,12 +1400,6 @@ export default {
       // return () => clearTimeout(delayDebounceFn)
     },
     async BuscarTicketFiltro () {
-      // Preservar o ticket focado atual
-      const ticketFocadoAtual = this.$store.getters.ticketFocado
-
-      // Reset completo dos tickets para garantir lista limpa
-      this.$store.commit('RESET_TICKETS')
-
       this.loading = true
       localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
       this.pesquisaTickets = {
@@ -1413,18 +1407,10 @@ export default {
         pageNumber: 1
       }
 
+      // Apenas buscar e atualizar a lista, sem mexer no chat
       await this.consultarTickets(this.pesquisaTickets)
       this.loading = false
       this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
-
-      // Se havia um ticket focado e ele ainda existe após a busca, mantê-lo focado
-      if (ticketFocadoAtual?.id) {
-        const ticketAindaExiste = this.tickets.find(t => t.id === ticketFocadoAtual.id)
-        if (ticketAindaExiste) {
-          // Manter o ticket focado se ele ainda está na lista
-          this.$store.commit('TICKET_FOCADO', ticketFocadoAtual)
-        }
-      }
     },
     async onLoadMore () {
       if (this.tickets.length === 0 || !this.hasMore || this.loading) {
@@ -1610,6 +1596,9 @@ export default {
     },
     $route: {
       handler (newRoute, oldRoute) {
+        // Evitar execução desnecessária
+        if (oldRoute && newRoute.query.status === oldRoute.query.status) return
+
         const newStatus = newRoute.query.status
 
         // Atualizar status se estivermos em qualquer rota de atendimento (atendimento, chat-empty, chat)
@@ -1665,7 +1654,7 @@ export default {
           }
         }
       },
-      immediate: true
+      immediate: false // Mudado para false para evitar execução desnecessária no mount
     },
     ticketFocado: {
       handler (newVal) {
@@ -1729,7 +1718,7 @@ export default {
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(25, 118, 210, 0.6) 0%, rgba(25, 118, 210, 0.8) 100%);
+    background: linear-gradient(180deg, #424242 0%, rgba(25, 118, 210, 0.8) 100%);
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.2);
     transition: all 0.3s ease;
@@ -2789,4 +2778,6 @@ export default {
   background-color: var(--primary-color);
   color: var(--text-color-primary);
 }
+
+/* Estilos elegantes para seleção de etiquetas */
 </style>
