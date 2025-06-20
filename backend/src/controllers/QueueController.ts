@@ -118,7 +118,7 @@ export const getUnreadCount = async (
     // Formatar os dados para o frontend
     const formattedQueues = pendingTicketsCount.map(item => ({
       queueId: item.queueId,
-      count: parseInt(item.getDataValue('count') || '0'),
+      count: parseInt((item as any).getDataValue("count") || "0", 10),
     }));
 
     return res.status(200).json({ queues: formattedQueues });

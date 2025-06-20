@@ -491,7 +491,7 @@ export async function initBaileys(
       getMessage: async () => undefined,
       shouldIgnoreJid: (jid) => {
         // Verificar se jid é válido antes de usar includes
-        return jid && typeof jid === 'string' && jid.includes('@broadcast') ? true : false;
+        return !!(jid && typeof jid === 'string' && jid.includes('@broadcast'));
       },
       linkPreviewImageThumbnailWidth: 0,
       // Configurações específicas para melhorar tratamento de grupos e criptografia
@@ -886,16 +886,16 @@ export async function initBaileys(
       try {
         const connectionState = (wbot as any)?.connection;
         const wsExists = !!(wbot as any)?.ws;
-        
+
         // Se a sessão está marcada como conectada mas não tem WebSocket
         if (connectionState === "open" && !wsExists) {
           baseLogger.warn(
             `[Session Monitor] Session ${whatsapp.name} has open connection but no WebSocket - attempting recovery`
           );
-          
+
           // Tentar regenerar a sessão
           try {
-            await regenerateSessionForCryptoIssues(whatsapp.id);
+            await safeReconnect(wbot, whatsapp);
             baseLogger.info(
               `[Session Monitor] Session ${whatsapp.name} regenerated successfully`
             );
@@ -905,13 +905,13 @@ export async function initBaileys(
             );
           }
         }
-        
+
         // Se a sessão está undefined, tentar reconectar
         if (connectionState === undefined && !wsExists) {
           baseLogger.warn(
             `[Session Monitor] Session ${whatsapp.name} has undefined state - attempting reconnection`
           );
-          
+
           try {
             await safeReconnect(wbot, whatsapp);
             baseLogger.info(
@@ -1008,8 +1008,7 @@ export async function initBaileys(
           `Estado da conexão antes do pairing: ${(wbot as any).connection}`
         );
         baseLogger.debug(
-          `WebSocket status antes do pairing: ${
-            (wbot as any).ws ? "disponível" : "indisponível"
+          `WebSocket status antes do pairing: ${(wbot as any).ws ? "disponível" : "indisponível"
           }`
         );
 
@@ -1028,13 +1027,11 @@ export async function initBaileys(
               `Pairing code gerado com sucesso para ${whatsapp.name}: ${pairingCode}`
             );
             baseLogger.debug(
-              `Estado da conexão após gerar pairing code: ${
-                (wbot as any).connection
+              `Estado da conexão após gerar pairing code: ${(wbot as any).connection
               }`
             );
             baseLogger.debug(
-              `WebSocket status após gerar pairing code: ${
-                (wbot as any).ws ? "disponível" : "indisponível"
+              `WebSocket status após gerar pairing code: ${(wbot as any).ws ? "disponível" : "indisponível"
               }`
             );
 
@@ -1067,13 +1064,11 @@ export async function initBaileys(
                 `Erro de conexão durante pairing: ${err.message}`
               );
               baseLogger.debug(
-                `Estado da conexão no momento do erro: ${
-                  (wbot as any).connection
+                `Estado da conexão no momento do erro: ${(wbot as any).connection
                 }`
               );
               baseLogger.debug(
-                `WebSocket status no momento do erro: ${
-                  (wbot as any).ws ? "disponível" : "indisponível"
+                `WebSocket status no momento do erro: ${(wbot as any).ws ? "disponível" : "indisponível"
                 }`
               );
             }
@@ -1188,10 +1183,13 @@ export const isSessionConnected = (whatsappId: number): boolean => {
   return session ? (session as any)?.connection === "open" : false;
 };
 
+
+
+
 // Função para regenerar sessão quando há problemas de criptografia
-export const regenerateSessionForCryptoIssues = async (
+async function regenerateSessionForCryptoIssues(
   whatsappId: number
-): Promise<BaileysClient | null> => {
+): Promise<BaileysClient | null> {
   try {
     const whatsapp = await Whatsapp.findByPk(whatsappId);
     if (!whatsapp) {
@@ -1246,6 +1244,6 @@ export const regenerateSessionForCryptoIssues = async (
     );
     return null;
   }
-};
+}
 
-export { sessions };
+export { sessions, regenerateSessionForCryptoIssues };

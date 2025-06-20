@@ -403,7 +403,6 @@ const processTextMessage = async (
       // Criar dados da mensagem para esta parte
       const partMessageData = {
         ...messageData,
-        body: partBody,
         // Adicionar indicador de parte se houver múltiplas partes
         body: messageParts.length > 1 ? `(${i + 1}/${messageParts.length}) ${partBody}` : partBody,
       };
