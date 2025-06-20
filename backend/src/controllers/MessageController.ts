@@ -13,6 +13,7 @@ import CreateForwardMessageService from "../services/MessageServices/CreateForwa
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
 
 import ListMessagesService from "../services/MessageServices/ListMessagesService";
+import ListContactMessagesService from "../services/MessageServices/ListContactMessagesService";
 import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import DeleteWhatsAppMessage from "../services/WbotServices/DeleteWhatsAppMessage";
 import { logger } from "../utils/logger";
@@ -73,6 +74,21 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     ticket,
     hasMore,
   });
+};
+
+export const getContactMessages = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { contactId } = req.params;
+  const { tenantId } = req.user;
+
+  const messages = await ListContactMessagesService({
+    contactId,
+    tenantId,
+  });
+
+  return res.json(messages);
 };
 
 export const store = async (req: Request, res: Response): Promise<Response> => {

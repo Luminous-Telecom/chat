@@ -79,6 +79,13 @@ export function DeletarMensagem (mensagem) {
   })
 }
 
+export function ListarMensagensContato (contactId) {
+  return request({
+    url: `/messages/contact/${contactId}`,
+    method: 'get'
+  })
+}
+
 export function CriarTicket (data) {
   return request({
     url: '/tickets',

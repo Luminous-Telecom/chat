@@ -681,6 +681,11 @@
         @nova-mensagem-agendada="abrirModalAgendarMensagem"
       />
 
+      <ModalTimeline
+        :modalTimeline.sync="modalTimeline"
+        :contato="ticketFocado.contact || {}"
+      />
+
     </q-layout>
   </div>
 </template>
@@ -716,6 +721,7 @@ import ModalObservacao from './ModalObservacao.vue'
 import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
+import ModalTimeline from './ModalTimeline.vue'
 
 import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
 
@@ -732,7 +738,8 @@ export default {
     MensagemChat,
     ModalObservacao,
     ModalListarObservacoes,
-    ModalListarMensagensAgendadas
+    ModalListarMensagensAgendadas,
+    ModalTimeline
 
   },
   data () {
@@ -776,6 +783,7 @@ export default {
       modalObservacao: false,
       modalListarObservacoes: false,
       modalListarMensagensAgendadas: false,
+      modalTimeline: false,
 
       observacoes: [],
       pesquisaTickets: {
@@ -1414,16 +1422,13 @@ export default {
       // Add any additional logic you want to execute when first load is complete
     },
     abrirModalTransferirTicket () {
-      if (!this.ticketFocado?.id) {
-        this.$q.notify({
-          type: 'warning',
-          message: 'Selecione um ticket para transferir',
-          position: 'top'
-        })
-        return
-      }
-      // Emitir evento para abrir modal de transferência
       this.$root.$emit('infor-cabecalo-chat:transferir-ticket')
+    },
+    confirmarTransferenciaTicket () {
+      // ... (Lógica para confirmar transferência)
+    },
+    filterUsers () {
+      // ... (Lógica para filtrar usuários)
     },
     abrirModalTimeline () {
       if (!this.ticketFocado?.id) {
@@ -1434,12 +1439,8 @@ export default {
         })
         return
       }
-      // Implementar lógica do timeline aqui
-      this.$q.notify({
-        type: 'info',
-        message: 'Funcionalidade de timeline em desenvolvimento',
-        position: 'top'
-      })
+      // Abrir modal de timeline
+      this.modalTimeline = true
     }
   },
   beforeMount () {

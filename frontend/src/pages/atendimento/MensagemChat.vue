@@ -315,7 +315,7 @@
                       class="ellipsis col-grow q-pr-sm"
                       style="max-width: 290px"
                     >
-                      {{ farmatarMensagemWhatsapp(mensagem.body || mensagem.mediaName) }}
+                      {{ formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName) }}
                     </div>
                     <q-icon name="mdi-download" />
                   </div>
@@ -339,7 +339,7 @@
               :class=" { 'q-mt-sm': mensagem.mediaType !== 'chat' } "
               class="q-message-container row items-end no-wrap"
             >
-              <div v-html="farmatarMensagemWhatsapp(mensagem.body)"></div>
+              <div v-html="formatarMensagemWhatsapp(mensagem.body)"></div>
             </div>
           </div>
         </q-chat-message>

@@ -31,7 +31,7 @@ export default {
         return ''
       }
     },
-    farmatarMensagemWhatsapp (body) {
+    formatarMensagemWhatsapp (body) {
       if (!body) return ''
 
       let format = body

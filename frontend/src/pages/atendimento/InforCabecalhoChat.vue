@@ -373,6 +373,9 @@ export default {
           }]
         })
       }
+    },
+    abrirModalTransferirTicket () {
+      this.listarFilas()
     }
   },
   watch: {
@@ -383,11 +386,13 @@ export default {
       immediate: true
     }
   },
-  mounted () {
-    this.$root.$on('infor-cabecalo-chat:transferir-ticket', this.listarFilas)
+  async mounted () {
+    this.$root.$on('infor-cabecalo-chat:transferir-ticket', () => {
+      this.abrirModalTransferirTicket()
+    })
   },
   beforeDestroy () {
-    this.$root.$off('infor-cabecalo-chat:transferir-ticket', this.listarFilas)
+    this.$root.$off('infor-cabecalo-chat:transferir-ticket')
   }
 }
 </script>

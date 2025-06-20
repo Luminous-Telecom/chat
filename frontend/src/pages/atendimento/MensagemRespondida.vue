@@ -128,7 +128,7 @@
                   style="max-width: 180px"
                 >
                   <div class="ellipsis col-grow q-pr-sm">
-                    {{ farmatarMensagemWhatsapp(mensagem.body) }}
+                    {{ formatarMensagemWhatsapp(mensagem.body) }}
                   </div>
                   <q-icon
                     class="col"
@@ -157,7 +157,7 @@
           :class="{'q-mt-sm': mensagem.mediaType !== 'chat'}"
           class="q-message-container row items-end no-wrap ellipsis-3-lines"
         >
-          <div v-html="farmatarMensagemWhatsapp(mensagem.body)">
+          <div v-html="formatarMensagemWhatsapp(mensagem.body)">
           </div>
         </div>
       </div>

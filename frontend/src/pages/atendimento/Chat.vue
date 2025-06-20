@@ -139,7 +139,7 @@
             </q-item-label>
             <q-item-label
               lines="4"
-              v-html="farmatarMensagemWhatsapp(replyingMessage.body)"
+              v-html="formatarMensagemWhatsapp(replyingMessage.body)"
             >
             </q-item-label>
           </q-item-section>
