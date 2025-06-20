@@ -21,7 +21,8 @@
     "pm2:delete": "pm2 delete ecosystem.config.js",
     "pm2:logs": "pm2 logs",
     "pm2:monit": "pm2 monit",
-    "clear-sessions": "ts-node src/utils/clearCorruptedSessions.ts"
+    "clear-sessions": "ts-node src/utils/clearCorruptedSessions.ts",
+    "session-monitor": "ts-node src/commands/sessionMonitor.ts"
   },
   "engines": {
     "node": ">=18"
