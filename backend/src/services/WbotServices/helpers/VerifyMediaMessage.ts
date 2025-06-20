@@ -330,6 +330,7 @@ const VerifyMediaMessage = async (
       quotedMsgId: quotedMsg?.id,
       timestamp: msg.timestamp,
       status: msg.fromMe ? "sended" : "received",
+      dataPayload: msg.dataPayload,
     };
 
     const message = await CreateMessageService({

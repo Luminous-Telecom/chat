@@ -8,6 +8,7 @@ import {
 
 interface BaileysMessageWithDownload extends BaileysMessage {
   downloadMedia: () => Promise<Buffer | null>;
+  dataPayload?: any;
 }
 
 export class BaileysMessageAdapter {
@@ -94,8 +95,9 @@ export class BaileysMessageAdapter {
           retryCount++;
           if (retryCount <= maxRetries) {
             // Aguardar antes da próxima tentativa
+            const currentRetryCount = retryCount;
             await new Promise(resolve =>
-              setTimeout(resolve, 1000 * retryCount)
+              setTimeout(resolve, 1000 * currentRetryCount)
             );
           }
         }
@@ -105,44 +107,27 @@ export class BaileysMessageAdapter {
       getChat: async () => this.getChat(msg),
       getContact: async () => this.getContact(msg),
       toJSON: () => ({ ...msg }),
+      dataPayload: this.getDataPayload(msg),
     };
 
     return message;
   }
 
   private static getMessageBody(msg: proto.IWebMessageInfo): string {
-    const messageType = Object.keys(msg.message || {})[0];
-    const content = msg.message?.[messageType as keyof proto.IMessage];
-
-    if (messageType === "conversation") {
-      return (content as string) || "";
-    }
-
-    if (messageType === "extendedTextMessage") {
-      return (content as proto.Message.IExtendedTextMessage)?.text || "";
-    }
-
-    if (messageType === "imageMessage") {
-      return (content as proto.Message.IImageMessage)?.caption || "";
-    }
-
-    if (messageType === "videoMessage") {
-      return (content as proto.Message.IVideoMessage)?.caption || "";
-    }
-
-    if (messageType === "documentMessage") {
-      return (content as proto.Message.IDocumentMessage)?.fileName || "";
-    }
-
-    if (messageType === "audioMessage") {
-      return "Áudio";
-    }
-
-    if (messageType === "stickerMessage") {
-      return "Figurinha";
-    }
-
-    return "";
+    return (
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      msg.message?.buttonsResponseMessage?.selectedDisplayText ||
+      msg.message?.listResponseMessage?.title ||
+      msg.message?.buttonsMessage?.contentText ||
+      msg.message?.templateButtonReplyMessage?.selectedDisplayText ||
+      msg.message?.viewOnceMessage?.message?.conversation ||
+      msg.message?.imageMessage?.caption ||
+      msg.message?.videoMessage?.caption ||
+      msg.message?.listMessage?.description ||
+      msg.message?.templateMessage?.hydratedTemplate?.hydratedContentText ||
+      ""
+    );
   }
 
   private static hasMedia(msg: proto.IWebMessageInfo): boolean {
@@ -205,15 +190,12 @@ export class BaileysMessageAdapter {
 
       // Se for grupo, o contato individual ainda é o remoteJid (o grupo)
       // Para mensagens em grupo enviadas por mim, o contato da conversa é o grupo
+    } else if (msg.key.remoteJid?.endsWith("@g.us")) {
+      // Em grupos, o remetente individual é o participant
+      contactJid = msg.key.participant || msg.key.remoteJid || "";
     } else {
-      // Mensagem recebida - o contato é o remetente
-      if (msg.key.remoteJid?.endsWith("@g.us")) {
-        // Em grupos, o remetente individual é o participant
-        contactJid = msg.key.participant || msg.key.remoteJid || "";
-      } else {
-        // Em conversas individuais, o remetente é o remoteJid
-        contactJid = msg.key.remoteJid || "";
-      }
+      // Em conversas individuais, o remetente é o remoteJid
+      contactJid = msg.key.remoteJid || "";
     }
 
     const number = contactJid.split("@")[0] || "";
@@ -268,5 +250,27 @@ export class BaileysMessageAdapter {
       default:
         return `file-${Date.now()}`;
     }
+  }
+
+  private static getDataPayload(msg: proto.IWebMessageInfo): any {
+    if (msg.message?.buttonsMessage) {
+      return {
+        buttons: msg.message.buttonsMessage.buttons?.map(btn => ({
+          id: btn.buttonId,
+          body: btn.buttonText?.displayText,
+        })),
+        footer: msg.message.buttonsMessage.footerText,
+      };
+    }
+    if (msg.message?.listMessage) {
+      return {
+        buttons: msg.message.listMessage.sections,
+        footer: msg.message.listMessage.footerText,
+        title: msg.message.listMessage.title,
+        buttonText: msg.message.listMessage.buttonText,
+        description: msg.message.listMessage.description,
+      };
+    }
+    return null;
   }
 }

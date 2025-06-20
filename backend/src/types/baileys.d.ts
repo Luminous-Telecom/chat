@@ -22,6 +22,7 @@ export interface BaileysMessage extends proto.IWebMessageInfo {
     _serialized: string;
   };
   timestamp: number;
+  dataPayload?: any;
   getChat: () => Promise<BaileysChat>;
   getContact: () => Promise<BaileysContact>;
   toJSON: () => { [k: string]: any };

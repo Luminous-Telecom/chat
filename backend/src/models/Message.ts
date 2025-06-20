@@ -143,6 +143,11 @@ class Message extends Model<Message> {
   @AllowNull
   @Column
   idFront: string;
+
+  @Default(null)
+  @AllowNull
+  @Column(DataType.JSONB)
+  dataPayload: any;
 }
 
 // Message.sequelize?.define("Message", {

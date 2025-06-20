@@ -30,9 +30,8 @@ const VerifyMessage = async (
       quotedMsgId: quotedMsg?.id,
       timestamp: msg.timestamp,
       status: "received",
+      dataPayload: msg.dataPayload,
     };
-
-
 
     // Calcular contador de mensagens não lidas
     const currentUnread = await Message.count({
