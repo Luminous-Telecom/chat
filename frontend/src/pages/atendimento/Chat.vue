@@ -387,7 +387,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['ticketFocado']),
+    ...mapGetters(['ticketFocado', 'mensagensTicket', 'hasMore']),
     cMessages () {
       // eslint-disable-next-line vue/no-side-effects-in-computed-properties
       this.replyingMessage = null

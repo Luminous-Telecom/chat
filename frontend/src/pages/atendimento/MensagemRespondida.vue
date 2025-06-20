@@ -160,6 +160,69 @@
           <div v-html="formatarMensagemWhatsapp(mensagem.body)">
           </div>
         </div>
+
+        <!-- Botões Interativos -->
+        <template v-if="mensagem.dataPayload && mensagem.dataPayload.buttons">
+          <div class="row q-gutter-sm justify-start q-mt-sm">
+            <q-btn
+              v-for="(button, btnIndex) in mensagem.dataPayload.buttons"
+              :key="btnIndex"
+              dense
+              outline
+              no-caps
+              color="primary"
+              class="q-px-sm"
+              :label="button.body || button.buttonText?.displayText || 'Botão'"
+              :loading="buttonStates[`button_${mensagem.id}_${btnIndex}`]?.loading"
+              :disabled="buttonStates[`button_${mensagem.id}_${btnIndex}`]?.disabled"
+              @click="handleButtonClick(mensagem, button, btnIndex)"
+            />
+          </div>
+        </template>
+
+        <!-- Lista Interativa -->
+        <template v-if="mensagem.dataPayload && mensagem.dataPayload.title">
+          <div class="row q-gutter-sm justify-start q-mt-sm">
+            <q-card class="list-message-card" flat>
+              <q-card-section class="q-pa-sm">
+                <div class="text-subtitle2 text-weight-medium">{{ mensagem.dataPayload.title }}</div>
+                <div v-if="mensagem.dataPayload.description" class="text-caption q-mt-xs">
+                  {{ mensagem.dataPayload.description }}
+                </div>
+              </q-card-section>
+              <q-card-section class="q-pa-sm q-pt-none" v-if="mensagem.dataPayload.buttons">
+                <q-btn
+                  v-for="(section, sectionIndex) in mensagem.dataPayload.buttons"
+                  :key="sectionIndex"
+                  dense
+                  outline
+                  no-caps
+                  color="primary"
+                  class="q-px-sm q-mb-xs full-width"
+                  :label="section.title || 'Opção'"
+                  :loading="buttonStates[`section_${mensagem.id}_${sectionIndex}`]?.loading"
+                  :disabled="buttonStates[`section_${mensagem.id}_${sectionIndex}`]?.disabled"
+                  @click="handleListButtonClick(mensagem, section, sectionIndex)"
+                />
+              </q-card-section>
+            </q-card>
+          </div>
+        </template>
+
+        <!-- Indicador de Resposta de Botão -->
+        <template v-if="mensagem.dataPayload && mensagem.dataPayload.isButtonResponse">
+          <div class="row q-gutter-sm justify-start q-mt-xs">
+            <q-chip
+              dense
+              color="positive"
+              text-color="white"
+              icon="mdi-check-circle"
+              class="q-px-sm"
+            >
+              Resposta: {{ mensagem.dataPayload.buttonText }}
+            </q-chip>
+          </div>
+        </template>
       </div>
     </q-chat-message>
   </q-item>
@@ -171,6 +234,7 @@ import { Base64 } from 'js-base64'
 
 import mixinCommon from './mixinCommon'
 import VueEasyLightbox from 'vue-easy-lightbox'
+import { EnviarRespostaBotao } from 'src/service/tickets'
 
 export default {
   name: 'MensagemChat',
@@ -197,7 +261,7 @@ export default {
     return {
       abrirModalImagem: false,
       urlMedia: '',
-
+      buttonStates: {}, // Para gerenciar estado dos botões
       ackIcons: { // Se ACK == 3 ou 4 entao color green
         0: 'mdi-clock-outline',
         1: 'mdi-check',
@@ -230,6 +294,90 @@ export default {
     },
     focarElemento (mensagem) {
       this.$emit('mensagem-respondida:focar-mensagem', mensagem)
+    },
+    async handleButtonClick (mensagem, button, btnIndex) {
+      try {
+        // Adicionar loading ao botão usando uma propriedade local
+        const buttonKey = `button_${mensagem.id}_${btnIndex}`
+        this.$set(this.buttonStates, buttonKey, { loading: true })
+
+        const buttonText = button.body || button.buttonText?.displayText || 'Botão'
+
+        // Enviar resposta do botão
+        await EnviarRespostaBotao({
+          ticketId: this.$parent.ticketFocado?.id,
+          buttonId: button.id,
+          buttonText: buttonText,
+          messageId: mensagem.id
+        })
+
+        // Marcar botões como desabilitados usando propriedades locais
+        if (mensagem.dataPayload && mensagem.dataPayload.buttons) {
+          mensagem.dataPayload.buttons.forEach((btn, index) => {
+            const btnKey = `button_${mensagem.id}_${index}`
+            this.$set(this.buttonStates, btnKey, { disabled: true, loading: false })
+          })
+        }
+
+        this.$q.notify({
+          type: 'positive',
+          message: `Resposta enviada: ${buttonText}`,
+          position: 'top'
+        })
+      } catch (error) {
+        console.error('Erro ao enviar resposta do botão:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao enviar resposta do botão',
+          position: 'top'
+        })
+      } finally {
+        // Remover loading do botão
+        const buttonKey = `button_${mensagem.id}_${btnIndex}`
+        this.$set(this.buttonStates, buttonKey, { loading: false })
+      }
+    },
+    async handleListButtonClick (mensagem, section, sectionIndex) {
+      try {
+        // Adicionar loading ao botão da lista usando uma propriedade local
+        const sectionKey = `section_${mensagem.id}_${sectionIndex}`
+        this.$set(this.buttonStates, sectionKey, { loading: true })
+
+        const buttonText = section.title || 'Opção'
+
+        // Enviar resposta do botão da lista
+        await EnviarRespostaBotao({
+          ticketId: this.$parent.ticketFocado?.id,
+          buttonId: section.id || `section_${sectionIndex}`,
+          buttonText: buttonText,
+          messageId: mensagem.id
+        })
+
+        // Marcar botões da lista como desabilitados usando propriedades locais
+        if (mensagem.dataPayload && mensagem.dataPayload.buttons) {
+          mensagem.dataPayload.buttons.forEach((btn, index) => {
+            const btnKey = `section_${mensagem.id}_${index}`
+            this.$set(this.buttonStates, btnKey, { disabled: true, loading: false })
+          })
+        }
+
+        this.$q.notify({
+          type: 'positive',
+          message: `Resposta enviada: ${buttonText}`,
+          position: 'top'
+        })
+      } catch (error) {
+        console.error('Erro ao enviar resposta da lista:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao enviar resposta da lista',
+          position: 'top'
+        })
+      } finally {
+        // Remover loading do botão da lista
+        const sectionKey = `section_${mensagem.id}_${sectionIndex}`
+        this.$set(this.buttonStates, sectionKey, { loading: false })
+      }
     }
   }
 }

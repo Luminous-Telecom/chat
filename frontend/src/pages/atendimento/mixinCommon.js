@@ -1,11 +1,9 @@
 import { format, parseISO, parseJSON } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
-import { mapGetters } from 'vuex'
 import { processEmojis } from 'src/utils/emojiUtils'
 
 export default {
   computed: {
-    ...mapGetters(['mensagensTicket', 'hasMore'])
   },
   data () {
     return {

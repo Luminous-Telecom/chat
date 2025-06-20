@@ -98,6 +98,7 @@ export const SendWhatsAppMessage = async (
       };
     }
 
+    // Enviar como mensagem normal (mesmo sendo resposta de botão)
     const sentMessage = await wbot.sendMessage(
       number,
       {

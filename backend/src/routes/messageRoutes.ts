@@ -15,6 +15,20 @@ messageRoutes.get(
   MessageController.getContactMessages
 );
 
+messageRoutes.post(
+  "/messages/button-response",
+  isAuth,
+  MessageController.buttonResponse
+);
+
+messageRoutes.post(
+  "/messages/read/:messageId",
+  isAuth,
+  MessageController.markAsRead
+);
+
+messageRoutes.post("/forward-messages/", isAuth, MessageController.forward);
+
 messageRoutes.get("/messages/:ticketId", isAuth, MessageController.index);
 
 messageRoutes.post(
@@ -24,14 +38,6 @@ messageRoutes.post(
   MessageController.store
 );
 
-messageRoutes.post("/forward-messages/", isAuth, MessageController.forward);
-
 messageRoutes.delete("/messages/:messageId", isAuth, MessageController.remove);
-
-messageRoutes.post(
-  "/messages/read/:messageId",
-  isAuth,
-  MessageController.markAsRead
-);
 
 export default messageRoutes;

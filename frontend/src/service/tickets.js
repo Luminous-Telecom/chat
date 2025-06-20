@@ -93,3 +93,8 @@ export function CriarTicket (data) {
     data
   })
 }
+
+export const EnviarRespostaBotao = async (data) => {
+  const { data: response } = await request.post('/messages/button-response', data)
+  return response
+}

@@ -23,6 +23,7 @@ import SendWhatsAppMedia from "../services/WbotServices/SendWhatsAppMedia";
 import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
 import Ticket from "../models/Ticket";
 import Contact from "../models/Contact";
+import User from "../models/User";
 
 type IndexQuery = {
   pageNumber: string;
@@ -260,5 +261,132 @@ export const markAsRead = async (
     logger.error("[markAsRead] Erro ao marcar mensagem como lida:", err);
     logger.error("[markAsRead] Stack do erro:", err.stack);
     return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const buttonResponse = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { ticketId, messageId, buttonText, buttonId } = req.body;
+
+  try {
+    logger.info(`[buttonResponse] Processando resposta do botão:`, {
+      ticketId,
+      messageId,
+      buttonText,
+      buttonId,
+    });
+
+    // Validar e converter ticketId
+    const parsedTicketId = parseInt(ticketId as string, 10);
+    if (isNaN(parsedTicketId)) {
+      return res.status(400).json({ error: "ticketId inválido" });
+    }
+
+    // Buscar o ticket
+    const ticket = await Ticket.findByPk(parsedTicketId, {
+      include: [
+        {
+          model: Contact,
+          as: "contact",
+        },
+        {
+          model: User,
+          as: "user",
+        },
+      ],
+    });
+
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket não encontrado" });
+    }
+
+    // Buscar a mensagem original que contém os botões
+    const originalMessage = await Message.findByPk(messageId);
+    if (!originalMessage) {
+      return res.status(404).json({ error: "Mensagem original não encontrada" });
+    }
+
+    // Buscar o contato
+    const contact = await Contact.findByPk(ticket.contactId);
+    if (!contact) {
+      return res.status(404).json({ error: "Contato não encontrado" });
+    }
+
+    // Enviar a mensagem via Baileys como resposta ao botão
+    const sentMessage = await SendWhatsAppMessage(
+      contact,
+      ticket,
+      buttonText,
+      originalMessage
+    );
+
+    logger.info(`[buttonResponse] Mensagem enviada via Baileys:`, {
+      messageId: sentMessage.id,
+      body: sentMessage.body,
+    });
+
+    // Atualizar os metadados da mensagem para indicar que é uma resposta de botão
+    await sentMessage.update({
+      dataPayload: JSON.stringify({
+        isButtonResponse: true,
+        originalMessageId: messageId,
+        buttonId: buttonId,
+        buttonText: buttonText,
+      }),
+    });
+
+    // Atualizar o ticket com a nova mensagem
+    await ticket.update({
+      lastMessage: buttonText,
+      lastMessageAt: new Date().getTime(),
+      answered: true,
+    });
+
+    // Recarregar a mensagem com os relacionamentos para emitir via WebSocket
+    const messageWithRelations = await Message.findByPk(sentMessage.id, {
+      include: [
+        {
+          model: Ticket,
+          as: 'ticket',
+          include: [{ model: Contact, as: 'contact' }]
+        },
+        {
+          model: Message,
+          as: 'quotedMsg',
+          include: [{ model: Contact, as: 'contact' }]
+        }
+      ]
+    })
+
+    // Emitir evento via WebSocket para atualizar o frontend em tempo real
+    const io = getIO()
+    const channel = `tenant:${ticket.tenantId}:appMessage`
+    const eventData = {
+      action: 'update',
+      message: messageWithRelations,
+      ticket
+    }
+    io.emit(channel, eventData)
+
+    logger.info(
+      `[buttonResponse] Resposta do botão enviada com sucesso: ${buttonText}`
+    )
+
+    return res.json({
+      success: true,
+      message: "Resposta do botão enviada com sucesso",
+      data: {
+        messageId: sentMessage.id,
+        body: sentMessage.body,
+      },
+    });
+  } catch (error) {
+    logger.error(`[buttonResponse] Erro:`, error);
+    return res.status(500).json({
+      error: "Erro interno do servidor",
+      details: error.message,
+    });
   }
 };

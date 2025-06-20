@@ -706,7 +706,8 @@ const atendimentoTicket = {
       return filteredTickets
     },
     messagesByTicket: state => state.messagesByTicket || {},
-    isMessageProcessing: state => messageId => state.processingMessages.has(messageId)
+    isMessageProcessing: state => messageId => state.processingMessages.has(messageId),
+    mensagensTicket: state => state.mensagens || []
   }
 }
 
