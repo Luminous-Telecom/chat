@@ -106,7 +106,7 @@
             :ticket="ticket"
             :filas="filas"
             :buscaTicket="false"
-            @debug="logTicketDebug"
+
           />
           <div v-if="loading">
             <div class="row justify-center q-my-md">
@@ -259,19 +259,6 @@
                     </span>
                   </div>
                 </div>
-              </q-card-section>
-            </q-card>
-
-            <!-- Espaçamento antes do botão logs -->
-            <div class="q-mt-md"></div>
-            <q-card class="action-card">
-              <q-card-section class="action-section">
-                <q-btn
-                  flat
-                  class="logs-btn"
-                  label="Logs"
-                  @click="abrirModalLogs"
-                />
               </q-card-section>
             </q-card>
 
@@ -621,62 +608,6 @@
         :usuarioEdicao.sync="usuario"
       />
 
-      <q-dialog
-        v-model="exibirModalLogs"
-        no-backdrop-dismiss
-        full-height
-        position="right"
-        @hide="logsTicket = []"
-      >
-        <q-card style="width: 400px">
-          <q-card-section :class="{ 'bg-grey-2': !$q.dark.isActive, 'bg-primary': $q.dark.isActive }">
-            <div class="text-h6">Logs Ticket: {{ ticketFocado.id }}
-              <q-btn
-                icon="close"
-                color="negative"
-                flat
-                class="bg-padrao float-right"
-                round
-                v-close-popup
-              />
-            </div>
-          </q-card-section>
-          <q-card-section class="">
-            <q-scroll-area
-              style="height: calc(100vh - 200px);"
-              class="full-width"
-            >
-              <q-timeline
-                color="black"
-                style="width: 360px"
-                class="q-pl-sm "
-                :class="{ 'text-black': !$q.dark.isActive }"
-              >
-                <template>
-                  <q-timeline-entry
-                    v-for="(log, idx) in logsTicket"
-                    :key="log.id ? `log-${log.id}` : `idx-${idx}`"
-                    :subtitle="$formatarData(log.createdAt, 'dd/MM/yyyy HH:mm')"
-                    :color="messagesLog[log.type] && messagesLog[log.type].color || ''"
-                    :icon="messagesLog[log.type] && messagesLog[log.type].icon || ''"
-                  >
-                    <template v-slot:title>
-                      <div
-                        :class="{ 'text-white': $q.dark.isActive }"
-                        style="width: calc(100% - 20px)"
-                      >
-                        <div class="row col text-bold text-body2"> {{ log.user && log.user.name || 'Bot' }}:</div>
-                        <div class="row col"> {{ messagesLog[log.type] && messagesLog[log.type].message }}</div>
-                      </div>
-                    </template>
-                  </q-timeline-entry>
-                </template>
-              </q-timeline>
-            </q-scroll-area>
-          </q-card-section>
-        </q-card>
-      </q-dialog>
-
       <ModalObservacao
         :value.sync="modalObservacao"
         :ticket-id="ticketFocado.id || null"
@@ -707,7 +638,7 @@
 <script>
 import ContatoModal from 'src/pages/contatos/ContatoModal'
 import ItemTicket from './ItemTicket'
-import { ConsultarLogsTicket, ConsultarTickets, DeletarMensagem } from 'src/service/tickets'
+import { ConsultarTickets, DeletarMensagem } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import mixinSockets from './mixinSockets'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
@@ -730,7 +661,7 @@ import { EditarEtiquetasContato, EditarCarteiraContato } from 'src/service/conta
 import { RealizarLogout } from 'src/service/login'
 import { ListarUsuarios } from 'src/service/user'
 import MensagemChat from './MensagemChat.vue'
-import { messagesLog } from '../../utils/constants'
+
 import ModalObservacao from './ModalObservacao.vue'
 import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
@@ -770,7 +701,6 @@ export default {
     initialStatus = initialStatus.filter(s => typeof s === 'string')
 
     return {
-      messagesLog,
       configuracoes: [],
       debounce,
       usuario,
@@ -791,8 +721,6 @@ export default {
       searchTickets: '',
       mensagensRapidas: [],
       modalEtiquestas: false,
-      exibirModalLogs: false,
-      logsTicket: [],
       modalObservacao: false,
       modalListarObservacoes: false,
       modalListarMensagensAgendadas: false,
@@ -899,8 +827,6 @@ export default {
       await tocarSomNotificacao()
     },
 
-    logTicketDebug (ticketData) {
-    },
     toggleStatus (status) {
       // Substitui o array atual por um novo array contendo apenas o status selecionado
       this.pesquisaTickets.status = [status]
@@ -1212,11 +1138,6 @@ export default {
     },
     setValueMenu () {
       this.drawerTickets = !this.drawerTickets
-    },
-    async abrirModalLogs () {
-      const { data } = await ConsultarLogsTicket({ ticketId: this.ticketFocado.id })
-      this.logsTicket = data
-      this.exibirModalLogs = true
     },
     formatDate (dateString) {
       if (!dateString) return ''
@@ -1993,23 +1914,6 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.logs-btn {
-  width: 80px;
-  height: 28px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-weight: 500;
-  font-size: 10px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
-  }
 }
 
 .tags-card {
