@@ -129,7 +129,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: 'Mensagem deletada!',
               actions: [{
                 icon: 'close',

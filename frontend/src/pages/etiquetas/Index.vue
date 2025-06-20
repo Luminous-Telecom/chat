@@ -143,7 +143,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: `Etiqueta ${etiqueta.tag} deletada!`,
               actions: [{
                 icon: 'close',

@@ -162,7 +162,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
         return
@@ -202,7 +202,7 @@ export default {
           type: 'negative',
           progress: true,
           timeout: 100000,
-          position: 'top',
+          position: 'bottom-right',
           closeBtn: true,
           actions: [{
             icon: 'close',
@@ -228,7 +228,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Etapa editada!',
             actions: [{
@@ -243,7 +243,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Etapa criada!',
             actions: [{
               icon: 'close',

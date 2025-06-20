@@ -66,7 +66,7 @@ const user = {
         Notify.create({
           type: 'positive',
           message: 'Login realizado com sucesso!',
-          position: 'top',
+          position: 'bottom-right',
           progress: true
         })
 

@@ -137,7 +137,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Etiqueta editada!',
             actions: [{
@@ -152,7 +152,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Etiqueta criada!',
             actions: [{
               icon: 'close',

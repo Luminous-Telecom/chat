@@ -95,7 +95,7 @@ class ErrorNotificationService {
         type: 'negative',
         message: 'Mensagem Agendada Atrasada',
         caption: `Mensagem para ${ticket.contact?.name || 'Contato'} está atrasada`,
-        position: 'top',
+        position: 'bottom-right',
         timeout: 8000,
         actions: [
           { label: 'Ver Detalhes', color: 'white' },

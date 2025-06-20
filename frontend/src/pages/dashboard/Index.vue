@@ -442,7 +442,7 @@ const ticketsEvolutionChannelsOptions = ref({
   },
   colors: ['#1976D2', '#4CAF50', '#FFC107', '#F44336', '#9C27B0'],
   legend: {
-    position: 'top'
+    position: 'bottom-right'
   },
   tooltip: {
     shared: true
@@ -724,7 +724,7 @@ const loadTicketsEvolutionByPeriod = async () => {
         },
         plugins: {
           legend: {
-            position: 'top',
+            position: 'bottom-right',
             align: 'center',
             labels: {
               padding: 20,
@@ -816,7 +816,7 @@ const loadTicketsEvolutionByPeriod = async () => {
     Notify.create({
       type: 'negative',
       message: 'Erro ao carregar dados de evolução por período',
-      position: 'top',
+      position: 'bottom-right',
       timeout: 5000
     })
   }
@@ -1389,7 +1389,7 @@ const loadChannelEvolutionData = async () => {
         },
         plugins: {
           legend: {
-            position: 'top',
+            position: 'bottom-right',
             align: 'center',
             labels: {
               padding: 20,
@@ -1482,7 +1482,7 @@ const loadChannelEvolutionData = async () => {
     Notify.create({
       type: 'negative',
       message: 'Erro ao carregar dados de evolução dos canais',
-      position: 'top',
+      position: 'bottom-right',
       timeout: 5000
     })
   }

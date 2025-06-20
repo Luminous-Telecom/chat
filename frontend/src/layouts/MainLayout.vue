@@ -590,7 +590,7 @@ export default {
         type: 'negative',
         message: titulo,
         caption: mensagem,
-        position: 'top',
+        position: 'bottom-right',
         timeout: 8000,
         actions: [
           { label: 'Ver Detalhes', color: 'white', handler: () => this.abrirDetalhesErro(errorNotification) },

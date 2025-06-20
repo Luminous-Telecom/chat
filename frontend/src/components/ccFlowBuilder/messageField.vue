@@ -101,7 +101,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
         return
@@ -120,7 +120,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
       }

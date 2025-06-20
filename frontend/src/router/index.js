@@ -53,7 +53,7 @@ Router.beforeEach((to, from, next) => {
         Notify.create({
           type: 'warning',
           message: 'Necessário realizar login',
-          position: 'top'
+          position: 'bottom-right'
         })
         next({ name: 'login' })
       } else {

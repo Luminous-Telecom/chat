@@ -224,7 +224,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           timeout: 2500,
           message: 'Não é possível conectar o elemento a si mesmo.',
           actions: [{
@@ -239,7 +239,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           timeout: 2500,
           message: 'Não é possível realizar loop entre os elementos.',
           actions: [{
@@ -254,7 +254,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           timeout: 2500,
           message: 'Não é possível realizar loop entre os elementos.',
           actions: [{

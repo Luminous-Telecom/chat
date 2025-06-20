@@ -416,7 +416,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: `Auto Resposta ${autoResposta.name} deletada!`,
               actions: [{
                 icon: 'close',
@@ -503,7 +503,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: `Etapa ${etapa.id} deletada!`,
               actions: [{
                 icon: 'close',
@@ -567,7 +567,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: `Ação Etapa ${etapa.id} deletada!`,
               actions: [{
                 icon: 'close',

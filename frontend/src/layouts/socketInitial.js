@@ -90,7 +90,7 @@ export default {
         if (data.action === 'readySession') {
           this.$root.$emit('READY_SESSION', data.session)
           this.$q.notify({
-            position: 'top',
+            position: 'bottom-right',
             icon: 'mdi-wifi-arrow-up-down',
             message: `A conexão com o WhatsApp está pronta e o mesmo está habilitado para enviar e receber mensagens. Conexão: ${data.session.name}. Número: ${data.session.number}.`,
             type: 'positive',
@@ -113,7 +113,7 @@ export default {
           message: `Bateria do celular do whatsapp ${data.batteryInfo.sessionName} está com bateria em ${data.batteryInfo.battery}%. Necessário iniciar carregamento.`,
           type: 'negative',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           actions: [{
             icon: 'close',
             round: true,

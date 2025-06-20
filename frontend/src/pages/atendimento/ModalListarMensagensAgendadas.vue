@@ -277,7 +277,7 @@ export default {
       this.$q.notify({
         type: 'info',
         message: 'Funcionalidade de edição será implementada em breve',
-        position: 'top'
+        position: 'bottom-right'
       })
     },
 
@@ -291,7 +291,7 @@ export default {
         this.$q.notify({
           type: 'info',
           message: 'Funcionalidade de cancelamento será implementada em breve',
-          position: 'top'
+          position: 'bottom-right'
         })
       })
     },

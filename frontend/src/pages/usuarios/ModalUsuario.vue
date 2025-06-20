@@ -171,7 +171,7 @@ export default {
         return this.$q.notify({
           type: 'warning',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: 'Ops! Verifique os erros...',
           actions: [{
             icon: 'close',
@@ -198,7 +198,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Usuário editado!',
             actions: [{
@@ -213,7 +213,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Usuário criado!',
             actions: [{
               icon: 'close',
@@ -230,7 +230,7 @@ export default {
             type: 'negative',
             message: 'Limite de usuario atingido.',
             caption: 'ERR_USER_LIMIT_USER_CREATION',
-            position: 'top',
+            position: 'bottom-right',
             progress: true
           })
         }

@@ -101,7 +101,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Etapa editada!',
             actions: [{
@@ -116,7 +116,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Fila criada!',
             actions: [{
               icon: 'close',

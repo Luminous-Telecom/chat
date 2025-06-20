@@ -9,7 +9,7 @@ export const notificarErro = (error) => {
     type: 'negative',
     message: errorMessage,
     caption: errorTitle,
-    position: 'top',
+    position: 'bottom-right',
     timeout: 5000,
     actions: [
       { label: 'OK', color: 'white' }
@@ -24,7 +24,7 @@ export const notificarSucesso = (message, title = 'Sucesso') => {
     type: 'positive',
     message: message,
     caption: title,
-    position: 'top',
+    position: 'bottom-right',
     timeout: 3000,
     actions: [
       { label: 'OK', color: 'white' }
@@ -37,7 +37,7 @@ export const notificarAviso = (message, title = 'Aviso') => {
     type: 'warning',
     message: message,
     caption: title,
-    position: 'top',
+    position: 'bottom-right',
     timeout: 4000,
     actions: [
       { label: 'OK', color: 'white' }

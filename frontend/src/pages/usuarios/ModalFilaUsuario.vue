@@ -96,7 +96,7 @@ export default {
       this.$q.notify({
         type: 'positive',
         progress: true,
-        position: 'top',
+        position: 'bottom-right',
         message: 'Filas do usuário editadas com sucesso!',
         actions: [{
           icon: 'close',

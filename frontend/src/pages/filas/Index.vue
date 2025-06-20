@@ -132,7 +132,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: `Fila ${fila.queue} deletada!`,
               actions: [{
                 icon: 'close',

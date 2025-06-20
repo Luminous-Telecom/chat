@@ -488,7 +488,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: 'Contatos adicionados.',
           actions: [{
             icon: 'close',
@@ -517,7 +517,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Contato excluído desta campanha',
             actions: [{
               icon: 'close',

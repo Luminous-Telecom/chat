@@ -652,14 +652,14 @@ const atendimentoTicket = {
             type: 'negative',
             message: error.response.data.error,
             progress: true,
-            position: 'top'
+            position: 'bottom-right'
           })
         } else {
           Notify.create({
             type: 'negative',
             message: `Ops... Ocorreu um problema não identificado. ${JSON.stringify(error)}`,
             progress: true,
-            position: 'top'
+            position: 'bottom-right'
           })
         }
       }

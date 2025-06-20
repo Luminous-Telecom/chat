@@ -216,7 +216,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: `Usuario ${usuario.name} deletado!`,
               actions: [{
                 icon: 'close',

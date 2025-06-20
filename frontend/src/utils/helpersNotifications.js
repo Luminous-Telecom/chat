@@ -28,7 +28,7 @@ export const notificarErro = (msg, error = null) => {
   Notify.create({
     type: 'negative',
     progress: true,
-    position: 'top',
+    position: 'bottom-right',
     timeout: 500,
     message,
     actions: [{
@@ -45,7 +45,7 @@ export const notificarSucesso = (msg) => {
   Notify.create({
     type: 'positive',
     progress: true,
-    position: 'top',
+    position: 'bottom-right',
     message,
     timeout: 500,
     actions: [{

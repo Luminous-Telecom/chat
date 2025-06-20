@@ -322,14 +322,14 @@ export default {
         this.$q.notify({
           type: 'positive',
           message: `Resposta enviada: ${buttonText}`,
-          position: 'top'
+          position: 'bottom-right'
         })
       } catch (error) {
         console.error('Erro ao enviar resposta do botão:', error)
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao enviar resposta do botão',
-          position: 'top'
+          position: 'bottom-right'
         })
       } finally {
         // Remover loading do botão
@@ -364,14 +364,14 @@ export default {
         this.$q.notify({
           type: 'positive',
           message: `Resposta enviada: ${buttonText}`,
-          position: 'top'
+          position: 'bottom-right'
         })
       } catch (error) {
         console.error('Erro ao enviar resposta da lista:', error)
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao enviar resposta da lista',
-          position: 'top'
+          position: 'bottom-right'
         })
       } finally {
         // Remover loading do botão da lista

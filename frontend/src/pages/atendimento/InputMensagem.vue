@@ -560,7 +560,7 @@ export default {
           this.$q.notify({
             type: 'warning',
             message: 'Erro ao inserir emoji. Tente novamente.',
-            position: 'top',
+            position: 'bottom-right',
             timeout: 3000
           })
         }
@@ -588,7 +588,7 @@ export default {
           this.$q.notify({
             type: 'negative',
             message: 'Não foi possível acessar o microfone. Verifique se o microfone está conectado e se as permissões foram concedidas.',
-            position: 'top',
+            position: 'bottom-right',
             timeout: 5000
           })
           return
@@ -601,7 +601,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           message: 'Gravação iniciada',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 1000
         })
       } catch (error) {
@@ -610,7 +610,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao iniciar a gravação. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
       }
@@ -699,7 +699,7 @@ export default {
           <strong>Dica:</strong> Divida sua mensagem em partes menores.`,
           type: 'warning',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           actions: [{
             icon: 'close',
             round: true,
@@ -835,7 +835,7 @@ export default {
         </ul>`,
         type: 'negative',
         progress: true,
-        position: 'top',
+        position: 'bottom-right',
         actions: [{
           icon: 'close',
           round: true,
@@ -886,7 +886,7 @@ export default {
           this.$q.notify({
             type: 'warning',
             message: 'Nenhum microfone detectado ou permissão não concedida',
-            position: 'top',
+            position: 'bottom-right',
             timeout: 5000
           })
           return
@@ -903,7 +903,7 @@ export default {
           this.$q.notify({
             type: 'warning',
             message: 'Permissão do microfone não concedida. Por favor, verifique as configurações do seu navegador.',
-            position: 'top',
+            position: 'bottom-right',
             timeout: 5000
           })
         }
@@ -914,7 +914,7 @@ export default {
       this.$q.notify({
         type: 'warning',
         message: 'Não foi possível acessar o microfone. Verifique se o navegador suporta esta funcionalidade.',
-        position: 'top',
+        position: 'bottom-right',
         timeout: 5000
       })
     }

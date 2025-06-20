@@ -265,7 +265,7 @@ export default {
           message: 'Ops... Para gerar o relatório, é necessário selecionar pelo menos um Estado.',
           type: 'negative',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           actions: [{
             icon: 'close',
             round: true,

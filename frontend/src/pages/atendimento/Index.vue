@@ -1001,7 +1001,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             message: 'Conteúdo copiado para a área de transferência',
-            position: 'top',
+            position: 'bottom-right',
             timeout: 2000
           })
         })
@@ -1010,7 +1010,7 @@ export default {
           this.$q.notify({
             type: 'negative',
             message: 'Erro ao copiar conteúdo',
-            position: 'top',
+            position: 'bottom-right',
             timeout: 2000
           })
         })
@@ -1132,7 +1132,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao carregar observações',
-          position: 'top'
+          position: 'bottom-right'
         })
       }
     },
@@ -1144,7 +1144,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao atualizar observações',
-          position: 'top'
+          position: 'bottom-right'
         })
       }
     },
@@ -1290,7 +1290,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Selecione um ticket para adicionar uma observação',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -1301,7 +1301,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Selecione um ticket para ver as observações',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -1312,7 +1312,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Selecione um ticket para ver as mensagens agendadas',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -1323,7 +1323,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Selecione um ticket para agendar uma mensagem',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -1338,7 +1338,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Selecione um ticket para resolver',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -1435,7 +1435,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Selecione um ticket para ver o timeline',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }

@@ -511,7 +511,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
         return
@@ -529,7 +529,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
       }
@@ -571,7 +571,7 @@ export default {
         </ul>`,
         type: 'negative',
         progress: true,
-        position: 'top',
+        position: 'bottom-right',
         actions: [{
           icon: 'close',
           round: true,
@@ -618,7 +618,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Campanha editada!',
             actions: [{
@@ -633,7 +633,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Campanha criada!',
             actions: [{
               icon: 'close',

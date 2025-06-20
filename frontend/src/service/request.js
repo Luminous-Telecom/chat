@@ -22,7 +22,7 @@ const handlerError = err => {
   }
   try {
     Notify.create({
-      position: 'top',
+      position: 'bottom-right',
       type: 'negative',
       html: true,
       progress: true,

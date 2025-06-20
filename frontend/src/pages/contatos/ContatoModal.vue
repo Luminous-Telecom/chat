@@ -182,7 +182,7 @@ export default {
         return this.$q.notify({
           type: 'warning',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: 'Ops! Verifique os erros...',
           actions: [{
             icon: 'close',
@@ -204,7 +204,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Contato editado!',
             actions: [{
@@ -218,7 +218,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Contato criado!',
             actions: [{
               icon: 'close',

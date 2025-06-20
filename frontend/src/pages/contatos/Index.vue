@@ -416,7 +416,7 @@ export default {
           type: 'warning',
           message: 'Isso pode demorar um pouco.',
           caption: 'Após finalizar, a página será atualizada.',
-          position: 'top'
+          position: 'bottom-right'
         })
         const formData = new FormData()
         formData.append('file', this.file)
@@ -570,7 +570,7 @@ export default {
           this.$q.notify({
             message: `Atendimento Iniciado || ${ticket.contact.name} - Ticket: ${ticket.id}`,
             type: 'positive',
-            position: 'top',
+            position: 'bottom-right',
             progress: true,
             actions: [{
               icon: 'close',
@@ -619,7 +619,7 @@ export default {
             this.$q.notify({
               type: 'positive',
               progress: true,
-              position: 'top',
+              position: 'bottom-right',
               message: 'Contato deletado!',
               actions: [{
                 icon: 'close',
@@ -700,7 +700,7 @@ export default {
         this.$q.notify({
           type: 'info',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           textColor: 'black',
           message: 'Contatos estão sendo atualizados. Isso pode levar um tempo...',
           actions: [{

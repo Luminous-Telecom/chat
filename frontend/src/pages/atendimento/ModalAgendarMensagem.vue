@@ -308,7 +308,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Preencha todos os campos obrigatórios',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -317,7 +317,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Data e hora são obrigatórias',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -326,7 +326,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'A data/hora deve ser no futuro',
-          position: 'top'
+          position: 'bottom-right'
         })
         return
       }
@@ -341,7 +341,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           message: 'Mensagem agendada com sucesso!',
-          position: 'top'
+          position: 'bottom-right'
         })
 
         // Emit antes de resetar o formulário
@@ -359,7 +359,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao agendar mensagem. Tente novamente.',
-          position: 'top'
+          position: 'bottom-right'
         })
       } finally {
         this.loading = false

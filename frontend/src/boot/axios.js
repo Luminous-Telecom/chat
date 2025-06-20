@@ -45,7 +45,7 @@ api.interceptors.response.use(
       message,
       type: 'negative',
       progress: true,
-      position: 'top',
+      position: 'bottom-right',
       actions: [{
         icon: 'close',
         color: 'white'

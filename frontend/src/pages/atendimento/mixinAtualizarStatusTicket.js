@@ -12,7 +12,7 @@ export default {
             message: `Atendimento Iniciado || ${ticket.name} - Ticket: ${ticket.id}`,
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             actions: [{
               icon: 'close',
               round: true,

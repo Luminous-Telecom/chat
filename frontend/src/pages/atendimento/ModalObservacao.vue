@@ -98,7 +98,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           message: 'Observação salva com sucesso!',
-          position: 'top'
+          position: 'bottom-right'
         })
         this.observacao = ''
         this.anexo = null
@@ -108,7 +108,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           message: err.response?.data?.error || 'Erro ao salvar observação',
-          position: 'top'
+          position: 'bottom-right'
         })
       } finally {
         this.loading = false

@@ -326,7 +326,7 @@ export default {
           this.$q.notify({
             type: 'info',
             message: 'Sessão já está em andamento, aguarde...',
-            position: 'top'
+            position: 'bottom-right'
           })
           return
         }
@@ -338,7 +338,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           message: 'Iniciando conexão com o WhatsApp...',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
         let attempts = 0
@@ -348,7 +348,7 @@ export default {
             this.$q.notify({
               type: 'negative',
               message: 'Tempo limite excedido ao tentar conectar',
-              position: 'top'
+              position: 'bottom-right'
             })
             return
           }
@@ -361,7 +361,7 @@ export default {
               this.$q.notify({
                 type: 'positive',
                 message: 'Conectado com sucesso!',
-                position: 'top'
+                position: 'bottom-right'
               })
               await this.loadWhatsapps()
               return
@@ -370,7 +370,7 @@ export default {
               this.$q.notify({
                 type: 'negative',
                 message: 'Falha na conexão. Tente novamente.',
-                position: 'top'
+                position: 'bottom-right'
               })
               return
             }
@@ -397,7 +397,7 @@ export default {
           this.$q.notify({
             type: 'negative',
             message: msg,
-            position: 'top'
+            position: 'bottom-right'
           })
         }
       } finally {
@@ -449,7 +449,7 @@ export default {
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao gerar novo QR code. Tente novamente em alguns segundos.',
-          position: 'top'
+          position: 'bottom-right'
         })
       } finally {
         this.loading = false
@@ -493,7 +493,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: `Whatsapp ${whatsapp.id ? 'editado' : 'criado'} com sucesso!`,
           actions: [{
             icon: 'close',
@@ -505,7 +505,7 @@ export default {
         this.$q.notify({
           type: 'error',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: 'Ops! Verifique os erros... O nome da conexão não pode existir na plataforma, é um identificador único.',
           actions: [{
             icon: 'close',
@@ -572,7 +572,7 @@ export default {
       try {
         await DeleteWhatsappSession(this.whatsapp.id)
         this.$q.notify({
-          position: 'top',
+          position: 'bottom-right',
           icon: 'mdi-wifi-arrow-up-down',
           message: 'Sessão do WhatsApp encerrada com sucesso!',
           type: 'positive',

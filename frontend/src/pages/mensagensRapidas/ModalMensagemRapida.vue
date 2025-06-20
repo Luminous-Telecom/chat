@@ -157,7 +157,7 @@ export default {
         this.$q.notify({
           type: 'warning',
           message: 'Erro ao inserir emoji. Tente novamente.',
-          position: 'top',
+          position: 'bottom-right',
           timeout: 3000
         })
         return
@@ -197,7 +197,7 @@ export default {
           this.$q.notify({
             type: 'info',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             textColor: 'black',
             message: 'Mensagem Rápida editada!',
             actions: [{
@@ -212,7 +212,7 @@ export default {
           this.$q.notify({
             type: 'positive',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Mensagem rápida criada!',
             actions: [{
               icon: 'close',

@@ -334,7 +334,7 @@ export default {
         return this.$q.notify({
           type: 'warning',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: 'Ops! Verifique os erros...',
           actions: [{
             icon: 'close',
@@ -352,7 +352,7 @@ export default {
         this.$q.notify({
           type: 'positive',
           progress: true,
-          position: 'top',
+          position: 'bottom-right',
           message: `Whatsapp ${this.whatsAppEdit.id ? 'editado' : 'criado'} com sucesso!`,
           actions: [{
             icon: 'close',
@@ -369,7 +369,7 @@ export default {
             type: 'negative',
             message: 'Limite de conexões atingida.',
             caption: 'ERR_NO_PERMISSION_CONNECTIONS_LIMIT',
-            position: 'top',
+            position: 'bottom-right',
             progress: true
           })
         } else {
@@ -377,7 +377,7 @@ export default {
           return this.$q.notify({
             type: 'error',
             progress: true,
-            position: 'top',
+            position: 'bottom-right',
             message: 'Ops! Verifique os erros... O nome da conexão não pode existir na plataforma, é um identificador único.',
             actions: [{
               icon: 'close',
