@@ -3,11 +3,6 @@
     class="bg-white no-scroll overflow-hidden"
     :style="style"
   >
-    <InforCabecalhoChat
-      @updateTicket:retornar="atualizarStatusTicket('pending')"
-      @updateTicket:reabrir="atualizarStatusTicket('open')"
-    />
-
     <q-scroll-area
       :thumb-style="thumbStyle"
       :bar-style="barStyle"
@@ -316,7 +311,6 @@
 </template>
 <script>
 import mixinCommon from './mixinCommon'
-import InforCabecalhoChat from './InforCabecalhoChat'
 // import parser from 'vdata-parser'
 import MensagemChat from './MensagemChat'
 import InputMensagem from './InputMensagem'
@@ -333,7 +327,6 @@ export default {
     mensagensRapidas: Array
   },
   components: {
-    InforCabecalhoChat,
     MensagemChat,
     InputMensagem
   },
@@ -374,7 +367,7 @@ export default {
     cStyleScroll () {
       const loading = 0 // this.loading ? 72 : 0
       const add = this.heigthInputMensagem + loading
-      return `min-height: calc(100vh - ${62 + add}px); height: calc(100vh - ${62 + add}px); width: 100%`
+      return `min-height: calc(100vh - ${12 + add}px); height: calc(100vh - ${12 + add}px); width: 100%`
     },
     thumbStyle () {
       return {

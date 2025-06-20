@@ -132,7 +132,7 @@
 
       <q-drawer
         v-if="!cRouteContatos && ticketFocado.id"
-        v-model="drawerContact"
+        :value="true"
         show-if-above
         bordered
         side="right"
@@ -779,7 +779,6 @@ export default {
       modalUsuario: false,
       toolbarSearch: true,
       drawerTickets: true,
-      drawerContact: true,
       loading: false,
       profile,
       modalNovoTicket: false,
@@ -1214,9 +1213,6 @@ export default {
     setValueMenu () {
       this.drawerTickets = !this.drawerTickets
     },
-    setValueMenuContact () {
-      this.drawerContact = !this.drawerContact
-    },
     async abrirModalLogs () {
       const { data } = await ConsultarLogsTicket({ ticketId: this.ticketFocado.id })
       this.logsTicket = data
@@ -1514,7 +1510,6 @@ export default {
       this.setFilterMode('meus')
     })
     this.$root.$on('infor-cabecalo-chat:acao-menu', this.setValueMenu)
-    this.$root.$on('update-ticket:info-contato', this.setValueMenuContact)
     this.$root.$on('ticket:transferido', this.consultarTickets)
     this.socketTicketList()
 
@@ -1596,7 +1591,6 @@ export default {
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
     this.$root.$off('infor-cabecalo-chat:acao-menu', this.setValueMenu)
-    this.$root.$off('update-ticket:info-contato', this.setValueMenuContact)
     this.$root.$off('ticket:transferido', this.consultarTickets)
     // this.socketDisconnect()
 

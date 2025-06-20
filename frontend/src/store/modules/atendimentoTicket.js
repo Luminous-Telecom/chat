@@ -612,11 +612,25 @@ const atendimentoTicket = {
         const params = { ticketId: data.ticketId || data.id, pageNumber: 1 }
         await dispatch('LocalizarMensagensTicket', params)
 
-        // Navegar para o chat
-        router.push({
+        // Navegar para o chat apenas se não estivermos já na rota correta
+        const currentRoute = router.currentRoute
+        const targetRoute = {
           name: 'chat',
-          params: { ticketId: ticketData.id }
-        })
+          params: { ticketId: ticketData.id.toString() }
+        }
+
+        // Verificar se já estamos na rota correta
+        const isAlreadyOnCorrectRoute =
+          currentRoute.name === targetRoute.name &&
+          currentRoute.params.ticketId === targetRoute.params.ticketId
+
+        if (!isAlreadyOnCorrectRoute) {
+          router.push(targetRoute).catch(err => {
+            if (err.name !== 'NavigationDuplicated') {
+              console.error('Erro de navegação:', err)
+            }
+          })
+        }
       } catch (error) {
         console.error('Erro ao abrir chat:', error)
       }
