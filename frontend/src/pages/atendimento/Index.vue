@@ -803,11 +803,29 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'tickets',
       'ticketFocado',
       'hasMore',
       'whatsapps'
     ]),
+    // Filtrar tickets pelo status atual
+    tickets () {
+      const allTickets = this.$store.getters.tickets || []
+      const currentStatus = this.pesquisaTickets.status
+
+      if (!currentStatus || !Array.isArray(currentStatus)) {
+        console.log('[tickets computed] Sem status definido, retornando todos os tickets')
+        return allTickets
+      }
+
+      const filteredTickets = allTickets.filter(ticket => currentStatus.includes(ticket.status))
+
+      console.log('[tickets computed] Status atual:', currentStatus)
+      console.log('[tickets computed] Total tickets no store:', allTickets.length)
+      console.log('[tickets computed] Tickets filtrados:', filteredTickets.length)
+      console.log('[tickets computed] Status dos tickets filtrados:', filteredTickets.map(t => ({ id: t.id, status: t.status })))
+
+      return filteredTickets
+    },
     cUserQueues () {
       return UserQueues
     },
@@ -861,23 +879,29 @@ export default {
     },
 
     setFilterMode (filterMode) {
+      console.log('[setFilterMode] Mudando filtro para:', filterMode, 'Status atual:', this.pesquisaTickets.status)
+
       // Resetar filtros
       this.pesquisaTickets.showAll = false
       this.pesquisaTickets.withUnreadMessages = false
       this.pesquisaTickets.isNotAssignedUser = false
       this.pesquisaTickets.queuesIds = []
+      this.pesquisaTickets.pageNumber = 1 // Reset da paginação
 
       const currentStatus = this.pesquisaTickets.status
 
-      // Para status que inclui 'pending' (tickets não atendidos), sempre aplicar filtro de tickets não atribuídos
+      // Para status que inclui 'pending' (tickets não atendidos)
       if (currentStatus && (currentStatus.includes('pending') || this.$route.query.status === 'pending')) {
-        // Para tickets pendentes, mostrar todos os tickets pendentes (não apenas os não atribuídos)
+        console.log('[setFilterMode] Aplicando filtros para tickets pendentes')
+        // Para tickets pendentes, mostrar todos os tickets pendentes
         this.pesquisaTickets.isNotAssignedUser = false
         this.pesquisaTickets.showAll = true // Permitir ver todos os tickets pendentes
         this.pesquisaTickets.withUnreadMessages = false
         this.pesquisaTickets.queuesIds = []
       } else {
         // Para outros status (incluindo 'open'), aplicar filtros baseado no modo selecionado
+        console.log('[setFilterMode] Aplicando filtros para status:', currentStatus, 'modo:', filterMode)
+
         if (filterMode === 'meus') {
           this.pesquisaTickets.showAll = false
           // Para 'open', meus atendimentos = atendimentos atribuídos a mim
@@ -886,12 +910,12 @@ export default {
           // Para 'open', atendimentos da minha fila em andamento
         } else if (filterMode === 'todos') {
           // Para 'open', todos os atendimentos em andamento independente da fila
-          // Não usar showAll para preservar o filtro de status
           this.pesquisaTickets.showAll = false
           this.pesquisaTickets.queuesIds = []
         }
       }
 
+      console.log('[setFilterMode] Filtros aplicados:', this.pesquisaTickets)
       this.debounce(this.BuscarTicketFiltro(), 700)
     },
 
@@ -1360,8 +1384,13 @@ export default {
         params.status = params.status.filter(s => typeof s === 'string')
       }
 
+      console.log('[consultarTickets] Enviando parâmetros para backend:', params)
+
       try {
         const { data } = await ConsultarTickets(params)
+        console.log('[consultarTickets] Recebidos', data.tickets.length, 'tickets do backend')
+        console.log('[consultarTickets] Status dos tickets recebidos:', data.tickets.map(t => ({ id: t.id, status: t.status })))
+
         this.countTickets = data.count // count total de tickets no status
         this.$store.commit('LOAD_TICKETS', {
           tickets: data.tickets,
@@ -1375,13 +1404,17 @@ export default {
       // return () => clearTimeout(delayDebounceFn)
     },
     async BuscarTicketFiltro () {
+      // Reset completo para evitar mistura de tickets de diferentes status
       this.$store.commit('RESET_TICKETS')
+
       this.loading = true
       localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
       this.pesquisaTickets = {
         ...this.pesquisaTickets,
         pageNumber: 1
       }
+
+      console.log('[BuscarTicketFiltro] Buscando tickets com filtros:', this.pesquisaTickets)
       await this.consultarTickets(this.pesquisaTickets)
       this.loading = false
       this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
@@ -1558,18 +1591,50 @@ export default {
       deep: true
     },
     $route: {
-      handler (newRoute) {
+      handler (newRoute, oldRoute) {
         const newStatus = newRoute.query.status
 
         // Só atualiza o status se estivermos na rota de atendimento
         if (newRoute.name === 'atendimento') {
+          let statusToSet
           if (newStatus) {
-            this.pesquisaTickets.status = [newStatus].filter(s => typeof s === 'string')
+            statusToSet = [newStatus].filter(s => typeof s === 'string')
           } else {
             // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
-            this.pesquisaTickets.status = ['open']
+            statusToSet = ['open']
           }
-          this.BuscarTicketFiltro()
+
+          // Só buscar se o status realmente mudou
+          const currentStatus = this.pesquisaTickets.status
+          const statusChanged = JSON.stringify(statusToSet) !== JSON.stringify(currentStatus)
+
+          if (statusChanged) {
+            console.log('[ROUTE CHANGE] Status mudou de', currentStatus, 'para', statusToSet)
+            this.pesquisaTickets.status = statusToSet
+
+            // Aplicar filtros específicos baseado no status
+            if (statusToSet.includes('pending')) {
+              // Para tickets pendentes: mostrar todos os pendentes
+              this.pesquisaTickets.showAll = true
+              this.pesquisaTickets.isNotAssignedUser = false
+              this.pesquisaTickets.withUnreadMessages = false
+              this.pesquisaTickets.queuesIds = []
+              console.log('[ROUTE CHANGE] Aplicando filtros para tickets pendentes')
+            } else if (statusToSet.includes('open')) {
+              // Para tickets em andamento: filtro padrão (meus atendimentos)
+              this.pesquisaTickets.showAll = false
+              this.pesquisaTickets.isNotAssignedUser = false
+              this.pesquisaTickets.withUnreadMessages = false
+              this.pesquisaTickets.queuesIds = []
+              console.log('[ROUTE CHANGE] Aplicando filtros para tickets em andamento')
+            }
+
+            // Forçar reset da paginação ao mudar status
+            this.pesquisaTickets.pageNumber = 1
+
+            // Buscar tickets do novo status
+            this.BuscarTicketFiltro()
+          }
         }
       },
       immediate: true

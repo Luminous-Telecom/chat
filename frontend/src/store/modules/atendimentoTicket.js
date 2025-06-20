@@ -200,9 +200,31 @@ const atendimentoTicket = {
       // Note: hasMore is handled separately via SET_HAS_MORE mutation
       // state.hasMore will be set by the separate SET_HAS_MORE commit in Index.vue
     },
-    RESET_TICKETS (state) {
+    RESET_TICKETS (state, statusFilter = null) {
       state.hasMore = true
-      state.tickets = []
+      if (statusFilter) {
+        // Reset apenas tickets de um status específico
+        state.tickets = state.tickets.filter(ticket => ticket.status !== statusFilter)
+      } else {
+        // Reset completo (comportamento original)
+        state.tickets = []
+      }
+    },
+    // Nova mutation para reset inteligente com filtros
+    RESET_TICKETS_WITH_FILTERS (state, { statusToReset, keepOtherStatus = true }) {
+      state.hasMore = true
+
+      if (keepOtherStatus && statusToReset) {
+        // Manter tickets de outros status, remover apenas do status especificado
+        if (Array.isArray(statusToReset)) {
+          state.tickets = state.tickets.filter(ticket => !statusToReset.includes(ticket.status))
+        } else {
+          state.tickets = state.tickets.filter(ticket => ticket.status !== statusToReset)
+        }
+      } else {
+        // Reset completo
+        state.tickets = []
+      }
     },
     RESET_UNREAD (state, payload) {
       const tickets = [...state.tickets]
@@ -699,12 +721,27 @@ const atendimentoTicket = {
   },
   getters: {
     getTickets: state => status => {
-      const filteredTickets = state.tickets.filter(t => t.status === status)
-      console.log('Chamando getTickets para status:', status)
-      console.log('Tickets no state:', state.tickets.map(t => ({ id: t.id, status: t.status })))
-      console.log('Tickets filtrados:', filteredTickets)
+      if (!status) return state.tickets
+
+      const filteredTickets = state.tickets.filter(t => {
+        // Se status for um array, verificar se inclui o status do ticket
+        if (Array.isArray(status)) {
+          return status.includes(t.status)
+        }
+        // Se status for string, comparar diretamente
+        return t.status === status
+      })
+
+      // Log apenas em desenvolvimento
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[getTickets] Status solicitado:', status)
+        console.log('[getTickets] Total tickets no state:', state.tickets.length)
+        console.log('[getTickets] Tickets filtrados:', filteredTickets.length)
+      }
+
       return filteredTickets
     },
+    tickets: state => state.tickets || [],
     messagesByTicket: state => state.messagesByTicket || {},
     isMessageProcessing: state => messageId => state.processingMessages.has(messageId),
     mensagensTicket: state => state.mensagens || []
