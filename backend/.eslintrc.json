@@ -52,6 +52,9 @@
     "padded-blocks": "off",
     "global-require": "off",
     "@typescript-eslint/no-var-requires": "off",
+    "operator-linebreak": "off",
+    "implicit-arrow-linebreak": "off", 
+    "arrow-body-style": "off",
     "import/extensions": [
       "error",
       "ignorePackages",
