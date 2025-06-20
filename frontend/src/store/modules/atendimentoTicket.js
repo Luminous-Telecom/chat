@@ -399,10 +399,24 @@ const atendimentoTicket = {
     },
     // OK
     LOAD_INITIAL_MESSAGES (state, payload) {
-      const { messages, messagesOffLine } = payload
-      state.mensagens = []
-      const newMessages = orderMessages([...messages, ...messagesOffLine])
-      state.mensagens = newMessages
+      const { messages, messagesOffLine, ticket } = payload
+
+      // Inicializar messagesByTicket se não existir
+      if (!state.messagesByTicket) {
+        state.messagesByTicket = {}
+      }
+
+      // Combinar mensagens normais e offline
+      const allMessages = [...messages, ...messagesOffLine]
+      const orderedMessages = orderMessages(allMessages)
+
+      // Armazenar mensagens no cache do ticket específico
+      if (ticket && ticket.id) {
+        state.messagesByTicket[ticket.id] = orderedMessages
+      }
+
+      // Manter compatibilidade com o array global para transição
+      state.mensagens = orderedMessages
     },
     // OK
     LOAD_MORE_MESSAGES (state, payload) {
