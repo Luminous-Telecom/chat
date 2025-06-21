@@ -145,12 +145,12 @@
               >
                 <q-list style="min-width: 100px">
                   <q-item
-                    :disable=" !['whatsapp', 'telegram'].includes(ticketFocado.channel) "
+                    :disable="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')"
                     clickable
                     @click=" citarMensagem(mensagem) "
                   >
                     <q-item-section>Responder</q-item-section>
-                    <q-tooltip v-if=" !['whatsapp', 'telegram'].includes(ticketFocado.channel) ">
+                    <q-tooltip v-if="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')">
                       Disponível apenas para WhatsApp e Telegram
                     </q-tooltip>
                   </q-item>
@@ -171,7 +171,7 @@
                     @click=" deletarMensagem(mensagem) "
                     clickable
                     v-if=" mensagem.fromMe "
-                    :disable=" isDesactivatDelete(mensagem) || ticketFocado.channel === 'messenger' "
+                    :disable="isDesactivatDelete(mensagem) || ticketFocado?.channel === 'messenger'"
                   >
                     <q-item-section>
                       <q-item-label>Deletar</q-item-label>

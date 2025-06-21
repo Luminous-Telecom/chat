@@ -1,20 +1,40 @@
 <template>
   <div
-    class="bg-white no-scroll overflow-hidden"
+    class="bg-white no-scroll hide-scrollbar overflow-hidden"
     :style="style"
   >
     <q-scroll-area
-      class="modern-scrollbar"
+      ref="scrollContainer"
+      class="scroll-y "
       :style="cStyleScroll"
       @scroll="scrollArea"
-      ref="scrollAreaMessageChat"
     >
+      <transition
+        appear
+        enter-active-class="animated fadeIn"
+        leave-active-class="animated fadeOut"
+      >
+        <infinite-loading
+          v-if="cMessages.length"
+          @infinite="onLoadMore"
+          direction="top"
+          :identificador="ticketFocado.id"
+          spinner="spiral"
+        >
+          <div slot="no-results">
+            <div v-if="!cMessages.length">
+              Sem resultados :(
+            </div>
+          </div>
+          <div slot="no-more">
+            Nada mais a carregar :)
+          </div>
+        </infinite-loading>
+      </transition>
       <MensagemChat
         :replyingMessage.sync="replyingMessage"
         :mensagens="cMessages"
         :ticketFocado="ticketFocado"
-        :status="ticketFocado?.status"
-        :isLineDate="true"
         v-if="cMessages.length && ticketFocado.id"
         @mensagem-chat:encaminhar-mensagem="abrirModalEncaminharMensagem"
         :ativarMultiEncaminhamento.sync="ativarMultiEncaminhamento"
@@ -112,7 +132,7 @@
             </q-item-label>
             <q-item-label
               lines="4"
-              v-html="formatarMensagemWhatsapp(replyingMessage.body)"
+              v-html="farmatarMensagemWhatsapp(replyingMessage.body)"
             >
             </q-item-label>
           </q-item-section>
@@ -190,22 +210,10 @@
       </q-banner>
 
       <InputMensagem
-        v-if="!mensagensParaEncaminhar.length && cPodeEnviarMensagem"
+        v-if="!mensagensParaEncaminhar.length"
         :mensagensRapidas="mensagensRapidas"
         :replyingMessage.sync="replyingMessage"
       />
-
-      <!-- Aviso quando não pode enviar mensagem -->
-      <div
-        v-if="!mensagensParaEncaminhar.length && !cPodeEnviarMensagem && ticketFocado.id"
-        class="no-message-input-container"
-      >
-        <div class="no-message-input-content">
-          <q-icon name="mdi-account-lock" size="24px" class="q-mb-xs" />
-          <div class="text-body2">Você precisa entrar na conversa para enviar mensagens</div>
-          <div class="text-caption text-grey-6">Use o botão "Entrar na conversa" na barra lateral</div>
-        </div>
-      </div>
       <q-resize-observer @resize="onResizeInputMensagem" />
     </q-footer>
 
@@ -261,9 +269,6 @@
             :isShowOptions="false"
             :replyingMessage.sync="replyingMessage"
             :mensagens="[mensagemEncaminhamento]"
-            :ticketFocado="ticketFocado"
-            :status="ticketFocado?.status"
-            :isLineDate="false"
           />
         </q-card-section>
         <q-card-section>
@@ -327,6 +332,7 @@ import MensagemChat from './MensagemChat'
 import InputMensagem from './InputMensagem'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import mixinSockets from './mixinSockets'
+import InfiniteLoading from 'vue-infinite-loading'
 import { ListarContatos } from 'src/service/contatos'
 import { EncaminharMensagem } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
@@ -339,7 +345,8 @@ export default {
   },
   components: {
     MensagemChat,
-    InputMensagem
+    InputMensagem,
+    InfiniteLoading
   },
   data () {
     return {
@@ -347,6 +354,10 @@ export default {
       loading: false,
       exibirContato: false,
       heigthInputMensagem: 0,
+      params: {
+        ticketId: null,
+        pageNumber: 1
+      },
       agendamentoMensagem: {
         scheduleDate: ''
       },
@@ -364,41 +375,11 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['ticketFocado', 'mensagensTicket', 'hasMore']),
+    ...mapGetters(['mensagensTicket', 'ticketFocado', 'hasMore']),
     cMessages () {
       // eslint-disable-next-line vue/no-side-effects-in-computed-properties
       this.replyingMessage = null
-
-      return this.mensagensTicket
-    },
-    cPodeEnviarMensagem () {
-      // Sempre pode enviar se o ticket estiver em status pending
-      if (this.ticketFocado.status === 'pending') return true
-
-      // Para tickets open, verificar se é o usuário responsável ou participante
-      if (this.ticketFocado.status === 'open') {
-        const userId = +localStorage.getItem('userId')
-
-        // Se é o usuário responsável, pode enviar
-        if (this.ticketFocado.userId === userId) {
-          return true
-        }
-
-        // Se é participante ativo, pode enviar
-        if (this.ticketFocado.participants && this.ticketFocado.participants.length > 0) {
-          const isParticipant = this.ticketFocado.participants.some(p =>
-            p.userId === userId && p.isActive
-          )
-          if (isParticipant) {
-            return true
-          }
-        }
-
-        return false
-      }
-
-      // Para outros status (closed, etc), não pode enviar
-      return false
+      return this.mensagensTicket || []
     },
     style () {
       return {
@@ -407,15 +388,32 @@ export default {
     cStyleScroll () {
       const loading = 0 // this.loading ? 72 : 0
       const add = this.heigthInputMensagem + loading
-      return `min-height: calc(100vh - ${12 + add}px); height: calc(100vh - ${12 + add}px); width: 100%`
+      return `min-height: calc(100vh - ${62 + add}px); height: calc(100vh - ${62 + add}px); width: 100%`
     }
-
   },
   methods: {
     async onResizeInputMensagem (size) {
       this.heigthInputMensagem = size.height
     },
+    async onLoadMore (infiniteState) {
+      if (this.loading) return
 
+      if (!this.hasMore || !this.ticketFocado?.id) {
+        return infiniteState.complete()
+      }
+
+      try {
+        this.loading = true
+        this.params.ticketId = this.ticketFocado.id
+        this.params.pageNumber += 1
+        await this.$store.dispatch('LocalizarMensagensTicket', this.params)
+        this.loading = false
+        infiniteState.loaded()
+      } catch (error) {
+        infiniteState.complete()
+      }
+      this.loading = false
+    },
     scrollArea (e) {
       this.hideOptions = true
       setTimeout(() => {
@@ -469,9 +467,6 @@ export default {
         .catch(e => {
           this.$notificarErro('Não foi possível encaminhar mensagem. Tente novamente em alguns minutos!', e)
         })
-    },
-    abrirModalAgendamento () {
-      this.modalAgendamentoMensagem = true
     }
   },
   created () {
@@ -479,14 +474,7 @@ export default {
     this.socketTicket()
   },
   mounted () {
-    this.$root.$on('scrollToBottomMessageChat', this.scrollToBottom)
-    this.$root.$on('abrir:modalAgendamentoMensagem', this.abrirModalAgendamento)
     this.socketMessagesList()
-    this.scrollToBottom()
-  },
-  beforeDestroy () {
-    this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
-    this.$root.$off('abrir:modalAgendamentoMensagem', this.abrirModalAgendamento)
   },
   destroyed () {
     this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
@@ -517,7 +505,7 @@ audio {
   position: relative;
   outline: 0;
   border: 0;
-  color: var(--text-color-primary);
+  color: black;
   text-align: center;
   height: 1.5em;
   opacity: 0.8;
@@ -538,12 +526,12 @@ audio {
     content: attr(data-content);
     position: relative;
     display: inline-block;
-    color: var(--text-color-primary);
+    color: black;
     font-size: 16px;
     font-weight: 600;
     padding: 0 0.5em;
     line-height: 1.5em;
-    background-color: var(--background-color-paper);
+    background-color: $grey;
     border-radius: 15px;
   }
 }
@@ -555,8 +543,7 @@ audio {
 
 .textContentItemDeleted {
   font-style: italic;
-  color: var(--text-color-secondary);
-  opacity: 0.6;
+  color: rgba(0, 0, 0, 0.36);
   overflow-wrap: break-word;
   // padding: 3px 80px 6px 6px;
 }
@@ -564,13 +551,13 @@ audio {
 .replyginContactMsgSideColor {
   flex: none;
   width: 4px;
-  background-color: var(--primary-color);
+  background-color: #35cd96;
 }
 
 .replyginSelfMsgSideColor {
   flex: none;
   width: 4px;
-  background-color: var(--primary-color);
+  background-color: #6bcbef;
 }
 
 .replyginMsgBody {
@@ -583,7 +570,7 @@ audio {
 
 .messageContactName {
   display: flex;
-  color: var(--primary-color);
+  color: #6bcbef;
   font-weight: 500;
 }
 
@@ -608,31 +595,5 @@ audio {
 
 /* .fade-leave-active below version 2.1.8 */ {
   opacity: 0;
-}
-
-.no-message-input-container {
-  padding: 16px;
-  background: rgba(244, 244, 244, 0.8);
-  border-top: 1px solid #e0e0e0;
-}
-
-.no-message-input-content {
-  text-align: center;
-  color: #757575;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-}
-
-/* Modo escuro */
-.body--dark .no-message-input-container {
-  background: rgba(66, 66, 66, 0.8);
-  border-top: 1px solid #424242;
-}
-
-.body--dark .no-message-input-content {
-  color: #bdbdbd;
 }
 </style>
