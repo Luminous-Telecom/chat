@@ -1879,7 +1879,6 @@ export default {
     await this.BuscarTicketFiltro()
 
     this.cUsuario = JSON.parse(localStorage.getItem('usuario'))
-    this.scrollToBottom()
     this.socketTicket()
     this.socketMessagesList()
     this.socketTicketList()
@@ -1895,10 +1894,6 @@ export default {
 
     this.$root.$on('ticket:update', () => {
       this.$forceUpdate()
-    })
-
-    this.$root.$on('scrollToBottomMessageChat', () => {
-      this.scrollToBottom()
     })
 
     this.$root.$on('abrir:modalAgendamentoMensagem', () => {
@@ -1927,12 +1922,7 @@ export default {
         }, 500)
       }
     },
-    tickets: {
-      handler (tickets) {
-        this.scrollToBottom()
-      },
-      deep: true
-    },
+
     $route: {
       handler (newRoute, oldRoute) {
         // Evitar execução desnecessária
