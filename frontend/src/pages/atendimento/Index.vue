@@ -215,7 +215,7 @@
                   <div v-if="getTempoFila()" class="contact-detail-item">
                     <q-icon name="mdi-account-clock" class="detail-icon" />
                     <span class="detail-text">
-                      Nesta fila há {{ getTempoFila() }}
+                      Neste departamento há {{ getTempoFila() }}
                     </span>
                   </div>
 
@@ -725,10 +725,10 @@
                 map-options
                 option-value="id"
                 option-label="label"
-                label="Fila de destino (opcional)"
+                label="Departamentos"
                 class="full-width"
                 :loading="filas.length === 0"
-                clearable
+                :rules="[val => !!val || 'Departamento é obrigatório']"
               />
             </div>
             <div class="col-12">
@@ -742,7 +742,7 @@
                 map-options
                 option-value="id"
                 option-label="name"
-                label="Usuário destino"
+                label="Usuários"
                 class="full-width"
                 :loading="usuarios.length === 0"
               />
@@ -761,7 +761,7 @@
               label="Transferir"
               color="positive"
               @click="confirmarTransferenciaTicket"
-              :disable="!usuarioSelecionado"
+              :disable="!usuarioSelecionado || !filaSelecionada"
             />
           </q-card-actions>
         </q-card>
@@ -947,15 +947,13 @@ export default {
       }
     },
     opcoesFilas () {
-      const opcoes = [
-        { id: null, label: 'Sem fila específica' }
-      ]
+      const opcoes = []
 
       if (this.filas && this.filas.length > 0) {
         this.filas.forEach(fila => {
           opcoes.push({
             id: fila.id,
-            label: fila.queue || `Fila ${fila.id}`
+            label: fila.queue || `Departamento ${fila.id}`
           })
         })
       }
@@ -1668,6 +1666,15 @@ export default {
           return
         }
 
+        if (!this.filaSelecionada) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Selecione um departamento de destino',
+            position: 'bottom-right'
+          })
+          return
+        }
+
         // Verificar se o ticket já pertence ao usuário selecionado
         if (this.ticketFocado.userId === this.usuarioSelecionado && this.ticketFocado.userId != null) {
           this.$q.notify({
@@ -1688,11 +1695,11 @@ export default {
           return
         }
 
-        // Verificar se o ticket já está na mesma fila e usuário
+        // Verificar se o ticket já está no mesmo departamento e usuário
         if (this.ticketFocado.queueId === this.filaSelecionada && this.ticketFocado.userId === this.usuarioSelecionado) {
           this.$q.notify({
             type: 'info',
-            message: 'Ticket já pertence a esta fila e usuário',
+            message: 'Ticket já pertence a este departamento e usuário',
             position: 'bottom-right'
           })
           return
@@ -1702,12 +1709,8 @@ export default {
         const dadosTransferencia = {
           userId: this.usuarioSelecionado,
           status: 'open',
-          isTransference: 1
-        }
-
-        // Adicionar fila apenas se foi selecionada
-        if (this.filaSelecionada) {
-          dadosTransferencia.queueId = this.filaSelecionada
+          isTransference: 1,
+          queueId: this.filaSelecionada
         }
 
         // Realizar a transferência
@@ -3543,10 +3546,6 @@ export default {
 .modern-action-btn:focus {
   outline: 2px solid #1976d2;
   outline-offset: 2px;
-}
-
-.modern-search-input:focus {
-  /* Focus is handled by the container */
 }
 
 /* Animation for filter changes */

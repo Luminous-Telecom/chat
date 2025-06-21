@@ -121,21 +121,21 @@
         </q-card-section>
         <q-card-section class="row q-gutter-sm">
           <div class="col-12">
-            <q-select
-              dense
-              rounded
-              outlined
-              v-model="filaSelecionada"
-              :options="opcoesFilas"
-              emit-value
-              map-options
-              option-value="id"
-              option-label="label"
-              label="Fila de destino (opcional)"
-              class="full-width"
-              :loading="filas.length === 0"
-              clearable
-            />
+                          <q-select
+                dense
+                rounded
+                outlined
+                v-model="filaSelecionada"
+                :options="opcoesFilas"
+                emit-value
+                map-options
+                option-value="id"
+                option-label="label"
+                label="Departamento de destino"
+                class="full-width"
+                :loading="filas.length === 0"
+                :rules="[val => !!val || 'Departamento é obrigatório']"
+              />
           </div>
           <div class="col-12">
             <q-select
@@ -205,15 +205,13 @@ export default {
       return Object.keys(this.ticketFocado).includes('contact') ? this.ticketFocado : infoDefault
     },
     opcoesFilas () {
-      const opcoes = [
-        { id: null, label: 'Sem fila específica' }
-      ]
+      const opcoes = []
 
       if (this.filas && this.filas.length > 0) {
         this.filas.forEach(fila => {
           opcoes.push({
             id: fila.id,
-            label: fila.queue || `Fila ${fila.id}`
+            label: fila.queue || `Departamento ${fila.id}`
           })
         })
       }
@@ -279,6 +277,20 @@ export default {
           return
         }
 
+        if (!this.filaSelecionada) {
+          this.$q.notify({
+            type: 'warning',
+            message: 'Selecione um departamento de destino',
+            progress: true,
+            actions: [{
+              icon: 'close',
+              round: true,
+              color: 'white'
+            }]
+          })
+          return
+        }
+
         // Verificar se o ticket já pertence ao usuário selecionado
         if (this.ticketFocado.userId === this.usuarioSelecionado && this.ticketFocado.userId != null) {
           this.$q.notify({
@@ -309,11 +321,11 @@ export default {
           return
         }
 
-        // Verificar se o ticket já está na mesma fila e usuário
+        // Verificar se o ticket já está no mesmo departamento e usuário
         if (this.ticketFocado.queueId === this.filaSelecionada && this.ticketFocado.userId === this.usuarioSelecionado) {
           this.$q.notify({
             type: 'info',
-            message: 'Ticket já pertence a esta fila e usuário',
+            message: 'Ticket já pertence a este departamento e usuário',
             progress: true,
             actions: [{
               icon: 'close',
@@ -328,12 +340,8 @@ export default {
         const dadosTransferencia = {
           userId: this.usuarioSelecionado,
           status: 'open',
-          isTransference: 1
-        }
-
-        // Adicionar fila apenas se foi selecionada
-        if (this.filaSelecionada) {
-          dadosTransferencia.queueId = this.filaSelecionada
+          isTransference: 1,
+          queueId: this.filaSelecionada
         }
 
         // Realizar a transferência
