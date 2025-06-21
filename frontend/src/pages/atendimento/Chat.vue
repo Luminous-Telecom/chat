@@ -99,7 +99,7 @@
 
     <!-- Input area sem q-footer -->
     <div
-      v-if="ticketFocado.id"
+      v-if="ticketFocado.id && ticketFocado.status === 'open'"
       class="input-area"
       :class="{
         'bg-white': !$q.dark.isActive,
@@ -394,11 +394,11 @@ export default {
     },
     cStyleScroll () {
       const loading = 0
-      // Se não há ticket selecionado, usa altura total
-      if (!this.ticketFocado.id) {
+      // Se não há ticket ou ticket está fechado, usa altura total
+      if (!this.ticketFocado.id || this.ticketFocado.status !== 'open') {
         return 'min-height: 100vh; height: 100vh; width: 100%; padding-bottom: 0px;'
       }
-      // Se há ticket, considera altura do input
+      // Se há ticket aberto, considera altura do input
       const add = this.heigthInputMensagem + loading
       return `min-height: calc(100vh - ${add}px); height: calc(100vh - ${add}px); width: 100%; padding-bottom: 0px;`
     }
