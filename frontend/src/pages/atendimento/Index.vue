@@ -282,9 +282,25 @@
               </q-card-section>
             </q-card>
 
-            <!-- Botão Encerrar Ticket - apenas para tickets em atendimento -->
-            <div class="q-mt-md" v-if="ticketFocado.status === 'open'"></div>
-            <q-card class="action-card" v-if="ticketFocado.status === 'open'">
+            <!-- Botão Entrar na Conversa - quando o ticket não pertence ao usuário -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && !cTicketPertenceAoUsuario"></div>
+            <q-card class="action-card" v-if="ticketFocado.status === 'open' && !cTicketPertenceAoUsuario">
+              <q-card-section class="action-section">
+                <q-btn
+                  flat
+                  color="primary"
+                  icon="mdi-login"
+                  label="Entrar na conversa"
+                  @click="entrarNaConversa"
+                  :loading="loadingEntrarConversa"
+                  class="full-width"
+                />
+              </q-card-section>
+            </q-card>
+
+            <!-- Botão Encerrar Ticket - apenas para tickets em atendimento do usuário -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"></div>
+            <q-card class="action-card" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario">
               <q-card-section class="action-section">
                 <q-btn
                   flat
@@ -296,9 +312,9 @@
               </q-card-section>
             </q-card>
 
-            <!-- Botões de Ação - apenas para tickets em atendimento -->
-            <div class="q-mt-md" v-if="ticketFocado.status === 'open'"></div>
-            <q-card class="action-card" v-if="ticketFocado.status === 'open'">
+            <!-- Botões de Ação - apenas para tickets em atendimento do usuário -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"></div>
+            <q-card class="action-card" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario">
               <q-card-section class="action-section">
                 <div class="row q-gutter-sm">
                   <div class="col">
@@ -732,12 +748,9 @@ import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import socketInitial from 'src/layouts/socketInitial'
 import ModalNovoTicket from './ModalNovoTicket'
 import { ListarFilas } from 'src/service/filas'
-const profile = localStorage.getItem('profile')
-const username = localStorage.getItem('username')
 const usuario = JSON.parse(localStorage.getItem('usuario'))
 import StatusWhatsapp from 'src/components/StatusWhatsapp'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
-import { debounce } from 'quasar'
 import { format } from 'date-fns'
 import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
@@ -777,81 +790,46 @@ export default {
 
   },
   data () {
-    const query = this.$route.query
-    // Para página de tickets não atendidos, usar apenas 'pending'
-    let initialStatus
-    if (query.status === 'pending') {
-      initialStatus = ['pending']
-    } else {
-      initialStatus = query.status ? [query.status] : ['open']
-    }
-
-    // Garantir que seja sempre um array simples
-    initialStatus = initialStatus.filter(s => typeof s === 'string')
-
-    // Configurar filtros iniciais baseado no status
-    const initialFilters = {
-      searchParam: '',
-      pageNumber: 1,
-      status: initialStatus,
-      showAll: false,
-      count: null,
-      queuesIds: [],
-      withUnreadMessages: false,
-      isNotAssignedUser: false,
-      includeNotQueueDefined: true,
-      onlyUserTickets: false
-    }
-
-    // Para tickets pendentes, aplicar filtros específicos
-    if (initialStatus.includes('pending')) {
-      initialFilters.showAll = true
-      initialFilters.isNotAssignedUser = false
-      initialFilters.withUnreadMessages = false
-      initialFilters.queuesIds = []
-    } else if (initialStatus.includes('open')) {
-      // Para tickets em andamento, aplicar filtro "meus atendimentos" por padrão
-      initialFilters.showAll = false
-      initialFilters.isNotAssignedUser = false
-      initialFilters.withUnreadMessages = false
-      initialFilters.queuesIds = []
-      initialFilters.onlyUserTickets = true // Filtro padrão para meus atendimentos
-    }
-
     return {
-      configuracoes: [],
-      debounce,
-      usuario,
-      usuarios: [],
-      username,
-      modalUsuario: false,
-      toolbarSearch: true,
-      drawerTickets: true,
       loading: false,
-      profile,
-      modalNovoTicket: false,
+      mensagensRapidas: [],
+      drawerTickets: true,
+      toolbarSearch: true,
+      filterMode: 'meus',
+      filas: [],
+      etiquetas: [],
+      usuarios: [],
+      contatos: [],
+      searchTickets: '',
       modalContato: false,
       selectedContactId: null,
-      filterBusca: '',
-      showDialog: false,
-      atendimentos: [],
-      countTickets: 0,
-      searchTickets: '',
-      mensagensRapidas: [],
-      modalEtiquestas: false,
+      modalUsuario: false,
       modalObservacao: false,
       modalListarObservacoes: false,
       modalListarMensagensAgendadas: false,
       modalTimeline: false,
+      modalNovoTicket: false,
       modalTransferirTicket: false,
-      usuarioSelecionado: null,
-      filaSelecionada: null,
-      usuariosFiltrados: [],
-
+      modalAgendarMensagem: false,
+      pesquisaTickets: {
+        searchParam: '',
+        pageNumber: 1,
+        status: ['open'],
+        showAll: false,
+        count: null,
+        queuesIds: [],
+        withUnreadMessages: false,
+        isNotAssignedUser: false,
+        includeNotQueueDefined: true,
+        onlyUserTickets: false // Flag para filtrar apenas tickets do usuário
+      },
       observacoes: [],
-      pesquisaTickets: initialFilters,
-      filas: [],
-      etiquetas: []
+      configuracoes: {},
+      filaSelecionada: null,
+      usuarioSelecionado: null,
+      usuario: {},
+      loadingEntrarConversa: false,
+      searchTimeout: null
     }
   },
   computed: {
@@ -950,6 +928,11 @@ export default {
       }
 
       return opcoes
+    },
+    cTicketPertenceAoUsuario () {
+      if (!this.ticketFocado?.id) return false
+      const userId = +localStorage.getItem('userId')
+      return this.ticketFocado.userId === userId
     }
   },
   methods: {
@@ -981,7 +964,7 @@ export default {
     toggleStatus (status) {
       // Substitui o array atual por um novo array contendo apenas o status selecionado
       this.pesquisaTickets.status = [status]
-      this.debounce(this.BuscarTicketFiltro(), 700)
+      this.BuscarTicketFiltro()
     },
 
     setFilterMode (filterMode) {
@@ -1024,7 +1007,48 @@ export default {
         }
       }
 
-      this.debounce(this.BuscarTicketFiltro(), 700)
+      this.BuscarTicketFiltro()
+    },
+
+    aplicarFiltrosIniciais () {
+      const currentRoute = this.$route
+      const currentStatus = currentRoute.query.status
+
+      // Determinar o status baseado na rota atual
+      let statusToSet
+      if (currentStatus) {
+        statusToSet = [currentStatus].filter(s => typeof s === 'string')
+      } else {
+        // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
+        statusToSet = ['open']
+      }
+
+      // Aplicar o status
+      this.pesquisaTickets.status = statusToSet
+
+      // Aplicar filtros específicos baseado no status
+      if (statusToSet.includes('pending')) {
+        // Para tickets pendentes: mostrar todos os pendentes
+        this.pesquisaTickets.showAll = true
+        this.pesquisaTickets.isNotAssignedUser = false
+        this.pesquisaTickets.withUnreadMessages = false
+        this.pesquisaTickets.queuesIds = []
+        this.pesquisaTickets.onlyUserTickets = false // Não filtrar por usuário para pendentes
+      } else if (statusToSet.includes('open')) {
+        // Para tickets em andamento: filtro padrão (meus tickets)
+        this.pesquisaTickets.showAll = false
+        this.pesquisaTickets.isNotAssignedUser = false
+        this.pesquisaTickets.withUnreadMessages = false
+        this.pesquisaTickets.queuesIds = []
+        this.pesquisaTickets.onlyUserTickets = true // Aplicar filtro "meus atendimentos" por padrão
+      } else if (statusToSet.includes('closed')) {
+        // Para tickets fechados: mostrar todos
+        this.pesquisaTickets.showAll = true
+        this.pesquisaTickets.isNotAssignedUser = false
+        this.pesquisaTickets.withUnreadMessages = false
+        this.pesquisaTickets.queuesIds = []
+        this.pesquisaTickets.onlyUserTickets = false // Não filtrar por usuário para fechados
+      }
     },
 
     handlerNotifications (data) {
@@ -1701,6 +1725,87 @@ export default {
 
       // Buscar tickets com os novos filtros
       this.BuscarTicketFiltro()
+    },
+    async entrarNaConversa () {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para entrar na conversa',
+          position: 'bottom-right'
+        })
+        return
+      }
+
+      const userId = +localStorage.getItem('userId')
+      if (this.ticketFocado.userId === userId) {
+        this.$q.notify({
+          type: 'info',
+          message: 'Você já está nesta conversa',
+          position: 'bottom-right'
+        })
+        return
+      }
+
+      this.$q.dialog({
+        title: 'Entrar na conversa',
+        message: `Deseja entrar na conversa com ${this.ticketFocado.contact.name}? O ticket será transferido para você.`,
+        cancel: {
+          label: 'Cancelar',
+          color: 'negative',
+          push: true
+        },
+        ok: {
+          label: 'Entrar',
+          color: 'primary',
+          push: true
+        },
+        persistent: true
+      }).onOk(async () => {
+        try {
+          this.loadingEntrarConversa = true
+
+          const dadosTransferencia = {
+            userId: userId,
+            status: 'open',
+            isTransference: 1
+          }
+
+          await AtualizarTicket(this.ticketFocado.id, dadosTransferencia)
+
+          this.$q.notify({
+            type: 'positive',
+            message: `Você entrou na conversa com ${this.ticketFocado.contact.name}!`,
+            position: 'bottom-right'
+          })
+
+          // Atualizar o ticket focado no store
+          this.$store.commit('TICKET_FOCADO', {
+            ...this.ticketFocado,
+            userId: userId
+          })
+
+          // Atualizar também na lista de tickets
+          this.$store.commit('UPDATE_TICKET', {
+            ...this.ticketFocado,
+            userId: userId
+          })
+
+          // Forçar atualização da interface
+          this.$forceUpdate()
+
+          // Buscar tickets atualizados
+          this.consultarTickets()
+        } catch (error) {
+          console.error('Erro ao entrar na conversa:', error)
+          this.$q.notify({
+            type: 'negative',
+            message: 'Erro ao entrar na conversa. Tente novamente.',
+            position: 'bottom-right'
+          })
+        } finally {
+          this.loadingEntrarConversa = false
+        }
+      })
     }
   },
   beforeMount () {
@@ -1740,8 +1845,11 @@ export default {
     await this.listarMensagensRapidas()
     await this.listarConfiguracoes()
 
-    // Sempre consultar tickets após carregar dependências, independentemente do status
-    await this.consultarTickets()
+    // Aplicar filtros baseados na rota atual antes de consultar tickets
+    this.aplicarFiltrosIniciais()
+
+    // Sempre consultar tickets após carregar dependências e aplicar filtros
+    await this.BuscarTicketFiltro()
 
     this.cUsuario = JSON.parse(localStorage.getItem('usuario'))
     this.scrollToBottom()
@@ -1776,12 +1884,20 @@ export default {
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
     this.$root.$off('trocar-para-meus-atendimentos', this.trocarParaMeusAtendimentos)
+    // Limpar timeout de busca
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout)
+    }
     this.socketDisconnect()
   },
   watch: {
     searchTickets: {
       handler (val) {
-        this.debounce(this.BuscarTicketFiltro(), 500)
+        // Usar setTimeout para simular debounce
+        clearTimeout(this.searchTimeout)
+        this.searchTimeout = setTimeout(() => {
+          this.BuscarTicketFiltro()
+        }, 500)
       }
     },
     tickets: {

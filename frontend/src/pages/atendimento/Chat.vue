@@ -191,10 +191,22 @@
       </q-banner>
 
       <InputMensagem
-        v-if="!mensagensParaEncaminhar.length"
+        v-if="!mensagensParaEncaminhar.length && cPodeEnviarMensagem"
         :mensagensRapidas="mensagensRapidas"
         :replyingMessage.sync="replyingMessage"
       />
+
+      <!-- Aviso quando não pode enviar mensagem -->
+      <div
+        v-if="!mensagensParaEncaminhar.length && !cPodeEnviarMensagem && ticketFocado.id"
+        class="no-message-input-container"
+      >
+        <div class="no-message-input-content">
+          <q-icon name="mdi-account-lock" size="24px" class="q-mb-xs" />
+          <div class="text-body2">Você precisa entrar na conversa para enviar mensagens</div>
+          <div class="text-caption text-grey-6">Use o botão "Entrar na conversa" na barra lateral</div>
+        </div>
+      </div>
       <q-resize-observer @resize="onResizeInputMensagem" />
     </q-footer>
 
@@ -359,6 +371,19 @@ export default {
       this.replyingMessage = null
 
       return this.mensagensTicket
+    },
+    cPodeEnviarMensagem () {
+      // Sempre pode enviar se o ticket estiver em status pending
+      if (this.ticketFocado.status === 'pending') return true
+
+      // Para tickets open, só pode enviar se for o usuário responsável
+      if (this.ticketFocado.status === 'open') {
+        const userId = +localStorage.getItem('userId')
+        return this.ticketFocado.userId === userId
+      }
+
+      // Para outros status (closed, etc), não pode enviar
+      return false
     },
     style () {
       return {
@@ -583,5 +608,31 @@ audio {
 
 /* .fade-leave-active below version 2.1.8 */ {
   opacity: 0;
+}
+
+.no-message-input-container {
+  padding: 16px;
+  background: rgba(244, 244, 244, 0.8);
+  border-top: 1px solid #e0e0e0;
+}
+
+.no-message-input-content {
+  text-align: center;
+  color: #757575;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Modo escuro */
+.body--dark .no-message-input-container {
+  background: rgba(66, 66, 66, 0.8);
+  border-top: 1px solid #424242;
+}
+
+.body--dark .no-message-input-content {
+  color: #bdbdbd;
 }
 </style>
