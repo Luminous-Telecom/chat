@@ -71,6 +71,11 @@ const CreateMessageService = async ({
             },
           ],
         },
+        {
+          model: require("../../models/User").default,
+          as: "user",
+          attributes: ["id", "name", "email"]
+        }
       ],
     });
 

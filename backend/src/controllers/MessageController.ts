@@ -142,6 +142,11 @@ export const update = async (
           as: "ticket",
           where: { tenantId },
           include: ["contact"]
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name", "email"]
         }
       ]
     });
@@ -164,7 +169,12 @@ export const update = async (
     const io = getIO();
     io.emit(`tenant:${tenantId}:appMessage`, {
       action: "update",
-      message: await message.reload({ include: [{ model: Ticket, as: "ticket", include: ["contact"] }] }),
+      message: await message.reload({ 
+        include: [
+          { model: Ticket, as: "ticket", include: ["contact"] },
+          { model: User, as: "user", attributes: ["id", "name", "email"] }
+        ] 
+      }),
       ticket: message.ticket
     });
 
@@ -195,6 +205,11 @@ export const cancel = async (
           as: "ticket",
           where: { tenantId },
           include: ["contact"]
+        },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name", "email"]
         }
       ]
     });
@@ -211,7 +226,12 @@ export const cancel = async (
     const io = getIO();
     io.emit(`tenant:${tenantId}:appMessage`, {
       action: "update",
-      message: await message.reload({ include: [{ model: Ticket, as: "ticket", include: ["contact"] }] }),
+      message: await message.reload({ 
+        include: [
+          { model: Ticket, as: "ticket", include: ["contact"] },
+          { model: User, as: "user", attributes: ["id", "name", "email"] }
+        ] 
+      }),
       ticket: message.ticket
     });
 

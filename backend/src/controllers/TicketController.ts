@@ -4,6 +4,7 @@ import { Op } from "sequelize";
 import { getIO } from "../libs/socket";
 import Message from "../models/Message";
 import CreateLogTicketService from "../services/TicketServices/CreateLogTicketService";
+import User from "../models/User";
 
 import CreateTicketService from "../services/TicketServices/CreateTicketService";
 import DeleteTicketService from "../services/TicketServices/DeleteTicketService";
@@ -135,6 +136,13 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   };
   const scheduledMessages = await Message.findAll({
     where,
+    include: [
+      {
+        model: User,
+        as: "user",
+        attributes: ["id", "name", "email"]
+      }
+    ]
     // logging: console.log
   });
 

@@ -497,6 +497,11 @@ const finalizeMessage = async (
           as: "quotedMsg",
           include: ["contact"],
         },
+        {
+          model: require("../../models/User").default,
+          as: "user",
+          attributes: ["id", "name", "email"]
+        }
       ],
     });
 
