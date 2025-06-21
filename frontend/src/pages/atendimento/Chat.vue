@@ -1,11 +1,23 @@
-<template>
+/* Força remoção de bordas do Quasar */
+:deep(.q-footer) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:deep(.q-separator) {
+  display: none !important;
+}<template>
   <div
-    class="bg-white no-scroll hide-scrollbar overflow-hidden"
+    class="chat-container no-scroll hide-scrollbar overflow-hidden"
     :style="style"
+    :class="{
+      'bg-white': !$q.dark.isActive,
+      'bg-dark': $q.dark.isActive
+    }"
   >
     <q-scroll-area
       ref="scrollContainer"
-      class="scroll-y "
+      class="scroll-y"
       :style="cStyleScroll"
       @scroll="scrollArea"
     >
@@ -40,37 +52,26 @@
         :ativarMultiEncaminhamento.sync="ativarMultiEncaminhamento"
         :mensagensParaEncaminhar.sync="mensagensParaEncaminhar"
       />
-      <div id="inicioListaMensagensChat"></div>
+      <div id="inicioListaMensagensChat" style="height: 1px;"></div>
     </q-scroll-area>
+
     <div
-      class="absolute-center items-center"
-      :class="{
-          'row col text-center q-col-gutter-lg': !$q.screen.xs,
-          'full-width text-center': $q.screen.xs
-        }"
+      class="empty-state-container"
       v-if="!ticketFocado.id"
     >
-      <q-icon
-        style="margin-left: 30vw"
-        size="6em"
-        color="grey-6"
-        name="mdi-emoticon-wink-outline"
-        class="row col text-center"
-        :class="{
-            'row col text-center q-mr-lg': !$q.screen.xs,
-            'full-width text-center center-block': $q.screen.xs
-          }"
-      >
-      </q-icon>
-      <h1
-        class="text-grey-6 row col justify-center"
-        :class="{
-            'full-width': $q.screen.xs
-          }"
-      >
-        Selecione um ticket!
-      </h1>
+      <div class="empty-state-content">
+        <q-icon
+          size="6em"
+          color="grey-6"
+          name="mdi-emoticon-wink-outline"
+          class="empty-icon"
+        />
+        <h1 class="text-grey-6 empty-title">
+          Selecione um ticket!
+        </h1>
+      </div>
     </div>
+
     <div
       v-if="cMessages.length"
       class="relative-position"
@@ -96,12 +97,20 @@
       </transition>
     </div>
 
-    <q-footer class="bg-white">
-      <q-separator class="bg-grey-4" />
+    <!-- Input area sem q-footer -->
+    <div
+      v-if="ticketFocado.id"
+      class="input-area"
+      :class="{
+        'bg-white': !$q.dark.isActive,
+        'bg-dark': $q.dark.isActive
+      }"
+    >
+      <!-- Mensagem de resposta -->
       <q-list
         v-if="replyingMessage"
-        :style="`border-top: 1px solid #; max-height: 140px; width: 100%;`"
-        style=" max-height: 100px;"
+        :style="`border-top: 1px solid transparent; max-height: 140px; width: 100%;`"
+        style="max-height: 100px;"
         class="q-pa-none q-py-md text-black row items-center col justify-center full-width"
         :class="{
             'bg-grey-1': !$q.dark.isActive,
@@ -148,6 +157,7 @@
         </q-item>
       </q-list>
 
+      <!-- Banner de encaminhamento -->
       <q-banner
         class="text-grey-8"
         v-if="mensagensParaEncaminhar.length > 0"
@@ -209,14 +219,16 @@
         </template>
       </q-banner>
 
+      <!-- Input de mensagem -->
       <InputMensagem
         v-if="!mensagensParaEncaminhar.length"
         :mensagensRapidas="mensagensRapidas"
         :replyingMessage.sync="replyingMessage"
       />
       <q-resize-observer @resize="onResizeInputMensagem" />
-    </q-footer>
+    </div>
 
+    <!-- Modais -->
     <q-dialog
       v-model="modalAgendamentoMensagem"
       persistent
@@ -241,10 +253,9 @@
             :replyingMessage.sync="replyingMessage"
           />
         </q-card-section>
-
       </q-card>
-
     </q-dialog>
+
     <q-dialog
       v-model="modalEncaminhamentoMensagem"
       persistent
@@ -322,12 +333,11 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-
   </div>
 </template>
+
 <script>
 import mixinCommon from './mixinCommon'
-// import parser from 'vdata-parser'
 import MensagemChat from './MensagemChat'
 import InputMensagem from './InputMensagem'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
@@ -377,23 +387,37 @@ export default {
   computed: {
     ...mapGetters(['mensagensTicket', 'ticketFocado', 'hasMore']),
     cMessages () {
-      // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-      this.replyingMessage = null
       return this.mensagensTicket || []
     },
     style () {
-      return {
-      }
+      return {}
     },
     cStyleScroll () {
-      const loading = 0 // this.loading ? 72 : 0
+      const loading = 0
+      // Se não há ticket selecionado, usa altura total
+      if (!this.ticketFocado.id) {
+        return 'min-height: 100vh; height: 100vh; width: 100%; padding-bottom: 0px;'
+      }
+      // Se há ticket, considera altura do input
       const add = this.heigthInputMensagem + loading
-      return `min-height: calc(100vh - ${62 + add}px); height: calc(100vh - ${62 + add}px); width: 100%`
+      return `min-height: calc(100vh - ${add}px); height: calc(100vh - ${add}px); width: 100%; padding-bottom: 0px;`
+    }
+  },
+  watch: {
+    mensagensTicket () {
+      this.replyingMessage = null
     }
   },
   methods: {
     async onResizeInputMensagem (size) {
       this.heigthInputMensagem = size.height
+      // Força recálculo do scroll area
+      this.$nextTick(() => {
+        if (this.$refs.scrollContainer) {
+          this.$refs.scrollContainer.setScrollPosition('vertical',
+            this.$refs.scrollContainer.getScrollPosition().top)
+        }
+      })
     },
     async onLoadMore (infiniteState) {
       if (this.loading) return
@@ -418,7 +442,7 @@ export default {
       this.hideOptions = true
       setTimeout(() => {
         if (!e) return
-        this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 2000 // e.verticalPercentage < 0.8
+        this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 2000
       }, 200)
     },
     scrollToBottom () {
@@ -444,7 +468,6 @@ export default {
           this.contatos = data.contacts
         } else {
           this.contatos = [{}]
-          // this.$refs.selectAutoCompleteContato.toggleOption({}, true)
         }
       })
       this.loading = false
@@ -482,7 +505,89 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+.chat-container {
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+.input-area {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  /* Remove qualquer separação visual */
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Adiciona padding bottom ao scroll area para compensar o input fixo */
+:deep(.q-scrollarea__content) {
+  padding-bottom: 0 !important;
+}
+
+/* Garante que o último elemento das mensagens tenha espaçamento correto */
+:deep(.q-scrollarea__content > *:last-child) {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Garante que o q-scroll-area ocupe o espaço correto */
+:deep(.q-scrollarea) {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+:deep(.q-scrollarea__container) {
+  position: relative !important;
+}
+
+/* Estado vazio centralizado */
+.empty-state-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.empty-icon {
+  margin-bottom: 20px;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+/* Responsivo */
+@media (max-width: 599px) {
+  .empty-title {
+    font-size: 1.25rem;
+  }
+
+  .empty-icon {
+    font-size: 4em !important;
+  }
+}
+
+/* Preserva todos os estilos originais */
 audio {
   height: 40px;
   width: 264px;
@@ -512,8 +617,6 @@ audio {
 
   &:before {
     content: "";
-    // use the linear-gradient for the fading effect
-    // use a solid background color for a solid bar
     background: linear-gradient(to right, transparent, #818078, transparent);
     position: absolute;
     left: 0;
@@ -531,21 +634,28 @@ audio {
     font-weight: 600;
     padding: 0 0.5em;
     line-height: 1.5em;
-    background-color: $grey;
+    background-color: #f5f5f5;
     border-radius: 15px;
   }
 }
 
+body.body--dark .hr-text:after {
+  background-color: #2d2d2d;
+  color: white;
+}
+
 .textContentItem {
   overflow-wrap: break-word;
-  // padding: 3px 80px 6px 6px;
 }
 
 .textContentItemDeleted {
   font-style: italic;
   color: rgba(0, 0, 0, 0.36);
   overflow-wrap: break-word;
-  // padding: 3px 80px 6px 6px;
+}
+
+body.body--dark .textContentItemDeleted {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .replyginContactMsgSideColor {
@@ -561,7 +671,7 @@ audio {
 }
 
 .replyginMsgBody {
-  padding: 10;
+  padding: 10px;
   height: auto;
   display: block;
   white-space: pre-wrap;
@@ -591,9 +701,7 @@ audio {
 }
 
 .fade-enter,
-.fade-leave-to
-
-/* .fade-leave-active below version 2.1.8 */ {
+.fade-leave-to {
   opacity: 0;
 }
 </style>
