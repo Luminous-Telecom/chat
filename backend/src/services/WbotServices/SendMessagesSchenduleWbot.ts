@@ -22,7 +22,7 @@ const SendMessagesSchenduleWbot = async (): Promise<void> => {
   const where = {
     fromMe: true,
     messageId: { [Op.is]: null },
-    status: "pending",
+    status: "pending", // Não processará mensagens canceladas
     scheduleDate: {
       [Op.lte]: currentDate, // Menor ou igual à data atual
       [Op.gte]: twentyFourHoursAgo,

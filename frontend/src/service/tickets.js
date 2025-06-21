@@ -99,6 +99,21 @@ export const EnviarRespostaBotao = async (data) => {
   return response
 }
 
+export function EditarMensagemAgendada (messageId, data) {
+  return request({
+    url: `/messages/${messageId}`,
+    method: 'put',
+    data
+  })
+}
+
+export function CancelarMensagemAgendada (messageId) {
+  return request({
+    url: `/messages/${messageId}/cancel`,
+    method: 'patch'
+  })
+}
+
 export function EntrarNaConversa (ticketId) {
   return request({
     url: `/tickets/${ticketId}/join`,

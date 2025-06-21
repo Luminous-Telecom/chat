@@ -121,6 +121,107 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   return res.send();
 };
 
+export const update = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { messageId } = req.params;
+  const { tenantId } = req.user;
+  const { body, scheduleDate } = req.body;
+
+  try {
+    const message = await Message.findOne({
+      where: { 
+        id: messageId,
+        status: "pending",
+        scheduleDate: { [Op.not]: null }
+      },
+      include: [
+        {
+          model: Ticket,
+          as: "ticket",
+          where: { tenantId },
+          include: ["contact"]
+        }
+      ]
+    });
+
+    if (!message) {
+      throw new AppError("Mensagem agendada não encontrada ou já foi enviada", 404);
+    }
+
+    // Verificar se a nova data é futura
+    if (scheduleDate && new Date(scheduleDate) <= new Date()) {
+      throw new AppError("A data de agendamento deve ser no futuro", 400);
+    }
+
+    await message.update({
+      body: body || message.body,
+      scheduleDate: scheduleDate || message.scheduleDate
+    });
+
+    // Emitir evento para o frontend
+    const io = getIO();
+    io.emit(`tenant:${tenantId}:appMessage`, {
+      action: "update",
+      message: await message.reload({ include: [{ model: Ticket, as: "ticket", include: ["contact"] }] }),
+      ticket: message.ticket
+    });
+
+    return res.json(message);
+  } catch (error) {
+    logger.error(`Erro ao atualizar mensagem agendada: ${error}`);
+    throw new AppError(error.message || "Erro ao atualizar mensagem agendada");
+  }
+};
+
+export const cancel = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { messageId } = req.params;
+  const { tenantId } = req.user;
+
+  try {
+    const message = await Message.findOne({
+      where: { 
+        id: messageId,
+        status: "pending",
+        scheduleDate: { [Op.not]: null }
+      },
+      include: [
+        {
+          model: Ticket,
+          as: "ticket",
+          where: { tenantId },
+          include: ["contact"]
+        }
+      ]
+    });
+
+    if (!message) {
+      throw new AppError("Mensagem agendada não encontrada ou já foi enviada", 404);
+    }
+
+    await message.update({
+      status: "canceled"
+    });
+
+    // Emitir evento para o frontend
+    const io = getIO();
+    io.emit(`tenant:${tenantId}:appMessage`, {
+      action: "update",
+      message: await message.reload({ include: [{ model: Ticket, as: "ticket", include: ["contact"] }] }),
+      ticket: message.ticket
+    });
+
+    return res.json({ message: "Mensagem agendada cancelada com sucesso" });
+  } catch (error) {
+    logger.error(`Erro ao cancelar mensagem agendada: ${error}`);
+    throw new AppError(error.message || "Erro ao cancelar mensagem agendada");
+  }
+};
+
 export const remove = async (
   req: Request,
   res: Response

@@ -195,12 +195,25 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Modal de edição de mensagem -->
+    <ModalEditarMensagemAgendada
+      v-model="modalEditarMensagem"
+      :mensagem="mensagemParaEditar"
+      @mensagem-editada="mensagemEditada"
+    />
   </q-dialog>
 </template>
 
 <script>
+import { CancelarMensagemAgendada } from 'src/service/tickets'
+import ModalEditarMensagemAgendada from './ModalEditarMensagemAgendada.vue'
+
 export default {
   name: 'ModalListarMensagensAgendadas',
+  components: {
+    ModalEditarMensagemAgendada
+  },
   props: {
     value: {
       type: Boolean,
@@ -218,7 +231,9 @@ export default {
   data () {
     return {
       modalVisualizacao: false,
-      mensagemSelecionada: null
+      mensagemSelecionada: null,
+      modalEditarMensagem: false,
+      mensagemParaEditar: {}
     }
   },
   computed: {
@@ -274,25 +289,75 @@ export default {
     },
 
     editarMensagem (mensagem) {
-      this.$q.notify({
-        type: 'info',
-        message: 'Funcionalidade de edição será implementada em breve',
-        position: 'bottom-right'
-      })
+      this.mensagemParaEditar = { ...mensagem }
+      this.modalEditarMensagem = true
     },
 
-    cancelarMensagem (mensagem) {
+    async cancelarMensagem (mensagem) {
       this.$q.dialog({
         title: 'Cancelar Mensagem Agendada',
         message: 'Tem certeza que deseja cancelar esta mensagem agendada?',
-        cancel: true,
+        cancel: {
+          label: 'Não',
+          color: 'primary',
+          push: true
+        },
+        ok: {
+          label: 'Sim, cancelar',
+          color: 'negative',
+          push: true
+        },
         persistent: true
-      }).onOk(() => {
+      }).onOk(async () => {
+        try {
+          await this.cancelarMensagemAPI(mensagem)
+        } catch (error) {
+          console.error('Erro ao cancelar mensagem:', error)
+        }
+      })
+    },
+
+    async cancelarMensagemAPI (mensagem) {
+      try {
+        await CancelarMensagemAgendada(mensagem.id)
+
         this.$q.notify({
-          type: 'info',
-          message: 'Funcionalidade de cancelamento será implementada em breve',
+          type: 'positive',
+          message: 'Mensagem agendada cancelada com sucesso!',
           position: 'bottom-right'
         })
+
+        // Atualizar a mensagem na lista local
+        const index = this.mensagensAgendadas.findIndex(m => m.id === mensagem.id)
+        if (index !== -1) {
+          this.mensagensAgendadas[index] = {
+            ...this.mensagensAgendadas[index],
+            status: 'canceled'
+          }
+        }
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error.response?.data?.message || 'Erro ao cancelar mensagem agendada',
+          position: 'bottom-right'
+        })
+      }
+    },
+
+    mensagemEditada (mensagemEditada) {
+      // Atualizar a mensagem na lista local
+      const index = this.mensagensAgendadas.findIndex(m => m.id === mensagemEditada.id)
+      if (index !== -1) {
+        this.mensagensAgendadas[index] = {
+          ...this.mensagensAgendadas[index],
+          ...mensagemEditada
+        }
+      }
+
+      this.$q.notify({
+        type: 'positive',
+        message: 'Mensagem atualizada na lista!',
+        position: 'bottom-right'
       })
     },
 
