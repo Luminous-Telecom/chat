@@ -774,6 +774,30 @@ export default {
     // Garantir que seja sempre um array simples
     initialStatus = initialStatus.filter(s => typeof s === 'string')
 
+    // Configurar filtros iniciais baseado no status
+    const initialFilters = {
+      searchParam: '',
+      pageNumber: 1,
+      status: initialStatus,
+      showAll: false,
+      count: null,
+      queuesIds: [],
+      withUnreadMessages: false,
+      isNotAssignedUser: false,
+      includeNotQueueDefined: true
+    }
+
+    // Para tickets pendentes, aplicar filtros específicos
+    if (initialStatus.includes('pending')) {
+      console.log('[data] Configurando filtros para tickets pendentes')
+      initialFilters.showAll = true
+      initialFilters.isNotAssignedUser = false
+      initialFilters.withUnreadMessages = false
+      initialFilters.queuesIds = []
+    }
+
+    console.log('[data] Filtros iniciais:', initialFilters)
+
     return {
       configuracoes: [],
       debounce,
@@ -805,17 +829,7 @@ export default {
       usuariosFiltrados: [],
 
       observacoes: [],
-      pesquisaTickets: {
-        searchParam: '',
-        pageNumber: 1,
-        status: initialStatus,
-        showAll: false,
-        count: null,
-        queuesIds: [],
-        withUnreadMessages: false,
-        isNotAssignedUser: false, // Sempre false inicialmente
-        includeNotQueueDefined: true
-      },
+      pesquisaTickets: initialFilters,
       filas: [],
       etiquetas: []
     }
@@ -831,8 +845,11 @@ export default {
       const allTickets = this.$store.getters.tickets || []
       const currentStatus = this.pesquisaTickets.status
 
+      console.log('[tickets computed] Status atual:', currentStatus)
+      console.log('[tickets computed] Total tickets no store:', allTickets.length)
+
       if (!currentStatus || !Array.isArray(currentStatus)) {
-        // console.log('[tickets computed] Sem status definido, retornando todos os tickets')
+        console.log('[tickets computed] Sem status definido, retornando todos os tickets')
         return allTickets
       }
 
@@ -849,10 +866,8 @@ export default {
         return matchesStatus
       })
 
-      // console.log('[tickets computed] Status atual:', currentStatus)
-      // console.log('[tickets computed] Total tickets no store:', allTickets.length)
-      // console.log('[tickets computed] Tickets filtrados:', filteredTickets.length)
-      // console.log('[tickets computed] Status dos tickets filtrados:', filteredTickets.map(t => ({ id: t.id, status: t.status })))
+      console.log('[tickets computed] Tickets filtrados:', filteredTickets.length)
+      console.log('[tickets computed] Status dos tickets filtrados:', filteredTickets.map(t => ({ id: t.id, status: t.status, name: t.contact?.name || t.name })))
 
       return filteredTickets
     },
@@ -1480,8 +1495,17 @@ export default {
         params.status = params.status.filter(s => typeof s === 'string')
       }
 
+      console.log('[consultarTickets] Parâmetros da consulta:', params)
+
       try {
         const { data } = await ConsultarTickets(params)
+
+        console.log('[consultarTickets] Resultado:', {
+          count: data.count,
+          ticketsLength: data.tickets?.length,
+          hasMore: data.hasMore,
+          tickets: data.tickets?.map(t => ({ id: t.id, status: t.status, name: t.contact?.name || t.name }))
+        })
 
         this.countTickets = data.count // count total de tickets no status
         this.$store.commit('LOAD_TICKETS', {
@@ -1490,8 +1514,8 @@ export default {
         })
         this.$store.commit('SET_HAS_MORE', data.hasMore)
       } catch (err) {
+        console.error('[consultarTickets] Erro:', err)
         this.$notificarErro('Algum problema', err)
-        console.error(err)
       }
       // return () => clearTimeout(delayDebounceFn)
     },
@@ -1669,8 +1693,11 @@ export default {
     this.listarEtiquetas()
     this.listarConfiguracoes()
     const filtros = JSON.parse(localStorage.getItem('filtrosAtendimento'))
+    console.log('[beforeMount] Filtros salvos no localStorage:', filtros)
+    console.log('[beforeMount] Filtros iniciais this.pesquisaTickets:', this.pesquisaTickets)
     if (!filtros?.pageNumber) {
       localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
+      console.log('[beforeMount] Salvando filtros iniciais no localStorage')
     }
   },
   async mounted () {
@@ -1702,9 +1729,11 @@ export default {
     await this.listarUsuarios()
     await this.listarMensagensRapidas()
     await this.listarConfiguracoes()
-    if (this.pesquisaTickets.status?.length) {
-      await this.consultarTickets()
-    }
+
+    // Sempre consultar tickets após carregar dependências, independentemente do status
+    console.log('[mounted] Consultando tickets com status:', this.pesquisaTickets.status)
+    await this.consultarTickets()
+
     this.cUsuario = JSON.parse(localStorage.getItem('usuario'))
     this.scrollToBottom()
     this.socketTicket()
@@ -1772,6 +1801,7 @@ export default {
         if (oldRoute && newRoute.query.status === oldRoute.query.status) return
 
         const newStatus = newRoute.query.status
+        console.log('[Route Watcher] Nova rota:', newRoute.name, 'Status:', newStatus)
 
         // Atualizar status se estivermos em qualquer rota de atendimento (atendimento, chat-empty, chat)
         const atendimentoRoutes = ['atendimento', 'chat-empty', 'chat']
@@ -1793,27 +1823,34 @@ export default {
             statusToSet = ['open']
           }
 
+          console.log('[Route Watcher] Status a ser definido:', statusToSet)
+
           // Só buscar se o status realmente mudou
           const currentStatus = this.pesquisaTickets.status
           const statusChanged = JSON.stringify(statusToSet) !== JSON.stringify(currentStatus)
+
+          console.log('[Route Watcher] Status atual:', currentStatus, 'Mudou:', statusChanged)
 
           if (statusChanged) {
             this.pesquisaTickets.status = statusToSet
 
             // Aplicar filtros específicos baseado no status
             if (statusToSet.includes('pending')) {
+              console.log('[Route Watcher] Aplicando filtros para tickets pendentes')
               // Para tickets pendentes: mostrar todos os pendentes
               this.pesquisaTickets.showAll = true
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
             } else if (statusToSet.includes('open')) {
+              console.log('[Route Watcher] Aplicando filtros para tickets em andamento')
               // Para tickets em andamento: filtro padrão (meus tickets)
               this.pesquisaTickets.showAll = false
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
             } else if (statusToSet.includes('closed')) {
+              console.log('[Route Watcher] Aplicando filtros para tickets fechados')
               // Para tickets fechados: mostrar todos
               this.pesquisaTickets.showAll = true
               this.pesquisaTickets.isNotAssignedUser = false
@@ -1821,6 +1858,7 @@ export default {
               this.pesquisaTickets.queuesIds = []
             }
 
+            console.log('[Route Watcher] Filtros aplicados:', this.pesquisaTickets)
             // Buscar com os novos filtros
             this.BuscarTicketFiltro()
           }

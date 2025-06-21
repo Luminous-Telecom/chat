@@ -188,18 +188,8 @@ export default {
     abrirChatContato (ticket) {
       console.log(`[abrirChatContato] Iniciando abertura de chat para ticket ${ticket.id} com status: ${ticket.status}`)
 
-      // Para tickets pendentes, apenas permitir abrir o chat se o botão de atender não estiver sendo exibido
-      // ou se for uma busca/pesquisa
-      if (ticket.status === 'pending' && this.shouldShowAttendButton) {
-        console.log('[abrirChatContato] Ticket pendente com botão de atender - use o botão "Atender" para iniciar atendimento')
-        this.$q.notify({
-          message: 'Para atender este ticket, clique no botão "Atender"',
-          type: 'info',
-          position: 'bottom-right',
-          timeout: 3000
-        })
-        return
-      }
+      // Permitir visualizar ticket sempre, removendo a restrição para tickets pendentes
+      // O botão "Atender" continuará disponível para iniciar o atendimento quando necessário
 
       if (this.$q.screen.lt.md && ticket.status !== 'pending') {
         this.$root.$emit('infor-cabecalo-chat:acao-menu')
