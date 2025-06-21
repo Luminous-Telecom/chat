@@ -186,8 +186,6 @@ export default {
       return formatDistance(data, new Date(), { locale: pt })
     },
     abrirChatContato (ticket) {
-      console.log(`[abrirChatContato] Iniciando abertura de chat para ticket ${ticket.id} com status: ${ticket.status}`)
-
       // Permitir visualizar ticket sempre, removendo a restrição para tickets pendentes
       // O botão "Atender" continuará disponível para iniciar o atendimento quando necessário
 
@@ -197,11 +195,9 @@ export default {
 
       // Verificar se o ticket já não está focado
       if (!((ticket.id !== this.$store.getters.ticketFocado.id || this.$route.name !== 'chat'))) {
-        console.log(`[abrirChatContato] Ticket ${ticket.id} já está focado, não abrindo novamente`)
         return
       }
 
-      console.log(`[abrirChatContato] Abrindo chat para ticket ${ticket.id} (status: ${ticket.status})`)
       this.$store.commit('SET_HAS_MORE', true)
       this.$store.dispatch('AbrirChatMensagens', ticket)
     }

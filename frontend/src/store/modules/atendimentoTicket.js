@@ -583,8 +583,6 @@ const atendimentoTicket = {
     // CORRIGIDO
     async AbrirChatMensagens ({ commit, dispatch }, data) {
       try {
-        console.log(`[AbrirChatMensagens] Iniciando abertura de chat para ticket ${data.id || data.ticketId} com status: ${data.status}`)
-
         // Limpar o ticket focado com um objeto vazio estruturado
         await commit('TICKET_FOCADO', {
           contact: {
@@ -601,8 +599,6 @@ const atendimentoTicket = {
         // Garantir que o ticket seja um objeto primitivo e tenha a estrutura correta
         const ticketData = JSON.parse(JSON.stringify(ticket.data))
 
-        console.log(`[AbrirChatMensagens] Dados do ticket consultados - ID: ${ticketData.id}, Status: ${ticketData.status}`)
-
         // Garantir estruturas essenciais
         if (!ticketData.contact) ticketData.contact = {}
         if (!ticketData.contact.tags) ticketData.contact.tags = []
@@ -615,8 +611,6 @@ const atendimentoTicket = {
         // Carregar mensagens
         const params = { ticketId: data.ticketId || data.id, pageNumber: 1 }
         await dispatch('LocalizarMensagensTicket', params)
-
-        console.log(`[AbrirChatMensagens] Chat aberto com sucesso para ticket ${ticketData.id} (status: ${ticketData.status})`)
 
         // Navegar para o chat apenas se não estivermos já na rota correta
         const currentRoute = router.currentRoute
@@ -632,7 +626,6 @@ const atendimentoTicket = {
           currentRoute.params.ticketId === targetRoute.params.ticketId
 
         if (!isAlreadyOnCorrectRoute) {
-          console.log('[AbrirChatMensagens] Navegando para chat com query preservado:', targetRoute.query)
           router.push(targetRoute).catch(err => {
             if (err.name !== 'NavigationDuplicated') {
               console.error('Erro de navegação:', err)

@@ -262,12 +262,6 @@ export default {
           }
 
           if (data.type === 'chat:ack') {
-            console.log('[DEBUG FRONTEND] ===== EVENTO CHAT:ACK RECEBIDO =====', data.payload)
-            console.log('[DEBUG FRONTEND] Canal:', `${usuario.tenantId}:ticketList`)
-            console.log('[DEBUG FRONTEND] MessageId:', data.payload.messageId)
-            console.log('[DEBUG FRONTEND] ACK:', data.payload.ack)
-            console.log('[DEBUG FRONTEND] Status:', data.payload.status)
-
             const messageId = data.payload.id || data.payload.messageId // Garantir que temos um ID
             const ticketId = data.payload.ticket?.id
 
@@ -441,13 +435,6 @@ export default {
         status: status || this.getStatusFromAck(ack),
         ticket,
         fromMe: fromMe // Garantir que fromMe seja incluído no commit
-      })
-
-      console.log('[atualizarStatusMensagem] Status atualizado:', {
-        messageId,
-        ack,
-        status: status || this.getStatusFromAck(ack),
-        read: novoStatus.read
       })
 
       // Não atualizar contagem de não lidas aqui, deixar o backend controlar

@@ -27,8 +27,6 @@ export default {
             userId: userId
           }
 
-          console.log('[iniciarAtendimento] Atualizando ticket na lista:', ticketAtualizado)
-
           // Atualizar o ticket na lista primeiro
           this.$store.commit('UPDATE_TICKET', {
             ...ticketAtualizado,
@@ -41,8 +39,6 @@ export default {
           this.$store.commit('TICKET_FOCADO', {})
           this.$store.commit('SET_HAS_MORE', true)
 
-          console.log('[iniciarAtendimento] Abrindo chat após delay...')
-
           // Pequeno delay para garantir que o backend processou a atualização
           setTimeout(() => {
             this.$store.dispatch('AbrirChatMensagens', ticketAtualizado)
@@ -50,7 +46,6 @@ export default {
             // Forçar atualização da interface
             this.$nextTick(() => {
               this.$forceUpdate()
-              console.log('[iniciarAtendimento] Interface atualizada forçadamente')
             })
           }, 500)
 
