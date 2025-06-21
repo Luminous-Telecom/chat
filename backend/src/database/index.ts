@@ -26,6 +26,7 @@ import ApiMessage from "../models/ApiMessage";
 import LogTicket from "../models/LogTicket";
 import ChatFlow from "../models/ChatFlow";
 import TicketObservation from "../models/TicketObservation";
+import TicketParticipant from "../models/TicketParticipant";
 import * as QueueJobs from "../libs/Queue";
 import { logger } from "../utils/logger";
 
@@ -68,6 +69,7 @@ const models = [
   LogTicket,
   ChatFlow,
   TicketObservation,
+  TicketParticipant,
 ];
 
 sequelize.addModels(models);

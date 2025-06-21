@@ -13,6 +13,7 @@ import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
 import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
+import TicketParticipantService from "../services/TicketServices/TicketParticipantService";
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
 import { pupa } from "../utils/pupa";
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
@@ -248,6 +249,178 @@ export const markAllAsRead = async (
     return res.status(200).json({ message: "All messages marked as read" });
   } catch (error) {
     logger.error("[markAllAsRead] Erro ao marcar mensagens como lidas:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const joinConversation = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+  const userId = req.user.id;
+
+  try {
+    logger.info(`[joinConversation] Iniciando - TicketId: ${ticketId}, UserId: ${userId}, TenantId: ${tenantId}`);
+    
+    const participantService = new TicketParticipantService();
+    
+    // Verificar se o ticket existe
+    const ticket = await ShowTicketService({ id: ticketId, tenantId });
+    if (!ticket) {
+      logger.warn(`[joinConversation] Ticket não encontrado - TicketId: ${ticketId}`);
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    logger.info(`[joinConversation] Ticket encontrado - Owner: ${ticket.userId}, Current User: ${userId}`);
+
+    // Verificar se o usuário já é o dono do ticket
+    if (ticket.userId === +userId) {
+      logger.warn(`[joinConversation] Usuário já é o dono do ticket - TicketId: ${ticketId}, UserId: ${userId}`);
+      return res.status(400).json({ error: "User is already the ticket owner" });
+    }
+
+    // Verificar se o usuário já é participante
+    const isParticipant = await participantService.isUserParticipant(
+      parseInt(ticketId),
+      +userId,
+      +tenantId
+    );
+
+    logger.info(`[joinConversation] Verificação de participante - IsParticipant: ${isParticipant}`);
+
+    if (isParticipant) {
+      logger.warn(`[joinConversation] Usuário já é participante - TicketId: ${ticketId}, UserId: ${userId}`);
+      return res.status(400).json({ error: "User is already a participant" });
+    }
+
+    // Adicionar como participante
+    logger.info(`[joinConversation] Adicionando participante - TicketId: ${ticketId}, UserId: ${userId}`);
+    const participant = await participantService.addParticipant({
+      ticketId: parseInt(ticketId),
+      userId: +userId,
+      tenantId: +tenantId,
+    });
+
+    logger.info(`[joinConversation] Participante adicionado com sucesso - ParticipantId: ${participant.id}`);
+
+    // Log da ação
+    await CreateLogTicketService({
+      userId: +userId,
+      ticketId: parseInt(ticketId),
+      type: "access",
+    });
+
+    // Emitir socket para notificar outros usuários
+    const io = getIO();
+    const participants = await participantService.getTicketParticipants(
+      parseInt(ticketId),
+      +tenantId
+    );
+    
+    io.to(`${tenantId}:${ticket.status}`)
+      .to(`${tenantId}:${ticketId}`)
+      .emit(`${tenantId}:ticket`, {
+        action: "participant_joined",
+        ticket: {
+          ...ticket.toJSON(),
+          participants: participants.map(p => p.toJSON ? p.toJSON() : p),
+        },
+        participant: participant.toJSON ? participant.toJSON() : participant,
+      });
+
+    return res.status(200).json({ 
+      message: "Successfully joined conversation",
+      participant 
+    });
+  } catch (error) {
+    logger.error("[joinConversation] Erro ao entrar na conversa:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const leaveConversation = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+  const userId = req.user.id;
+
+  try {
+    const participantService = new TicketParticipantService();
+    
+    // Verificar se o ticket existe
+    const ticket = await ShowTicketService({ id: ticketId, tenantId });
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    // Não permitir que o dono saia da conversa
+    if (ticket.userId === +userId) {
+      return res.status(400).json({ error: "Ticket owner cannot leave conversation" });
+    }
+
+    // Remover da conversa
+    await participantService.removeParticipant({
+      ticketId: parseInt(ticketId),
+      userId: +userId,
+      tenantId: +tenantId,
+    });
+
+    // Log da ação
+    await CreateLogTicketService({
+      userId: +userId,
+      ticketId: parseInt(ticketId),
+      type: "access",
+    });
+
+    // Emitir socket para notificar outros usuários
+    const io = getIO();
+    const participants = await participantService.getTicketParticipants(
+      parseInt(ticketId),
+      +tenantId
+    );
+    
+    io.to(`${tenantId}:${ticket.status}`)
+      .to(`${tenantId}:${ticketId}`)
+      .emit(`${tenantId}:ticket`, {
+        action: "participant_left",
+        ticket: {
+          ...ticket.toJSON(),
+          participants: participants.map(p => p.toJSON ? p.toJSON() : p),
+        },
+        userId,
+      });
+
+    return res.status(200).json({ 
+      message: "Successfully left conversation" 
+    });
+  } catch (error) {
+    logger.error("[leaveConversation] Erro ao sair da conversa:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getParticipants = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+
+  try {
+    const participantService = new TicketParticipantService();
+    
+    const participants = await participantService.getTicketParticipants(
+      parseInt(ticketId),
+      +tenantId
+    );
+
+    return res.status(200).json(participants);
+  } catch (error) {
+    logger.error("[getParticipants] Erro ao buscar participantes:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };

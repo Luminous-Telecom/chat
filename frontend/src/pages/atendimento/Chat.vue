@@ -376,10 +376,26 @@ export default {
       // Sempre pode enviar se o ticket estiver em status pending
       if (this.ticketFocado.status === 'pending') return true
 
-      // Para tickets open, só pode enviar se for o usuário responsável
+      // Para tickets open, verificar se é o usuário responsável ou participante
       if (this.ticketFocado.status === 'open') {
         const userId = +localStorage.getItem('userId')
-        return this.ticketFocado.userId === userId
+
+        // Se é o usuário responsável, pode enviar
+        if (this.ticketFocado.userId === userId) {
+          return true
+        }
+
+        // Se é participante ativo, pode enviar
+        if (this.ticketFocado.participants && this.ticketFocado.participants.length > 0) {
+          const isParticipant = this.ticketFocado.participants.some(p =>
+            p.userId === userId && p.isActive
+          )
+          if (isParticipant) {
+            return true
+          }
+        }
+
+        return false
       }
 
       // Para outros status (closed, etc), não pode enviar

@@ -221,11 +221,13 @@ const ListTicketsService = async ({
   where t."tenantId" = :tenantId
   and c."tenantId" = :tenantId
   and t.status in (:status)
-  and (( :isOnlyUserTickets = 'S' and t."userId" = :userId )
+  and (( :isOnlyUserTickets = 'S' and (t."userId" = :userId OR exists (select 1 from "TicketParticipants" tp where tp."ticketId" = t.id and tp."userId" = :userId and tp."isActive" = true and tp."tenantId" = :tenantId)) )
     OR ( :isOnlyUserTickets = 'N' and ( 
       ( :isShowAll = 'N' and  (
         (:isExistsQueueTenant = 'S' and (t."queueId" in ( :queuesIdsUser ) or (:isNotAssigned = 'S' and t."queueId" is null)))
-        or t."userId" = :userId or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
+        or t."userId" = :userId 
+        or exists (select 1 from "TicketParticipants" tp where tp."ticketId" = t.id and tp."userId" = :userId and tp."isActive" = true and tp."tenantId" = :tenantId)
+        or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
       ) OR (:isShowAll = 'S') OR (t."isGroup" = true) OR (:isExistsQueueTenant = 'N') 
     ))
   )

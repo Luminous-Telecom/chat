@@ -2,6 +2,7 @@ import Ticket from "../../models/Ticket";
 import AppError from "../../errors/AppError";
 import Contact from "../../models/Contact";
 import User from "../../models/User";
+import TicketParticipant from "../../models/TicketParticipant";
 
 interface Request {
   id: string | number;
@@ -33,6 +34,18 @@ const ShowTicketService = async ({
       {
         association: "whatsapp",
         attributes: ["id", "name"],
+      },
+      {
+        model: TicketParticipant,
+        as: "participants",
+        where: { isActive: true },
+        required: false,
+        include: [
+          {
+            model: User,
+            attributes: ["id", "name", "email"],
+          },
+        ],
       },
     ],
   });

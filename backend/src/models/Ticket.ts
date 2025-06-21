@@ -28,6 +28,7 @@ import Tenant from "./Tenant";
 import MessagesOffLine from "./MessageOffLine";
 import ChatFlow from "./ChatFlow";
 import TicketObservation from "./TicketObservation";
+import TicketParticipant from "./TicketParticipant";
 
 @Table
 class Ticket extends Model<Ticket> {
@@ -174,6 +175,9 @@ class Ticket extends Model<Ticket> {
 
   @HasMany(() => TicketObservation)
   observations: TicketObservation[];
+
+  @HasMany(() => TicketParticipant)
+  participants: TicketParticipant[];
 
   @Column(DataType.VIRTUAL)
   get protocol(): string {

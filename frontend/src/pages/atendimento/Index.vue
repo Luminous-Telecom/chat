@@ -339,6 +339,39 @@
               </q-card-section>
             </q-card>
 
+            <!-- Participantes da Conversa -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && ticketFocado.participants && ticketFocado.participants.length > 0"></div>
+            <q-card class="participants-card" v-if="ticketFocado.status === 'open' && ticketFocado.participants && ticketFocado.participants.length > 0">
+              <q-card-section class="participants-section">
+                <div class="participants-header">
+                  <q-icon name="mdi-account-group" size="16px" class="q-mr-xs" />
+                  <span class="participants-title">Participantes da Conversa</span>
+                </div>
+                <div class="participants-list">
+                  <!-- Dono do ticket -->
+                  <div class="participant-item">
+                    <q-icon name="mdi-crown" size="14px" class="participant-icon participant-icon--owner" />
+                    <span class="participant-name">{{ ticketFocado.user?.name || 'Usuário Principal' }}</span>
+                    <q-chip dense size="xs" color="primary" text-color="white" class="participant-badge">
+                      Responsável
+                    </q-chip>
+                  </div>
+                  <!-- Participantes -->
+                  <div
+                    v-for="participant in ticketFocado.participants.filter(p => p.isActive)"
+                    :key="participant.id"
+                    class="participant-item"
+                  >
+                    <q-icon name="mdi-account" size="14px" class="participant-icon" />
+                    <span class="participant-name">{{ participant.user?.name || 'Participante' }}</span>
+                    <q-chip dense size="xs" color="green" text-color="white" class="participant-badge">
+                      Participante
+                    </q-chip>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+
             <!-- Espaçamento entre botões -->
             <div class="q-mt-md"></div>
             <!-- Tags selecionadas -->
@@ -741,7 +774,7 @@
 <script>
 import ContatoModal from 'src/pages/contatos/ContatoModal'
 import ItemTicket from './ItemTicket'
-import { ConsultarTickets, DeletarMensagem, AtualizarTicket } from 'src/service/tickets'
+import { ConsultarTickets, DeletarMensagem, AtualizarTicket, EntrarNaConversa, ListarParticipantes } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import mixinSockets from './mixinSockets'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
@@ -932,7 +965,20 @@ export default {
     cTicketPertenceAoUsuario () {
       if (!this.ticketFocado?.id) return false
       const userId = +localStorage.getItem('userId')
-      return this.ticketFocado.userId === userId
+
+      // Verificar se é o dono do ticket
+      if (this.ticketFocado.userId === userId) {
+        return true
+      }
+
+      // Verificar se é participante da conversa
+      if (this.ticketFocado.participants && Array.isArray(this.ticketFocado.participants)) {
+        return this.ticketFocado.participants.some(participant =>
+          participant.userId === userId && participant.isActive
+        )
+      }
+
+      return false
     }
   },
   methods: {
@@ -1764,42 +1810,41 @@ export default {
         try {
           this.loadingEntrarConversa = true
 
-          const dadosTransferencia = {
-            userId: userId,
-            status: 'open',
-            isTransference: 1
-          }
-
-          await AtualizarTicket(this.ticketFocado.id, dadosTransferencia)
+          // Usar a nova API que adiciona como participante
+          await EntrarNaConversa(this.ticketFocado.id)
 
           this.$q.notify({
             type: 'positive',
-            message: `Você entrou na conversa com ${this.ticketFocado.contact.name}!`,
+            message: `Você entrou na conversa com ${this.ticketFocado.contact.name}! Agora você e o atendente original podem participar da conversa.`,
             position: 'bottom-right'
           })
 
-          // Atualizar o ticket focado no store
+          // Buscar participantes atualizados
+          const { data: participants } = await ListarParticipantes(this.ticketFocado.id)
+
+          // Atualizar o ticket focado no store com os participantes
           this.$store.commit('TICKET_FOCADO', {
             ...this.ticketFocado,
-            userId: userId
+            participants: participants
           })
 
           // Atualizar também na lista de tickets
           this.$store.commit('UPDATE_TICKET', {
             ...this.ticketFocado,
-            userId: userId
+            participants: participants
           })
 
           // Forçar atualização da interface
           this.$forceUpdate()
 
           // Buscar tickets atualizados
-          this.consultarTickets()
+          this.BuscarTicketFiltro()
         } catch (error) {
           console.error('Erro ao entrar na conversa:', error)
+          const errorMessage = error.response?.data?.error || 'Erro ao entrar na conversa. Tente novamente.'
           this.$q.notify({
             type: 'negative',
-            message: 'Erro ao entrar na conversa. Tente novamente.',
+            message: errorMessage,
             position: 'bottom-right'
           })
         } finally {
@@ -2526,6 +2571,102 @@ export default {
 
 .body--dark .elegant-chip .q-icon {
   color: var(--text-color-primary);
+}
+
+/* Participants styles */
+.participants-card {
+  background: var(--background-color-paper);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  margin-top: 8px;
+  border: none;
+}
+
+.participants-section {
+  padding: 8px 12px;
+}
+
+.participants-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.participants-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.participants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--background-color-default);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.participant-item:hover {
+  background: var(--background-color-paper);
+  transform: translateX(1px);
+}
+
+.participant-icon {
+  color: var(--text-color-secondary);
+  margin-right: 8px;
+}
+
+.participant-icon--owner {
+  color: #f39c12;
+}
+
+.participant-name {
+  font-size: 12px;
+  color: var(--text-color-primary);
+  flex: 1;
+  font-weight: 500;
+}
+
+.participant-badge {
+  font-size: 10px;
+  height: 18px;
+}
+
+/* Dark mode for participants */
+.body--dark .participants-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.body--dark .participant-item {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.body--dark .participant-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.body--dark .participants-title {
+  color: var(--text-color-primary);
+}
+
+.body--dark .participant-name {
+  color: var(--text-color-primary);
+}
+
+.body--dark .participant-icon {
+  color: var(--primary-color);
+}
+
+.body--dark .participant-icon--owner {
+  color: #f39c12;
 }
 
 /* Wallet selector styles */

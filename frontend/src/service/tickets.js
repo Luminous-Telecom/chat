@@ -98,3 +98,24 @@ export const EnviarRespostaBotao = async (data) => {
   const { data: response } = await request.post('/messages/button-response', data)
   return response
 }
+
+export function EntrarNaConversa (ticketId) {
+  return request({
+    url: `/tickets/${ticketId}/join`,
+    method: 'post'
+  })
+}
+
+export function SairDaConversa (ticketId) {
+  return request({
+    url: `/tickets/${ticketId}/leave`,
+    method: 'post'
+  })
+}
+
+export function ListarParticipantes (ticketId) {
+  return request({
+    url: `/tickets/${ticketId}/participants`,
+    method: 'get'
+  })
+}

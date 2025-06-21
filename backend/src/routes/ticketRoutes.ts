@@ -27,4 +27,23 @@ ticketRoutes.post(
   TicketController.markAllAsRead
 );
 
+// Rotas para participantes da conversa
+ticketRoutes.post(
+  "/tickets/:ticketId/join",
+  isAuth,
+  TicketController.joinConversation
+);
+
+ticketRoutes.post(
+  "/tickets/:ticketId/leave",
+  isAuth,
+  TicketController.leaveConversation
+);
+
+ticketRoutes.get(
+  "/tickets/:ticketId/participants",
+  isAuth,
+  TicketController.getParticipants
+);
+
 export default ticketRoutes;
