@@ -3064,7 +3064,7 @@ export default {
 
 .filters-container {
   display: flex;
-  gap: 8px;
+  gap: 2px;
   flex-wrap: wrap;
   justify-content: center;
 }
@@ -3072,11 +3072,11 @@ export default {
 .filter-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: #ffffff;
   border: 2px solid #e0e0e0;
   border-radius: 20px;
-  padding: 8px 16px;
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 500;
   color: #5a6c7d;
@@ -3241,7 +3241,7 @@ export default {
   }
 
   .filter-chip {
-    padding: 6px 12px;
+    padding: 3px 6px;
     font-size: 11px;
   }
 }
