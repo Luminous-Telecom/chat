@@ -16,6 +16,7 @@ import socketEmit from "../../helpers/socketEmit";
 import Contact from "../../models/Contact";
 import { BaileysMessageAdapter } from "./BaileysMessageAdapter";
 import Message from "../../models/Message";
+import CreateMessageService from "../MessageServices/CreateMessageService";
 
 // Cache para controlar tentativas de reconexão
 const reconnectionAttempts = new Map<number, number>();
@@ -44,19 +45,22 @@ const isSessionReady = (wbot: BaileysClient): boolean => {
     const wsExists = !!(wbot as any)?.ws;
     const wsState = (wbot as any)?.ws?.readyState;
     
-    // Se a connection está open e temos um WebSocket, consideramos pronto
-    // mesmo que wsState seja undefined (isso acontece em algumas versões do Baileys)
-    const isStateOpen = sessionState === "open";
-    const hasWebSocket = wsExists;
+    // CORREÇÃO: Ser mais flexível com estados de conexão
+    // Aceitar 'connecting' temporariamente se temos WebSocket ativo
+    const isStateValid = sessionState === "open" || 
+                        (sessionState === "connecting" && wsExists);
     
     // WebSocket states: CONNECTING = 0, OPEN = 1, CLOSING = 2, CLOSED = 3
-    // Aceitar undefined, 0 ou 1 quando connection está open
-    const isWsOk = hasWebSocket && (wsState === undefined || wsState === 0 || wsState === 1);
+    // Aceitar undefined, 0 ou 1 quando connection está válida
+    const isWsOk = !wsExists || 
+                   wsState === undefined || 
+                   wsState === 0 || 
+                   wsState === 1;
     
-    const isConnected = isStateOpen && isWsOk;
+    const isConnected = isStateValid && isWsOk;
     
-    // Log apenas quando não está conectado para debug
-    if (!isConnected) {
+    // Log detalhado apenas quando debug está habilitado
+    if (!isConnected && process.env.NODE_ENV === 'development') {
       logger.debug(`[isSessionReady] Session ${wbot.id} not ready - State: ${sessionState}, WS: ${wsExists}, WS State: ${wsState}`);
     }
     
@@ -65,6 +69,19 @@ const isSessionReady = (wbot: BaileysClient): boolean => {
     logger.error(`[isSessionReady] Error checking session ${wbot.id}: ${err}`);
     return false;
   }
+};
+
+// Função para determinar se uma mensagem deve ser processada mesmo com erro de criptografia
+const shouldProcessEncryptedMessage = (msg: proto.IWebMessageInfo): boolean => {
+  // Processar mensagens próprias mesmo com erro de criptografia
+  if (msg.key.fromMe) {
+    return true;
+  }
+  
+  // Processar mensagens que tenham pelo menos alguns dados básicos
+  const hasBasicData = !!(msg.key.id && msg.key.remoteJid && msg.messageTimestamp);
+  
+  return hasBasicData;
 };
 
 const HandleBaileysMessage = async (
@@ -92,8 +109,33 @@ const HandleBaileysMessage = async (
           return;
         }
 
-        // Verificar se mensagem tem conteúdo válido (exceto para mensagens próprias de ACK)
-        if (!msg.key.fromMe && !msg.message) {
+        // Verificar se é um erro de criptografia de grupo
+        const isGroup = msg.key.remoteJid?.endsWith("@g.us");
+        if (isGroup && !msg.message && !msg.key.fromMe) {
+          const cryptoKey = `crypto-error-${msg.key.remoteJid}`;
+          if (shouldLogWarning(cryptoKey)) {
+            logger.warn(
+              `[HandleBaileysMessage] Grupo ${msg.key.remoteJid} - possível erro de criptografia`
+            );
+          }
+          
+          // CORREÇÃO: Verificar se ainda assim devemos processar a mensagem
+          if (!shouldProcessEncryptedMessage(msg)) {
+            resolve();
+            return;
+          }
+          
+          // Para mensagens com erro de criptografia, criar uma mensagem de sistema
+          logger.info(`[HandleBaileysMessage] Processando mensagem com erro de criptografia: ${msg.key.id}`);
+        }
+
+        // CORREÇÃO: Verificação mais flexível para mensagens válidas
+        // Algumas mensagens podem ter conteúdo em outros campos
+        const hasValidContent = msg.message || 
+                               msg.key.fromMe || 
+                               shouldProcessEncryptedMessage(msg);
+        
+        if (!msg.key.fromMe && !hasValidContent) {
           resolve();
           return;
         }
@@ -111,19 +153,6 @@ const HandleBaileysMessage = async (
         ];
 
         if (ignoredMessageTypes.includes(messageType)) {
-          resolve();
-          return;
-        }
-
-        // Verificar se é um erro de criptografia de grupo
-        const isGroup = msg.key.remoteJid?.endsWith("@g.us");
-        if (isGroup && !msg.message && !msg.key.fromMe) {
-          const cryptoKey = `crypto-error-${msg.key.remoteJid}`;
-          if (shouldLogWarning(cryptoKey)) {
-            logger.warn(
-              `[HandleBaileysMessage] Grupo ${msg.key.remoteJid} - possível erro de criptografia`
-            );
-          }
           resolve();
           return;
         }
@@ -405,7 +434,36 @@ const processMessage = async (
     const messageType = Object.keys(msg.message || {})[0];
 
     let message;
-    if (adaptedMessage.hasMedia) {
+    
+    // CORREÇÃO: Tratamento especial para mensagens com erro de criptografia
+    if (!msg.message && shouldProcessEncryptedMessage(msg)) {
+      // Criar uma mensagem de sistema para indicar erro de criptografia
+      const systemMessageData = {
+        messageId: msg.key.id || `crypto-error-${Date.now()}`,
+        ticketId: ticket.id,
+        contactId: contact.id,
+        body: "⚠️ Mensagem não pôde ser descriptografada",
+        fromMe: false,
+        read: false,
+        mediaUrl: null,
+        mediaType: null,
+        quotedMsgId: null,
+        timestamp: Number(msg.messageTimestamp) || Date.now(),
+        status: "received",
+        dataPayload: JSON.stringify({
+          encryptionError: true,
+          originalKey: msg.key,
+          messageTimestamp: msg.messageTimestamp
+        }),
+      };
+      
+      message = await CreateMessageService({
+        messageData: systemMessageData,
+        tenantId: ticket.tenantId,
+      });
+      
+      logger.info(`[HandleBaileysMessage] Created system message for crypto error: ${msg.key.id}`);
+    } else if (adaptedMessage.hasMedia) {
       message = await VerifyMediaMessage(adaptedMessage, ticket, contact);
     } else {
       message = await VerifyMessage(adaptedMessage, ticket, contact);
@@ -423,6 +481,32 @@ const processMessage = async (
       `[HandleBaileysMessage] Error creating message for ticket ${ticket.id}: ${err}`
     );
     return null;
+  }
+};
+
+// Função para reinicializar sessão problemática
+const handleProblematicSession = async (wbot: BaileysClient): Promise<void> => {
+  try {
+    const sessionId = wbot.id;
+    const sessionKey = `problematic-session-${sessionId}`;
+    
+    if (!shouldLogWarning(sessionKey)) {
+      return; // Já tratamos essa sessão recentemente
+    }
+    
+    logger.warn(`[HandleBaileysMessage] Detectada sessão problemática: ${sessionId}`);
+    
+    // Tentar verificar e reinicializar a sessão em background
+    setImmediate(async () => {
+      try {
+        await StartWhatsAppSessionVerify(sessionId, "ERR_SESSION_PROBLEMATIC");
+      } catch (err) {
+        logger.error(`[HandleBaileysMessage] Erro ao reinicializar sessão ${sessionId}: ${err}`);
+      }
+    });
+    
+  } catch (err) {
+    logger.error(`[HandleBaileysMessage] Erro em handleProblematicSession: ${err}`);
   }
 };
 
