@@ -1,25 +1,5 @@
 <template>
   <div>
-    <!-- Botão de iniciar atendimento para tickets pending -->
-    <template v-if="ticketFocado.status === 'pending'">
-      <div
-        style="padding-top: 8px; padding-bottom: 8px"
-        class="row bg-white justify-center items-center text-grey-9 relative-position"
-      >
-        <q-btn
-          push
-          rounded
-          style="width: 250px"
-          class="text-bold"
-          color="positive"
-          icon="mdi-send-circle"
-          label="Iniciar o atendimento"
-          @click="iniciarAtendimento(ticketFocado)"
-          :loading="loading"
-        />
-      </div>
-    </template>
-
     <!-- Interface normal de chat para tickets não pending -->
     <template v-if="ticketFocado.status !== 'pending'">
       <div

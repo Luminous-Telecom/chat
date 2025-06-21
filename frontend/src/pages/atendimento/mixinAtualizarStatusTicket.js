@@ -19,9 +19,41 @@ export default {
               color: 'white'
             }]
           })
+
+          // Atualizar o ticket com o novo status antes de abrir o chat
+          const ticketAtualizado = {
+            ...ticket,
+            status: 'open',
+            userId: userId
+          }
+
+          console.log('[iniciarAtendimento] Atualizando ticket na lista:', ticketAtualizado)
+
+          // Atualizar o ticket na lista primeiro
+          this.$store.commit('UPDATE_TICKET', {
+            ...ticketAtualizado,
+            user: {
+              id: userId,
+              name: JSON.parse(localStorage.getItem('usuario'))?.name || localStorage.getItem('username') || 'Usuário'
+            }
+          })
+
           this.$store.commit('TICKET_FOCADO', {})
           this.$store.commit('SET_HAS_MORE', true)
-          this.$store.dispatch('AbrirChatMensagens', ticket)
+
+          console.log('[iniciarAtendimento] Abrindo chat após delay...')
+
+          // Pequeno delay para garantir que o backend processou a atualização
+          setTimeout(() => {
+            this.$store.dispatch('AbrirChatMensagens', ticketAtualizado)
+
+            // Forçar atualização da interface
+            this.$nextTick(() => {
+              this.$forceUpdate()
+              console.log('[iniciarAtendimento] Interface atualizada forçadamente')
+            })
+          }, 500)
+
           // Removido: não forçar mudança automática de filtros
           // this.$root.$emit('trocar-para-meus-atendimentos')
           // if (this.$parent && this.$parent.pesquisaTickets && this.$parent.setFilterMode) {

@@ -266,9 +266,25 @@
               </q-card-section>
             </q-card>
 
-            <!-- Botão Encerrar Ticket -->
-            <div class="q-mt-md"></div>
-            <q-card class="action-card" v-if="ticketFocado.status !== 'closed'">
+            <!-- Botão Iniciar Atendimento para tickets pending -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'pending'"></div>
+            <q-card class="action-card" v-if="ticketFocado.status === 'pending'">
+              <q-card-section class="action-section">
+                <q-btn
+                  flat
+                  color="positive"
+                  icon="mdi-send-circle"
+                  label="Iniciar o atendimento"
+                  @click="iniciarAtendimento(ticketFocado)"
+                  :loading="loading"
+                  class="full-width"
+                />
+              </q-card-section>
+            </q-card>
+
+            <!-- Botão Encerrar Ticket - apenas para tickets em atendimento -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'open'"></div>
+            <q-card class="action-card" v-if="ticketFocado.status === 'open'">
               <q-card-section class="action-section">
                 <q-btn
                   flat
@@ -280,9 +296,9 @@
               </q-card-section>
             </q-card>
 
-            <!-- Botões de Ação -->
-            <div class="q-mt-md"></div>
-            <q-card class="action-card" v-if="ticketFocado.status !== 'closed'">
+            <!-- Botões de Ação - apenas para tickets em atendimento -->
+            <div class="q-mt-md" v-if="ticketFocado.status === 'open'"></div>
+            <q-card class="action-card" v-if="ticketFocado.status === 'open'">
               <q-card-section class="action-section">
                 <div class="row q-gutter-sm">
                   <div class="col">
