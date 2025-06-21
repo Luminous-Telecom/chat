@@ -28,6 +28,7 @@ type IndexQuery = {
   queuesIds: string[];
   isNotAssignedUser: string;
   includeNotQueueDefined: string;
+  onlyUserTickets: string;
 };
 
 interface TicketData {
@@ -52,6 +53,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     queuesIds,
     isNotAssignedUser,
     includeNotQueueDefined,
+    onlyUserTickets,
   } = req.query as IndexQuery;
 
   const userId = req.user.id;
@@ -67,6 +69,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
     queuesIds,
     isNotAssignedUser,
     includeNotQueueDefined,
+    onlyUserTickets,
     tenantId,
     profile,
   });

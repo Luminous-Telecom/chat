@@ -799,7 +799,8 @@ export default {
       queuesIds: [],
       withUnreadMessages: false,
       isNotAssignedUser: false,
-      includeNotQueueDefined: true
+      includeNotQueueDefined: true,
+      onlyUserTickets: false
     }
 
     // Para tickets pendentes, aplicar filtros específicos
@@ -808,6 +809,13 @@ export default {
       initialFilters.isNotAssignedUser = false
       initialFilters.withUnreadMessages = false
       initialFilters.queuesIds = []
+    } else if (initialStatus.includes('open')) {
+      // Para tickets em andamento, aplicar filtro "meus atendimentos" por padrão
+      initialFilters.showAll = false
+      initialFilters.isNotAssignedUser = false
+      initialFilters.withUnreadMessages = false
+      initialFilters.queuesIds = []
+      initialFilters.onlyUserTickets = true // Filtro padrão para meus atendimentos
     }
 
     return {
@@ -982,6 +990,7 @@ export default {
       this.pesquisaTickets.withUnreadMessages = false
       this.pesquisaTickets.isNotAssignedUser = false
       this.pesquisaTickets.queuesIds = []
+      this.pesquisaTickets.onlyUserTickets = false // Reset da flag específica
       this.pesquisaTickets.pageNumber = 1 // Reset da paginação
 
       const currentStatus = this.pesquisaTickets.status
@@ -1001,7 +1010,7 @@ export default {
           this.pesquisaTickets.showAll = false
           this.pesquisaTickets.isNotAssignedUser = false
           this.pesquisaTickets.queuesIds = []
-          // O backend filtrará por userId automaticamente quando showAll = false
+          this.pesquisaTickets.onlyUserTickets = true // Flag específica para filtrar apenas por userId
         } else if (filterMode === 'fila') {
           // MEUS DEPARTAMENTOS: Somente tickets das filas que estou vinculado
           this.pesquisaTickets.showAll = false
@@ -1822,18 +1831,21 @@ export default {
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
+              this.pesquisaTickets.onlyUserTickets = false // Não filtrar por usuário para pendentes
             } else if (statusToSet.includes('open')) {
               // Para tickets em andamento: filtro padrão (meus tickets)
               this.pesquisaTickets.showAll = false
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
+              this.pesquisaTickets.onlyUserTickets = true // Aplicar filtro "meus atendimentos" por padrão
             } else if (statusToSet.includes('closed')) {
               // Para tickets fechados: mostrar todos
               this.pesquisaTickets.showAll = true
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
+              this.pesquisaTickets.onlyUserTickets = false // Não filtrar por usuário para fechados
             }
 
             // Buscar com os novos filtros

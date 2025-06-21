@@ -21,6 +21,7 @@ interface Request {
   isNotAssignedUser?: string;
   queuesIds?: string[];
   includeNotQueueDefined?: string;
+  onlyUserTickets?: string;
   tenantId: string | number;
   profile: string;
 }
@@ -42,6 +43,7 @@ const ListTicketsService = async ({
   queuesIds,
   isNotAssignedUser,
   includeNotQueueDefined,
+  onlyUserTickets,
   tenantId,
   profile,
 }: Request): Promise<Response> => {
@@ -63,6 +65,7 @@ const ListTicketsService = async ({
     isNotAssignedUser && isNotAssignedUser == "true" ? "S" : "N";
   const isShowAll = isAdminShowAll ? "S" : "N";
   const isQueuesIds = queuesIds ? "S" : "N";
+  const isOnlyUserTickets = onlyUserTickets == "true" ? "S" : "N";
 
   const isSearchParam = searchParam ? "S" : "N";
 
@@ -218,10 +221,14 @@ const ListTicketsService = async ({
   where t."tenantId" = :tenantId
   and c."tenantId" = :tenantId
   and t.status in (:status)
-  and (( :isShowAll = 'N' and  (
-    (:isExistsQueueTenant = 'S' and (t."queueId" in ( :queuesIdsUser ) or (:isNotAssigned = 'S' and t."queueId" is null)))
-    or t."userId" = :userId or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
-  ) OR (:isShowAll = 'S') OR (t."isGroup" = true) OR (:isExistsQueueTenant = 'N') )
+  and (( :isOnlyUserTickets = 'S' and t."userId" = :userId )
+    OR ( :isOnlyUserTickets = 'N' and ( 
+      ( :isShowAll = 'N' and  (
+        (:isExistsQueueTenant = 'S' and (t."queueId" in ( :queuesIdsUser ) or (:isNotAssigned = 'S' and t."queueId" is null)))
+        or t."userId" = :userId or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
+      ) OR (:isShowAll = 'S') OR (t."isGroup" = true) OR (:isExistsQueueTenant = 'N') 
+    ))
+  )
   and (( :isUnread = 'S'  and t."unreadMessages" > 0) OR (:isUnread = 'N'))
   and ((:isNotAssigned = 'S' and t."userId" is null) OR (:isNotAssigned = 'N'))
   and ((:isSearchParam = 'S' and ( /*exists (
@@ -247,6 +254,7 @@ const ListTicketsService = async ({
       userId,
       isUnread,
       isNotAssigned,
+      isOnlyUserTickets,
       isSearchParam,
       searchParam: `%${searchParam}%`,
       limit,
