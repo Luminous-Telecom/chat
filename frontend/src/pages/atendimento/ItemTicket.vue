@@ -17,50 +17,15 @@
 
       <!-- Main Content -->
       <div class="ticket-content">
-        <!-- Avatar Section -->
-        <div class="ticket-avatar-section">
-          <!-- Botão de atender sempre visível quando shouldShowAttendButton for true -->
+        <!-- Avatar Section - apenas para botão atender -->
+        <div class="ticket-avatar-section" v-if="shouldShowAttendButton">
           <div
-            v-if="shouldShowAttendButton"
             class="attend-button-container"
             @click.stop="iniciarAtendimento(ticket)"
           >
-                         <div class="attend-button">
-               <q-icon name="mdi-send-circle" size="20px" />
-               <div class="attend-button-label">Atender</div>
-             </div>
-            <div
-              v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
-              class="unread-badge"
-            >
-              {{ ticket.unreadMessages }}
-            </div>
-          </div>
-
-          <!-- Avatar do contato - só aparece quando não estiver pending -->
-          <div
-            v-else
-            class="contact-avatar-container"
-          >
-            <div class="contact-avatar">
-              <img
-                v-if="ticket.profilePicUrl"
-                :src="ticket.profilePicUrl"
-                class="avatar-image"
-                @error="$event.target.style.display='none'"
-              />
-                             <q-icon
-                 v-else
-                 name="mdi-account-circle"
-                 size="32px"
-                 class="avatar-icon"
-               />
-            </div>
-            <div
-              v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
-              class="unread-badge"
-            >
-              {{ ticket.unreadMessages }}
+            <div class="attend-button">
+              <q-icon name="mdi-send-circle" size="20px" />
+              <div class="attend-button-label">Atender</div>
             </div>
           </div>
         </div>
@@ -71,6 +36,13 @@
           <div class="ticket-header">
             <div class="ticket-contact-name">
               {{ !ticket.name ? ticket.contact.name : ticket.name }}
+              <!-- Badge de mensagens não lidas movido para cá -->
+              <div
+                v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
+                class="unread-badge unread-badge--inline"
+              >
+                {{ ticket.unreadMessages }}
+              </div>
             </div>
             <div class="ticket-time">
               {{ dataInWords(ticket.lastMessageAt, ticket.updatedAt) }}
@@ -350,49 +322,24 @@ export default {
   }
 }
 
-.contact-avatar-container {
-  position: relative;
-
-  .contact-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-    border: 1px solid rgba(25, 118, 210, 0.1);
-
-    .avatar-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-
-    .avatar-icon {
-      color: #9e9e9e;
-    }
-  }
-}
-
 .unread-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
   background: linear-gradient(135deg, #f44336, #e57373);
   color: white;
-  border-radius: 50%;
-  min-width: 16px;
-  height: 16px;
-  display: flex;
+  border-radius: 12px;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 9px;
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(244, 67, 54, 0.3);
   animation: badge-bounce 0.6s ease-out;
+
+  &--inline {
+    margin-left: 6px;
+    position: static;
+  }
 }
 
 .ticket-info-section {
@@ -579,10 +526,6 @@ export default {
       }
     }
 
-    .contact-avatar {
-      background: rgba(144, 202, 249, 0.2);
-      border-color: rgba(144, 202, 249, 0.3);
-    }
   }
 }
 
@@ -641,7 +584,6 @@ export default {
     font-size: 10px;
   }
 
-  .contact-avatar-container .contact-avatar,
   .attend-button-container .attend-button {
     width: 32px;
     height: 32px;
