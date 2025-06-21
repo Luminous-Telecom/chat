@@ -16,7 +16,42 @@ import socketEmit from "../../helpers/socketEmit";
 import Contact from "../../models/Contact";
 import { BaileysMessageAdapter } from "./BaileysMessageAdapter";
 import Message from "../../models/Message";
-// import SetTicketMessagesAsRead from '../../helpers/SetTicketMessagesAsRead'; // Removido - não usado mais
+
+// Cache para controlar tentativas de reconexão
+const reconnectionAttempts = new Map<number, number>();
+const MAX_RECONNECTION_ATTEMPTS = 3;
+const RECONNECTION_COOLDOWN = 30000; // 30 segundos
+
+// Cache para controlar rate limiting de warnings
+const warningCache = new Map<string, number>();
+const WARNING_THROTTLE_TIME = 60000; // 1 minuto
+
+const shouldLogWarning = (key: string): boolean => {
+  const now = Date.now();
+  const lastWarning = warningCache.get(key);
+  
+  if (!lastWarning || now - lastWarning > WARNING_THROTTLE_TIME) {
+    warningCache.set(key, now);
+    return true;
+  }
+  
+  return false;
+};
+
+const isSessionReady = (wbot: BaileysClient): boolean => {
+  try {
+    const sessionState = (wbot as any)?.connection;
+    const wsExists = !!(wbot as any)?.ws;
+    const wsState = (wbot as any)?.ws?.readyState;
+    
+    // WebSocket.OPEN = 1
+    const isConnected = sessionState === "open" && wsExists && wsState === 1;
+    
+    return isConnected;
+  } catch (err) {
+    return false;
+  }
+};
 
 const HandleBaileysMessage = async (
   msg: proto.IWebMessageInfo,
@@ -25,7 +60,25 @@ const HandleBaileysMessage = async (
   return new Promise<void>((resolve, reject) => {
     (async () => {
       try {
+        // Verificação prévia se a sessão está realmente pronta
+        if (!isSessionReady(wbot)) {
+          const sessionKey = `session-not-ready-${wbot.id}`;
+          if (shouldLogWarning(sessionKey)) {
+            logger.warn(
+              `[HandleBaileysMessage] Session ${wbot.id} not ready - skipping message processing`
+            );
+          }
+          resolve();
+          return;
+        }
+
         // Verificar se mensagem é válida
+        if (!msg || !msg.key) {
+          resolve();
+          return;
+        }
+
+        // Verificar se mensagem tem conteúdo válido (exceto para mensagens próprias de ACK)
         if (!msg.key.fromMe && !msg.message) {
           resolve();
           return;
@@ -35,7 +88,7 @@ const HandleBaileysMessage = async (
         const messageType = msg.message ? Object.keys(msg.message)[0] : "";
         const ignoredMessageTypes = [
           "protocolMessage",
-          "ephemeralMessage",
+          "ephemeralMessage", 
           "reactionMessage",
           "pollCreationMessage",
           "pollUpdateMessage",
@@ -50,21 +103,24 @@ const HandleBaileysMessage = async (
 
         // Verificar se é um erro de criptografia de grupo
         const isGroup = msg.key.remoteJid?.endsWith("@g.us");
-        if (isGroup && !msg.message) {
-          logger.warn(
-            `[HandleBaileysMessage] Mensagem de grupo sem conteúdo - possível erro de criptografia: ${msg.key.remoteJid}`
-          );
-          
-          // Log do erro de criptografia para monitoramento
-          logger.error(
-            `[HandleBaileysMessage] Erro de criptografia detectado para grupo: ${msg.key.remoteJid}. Considere regenerar a sessão.`
-          );
-          
+        if (isGroup && !msg.message && !msg.key.fromMe) {
+          const cryptoKey = `crypto-error-${msg.key.remoteJid}`;
+          if (shouldLogWarning(cryptoKey)) {
+            logger.warn(
+              `[HandleBaileysMessage] Grupo ${msg.key.remoteJid} - possível erro de criptografia`
+            );
+          }
           resolve();
           return;
         }
 
         const whatsapp = await ShowWhatsAppService({ id: wbot.id });
+        if (!whatsapp) {
+          logger.error(`[HandleBaileysMessage] WhatsApp instance ${wbot.id} not found`);
+          resolve();
+          return;
+        }
+
         const { tenantId } = whatsapp;
 
         // Verificar se é mensagem de canal/newsletter do WhatsApp
@@ -87,20 +143,16 @@ const HandleBaileysMessage = async (
           return;
         }
 
-        // Verificar estado da sessão
-        const sessionState = (wbot as any)?.connection;
-        const wsExists = !!(wbot as any)?.ws;
-
-        if (sessionState !== "open" || !wsExists) {
-          logger.warn(
-            `[HandleBaileysMessage] Session not ready (state: ${sessionState}, ws: ${wsExists})`
-          );
-
-          if (sessionState === "open" && !wsExists) {
-            await attemptSessionReconnect(whatsapp, msg, wbot);
-            resolve();
-            return;
+        // Dupla verificação do estado da sessão antes de processar
+        if (!isSessionReady(wbot)) {
+          const sessionKey = `session-not-ready-processing-${wbot.id}`;
+          if (shouldLogWarning(sessionKey)) {
+            logger.warn(
+              `[HandleBaileysMessage] Session ${wbot.id} lost connection during processing`
+            );
           }
+          resolve();
+          return;
         }
 
         // Processar contato
@@ -132,17 +184,19 @@ const HandleBaileysMessage = async (
         const message = await processMessage(msg, ticket, contact, wbot);
 
         if (!message) {
-          logger.warn(
-            `[HandleBaileysMessage] Failed to create message for ticket ${ticket.id}`
-          );
+          const messageKey = `failed-message-${ticket.id}`;
+          if (shouldLogWarning(messageKey)) {
+            logger.warn(
+              `[HandleBaileysMessage] Failed to create message for ticket ${ticket.id}`
+            );
+          }
           resolve();
           return;
         }
 
-        // Marcar como lida se não for própria mensagem
+        // Marcar como lida se não for própria mensagem (com delay para não bloquear)
         if (!msg.key.fromMe) {
-          // Usar setTimeout para não bloquear o processamento principal
-          setTimeout(async () => {
+          setImmediate(async () => {
             try {
               await handleMessageReadReceipt(msg, ticket, message, wbot);
             } catch (err) {
@@ -150,27 +204,36 @@ const HandleBaileysMessage = async (
                 `[HandleBaileysMessage] Error in read receipt: ${err}`
               );
             }
-          }, 1000);
+          });
         }
 
-        // Verificar horário comercial e chat flow
-        const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
-        const isBusinessHours = await verifyBusinessHours(
-          adaptedMessage,
-          ticket
-        );
-        if (isBusinessHours) {
-          await VerifyStepsChatFlowTicket(adaptedMessage, ticket);
+        // Verificar horário comercial e chat flow (com tratamento de erro)
+        try {
+          const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
+          const isBusinessHours = await verifyBusinessHours(
+            adaptedMessage,
+            ticket
+          );
+          if (isBusinessHours) {
+            await VerifyStepsChatFlowTicket(adaptedMessage, ticket);
+          }
+        } catch (flowErr) {
+          logger.error(`[HandleBaileysMessage] Error in chat flow: ${flowErr}`);
         }
 
-        // Webhook para API externa
-        await handleExternalWebhook(msg, ticket);
+        // Webhook para API externa (com tratamento de erro)
+        try {
+          await handleExternalWebhook(msg, ticket);
+        } catch (webhookErr) {
+          logger.error(`[HandleBaileysMessage] Webhook error: ${webhookErr}`);
+        }
 
         resolve();
       } catch (err) {
         logger.error(`[HandleBaileysMessage] Error processing message: ${err}`);
-        logger.error(`[HandleBaileysMessage] Error stack: ${err.stack}`);
-        reject(err);
+        
+        // Não fazer reject para evitar travamento do processo principal
+        resolve();
       }
     })();
   });
@@ -182,21 +245,36 @@ const attemptSessionReconnect = async (
   wbot: BaileysClient
 ): Promise<void> => {
   try {
-    logger.warn(
-      `[HandleBaileysMessage] Attempting reconnect for session ${whatsapp.name}`
-    );
-    await StartWhatsAppSessionVerify(whatsapp.id, "ERR_WAPP_NOT_INITIALIZED");
-
-    // Aguardar reconexão
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // Tentar processar mensagem novamente
-    const newWbot = getBaileysSession(whatsapp.id);
-    if (newWbot) {
-      return HandleBaileysMessage(msg, newWbot);
+    const whatsappId = whatsapp.id;
+    const currentAttempts = reconnectionAttempts.get(whatsappId) || 0;
+    
+    // Verificar se já excedeu o máximo de tentativas
+    if (currentAttempts >= MAX_RECONNECTION_ATTEMPTS) {
+      logger.warn(
+        `[HandleBaileysMessage] Max reconnection attempts reached for session ${whatsapp.name}`
+      );
+      return;
     }
+
+    // Incrementar contador de tentativas
+    reconnectionAttempts.set(whatsappId, currentAttempts + 1);
+    
+    logger.warn(
+      `[HandleBaileysMessage] Attempting reconnect ${currentAttempts + 1}/${MAX_RECONNECTION_ATTEMPTS} for session ${whatsapp.name}`
+    );
+
+    // Tentar reconectar (sem aguardar para não bloquear)
+    StartWhatsAppSessionVerify(whatsappId, "ERR_WAPP_NOT_INITIALIZED").catch(err => {
+      logger.error(`[HandleBaileysMessage] Reconnect failed: ${err}`);
+    });
+
+    // Resetar contador após cooldown
+    setTimeout(() => {
+      reconnectionAttempts.delete(whatsappId);
+    }, RECONNECTION_COOLDOWN);
+
   } catch (reconnectErr) {
-    logger.error(`[HandleBaileysMessage] Reconnect failed: ${reconnectErr}`);
+    logger.error(`[HandleBaileysMessage] Reconnect error: ${reconnectErr}`);
   }
 };
 
@@ -319,8 +397,7 @@ const processMessage = async (
       message = await VerifyMessage(adaptedMessage, ticket, contact);
     }
 
-    if (message) {
-    } else {
+    if (!message) {
       logger.warn(
         `[HandleBaileysMessage] Failed to create message for ticket ${ticket.id} - message type: ${messageType}`
       );
@@ -331,7 +408,6 @@ const processMessage = async (
     logger.error(
       `[HandleBaileysMessage] Error creating message for ticket ${ticket.id}: ${err}`
     );
-    logger.error(`[HandleBaileysMessage] Error stack: ${err.stack}`);
     return null;
   }
 };
@@ -343,6 +419,8 @@ const handleMessageReadReceipt = async (
   wbot: BaileysClient
 ): Promise<void> => {
   try {
+    // Implementação simplificada para evitar travamentos
+    // A marcação como lida será feita apenas quando necessário
   } catch (err) {
     logger.error(
       `[HandleBaileysMessage] Error processing read receipt: ${err}`
@@ -374,10 +452,15 @@ const handleExternalWebhook = async (
         type: "hookMessage",
       };
 
-      Queue.add("WebHooksAPI", {
-        url: apiConfig.urlMessageStatus,
-        type: payload.type,
-        payload,
+      // Usar setImmediate para não bloquear o processamento principal
+      setImmediate(() => {
+        Queue.add("WebHooksAPI", {
+          url: apiConfig.urlMessageStatus,
+          type: payload.type,
+          payload,
+        }).catch(err => {
+          logger.error(`[HandleBaileysMessage] Webhook queue error: ${err}`);
+        });
       });
     }
   } catch (err) {

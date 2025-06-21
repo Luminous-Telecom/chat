@@ -6,193 +6,184 @@
 // import { WbotMessage } from '../../../types/baileys';
 // import { MessageAck } from "whatsapp-web.js";
 import { WAMessage } from "@whiskeysockets/baileys";
-import { Op, Sequelize } from "sequelize";
+import { Op } from "sequelize";
 import Message from "../../../models/Message";
-import Ticket from "../../../models/Ticket";
-import Contact from "../../../models/Contact";
-import { getIO } from "../../../libs/socket";
-import sequelize from "../../../database";
+import { sequelize } from "../../../database";
 import { logger } from "../../../utils/logger";
-import CampaignContacts from "../../../models/CampaignContacts";
-import ApiMessage from "../../../models/ApiMessage";
 import socketEmit from "../../../helpers/socketEmit";
-import Queue from "../../../libs/Queue";
+import Ticket from "../../../models/Ticket";
 
-type MessageAck = number;
+// Cache para controlar rate limiting de warnings
+const warningCache = new Map<string, number>();
+const WARNING_THROTTLE_TIME = 300000; // 5 minutos
 
-// Helper function to get message status from ack
-const getMessageStatus = (ack: number): string => {
-  switch (ack) {
-    case 1:
-      return "sended";
-    case 2:
-      return "delivered";
-    case 3:
-      return "received";
-    default:
-      return "pending";
+const shouldLogWarning = (key: string): boolean => {
+  const now = Date.now();
+  const lastWarning = warningCache.get(key);
+  
+  if (!lastWarning || now - lastWarning > WARNING_THROTTLE_TIME) {
+    warningCache.set(key, now);
+    return true;
   }
+  
+  return false;
+};
+
+const isRecentMessage = (timeWindow: number = 600000): Promise<boolean> => {
+  // Verifica se há mensagens nos últimos 10 minutos
+  const timeAgo = new Date(Date.now() - timeWindow);
+  
+  return Message.findOne({
+    where: {
+      fromMe: true,
+      isDeleted: false,
+      createdAt: {
+        [Op.gte]: timeAgo,
+      },
+    },
+    order: [["createdAt", "DESC"]],
+  }).then(message => !!message);
 };
 
 export const HandleMsgAck = async (
   msg: WAMessage,
   ack: number
 ): Promise<void> => {
-  const t = await sequelize.transaction();
-  try {
-    const messageId = msg.key?.id;
-    if (!messageId) {
-      await t.rollback();
-      return;
-    }
+  // Validações básicas
+  if (!msg?.key?.id || ack < 0 || ack > 3) {
+    return;
+  }
 
-    // Primeiro, busca TODAS as mensagens com esse messageId
+  const messageId = msg.key.id;
+  const t = await sequelize.transaction();
+  
+  try {
+    // Buscar mensagens com esse messageId
     const messages = await Message.findAll({
       where: {
         messageId,
         fromMe: true,
         isDeleted: false,
       },
-      order: [["createdAt", "DESC"]], // Ordena por mais recente primeiro
+      order: [["createdAt", "DESC"]],
       lock: true,
       transaction: t,
     });
 
     if (messages.length === 0) {
-      // Só loga warning se for uma mensagem recente (últimos 5 minutos)
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const recentMessage = await Message.findOne({
-        where: {
-          fromMe: true,
-          isDeleted: false,
-          createdAt: {
-            [Op.gte]: fiveMinutesAgo,
-          },
-        },
-        order: [["createdAt", "DESC"]],
-      });
-
-      if (recentMessage) {
-        logger.warn(`[HandleMsgAck] No message found for ID ${messageId}, but found recent messages. Possible sync issue.`);
-      }
       await t.rollback();
+      
+      // Só logar warning se for uma situação realmente problemática
+      const hasRecentMessages = await isRecentMessage();
+      if (hasRecentMessages) {
+        const warningKey = `ack-no-message-${messageId.substring(0, 10)}`;
+        if (shouldLogWarning(warningKey)) {
+          logger.warn(
+            `[HandleMsgAck] Message ID ${messageId} not found but recent messages exist. This might indicate a sync issue.`
+          );
+        }
+      }
       return;
     }
 
-    // Se temos mais de uma mensagem, vamos analisar qual devemos atualizar
+    // Determinar qual mensagem atualizar
     let messageToUpdate: Message | null = null;
     let duplicateMessages: Message[] = [];
 
     if (messages.length === 1) {
-      // Se só temos uma mensagem, ela é a que devemos atualizar
       messageToUpdate = messages[0];
     } else {
-      // Se temos múltiplas mensagens, vamos analisar cada uma
-      // Primeiro, vamos verificar se alguma mensagem já tem um ACK maior
-      const messagesWithHigherAck = messages.filter(m => m.ack >= ack);
-      if (messagesWithHigherAck.length > 0) {
-        await t.rollback();
-        return;
+      // Múltiplas mensagens - escolher a mais recente com ACK menor
+      messageToUpdate = messages.find(m => m.ack < ack) || messages[0];
+      duplicateMessages = messages.filter(m => m.id !== messageToUpdate!.id);
+    }
+
+    // Atualizar a mensagem principal
+    if (messageToUpdate && messageToUpdate.ack < ack) {
+      await messageToUpdate.update({ ack }, { transaction: t });
+
+      // Incluir dados do ticket para o socket
+      const messageWithTicket = await Message.findByPk(messageToUpdate.id, {
+        include: [
+          {
+            model: Ticket,
+            as: "ticket",
+            include: ["contact"],
+          },
+        ],
+        transaction: t,
+      });
+
+      await t.commit();
+
+      // Emitir evento via socket (após commit da transação)
+      if (messageWithTicket) {
+        socketEmit({
+          tenantId: messageWithTicket.ticket.tenantId,
+          type: "chat:ack",
+          payload: {
+            id: messageWithTicket.id,
+            messageId: messageWithTicket.messageId,
+            ack: messageWithTicket.ack,
+            status: getStatusFromAck(ack),
+            ticketId: messageWithTicket.ticketId,
+            fromMe: messageWithTicket.fromMe,
+            timestamp: messageWithTicket.timestamp,
+            mediaUrl: messageWithTicket.mediaUrl,
+          },
+        });
       }
 
-      // Agora vamos verificar qual mensagem devemos atualizar
-      // Preferimos a mensagem que:
-      // 1. Tem o ACK mais alto (mas menor que o novo ack)
-      // 2. Foi criada mais recentemente
-      messageToUpdate = messages.reduce((best, current) => {
-        if (!best) return current;
-        if (current.ack > best.ack) return current;
-        if (current.ack === best.ack && current.createdAt > best.createdAt)
-          return current;
-        return best;
-      }, null as Message | null);
-
-      // Todas as outras mensagens são duplicadas
-      duplicateMessages = messages.filter(m => m.id !== messageToUpdate?.id);
-    }
-
-    if (!messageToUpdate) {
-      logger.error(
-        `[HandleMsgAck] Could not determine which message to update for ID ${messageId}`
-      );
+      // Limpar mensagens duplicadas (em background)
+      if (duplicateMessages.length > 0) {
+        setImmediate(async () => {
+          try {
+            await cleanupDuplicateMessages(duplicateMessages);
+          } catch (cleanupErr) {
+            logger.error(`[HandleMsgAck] Error cleaning duplicates: ${cleanupErr}`);
+          }
+        });
+      }
+    } else {
       await t.rollback();
-      return;
     }
+  } catch (err) {
+    await t.rollback();
+    logger.error(`[HandleMsgAck] Error updating message ack: ${err}`);
+  }
+};
 
-    // Não permitir que um ACK menor sobrescreva um ACK maior
-    if (ack <= messageToUpdate.ack) {
-      await t.rollback();
-      return;
-    }
+const getStatusFromAck = (ack: number): string => {
+  switch (ack) {
+    case 0:
+      return "pending";
+    case 1:
+      return "sent";
+    case 2:
+      return "delivered";
+    case 3:
+      return "read";
+    default:
+      return "pending";
+  }
+};
 
-    // Busca o ticket e contato em uma segunda query
-    const ticket = await Ticket.findOne({
-      where: { id: messageToUpdate.ticketId },
-      include: [{ model: Contact }],
-      transaction: t,
-    });
-
-    if (!ticket) {
-      logger.error(
-        `[HandleMsgAck] Ticket not found for message ${messageToUpdate.id}`
-      );
-      await t.rollback();
-      return;
-    }
-
-    const newStatus = getMessageStatus(ack);
-    // Atualiza a mensagem com lock
-    await messageToUpdate.update(
-      {
-        ack,
-        status: newStatus,
-      },
-      { transaction: t }
-    );
-
-    // Emitir evento no canal correto
-    const io = getIO();
-    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, {
-      type: "chat:ack",
-      payload: {
-        id: messageToUpdate.id,
-        messageId: messageToUpdate.messageId,
-        ack,
-        status: newStatus,
-        read: ack >= 3,
-        fromMe: messageToUpdate.fromMe,
-        ticket: {
-          id: ticket.id,
-          status: ticket.status,
-          unreadMessages: ticket.unreadMessages,
-          answered: ticket.answered,
+const cleanupDuplicateMessages = async (duplicateMessages: Message[]): Promise<void> => {
+  try {
+    const duplicateIds = duplicateMessages.map(m => m.id);
+    
+    // Remover mensagens duplicadas
+    await Message.destroy({
+      where: {
+        id: {
+          [Op.in]: duplicateIds,
         },
       },
     });
 
-    // Se temos mensagens duplicadas, marca como deletadas
-    if (duplicateMessages.length > 0) {
-      logger.warn(
-        `[HandleMsgAck] Found ${duplicateMessages.length} duplicate messages for ID ${messageId}, marking them as deleted`
-      );
-      for (const dup of duplicateMessages) {
-        logger.warn(
-          `[HandleMsgAck] - Duplicate message ${
-            dup.id
-          } created at ${dup.createdAt.toISOString()}, current ack: ${dup.ack}`
-        );
-        await dup.update({ isDeleted: true }, { transaction: t });
-      }
-    }
-
-    await t.commit();
+    logger.info(`[HandleMsgAck] Cleaned up ${duplicateIds.length} duplicate messages`);
   } catch (err) {
-    await t.rollback();
-    logger.error(
-      `[HandleMsgAck] Error processing ACK for message ${
-        msg.key?.id || "unknown"
-      }: ${err}`
-    );
+    logger.error(`[HandleMsgAck] Error in cleanup: ${err}`);
   }
 };
 

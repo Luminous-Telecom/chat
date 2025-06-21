@@ -142,22 +142,31 @@ export const setupAdditionalHandlers = (
               currentMessage = recentMessage;
               await currentMessage.reload();
             } else {
-              // Só loga warning se for uma mensagem realmente recente (últimos 2 minutos)
-              const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+              // Só loga warning se for uma mensagem realmente recente (últimos 10 minutos) e em situações críticas
+              const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
               const veryRecentMessage = await Message.findOne({
                 where: {
                   fromMe: true,
                   isDeleted: false,
                   createdAt: {
-                    [Op.gte]: twoMinutesAgo,
+                    [Op.gte]: tenMinutesAgo,
                   },
                 },
                 order: [["createdAt", "DESC"]],
               });
 
-              if (veryRecentMessage) {
+              // Criar cache para throttling de warnings por messageId
+              const warningKey = `sync-issue-${messageId.substring(0, 10)}`;
+              const lastWarning = global.warningCache?.get(warningKey) || 0;
+              const now = Date.now();
+              
+              // Só logar se passou mais de 5 minutos desde o último warning para este tipo de messageId
+              if (veryRecentMessage && (now - lastWarning > 300000)) {
+                if (!global.warningCache) global.warningCache = new Map();
+                global.warningCache.set(warningKey, now);
+                
                 logger.warn(
-                  `[messages.update] No message found for ID ${messageId}, but found recent messages. Possible sync issue.`
+                  `[messages.update] Message ID ${messageId} not found but recent messages exist. Possible sync issue (throttled).`
                 );
               }
               continue;

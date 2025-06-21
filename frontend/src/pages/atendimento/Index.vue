@@ -23,74 +23,78 @@
           v-if="false"
           class="q-mx-sm full-width"
         />
-        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md">
-          <div class="col custom-search-wrapper">
-            <input
-              v-model="searchTickets"
-              placeholder="Buscar..."
-              class="custom-search-input"
-              type="text"
-            />
-            <q-icon name="search" class="search-icon" />
+        <q-toolbar class="modern-search-toolbar">
+          <div class="col modern-search-wrapper">
+            <div class="search-input-container">
+              <q-icon name="mdi-magnify" class="search-icon" />
+              <input
+                v-model="searchTickets"
+                placeholder="Buscar atendimentos..."
+                class="modern-search-input"
+                type="text"
+              />
+              <q-btn
+                v-if="searchTickets"
+                flat
+                round
+                dense
+                size="sm"
+                icon="mdi-close"
+                class="clear-search-btn"
+                @click="searchTickets = ''"
+              />
+            </div>
           </div>
-          <div class="q-ml-md">
+          <div class="toolbar-actions">
             <q-btn
               flat
               round
               dense
-              class="contacts-btn"
+              class="modern-action-btn"
               icon="mdi-account-multiple"
               @click="$q.screen.lt.md ? modalNovoTicket = true : $router.push({ name: 'chat-contatos' })"
             >
-              <q-tooltip content-class="bg-padrao text-grey-9 text-bold">
+              <q-tooltip content-class="modern-tooltip">
                 Contatos
               </q-tooltip>
             </q-btn>
           </div>
-          <q-separator class="absolute-bottom" />
         </q-toolbar>
 
         <!-- Filtros condicionais baseado no status -->
-        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md q-pt-sm q-pb-sm justify-center" v-if="(pesquisaTickets.status && pesquisaTickets.status.includes('pending')) || $route.query.status === 'pending'">
-          <q-btn
-            color="positive"
-            class="filter-btn"
-            size="sm"
-            dense
-            label="Tickets não atendidos"
-            disabled
-          />
-          <q-separator class="absolute-bottom" />
-        </q-toolbar>
+        <div class="modern-filters-section" v-if="(pesquisaTickets.status && pesquisaTickets.status.includes('pending')) || $route.query.status === 'pending'">
+          <div class="filter-chip filter-chip--active">
+            <q-icon name="mdi-clock-outline" size="14px" />
+            <span>Tickets não atendidos</span>
+          </div>
+        </div>
 
         <!-- Filtros originais para outros status -->
-        <q-toolbar class="bg-white text-primary q-pl-md q-pr-md q-pt-sm q-pb-sm justify-center" v-else>
-          <q-btn
-            :color="cFiltroSelecionado === 'meus' ? 'positive' : 'primary'"
-            class="filter-btn"
-            size="sm"
-            dense
-            label="Meus atendimentos"
-            @click="setFilterMode('meus')"
-          />
-          <q-btn
-            :color="cFiltroSelecionado === 'fila' ? 'positive' : 'primary'"
-            class="filter-btn"
-            size="sm"
-            dense
-            label="Meus departamentos"
-            @click="setFilterMode('fila')"
-          />
-          <q-btn
-            :color="cFiltroSelecionado === 'todos' ? 'positive' : 'primary'"
-            class="filter-btn"
-            size="sm"
-            dense
-            label="Todos"
-            @click="setFilterMode('todos')"
-          />
-          <q-separator class="absolute-bottom" />
-        </q-toolbar>
+        <div class="modern-filters-section" v-else>
+          <div class="filters-container">
+            <button
+              :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'meus' }]"
+              @click="setFilterMode('meus')"
+            >
+              <q-icon name="mdi-account" size="14px" />
+              <span>Meus atendimentos</span>
+            </button>
+            <button
+              :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'fila' }]"
+              @click="setFilterMode('fila')"
+            >
+              <q-icon name="mdi-account-group" size="14px" />
+              <span>Meus departamentos</span>
+            </button>
+            <button
+              :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'todos' }]"
+              @click="setFilterMode('todos')"
+            >
+              <q-icon name="mdi-view-list" size="14px" />
+              <span>Todos</span>
+            </button>
+          </div>
+        </div>
 
         <q-scroll-area
           ref="scrollAreaTickets"
@@ -2900,4 +2904,342 @@ export default {
 }
 
 /* Estilos elegantes para seleção de etiquetas */
+
+/* Modern Search Toolbar */
+.modern-search-toolbar {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: none;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.modern-search-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  border-radius: 24px;
+  padding: 0 16px;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 40px;
+  width: 100%;
+  max-width: 400px;
+
+  &:hover {
+    background: #eeeeee;
+    border-color: rgba(25, 118, 210, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  &:focus-within {
+    background: #ffffff;
+    border-color: #1976d2;
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.15);
+  }
+}
+
+.search-icon {
+  color: #757575;
+  margin-right: 8px;
+  transition: color 0.3s ease;
+}
+
+.search-input-container:focus-within .search-icon {
+  color: #1976d2;
+}
+
+.modern-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 400;
+  color: #2c3e50;
+  padding: 8px 0;
+
+  &::placeholder {
+    color: #9e9e9e;
+    font-weight: 400;
+  }
+}
+
+.clear-search-btn {
+  color: #9e9e9e;
+  margin-left: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+  }
+}
+
+.toolbar-actions {
+  margin-left: 16px;
+}
+
+.modern-action-btn {
+  width: 40px;
+  height: 40px;
+  background: #f5f5f5;
+  color: #1976d2;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+
+  &:hover {
+    background: #1976d2;
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.modern-tooltip {
+  background: linear-gradient(135deg, #2c3e50, #3498db);
+  color: white;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Modern Filters Section */
+.modern-filters-section {
+  background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.filters-container {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 2px solid #e0e0e0;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5a6c7d;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  &:hover {
+    border-color: #1976d2;
+    color: #1976d2;
+    background: #f3f8ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &--active {
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    border-color: #1976d2;
+    color: white;
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+
+    &:hover {
+      background: linear-gradient(135deg, #1565c0, #1976d2);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
+    }
+  }
+
+  span {
+    font-weight: 500;
+  }
+}
+
+/* Dark Mode Styles */
+.body--dark {
+  .modern-search-toolbar {
+    background: linear-gradient(135deg, var(--dark-secondary), var(--dark-tertiary));
+    border-bottom-color: var(--dark-border);
+  }
+
+  .search-input-container {
+    background: var(--dark-tertiary);
+
+    &:hover {
+      background: var(--dark-primary);
+      border-color: rgba(144, 202, 249, 0.3);
+    }
+
+    &:focus-within {
+      background: var(--dark-primary);
+      border-color: var(--dark-accent);
+      box-shadow: 0 4px 16px rgba(144, 202, 249, 0.15);
+    }
+  }
+
+  .search-icon {
+    color: var(--dark-text-primary);
+  }
+
+  .search-input-container:focus-within .search-icon {
+    color: var(--dark-accent);
+  }
+
+  .modern-search-input {
+    color: var(--dark-text-primary);
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .clear-search-btn {
+    color: var(--dark-text-primary);
+
+    &:hover {
+      color: #ff5252;
+    }
+  }
+
+  .modern-action-btn {
+    background: var(--dark-tertiary);
+    color: var(--dark-accent);
+
+    &:hover {
+      background: var(--dark-accent);
+      color: var(--dark-primary);
+    }
+  }
+
+  .modern-filters-section {
+    background: linear-gradient(135deg, var(--dark-secondary), var(--dark-primary));
+    border-bottom-color: var(--dark-border);
+  }
+
+  .filter-chip {
+    background: var(--dark-tertiary);
+    border-color: var(--dark-border);
+    color: var(--dark-text-primary);
+
+    &:hover {
+      border-color: var(--dark-accent);
+      color: var(--dark-accent);
+      background: rgba(144, 202, 249, 0.1);
+    }
+
+    &--active {
+      background: linear-gradient(135deg, var(--dark-accent), #64b5f6);
+      border-color: var(--dark-accent);
+      color: var(--dark-primary);
+
+      &:hover {
+        background: linear-gradient(135deg, #64b5f6, var(--dark-accent));
+      }
+    }
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .modern-search-toolbar {
+    padding: 8px 12px;
+  }
+
+  .search-input-container {
+    max-width: none;
+    min-height: 36px;
+    padding: 0 12px;
+  }
+
+  .modern-search-input {
+    font-size: 13px;
+  }
+
+  .toolbar-actions {
+    margin-left: 12px;
+  }
+
+  .modern-action-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .modern-filters-section {
+    padding: 8px 12px;
+  }
+
+  .filter-chip {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+/* Accessibility improvements */
+.filter-chip:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.modern-action-btn:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.modern-search-input:focus {
+  /* Focus is handled by the container */
+}
+
+/* Animation for filter changes */
+@keyframes filter-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.filter-chip--active {
+  animation: filter-pulse 0.3s ease-out;
+}
 </style>

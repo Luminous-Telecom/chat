@@ -1,31 +1,47 @@
 <template>
-  <div>
+  <div class="ticket-list-container">
     <q-scroll-area
       ref="scrollAreaTickets"
-      style="height: calc(100vh - 300px)"
+      class="ticket-scroll-area"
+      :class="{ 'ticket-scroll-area--loading': loading }"
       @scroll="onScroll"
     >
-      <!-- <q-separator /> -->
-      <ItemTicket
-        v-for="(ticket, key) in cTickets"
-        :key="`ticket-list-${key}`"
-        :ticket="ticket"
-        :filas="filas"
-      />
-      <div v-if="loading">
-        <div class="row justify-center q-my-md">
-          <q-spinner
-            color="white"
-            size="3em"
-            :thickness="3"
-          />
+      <!-- Lista de tickets -->
+      <div class="tickets-wrapper">
+        <ItemTicket
+          v-for="(ticket, key) in cTickets"
+          :key="`ticket-list-${key}`"
+          :ticket="ticket"
+          :filas="filas"
+        />
+
+        <!-- Empty state -->
+        <div v-if="!loading && cTickets.length === 0" class="empty-state">
+          <div class="empty-state-icon">
+            <q-icon name="mdi-ticket-outline" size="48px" />
+          </div>
+          <div class="empty-state-title">Nenhum atendimento encontrado</div>
+          <div class="empty-state-subtitle">
+            Não há tickets disponíveis no momento
+          </div>
         </div>
-        <div class="row col justify-center q-my-sm text-white">
-          Carregando...
+      </div>
+
+      <!-- Loading state -->
+      <div v-if="loading" class="loading-container">
+        <div class="loading-content">
+          <div class="loading-spinner">
+            <q-spinner-dots
+              color="primary"
+              size="40px"
+            />
+          </div>
+          <div class="loading-text">
+            Carregando atendimentos...
+          </div>
         </div>
       </div>
     </q-scroll-area>
-
   </div>
 </template>
 
@@ -347,4 +363,208 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.ticket-list-container {
+  height: calc(100vh - 300px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ticket-scroll-area {
+  flex: 1;
+  background: transparent;
+
+  &--loading {
+    overflow: hidden;
+  }
+
+  // Estilização customizada do scroll
+  :deep(.q-scrollarea__thumb--v) {
+    width: 6px;
+    background: rgba(25, 118, 210, 0.3);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(25, 118, 210, 0.5);
+      width: 8px;
+    }
+  }
+
+  :deep(.q-scrollarea__bar--v) {
+    width: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    right: 4px;
+  }
+}
+
+.tickets-wrapper {
+  padding: 4px 0;
+  min-height: 100%;
+
+  // Animação suave para novos tickets
+  :deep(.ticket-item-container) {
+    animation: ticket-fade-in 0.5s ease-out;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  text-align: center;
+  opacity: 0.7;
+  animation: fade-in 0.6s ease-out;
+
+  .empty-state-icon {
+    margin-bottom: 16px;
+    color: #9e9e9e;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .empty-state-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #5a6c7d;
+    margin-bottom: 8px;
+  }
+
+  .empty-state-subtitle {
+    font-size: 14px;
+    color: #7b8794;
+    max-width: 300px;
+    line-height: 1.4;
+  }
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  min-height: 200px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: fade-in 0.5s ease-out;
+
+  .loading-spinner {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .loading-text {
+    font-size: 14px;
+    color: #7b8794;
+    font-weight: 500;
+    text-align: center;
+  }
+}
+
+// Dark mode
+.body--dark {
+  .ticket-list-container {
+    background: transparent;
+  }
+
+  .ticket-scroll-area {
+    :deep(.q-scrollarea__thumb--v) {
+      background: rgba(144, 202, 249, 0.3);
+
+      &:hover {
+        background: rgba(144, 202, 249, 0.5);
+      }
+    }
+
+    :deep(.q-scrollarea__bar--v) {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .empty-state {
+    .empty-state-icon {
+      color: var(--dark-text-primary);
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      color: var(--dark-text-secondary);
+    }
+
+    .empty-state-subtitle {
+      color: var(--dark-text-primary);
+    }
+  }
+
+  .loading-content {
+    .loading-text {
+      color: var(--dark-text-primary);
+    }
+  }
+}
+
+// Animations
+@keyframes ticket-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .ticket-list-container {
+    height: calc(100vh - 200px);
+  }
+
+  .empty-state {
+    height: 300px;
+    padding: 20px;
+
+    .empty-state-title {
+      font-size: 16px;
+    }
+
+    .empty-state-subtitle {
+      font-size: 13px;
+    }
+  }
+}
 </style>

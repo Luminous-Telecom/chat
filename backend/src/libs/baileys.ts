@@ -2,7 +2,8 @@ import {
   makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
-  Browsers
+  Browsers,
+  proto
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
 import { join } from "path";
@@ -15,7 +16,6 @@ import Whatsapp from "../models/Whatsapp";
 // Dynamic imports for circular dependency resolution
 let socketIO: any;
 let setupAdditionalHandlers: any;
-let baileysPackageJson: any;
 
 // Lazy load modules to avoid circular dependencies
 const getSocketIO = async () => {
@@ -35,10 +35,12 @@ const getSetupAdditionalHandlers = async () => {
 };
 
 const getBaileysVersion = async () => {
-  if (!baileysPackageJson) {
-    baileysPackageJson = await import("@whiskeysockets/baileys/package.json");
+  try {
+    const packageJson = require("@whiskeysockets/baileys/package.json");
+    return packageJson.version;
+  } catch (err) {
+    return "unknown";
   }
-  return baileysPackageJson.version;
 };
 
 // Array to store active sessions
@@ -49,6 +51,75 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 
 // Track sessions being initialized to prevent duplicates
 const initializingSession = new Set<number>();
+
+// Sistema de throttling para evitar sobrecarga
+const messageQueue = new Map<number, proto.IWebMessageInfo[]>();
+const processingLock = new Set<number>();
+const MAX_QUEUE_SIZE = 50;
+const PROCESSING_DELAY = 100; // 100ms entre processamentos
+
+const processMessageQueue = async (whatsappId: number): Promise<void> => {
+  if (processingLock.has(whatsappId)) {
+    return; // Já está processando
+  }
+
+  const queue = messageQueue.get(whatsappId);
+  if (!queue || queue.length === 0) {
+    return;
+  }
+
+  processingLock.add(whatsappId);
+
+  try {
+    // Processar mensagens em lotes pequenos
+    const batchSize = 5;
+    const batch = queue.splice(0, batchSize);
+
+    for (const msg of batch) {
+      try {
+        const { default: HandleBaileysMessage } = await import("../services/BaileysServices/HandleBaileysMessage");
+        const session = getBaileysSession(whatsappId);
+        
+        if (session) {
+          await HandleBaileysMessage(msg, session);
+        }
+        
+        // Pequeno delay entre mensagens
+        await new Promise(resolve => setTimeout(resolve, PROCESSING_DELAY));
+      } catch (msgErr) {
+        baseLogger.error(`[processMessageQueue] Error processing message: ${msgErr}`);
+      }
+    }
+
+    // Se ainda há mensagens na fila, continuar processamento
+    if (queue.length > 0) {
+      setImmediate(() => processMessageQueue(whatsappId));
+    }
+  } catch (err) {
+    baseLogger.error(`[processMessageQueue] Error in queue processing: ${err}`);
+  } finally {
+    processingLock.delete(whatsappId);
+  }
+};
+
+const addToMessageQueue = (whatsappId: number, msg: proto.IWebMessageInfo): void => {
+  if (!messageQueue.has(whatsappId)) {
+    messageQueue.set(whatsappId, []);
+  }
+
+  const queue = messageQueue.get(whatsappId)!;
+  
+  // Limitar tamanho da fila
+  if (queue.length >= MAX_QUEUE_SIZE) {
+    baseLogger.warn(`[addToMessageQueue] Queue full for session ${whatsappId}, dropping oldest message`);
+    queue.shift(); // Remove a mensagem mais antiga
+  }
+
+  queue.push(msg);
+  
+  // Iniciar processamento se não estiver em execução
+  setImmediate(() => processMessageQueue(whatsappId));
+};
 
 // Enhanced session removal with better cleanup
 export const removeBaileysSession = async (
