@@ -622,7 +622,8 @@ const atendimentoTicket = {
         const currentRoute = router.currentRoute
         const targetRoute = {
           name: 'chat',
-          params: { ticketId: ticketData.id.toString() }
+          params: { ticketId: ticketData.id.toString() },
+          query: currentRoute.query // Preservar query parameters (como status=pending)
         }
 
         // Verificar se já estamos na rota correta
@@ -631,6 +632,7 @@ const atendimentoTicket = {
           currentRoute.params.ticketId === targetRoute.params.ticketId
 
         if (!isAlreadyOnCorrectRoute) {
+          console.log('[AbrirChatMensagens] Navegando para chat com query preservado:', targetRoute.query)
           router.push(targetRoute).catch(err => {
             if (err.name !== 'NavigationDuplicated') {
               console.error('Erro de navegação:', err)
