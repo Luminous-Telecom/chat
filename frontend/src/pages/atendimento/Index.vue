@@ -24,27 +24,12 @@
           class="q-mx-sm full-width"
         />
         <q-toolbar class="modern-search-toolbar">
-          <div class="col modern-search-wrapper">
-            <div class="search-input-container">
-              <q-icon name="mdi-magnify" class="search-icon" />
-              <input
-                v-model="searchTickets"
-                placeholder="Buscar atendimentos..."
-                class="modern-search-input"
-                type="text"
-              />
-              <q-btn
-                v-if="searchTickets"
-                flat
-                round
-                dense
-                size="sm"
-                icon="mdi-close"
-                class="clear-search-btn"
-                @click="searchTickets = ''"
-              />
-            </div>
-          </div>
+          <ModernSearch
+            v-model="searchTickets"
+            placeholder="Buscar atendimentos..."
+            :debounce="300"
+            @search="onSearchTickets"
+          />
           <div class="toolbar-actions">
             <q-btn
               flat
@@ -799,6 +784,7 @@ import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
 import ModalTimeline from './ModalTimeline.vue'
+import ModernSearch from 'src/components/ModernSearch'
 
 import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio } from 'src/helpers/helpersNotifications'
 import { socketIO } from 'src/utils/socket'
@@ -819,7 +805,8 @@ export default {
     ModalObservacao,
     ModalListarObservacoes,
     ModalListarMensagensAgendadas,
-    ModalTimeline
+    ModalTimeline,
+    ModernSearch
 
   },
   data () {
@@ -1579,6 +1566,10 @@ export default {
         console.error(err)
       }
       // return () => clearTimeout(delayDebounceFn)
+    },
+    onSearchTickets (searchValue) {
+      this.pesquisaTickets.searchParam = searchValue
+      this.BuscarTicketFiltro()
     },
     async BuscarTicketFiltro () {
       this.loading = true
@@ -3239,74 +3230,6 @@ export default {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.modern-search-wrapper {
-  display: flex;
-  align-items: center;
-}
-
-.search-input-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: #f5f5f5;
-  border-radius: 24px;
-  padding: 0 16px;
-  border: 2px solid transparent;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 40px;
-  width: 100%;
-  max-width: 400px;
-
-  &:hover {
-    background: #eeeeee;
-    border-color: rgba(25, 118, 210, 0.2);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  }
-
-  &:focus-within {
-    background: #ffffff;
-    border-color: #1976d2;
-    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.15);
-  }
-}
-
-.search-icon {
-  color: #757575;
-  margin-right: 8px;
-  transition: color 0.3s ease;
-}
-
-.search-input-container:focus-within .search-icon {
-  color: #1976d2;
-}
-
-.modern-search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 14px;
-  font-weight: 400;
-  color: #2c3e50;
-  padding: 8px 0;
-
-  &::placeholder {
-    color: #9e9e9e;
-    font-weight: 400;
-  }
-}
-
-.clear-search-btn {
-  color: #9e9e9e;
-  margin-left: 8px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    color: #f44336;
-    background: rgba(244, 67, 54, 0.1);
-  }
-}
-
 .toolbar-actions {
   margin-left: 16px;
 }
@@ -3425,45 +3348,6 @@ export default {
     border-bottom-color: var(--dark-border);
   }
 
-  .search-input-container {
-    background: var(--dark-tertiary);
-
-    &:hover {
-      background: var(--dark-primary);
-      border-color: rgba(144, 202, 249, 0.3);
-    }
-
-    &:focus-within {
-      background: var(--dark-primary);
-      border-color: var(--dark-accent);
-      box-shadow: 0 4px 16px rgba(144, 202, 249, 0.15);
-    }
-  }
-
-  .search-icon {
-    color: var(--dark-text-primary);
-  }
-
-  .search-input-container:focus-within .search-icon {
-    color: var(--dark-accent);
-  }
-
-  .modern-search-input {
-    color: var(--dark-text-primary);
-
-    &::placeholder {
-      color: rgba(255, 255, 255, 0.5);
-    }
-  }
-
-  .clear-search-btn {
-    color: var(--dark-text-primary);
-
-    &:hover {
-      color: #ff5252;
-    }
-  }
-
   .modern-action-btn {
     background: var(--dark-tertiary);
     color: var(--dark-accent);
@@ -3506,16 +3390,6 @@ export default {
 @media (max-width: 768px) {
   .modern-search-toolbar {
     padding: 8px 12px;
-  }
-
-  .search-input-container {
-    max-width: none;
-    min-height: 36px;
-    padding: 0 12px;
-  }
-
-  .modern-search-input {
-    font-size: 13px;
   }
 
   .toolbar-actions {

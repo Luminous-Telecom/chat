@@ -267,19 +267,11 @@
                 </q-select>
               </div>
               <div class="col-xs-12 col-sm-4 grow text-center">
-                <q-input
-                  style="width: 300px"
-                  outlined
-                  dense
-                  rounded
+                <ModernSearch
                   v-model="pesquisa.searchParam"
-                  clearable
-                  placeholder="Filtrar Nome ou Telefone"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="search" />
-                  </template>
-                </q-input>
+                  placeholder="Filtrar nome ou telefone..."
+                  :debounce="500"
+                />
               </div>
               <div class="col-grow text-right">
                 <q-btn
@@ -370,9 +362,11 @@ import { RelatorioContatos } from 'src/service/estatisticas'
 import { AdicionarContatosCampanha, DeletarTodosContatosCampanha, ListarContatosCampanha, DeletarContatoCampanha } from 'src/service/campanhas'
 import { format, parseISO, sub } from 'date-fns'
 import { ListarUsuarios } from 'src/service/user'
+import ModernSearch from 'src/components/ModernSearch'
 
 export default {
   name: 'ContatosCampanha',
+  components: { ModernSearch },
   data () {
     return {
       modalAddContatosCampanha: false,

@@ -37,24 +37,15 @@
           Contatos
         </div>
         <q-space />
-        <q-input
+        <ModernSearch
           :class="{
           'order-last q-mt-md': $q.screen.width < 500
         }"
-          style="width: 300px"
-          dense
-          outlined
-          rounded
-          debounce="500"
           v-model="filter"
-          clearable
-          placeholder="Localize"
-          @input="filtrarContato"
-        >
-          <template v-slot:prepend>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+          placeholder="Localizar contatos..."
+          :debounce="500"
+          @search="filtrarContato"
+        />
         <q-space />
         <q-btn-dropdown
           color="primary"
@@ -317,10 +308,11 @@ import ContatoModal from './ContatoModal'
 import { ListarUsuarios } from 'src/service/user'
 import { ListarEtiquetas } from 'src/service/etiquetas'
 import { mapGetters } from 'vuex'
+import ModernSearch from 'src/components/ModernSearch'
 
 export default {
   name: 'IndexContatos',
-  components: { ContatoModal },
+  components: { ContatoModal, ModernSearch },
   userProfile: 'user',
   usuario: {},
   props: {

@@ -11,22 +11,13 @@
       :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>
-        <q-input
-          style="width: 300px"
-          outlined
-          rounded
-          dense
+        <ModernSearch
           class="col-grow"
-          debounce="500"
           v-model="filter"
-          clearable
-          placeholder="Localize"
-          @input="filtrarUsuario"
-        >
-          <template v-slot:prepend>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+          placeholder="Localizar usuários..."
+          :debounce="500"
+          @search="filtrarUsuario"
+        />
         <q-space />
         <q-btn
           rounded
@@ -91,9 +82,10 @@ import { ListarUsuarios, DeleteUsuario } from 'src/service/user'
 import { ListarFilas } from 'src/service/filas'
 import ModalUsuario from './ModalUsuario'
 import ModalFilaUsuario from './ModalFilaUsuario'
+import ModernSearch from 'src/components/ModernSearch'
 export default {
   name: 'IndexUsuarios',
-  components: { ModalUsuario, ModalFilaUsuario },
+  components: { ModalUsuario, ModalFilaUsuario, ModernSearch },
   data () {
     return {
       usuarios: [],
