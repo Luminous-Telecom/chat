@@ -23,6 +23,20 @@ const emitEvent = ({ tenantId, type, payload }: ObjEvent): void => {
   const io = getIO();
   let eventChannel = `${tenantId}:ticketList`;
 
+  // CORREÇÃO: Apenas chat:create usa o canal tenant:appMessage
+  // chat:ack precisa ir para o canal ticketList onde o frontend está escutando
+  if (type === "chat:create") {
+    // Emitir para o canal específico que o frontend está escutando para novas mensagens
+    io.emit(`tenant:${tenantId}:appMessage`, {
+      action: "create",
+      message: payload,
+      ticket: (payload as any)?.ticket,
+      contact: (payload as any)?.ticket?.contact,
+    });
+    
+    return;
+  }
+
   if (type.indexOf("contact:") !== -1) {
     eventChannel = `${tenantId}:contactList`;
   }

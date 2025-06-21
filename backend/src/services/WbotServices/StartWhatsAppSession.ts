@@ -71,7 +71,7 @@ export const setupAdditionalHandlers = (
         await HandleBaileysMessage(msg, wbot);
       }
     } catch (err) {
-      logger.error(`[DEBUG] Error handling message for ${whatsapp.name}:`, err);
+      logger.error(`[setupAdditionalHandlers] Error handling message for ${whatsapp.name}:`, err);
     }
   });
 

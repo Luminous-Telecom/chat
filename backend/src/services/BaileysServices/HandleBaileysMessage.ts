@@ -44,11 +44,25 @@ const isSessionReady = (wbot: BaileysClient): boolean => {
     const wsExists = !!(wbot as any)?.ws;
     const wsState = (wbot as any)?.ws?.readyState;
     
-    // WebSocket.OPEN = 1
-    const isConnected = sessionState === "open" && wsExists && wsState === 1;
+    // Se a connection está open e temos um WebSocket, consideramos pronto
+    // mesmo que wsState seja undefined (isso acontece em algumas versões do Baileys)
+    const isStateOpen = sessionState === "open";
+    const hasWebSocket = wsExists;
+    
+    // WebSocket states: CONNECTING = 0, OPEN = 1, CLOSING = 2, CLOSED = 3
+    // Aceitar undefined, 0 ou 1 quando connection está open
+    const isWsOk = hasWebSocket && (wsState === undefined || wsState === 0 || wsState === 1);
+    
+    const isConnected = isStateOpen && isWsOk;
+    
+    // Log apenas quando não está conectado para debug
+    if (!isConnected) {
+      logger.debug(`[isSessionReady] Session ${wbot.id} not ready - State: ${sessionState}, WS: ${wsExists}, WS State: ${wsState}`);
+    }
     
     return isConnected;
   } catch (err) {
+    logger.error(`[isSessionReady] Error checking session ${wbot.id}: ${err}`);
     return false;
   }
 };
@@ -60,7 +74,7 @@ const HandleBaileysMessage = async (
   return new Promise<void>((resolve, reject) => {
     (async () => {
       try {
-        // Verificação prévia se a sessão está realmente pronta
+        // Verificação se a sessão está realmente pronta
         if (!isSessionReady(wbot)) {
           const sessionKey = `session-not-ready-${wbot.id}`;
           if (shouldLogWarning(sessionKey)) {

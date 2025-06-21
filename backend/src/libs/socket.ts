@@ -32,6 +32,14 @@ export const initIO = (httpServer: Server): SocketIO => {
   io.use(async (socket, next) => {
     try {
       const token = socket?.handshake?.auth?.token;
+      
+      // Verificar se o token existe antes de tentar decodificar
+      if (!token) {
+        logger.warn(`[Socket Auth] Token não fornecido para socket ${socket.id}`);
+        socket.emit(`tokenInvalid:${socket.id}`);
+        return next(new Error("Token não fornecido"));
+      }
+      
       const verify = decodeTokenSocket(token);
       if (verify.isValid) {
         const auth = socket?.handshake?.auth;
@@ -54,14 +62,25 @@ export const initIO = (httpServer: Server): SocketIO => {
             "lastOnline",
           ],
         });
+        
+        if (!user) {
+          logger.warn(`[Socket Auth] Usuário não encontrado para ID ${verify.data.id}`);
+          socket.emit(`tokenInvalid:${socket.id}`);
+          return next(new Error("Usuário não encontrado"));
+        }
+        
         socket.handshake.auth.user = user;
+        logger.info(`[Socket Auth] Usuário ${user.name} (${user.id}) autenticado com sucesso`);
         return next();
       }
-      return next(new Error("authentication error"));
-    } catch (error) {
-      logger.warn(`tokenInvalid: ${socket}`);
+      
+      logger.warn(`[Socket Auth] Token inválido para socket ${socket.id}`);
       socket.emit(`tokenInvalid:${socket.id}`);
-      return next(new Error("authentication error"));
+      return next(new Error("Token inválido"));
+    } catch (error) {
+      logger.error(`[Socket Auth] Erro de autenticação: ${error.message}`);
+      socket.emit(`tokenInvalid:${socket.id}`);
+      return next(new Error("Erro de autenticação"));
     }
   });
 

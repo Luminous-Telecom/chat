@@ -739,7 +739,10 @@ import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
 import ModalTimeline from './ModalTimeline.vue'
 
-import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
+import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio } from 'src/helpers/helpersNotifications'
+import { socketIO } from 'src/utils/socket'
+
+const socket = socketIO()
 
 export default {
   name: 'IndexAtendimento',
@@ -833,7 +836,18 @@ export default {
         return allTickets
       }
 
-      const filteredTickets = allTickets.filter(ticket => currentStatus.includes(ticket.status))
+      const filteredTickets = allTickets.filter(ticket => {
+        // Garantir que tickets pendentes permaneçam na lista de pendentes
+        // mesmo após serem visualizados (mensagens marcadas como lidas)
+        const matchesStatus = currentStatus.includes(ticket.status)
+
+        // Log para debug apenas quando necessário
+        if (ticket.status === 'pending' && !matchesStatus) {
+          console.log(`[tickets computed] Ticket pendente ${ticket.id} não deveria ser removido da lista`)
+        }
+
+        return matchesStatus
+      })
 
       // console.log('[tickets computed] Status atual:', currentStatus)
       // console.log('[tickets computed] Total tickets no store:', allTickets.length)
@@ -908,6 +922,17 @@ export default {
     }
   },
   methods: {
+    // Método para atualizar dados do usuário
+    atualizarUsuario () {
+      this.usuario = JSON.parse(localStorage.getItem('usuario'))
+      if (this.usuario.status === 'offline') {
+        socket.emit(`${this.usuario.tenantId}:setUserIdle`)
+      }
+      if (this.usuario.status === 'online') {
+        socket.emit(`${this.usuario.tenantId}:setUserActive`)
+      }
+    },
+
     // Método para solicitar permissão de áudio
     async requestAudioPermission () {
       return await solicitarPermissaoAudio()
@@ -915,7 +940,13 @@ export default {
 
     // Método para tocar áudio de notificação
     async playNotificationSound () {
-      await tocarSomNotificacao()
+      console.log('[playNotificationSound] Chamado')
+      try {
+        await tocarSomNotificacao()
+        console.log('[playNotificationSound] Som tocado com sucesso')
+      } catch (error) {
+        console.error('[playNotificationSound] Erro ao tocar som:', error)
+      }
     },
 
     toggleStatus (status) {
@@ -966,6 +997,8 @@ export default {
     },
 
     handlerNotifications (data) {
+      console.log('[handlerNotifications] CHAMADO com data:', data)
+
       // Verificar se deve mostrar notificação do navegador
       // Verificar se data tem a estrutura esperada
       if (!data) {
@@ -984,19 +1017,33 @@ export default {
         return
       }
 
+      console.log('[handlerNotifications] Verificando condições:', {
+        fromMe: message.fromMe,
+        read: message.read,
+        shouldSkip: message.fromMe || message.read
+      })
+
       // Só mostrar notificação e tocar som se não for do usuário atual e não estiver lida
       if (message.fromMe || message.read) {
+        console.log('[handlerNotifications] Pulando notificação (fromMe ou read)')
         return
       }
 
+      console.log('[handlerNotifications] Tocando som de notificação...')
       // Tocar áudio de notificação para cada mensagem recebida de outro usuário
       this.playNotificationSound()
 
+      console.log('[handlerNotifications] Verificando suporte a notificações do navegador...')
       // Verificar se notificações são suportadas
       if (!('Notification' in window) || Notification.permission !== 'granted') {
+        console.warn('[handlerNotifications] Notificações não suportadas ou sem permissão:', {
+          supported: 'Notification' in window,
+          permission: Notification.permission
+        })
         return
       }
 
+      console.log('[handlerNotifications] Criando notificação do navegador...')
       const options = {
         body: `${message.body} - ${format(new Date(), 'HH:mm')}`,
         icon: contact.profilePicUrl,
@@ -1020,6 +1067,8 @@ export default {
         this.$router.push({ name: 'atendimento' })
         // history.push(`/tickets/${ticket.id}`);
       }
+
+      console.log('[handlerNotifications] Notificação criada com sucesso')
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()
@@ -1037,6 +1086,15 @@ export default {
     async listarEtiquetas () {
       const { data } = await ListarEtiquetas(true)
       this.etiquetas = data
+    },
+    async listarMensagensRapidas () {
+      try {
+        const { data } = await ListarMensagensRapidas()
+        this.mensagensRapidas = data || []
+      } catch (error) {
+        console.error('[listarMensagensRapidas] Erro ao carregar mensagens rápidas:', error)
+        this.mensagensRapidas = []
+      }
     },
     async abrirModalUsuario () {
       // if (!usuario.id) {
@@ -1616,88 +1674,67 @@ export default {
     }
   },
   async mounted () {
-    this.$root.$on('trocar-para-meus-atendimentos', () => {
-      this.pesquisaTickets.status = ['open']
-      this.setFilterMode('meus')
-    })
-    this.$root.$on('infor-cabecalo-chat:acao-menu', this.setValueMenu)
-    this.$root.$on('ticket:transferido', this.consultarTickets)
+    this.createdTimestamp = Date.now()
+    this.atualizarUsuario()
+
+    // Solicitar permissão de notificação
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        const permission = await Notification.requestPermission()
+        console.log('[mounted] Permissão de notificação:', permission)
+      } catch (error) {
+        console.error('[mounted] Erro ao solicitar permissão de notificação:', error)
+      }
+    }
+
+    // Solicitar permissão de áudio e inicializar serviço
+    try {
+      await solicitarPermissaoAudio()
+      inicializarServicoAudio()
+      console.log('[mounted] Serviço de áudio inicializado')
+    } catch (error) {
+      console.error('[mounted] Erro ao inicializar áudio:', error)
+    }
+
+    await this.listarFilas()
+    await this.listarWhatsapps()
+    await this.listarEtiquetas()
+    await this.listarUsuarios()
+    await this.listarMensagensRapidas()
+    await this.listarConfiguracoes()
+    if (this.pesquisaTickets.status?.length) {
+      await this.consultarTickets()
+    }
+    this.cUsuario = JSON.parse(localStorage.getItem('usuario'))
+    this.scrollToBottom()
+    this.socketTicket()
+    this.socketMessagesList()
     this.socketTicketList()
 
-    // Inicializar o serviço de áudio (sem tocar som)
-    inicializarServicoAudio()
-
-    // Marcar primeira carga como concluída após 3 segundos
+    // Aguardar um tempo para marcar primeira carga completa
     setTimeout(() => {
       this.markFirstLoadComplete()
+      console.log('[mounted] Primeira carga concluída, notificações ativadas')
     }, 3000)
 
-    // Adicionar evento de clique para solicitar permissão de áudio apenas quando necessário
-    document.addEventListener('click', async () => {
-      // Só solicitar permissão se ainda não tiver
-      if (!temPermissaoAudio()) {
-        await this.requestAudioPermission()
-      }
-    }, { once: true })
-
-    // Carregar filtros do localStorage
-    const filtrosLocalStorage = JSON.parse(localStorage.getItem('filtrosAtendimento'))
-    if (filtrosLocalStorage) {
-      // Determinar o status correto
-      let statusToUse
-      if (this.$route.query.status === 'pending') {
-        statusToUse = ['pending']
-      } else if (this.$route.query.status) {
-        statusToUse = [this.$route.query.status]
-      } else {
-        statusToUse = filtrosLocalStorage.status || ['open']
-      }
-
-      // Garantir que seja sempre um array simples
-      statusToUse = statusToUse.filter(s => typeof s === 'string')
-
-      this.pesquisaTickets = {
-        ...filtrosLocalStorage,
-        status: statusToUse
-      }
-
-      // Aplicar filtro de tickets não atendidos para status 'pending' ou quando vier da rota de tickets não atendidos
-      const currentStatus = this.pesquisaTickets.status
-      if ((currentStatus && currentStatus.includes('pending')) || this.$route.query.status === 'pending') {
-        // Para tickets pendentes, mostrar todos os tickets pendentes (não apenas os não atribuídos)
-        this.pesquisaTickets.isNotAssignedUser = false
-        this.pesquisaTickets.showAll = true // Permitir ver todos os tickets pendentes
-        this.pesquisaTickets.withUnreadMessages = false
-        this.pesquisaTickets.queuesIds = []
-      }
-    }
-
+    // Listeners para eventos globais
     this.$root.$on('handlerNotifications', this.handlerNotifications)
-    await this.listarWhatsapps()
-    await this.consultarTickets()
-    await this.listarUsuarios()
-    const { data } = await ListarMensagensRapidas()
-    this.mensagensRapidas = data
-    // Notification permission will be requested when needed
-    this.userProfile = localStorage.getItem('profile')
-    // this.socketInitial()
+    console.log('[mounted] Listener handlerNotifications registrado')
 
-    // se existir ticket na url, abrir o ticket.
-    if (this.$route?.params?.ticketId) {
-      const ticketId = this.$route?.params?.ticketId
-      if (ticketId && this.tickets.length > 0) {
-        const ticket = this.tickets.find(t => t.id === +ticketId)
-        if (!ticket) return
-        // caso esteja em um tamanho mobile, fechar a drawer dos contatos
-        if (this.$q.screen.lt.md && ticket.status !== 'pending') {
-          this.$root.$emit('infor-cabecalo-chat:acao-menu')
-        }
-        this.$store.commit('SET_HAS_MORE', true)
-        this.$store.dispatch('AbrirChatMensagens', ticket)
-      }
-    } else if (this.$route.name !== 'chat-empty' && this.$route.name !== 'atendimento') {
-      this.$router.push({ name: 'chat-empty', replace: true })
-    }
+    this.$root.$on('ticket:update', () => {
+      this.$forceUpdate()
+    })
+
+    this.$root.$on('scrollToBottomMessageChat', () => {
+      this.scrollToBottom()
+    })
+
+    this.$root.$on('abrir:modalAgendamentoMensagem', () => {
+      this.modalAgendarMensagem = true
+    })
+
+    // Define configurações iniciais
+    this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
   },
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)

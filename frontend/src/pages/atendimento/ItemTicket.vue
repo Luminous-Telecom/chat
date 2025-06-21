@@ -186,10 +186,32 @@ export default {
       return formatDistance(data, new Date(), { locale: pt })
     },
     abrirChatContato (ticket) {
+      console.log(`[abrirChatContato] Iniciando abertura de chat para ticket ${ticket.id} com status: ${ticket.status}`)
+
+      // Para tickets pendentes, apenas permitir abrir o chat se o botão de atender não estiver sendo exibido
+      // ou se for uma busca/pesquisa
+      if (ticket.status === 'pending' && this.shouldShowAttendButton) {
+        console.log('[abrirChatContato] Ticket pendente com botão de atender - use o botão "Atender" para iniciar atendimento')
+        this.$q.notify({
+          message: 'Para atender este ticket, clique no botão "Atender"',
+          type: 'info',
+          position: 'bottom-right',
+          timeout: 3000
+        })
+        return
+      }
+
       if (this.$q.screen.lt.md && ticket.status !== 'pending') {
         this.$root.$emit('infor-cabecalo-chat:acao-menu')
       }
-      if (!((ticket.id !== this.$store.getters.ticketFocado.id || this.$route.name !== 'chat'))) return
+
+      // Verificar se o ticket já não está focado
+      if (!((ticket.id !== this.$store.getters.ticketFocado.id || this.$route.name !== 'chat'))) {
+        console.log(`[abrirChatContato] Ticket ${ticket.id} já está focado, não abrindo novamente`)
+        return
+      }
+
+      console.log(`[abrirChatContato] Abrindo chat para ticket ${ticket.id} (status: ${ticket.status})`)
       this.$store.commit('SET_HAS_MORE', true)
       this.$store.dispatch('AbrirChatMensagens', ticket)
     }

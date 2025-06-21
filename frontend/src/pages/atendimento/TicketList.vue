@@ -211,9 +211,22 @@ export default {
       const usuario = JSON.parse(localStorage.getItem('usuario'))
       // console.log('[DEBUG] Socket created with tenantId:', usuario?.tenantId)
 
-      const shouldUpdateTicket = (ticket) =>
-        (!ticket.userId || ticket.userId === usuario?.userId || this.showAll) &&
-        (!ticket.queueId || this.queuesIds.indexOf(ticket.queueId) > -1)
+      const shouldUpdateTicket = (ticket) => {
+        const result = (!ticket.userId || ticket.userId === usuario?.userId || this.showAll) &&
+          (!ticket.queueId || this.queuesIds.indexOf(ticket.queueId) > -1)
+
+        console.log('[shouldUpdateTicket] Verificando ticket:', {
+          ticketId: ticket.id,
+          ticketUserId: ticket.userId,
+          usuarioUserId: usuario?.userId,
+          showAll: this.showAll,
+          ticketQueueId: ticket.queueId,
+          queuesIds: this.queuesIds,
+          result: result
+        })
+
+        return result
+      }
 
       const notBelongsToUserQueues = (ticket) =>
         ticket.queueId && this.queuesIds.indexOf(ticket.queueId) === -1
@@ -281,9 +294,22 @@ export default {
         // console.log('[DEBUG TICKETLIST] Ticket ID:', data.ticket?.id)
 
         if (data.action === 'create' && shouldUpdateTicket(data.ticket)) {
+          console.log('[TicketList] Verificando se deve enviar notificação:', {
+            ticketFocadoId: this.ticketFocado.id,
+            dataTicketId: data.ticket.id,
+            status: this.status,
+            fromMe: data.message.fromMe,
+            chatFlowId: data.ticket.chatFlowId,
+            shouldNotify: this.ticketFocado.id !== data.ticket.id && this.status !== 'closed' && !data.message.fromMe && !data.ticket.chatFlowId
+          })
+
           if (this.ticketFocado.id !== data.ticket.id && this.status !== 'closed' && !data.message.fromMe && !data.ticket.chatFlowId) {
+            console.log('[TicketList] Emitindo handlerNotifications para:', data.message)
             this.$root.$emit('handlerNotifications', data.message)
+          } else {
+            console.log('[TicketList] NÃO emitindo notificação - condições não atendidas')
           }
+
           // console.log('[DEBUG] Criando mensagem de app, atualizando contagem não lidas:', {
           //  type: this.status,
           //  ticket: data.ticket

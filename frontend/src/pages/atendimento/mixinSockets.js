@@ -61,26 +61,21 @@ export default {
         // console.log('[DEBUG FRONTEND] Usuario tenantId:', usuario.tenantId)
 
         socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
-          // console.log('[DEBUG FRONTEND] ===== EVENTO APPMESSAGE RECEBIDO =====', data)
-          // console.log('[DEBUG FRONTEND] Canal:', `tenant:${usuario.tenantId}:appMessage`)
-          // console.log('[DEBUG FRONTEND] Action:', data.action)
-          // console.log('[DEBUG FRONTEND] Message isDeleted:', data.message?.isDeleted)
-          // console.log('[DEBUG FRONTEND] Message ID:', data.message?.id)
-          // console.log('[DEBUG FRONTEND] Ticket ID:', data.ticket?.id)
+          if (data.action === 'create' && data.message) {
+            // Processar a nova mensagem
+            const messageWithTicket = {
+              ...data.message,
+              ticket: data.ticket
+            }
 
-          if (data.action === 'update' && data.message) {
-            // console.log('[DEBUG FRONTEND] Processando update de mensagem')
+            self.$store.commit('UPDATE_MESSAGES', messageWithTicket)
+          } else if (data.action === 'update' && data.message) {
             // Atualizar a mensagem no store para refletir mudanças como isDeleted
             const messageWithTicket = {
               ...data.message,
               ticket: data.ticket
             }
-            // console.log('[DEBUG FRONTEND] Mensagem com ticket preparada:', messageWithTicket)
-            // console.log('[DEBUG FRONTEND] Chamando UPDATE_MESSAGES mutation')
             self.$store.commit('UPDATE_MESSAGES', messageWithTicket)
-            // console.log('[DEBUG FRONTEND] UPDATE_MESSAGES mutation executada')
-          } else {
-            // console.log('[DEBUG FRONTEND] Condição não atendida - action:', data.action, 'message exists:', !!data.message)
           }
         })
       })
@@ -267,7 +262,12 @@ export default {
           }
 
           if (data.type === 'chat:ack') {
-            // console.log('[DEBUG] Processando chat:ack:', data.payload)
+            console.log('[DEBUG FRONTEND] ===== EVENTO CHAT:ACK RECEBIDO =====', data.payload)
+            console.log('[DEBUG FRONTEND] Canal:', `${usuario.tenantId}:ticketList`)
+            console.log('[DEBUG FRONTEND] MessageId:', data.payload.messageId)
+            console.log('[DEBUG FRONTEND] ACK:', data.payload.ack)
+            console.log('[DEBUG FRONTEND] Status:', data.payload.status)
+
             const messageId = data.payload.id || data.payload.messageId // Garantir que temos um ID
             const ticketId = data.payload.ticket?.id
 
@@ -441,6 +441,13 @@ export default {
         status: status || this.getStatusFromAck(ack),
         ticket,
         fromMe: fromMe // Garantir que fromMe seja incluído no commit
+      })
+
+      console.log('[atualizarStatusMensagem] Status atualizado:', {
+        messageId,
+        ack,
+        status: status || this.getStatusFromAck(ack),
+        read: novoStatus.read
       })
 
       // Não atualizar contagem de não lidas aqui, deixar o backend controlar

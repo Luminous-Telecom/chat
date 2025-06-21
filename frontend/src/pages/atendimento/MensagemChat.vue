@@ -662,6 +662,13 @@ export default {
       if (!this.ticketFocado || !this.ticketFocado.id) return
       if (this.loading) return
 
+      // NÃO marcar mensagens como lidas se o ticket estiver com status 'pending'
+      // Isso evita que tickets pendentes sejam automaticamente movidos para atendidos
+      if (this.ticketFocado.status === 'pending') {
+        console.log('[markUnreadMessagesAsRead] Ticket pendente - não marcando mensagens como lidas automaticamente')
+        return
+      }
+
       // Verificar se realmente há mensagens não lidas
       const hasUnreadMessages = this.unreadMessages.length > 0 || this.ticketFocado.unreadMessages > 0
       if (!hasUnreadMessages) {
