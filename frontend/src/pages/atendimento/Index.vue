@@ -732,7 +732,6 @@ import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import socketInitial from 'src/layouts/socketInitial'
 import ModalNovoTicket from './ModalNovoTicket'
 import { ListarFilas } from 'src/service/filas'
-const UserQueues = JSON.parse(localStorage.getItem('queues'))
 const profile = localStorage.getItem('profile')
 const username = localStorage.getItem('username')
 const usuario = JSON.parse(localStorage.getItem('usuario'))
@@ -869,7 +868,13 @@ export default {
       return filteredTickets
     },
     cUserQueues () {
-      return UserQueues
+      try {
+        const queues = JSON.parse(localStorage.getItem('queues') || '[]')
+        return queues.filter(q => q.isActive !== false) || []
+      } catch (error) {
+        console.error('Erro ao carregar filas do usuário:', error)
+        return []
+      }
     },
     style () {
       return {
@@ -893,9 +898,15 @@ export default {
         return null
       }
 
-      // Para outros status (incluindo 'open'), determina qual filtro está ativo
+      // Para tickets em atendimento (status 'open'), determina qual filtro está ativo:
+
+      // TODOS: showAll = true (todos os tickets independente de usuário/fila)
       if (showAll) return 'todos'
+
+      // MEUS DEPARTAMENTOS: tem filas específicas definidas
       if (queuesIds?.length) return 'fila'
+
+      // MEUS ATENDIMENTOS: sem showAll, sem filas específicas (filtro padrão por usuário)
       if (!showAll && !queuesIds?.length && !withUnreadMessages) return 'meus'
 
       return null
@@ -986,14 +997,20 @@ export default {
         // Para outros status (incluindo 'open'), aplicar filtros baseado no modo selecionado
 
         if (filterMode === 'meus') {
+          // MEUS ATENDIMENTOS: Somente tickets que EU estou atendendo
           this.pesquisaTickets.showAll = false
-          // Para 'open', meus atendimentos = atendimentos atribuídos a mim
+          this.pesquisaTickets.isNotAssignedUser = false
+          this.pesquisaTickets.queuesIds = []
+          // O backend filtrará por userId automaticamente quando showAll = false
         } else if (filterMode === 'fila') {
-          this.pesquisaTickets.queuesIds = this.cUserQueues.map(q => q.id)
-          // Para 'open', atendimentos da minha fila em andamento
-        } else if (filterMode === 'todos') {
-          // Para 'open', todos os atendimentos em andamento independente da fila
+          // MEUS DEPARTAMENTOS: Somente tickets das filas que estou vinculado
           this.pesquisaTickets.showAll = false
+          this.pesquisaTickets.isNotAssignedUser = false
+          this.pesquisaTickets.queuesIds = this.cUserQueues.map(q => q.id)
+        } else if (filterMode === 'todos') {
+          // TODOS: Todos os tickets em andamento, independente de usuário ou fila
+          this.pesquisaTickets.showAll = true
+          this.pesquisaTickets.isNotAssignedUser = false
           this.pesquisaTickets.queuesIds = []
         }
       }
@@ -3085,6 +3102,8 @@ export default {
   user-select: none;
   position: relative;
   overflow: hidden;
+  pointer-events: auto;
+  z-index: 10;
 
   &::before {
     content: '';

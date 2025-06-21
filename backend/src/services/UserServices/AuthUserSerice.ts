@@ -24,12 +24,19 @@ const AuthUserService = async ({
 }: Request): Promise<Response> => {
   const user = await User.findOne({
     where: { email },
-    include: [{ model: Queue, as: "queues" }],
+    include: [{ 
+      model: Queue, 
+      as: "queues",
+      where: { isActive: true },
+      required: false // LEFT JOIN para não excluir usuários sem filas
+    }],
   });
 
   if (!user) {
     throw new AppError("ERR_INVALID_CREDENTIALS", 401);
   }
+
+
 
   if (!(await user.checkPassword(password))) {
     throw new AppError("ERR_INVALID_CREDENTIALS", 401);
@@ -47,6 +54,8 @@ const AuthUserService = async ({
     where: { tenantId: user.tenantId, isOnline: true },
     attributes: ["id", "email", "status", "lastOnline", "name", "lastLogin"],
   });
+
+
 
   return {
     user,
