@@ -4,13 +4,13 @@
     :value="modalEtiqueta"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
-    <q-card
-      style="width: 500px"
-      class="q-pa-lg"
-    >
-      <div class="text-h6">{{ etiquetaEdicao.id ? 'Editar': 'Criar' }} Etiqueta</div>
-      <q-card-section>
+    <q-card style="width: 500px">
+      <q-card-section class="modal-header">
+        <div class="text-h6">{{ etiquetaEdicao.id ? 'Editar': 'Criar' }} Etiqueta</div>
+      </q-card-section>
+      <q-card-section class="modal-content">
         <q-input
           class="row col"
           rounded
@@ -60,7 +60,7 @@
       </q-card-section>
       <q-card-actions
         align="right"
-        class="q-mt-md"
+        class="modal-actions"
       >
         <q-btn
           rounded
@@ -72,7 +72,7 @@
         <q-btn
           rounded
           label="Salvar"
-          color="positive"
+          color="primary"
           @click="handleEtiqueta"
         />
       </q-card-actions>

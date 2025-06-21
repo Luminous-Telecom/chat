@@ -4,12 +4,13 @@
     :value="modalUsuario"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
     <q-card style="width: 600px">
-      <q-card-section>
-        <div class="text-h6">Cadastrar Usuário</div>
+      <q-card-section class="modal-header">
+        <div class="text-h6">{{ usuarioEdicao.id ? 'Editar' : 'Cadastrar' }} Usuário</div>
       </q-card-section>
-      <q-card-section class="q-col-gutter-sm">
+      <q-card-section class="modal-content q-col-gutter-sm">
         <div class="row q-col-gutter-sm">
           <div class="col-12">
             <c-input
@@ -66,10 +67,10 @@
           </div>
         </div>
       </q-card-section>
-      <q-card-actions align="right">
+      <q-card-actions align="right" class="modal-actions">
         <q-btn
           rounded
-          label="Sair"
+          label="Cancelar"
           class="q-px-md q-mr-sm"
           color="negative"
           v-close-popup

@@ -23,7 +23,7 @@ $secondary: #e6ebf5 //#F5F7FB
 $accent: #7269ef
 $light: #8DB1DD
 
-$dark: #1D1D1D
+$dark: #0d1421
 $faded: #777
 
 $positive: #21BA45
@@ -41,7 +41,7 @@ $spacer-lg: ($spacer * 2)
 $success: #28C76F
 $danger: #EA5455
 $warning: #FF9F43
-$dark: #1E1E1E
+$dark: #0d1421
 $grey: #b8c2cc
 $grey-light: #dae1e7
 $white: #fff
@@ -92,24 +92,24 @@ $line-height-base: 1.45
 
 $content-color: #495057
 $theme-background: #f8f8f8
-$theme-dark-background: #1a202c // Background escuro da nova paleta
+$theme-dark-background: #0d1421 // Background escuro azul profundo
 
 //  TYPOGRAPHY
 
 $reduced-sidebar-width: 80px
 
-//  DARK THEME - PALETA HARMONIZADA
+//  DARK THEME - PALETA AZUL ESCURO
 
-// Cores centralizadas para o modo escuro - Nova paleta harmonizada
-$dark-primary: #1a202c      // Cor mais escura - backgrounds principais
-$dark-secondary: #2d3748    // Cor média - cards, modais, elementos secundários
-$dark-tertiary: #4a5568     // Cor mais clara - bordas, divisores, hover states
-$dark-text-primary: #e2e8f0 // Texto principal no modo escuro
-$dark-text-secondary: #f7fafc // Títulos e texto destacado
-$dark-accent: #90caf9       // Cor de destaque (azul claro)
-$dark-success: #a5d6a7      // Verde claro para sucesso
-$dark-border: #4a5568       // Bordas padrão
-$dark-hover: #4a5568        // Estados de hover
+// Cores centralizadas para o modo escuro - Paleta azul escuro harmonizada
+$dark-primary: #0d1421      // Azul escuro profundo - backgrounds principais
+$dark-secondary: #1e2a3a    // Azul escuro médio - cards, modais, elementos secundários
+$dark-tertiary: #2c3e54     // Azul escuro claro - bordas, divisores, hover states
+$dark-text-primary: #e8f4f8 // Texto principal no modo escuro (azul bem claro)
+$dark-text-secondary: #ffffff // Títulos e texto destacado (branco)
+$dark-accent: #64b5f6       // Cor de destaque (azul médio)
+$dark-success: #4caf50      // Verde para sucesso
+$dark-border: #34495e       // Bordas padrão (azul acinzentado)
+$dark-hover: #3b4b66        // Estados de hover (azul médio escuro)
 
 // Variáveis CSS customizadas para uso em arquivos CSS
 body.body--dark
@@ -162,21 +162,21 @@ $dark-input-text: $dark-text-primary
 $dark-line-group: $dark-secondary
 $dark-report-border: $dark-border
 
-/// Ajustes para dark mode usando variáveis centralizadas
+/// Ajustes para dark mode usando variáveis centralizadas - Azul escuro
 body.body--dark
-  background: $dark-secondary
+  background: $dark-primary !important
   border-color: none !important
-  color: $grey
+  color: $dark-text-primary
 
   .bg-white
     background: $dark-secondary !important
-    color: $grey !important
+    color: $dark-text-primary !important
   .bg-blue-1
-    background: rgba(7, 7, 7, 0.198) !important
+    background: $dark-tertiary !important
   .text-grey-8
-    color: $grey !important
+    color: $dark-text-primary !important
   .text-grey-9
-    color: $dark-tertiary !important
+    color: $dark-text-secondary !important
 
   .bg-grey-3
     background: $dark-tertiary !important
@@ -196,32 +196,32 @@ body.body--dark
     background: $dark-tertiary !important
 
   div.q-badge.text-grey-10
-    color: $neutral !important
+    color: $dark-text-primary !important
 
   hr.bg-grey-2
-    background: $dark-tertiary !important
+    background: $dark-border !important
 
   hr.q-separator--dark
-    background: $dark-tertiary !important
+    background: $dark-border !important
     border-color: $dark-border !important
 
   aside div.bg-grey-1
-    background: $dark-tertiary !important
+    background: $dark-secondary !important
 
   .text-primary
-    color: $light !important
+    color: $dark-accent !important
 
   .bg-primary
-    background: $dark-primary !important
+    background: $dark-secondary !important
 
   label div.bg-grey-2
-    background: $dark-tertiary !important
+    background: $dark-secondary !important
 
   div .bg-amber .q-carousel--dark
-    color: $dark-tertiary !important
+    color: $dark-text-primary !important
 
   div.q-fab > div.q-fab__actions
-    background: $dark-primary !important
+    background: $dark-secondary !important
 
   .q-table__top, table.q-table thead tr th, .q-table__bottom
     background: $dark-secondary !important
@@ -249,4 +249,4 @@ body.body--dark .q-header, body.body--dark .q-footer, body.body--dark .q-drawer
   border-color: $dark-border !important
 
 body.body--dark
-  --dark-accent: #7269ef
+  --dark-accent: #64b5f6

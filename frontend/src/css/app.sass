@@ -860,3 +860,80 @@ emoji-picker
   emoji-picker
     z-index: 9999 !important
     pointer-events: auto !important
+
+// Modais usando sistema de cores e variáveis nativas do Quasar
+.q-dialog
+  .q-card
+    border-radius: 16px !important
+    overflow: hidden !important
+    
+    // Modo claro - usando cores azuis escuras consistentes
+    background: white !important
+    color: $dark-primary !important
+    
+    .modal-header
+      background: linear-gradient(135deg, $dark-tertiary 0%, $dark-secondary 100%) !important
+      color: $dark-text-secondary !important
+      padding: 16px 20px !important
+      position: relative !important
+
+      &::before
+        content: ''
+        position: absolute
+        top: 0
+        left: 0
+        right: 0
+        bottom: 0
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%)
+        pointer-events: none
+
+      .text-h6, .text-subtitle1, .text-subtitle2
+        color: $dark-text-secondary !important
+        font-weight: 600 !important
+        margin: 0 !important
+
+      .q-btn
+        color: $dark-text-secondary !important
+        background: rgba(255, 255, 255, 0.1) !important
+        border-radius: 8px !important
+        transition: all 0.3s ease !important
+
+        &:hover
+          background: rgba(255, 255, 255, 0.2) !important
+          transform: scale(1.05) !important
+
+    .modal-content
+      padding: 20px !important
+      background: inherit !important
+      color: inherit !important
+
+    .modal-actions
+      padding: 16px 20px !important
+      border-top: 1px solid rgba(0, 0, 0, 0.12) !important
+      background: #fafafa !important
+
+      .q-btn
+        border-radius: 8px !important
+        font-weight: 500 !important
+        transition: all 0.2s ease !important
+
+        &:hover
+          transform: translateY(-1px) !important
+
+// Modo escuro específico - azul escuro
+.body--dark .q-dialog
+  .q-card
+    background: $dark-primary !important
+    color: $dark-text-primary !important
+    
+    .modal-header
+      background: linear-gradient(135deg, $dark-secondary 0%, $dark-tertiary 100%) !important
+      color: $dark-text-secondary !important
+    
+    .modal-content
+      background: $dark-primary !important
+      color: $dark-text-primary !important
+      
+    .modal-actions
+      background: $dark-secondary !important
+      border-top-color: $dark-border !important

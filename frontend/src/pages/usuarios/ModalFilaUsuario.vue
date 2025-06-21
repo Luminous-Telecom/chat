@@ -4,21 +4,15 @@
     :value="modalFilaUsuario"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
     <q-card style="width: 400px">
-      <q-card-section class="q-pa-none">
-        <div class="full-width text-h6 row col bg-grey-4 q-pa-sm">Filas Usuário</div>
-        <div
-          style="font-size: 1em"
-          class="text-caption text-bold row col q-px-sm q-pt-sm"
-        >Nome: {{ usuarioSelecionado.name }}</div>
-        <div
-          style="font-size: 1em"
-          class="text-caption text-bold row col q-px-sm"
-        >Email: {{ usuarioSelecionado.email }}</div>
-        <q-separator spaced />
+      <q-card-section class="modal-header">
+        <div class="text-h6">Departamentos do Usuário</div>
+        <div class="text-subtitle2">Nome: {{ usuarioSelecionado.name }}</div>
+        <div class="text-subtitle2">Email: {{ usuarioSelecionado.email }}</div>
       </q-card-section>
-      <q-card-section>
+      <q-card-section class="modal-content">
         <template v-for="fila in filas">
           <div
             class="row col"
@@ -33,9 +27,9 @@
           </div>
         </template>
       </q-card-section>
-      <q-card-actions align="right">
+      <q-card-actions align="right" class="modal-actions">
         <q-btn
-          label="Sair"
+          label="Cancelar"
           class="q-px-md q-mr-sm"
           color="negative"
           rounded

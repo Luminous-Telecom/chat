@@ -6,6 +6,7 @@
     :maximized="$q.screen.lt.md"
     transition-show="slide-up"
     transition-hide="slide-down"
+    class="modal-modern"
   >
     <q-card class="modal-agendar-mensagem" :style="$q.screen.width < 770 ? 'min-width: 95vw; max-width: 95vw; max-height: 90vh; overflow-y: auto' : 'min-width: 60vw; max-width: 60vw; max-height: 85vh; overflow-y: auto'">
       <q-card-section class="modal-header row items-center q-pb-none">

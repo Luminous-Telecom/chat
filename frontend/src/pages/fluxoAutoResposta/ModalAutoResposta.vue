@@ -4,6 +4,7 @@
     @hide="fecharModal"
     @show="abrirModal"
     persistent
+    class="modal-modern"
   >
     <q-card
       style="width: 500px"

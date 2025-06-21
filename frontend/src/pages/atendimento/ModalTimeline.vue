@@ -5,9 +5,10 @@
     @hide="fecharModal"
     persistent
     maximized
+    class="modal-modern"
   >
-    <q-card style="min-width: 80vw; max-width: 80vw; min-height: 80vh; max-height: 80vh" class="q-pa-md">
-      <q-card-section class="row items-center q-pb-none">
+    <q-card style="min-width: 80vw; max-width: 80vw; min-height: 80vh; max-height: 80vh">
+      <q-card-section class="modal-header row items-center q-pb-none">
         <div class="text-h6">
           Timeline do Contato: {{ contato.name }}
         </div>
@@ -15,7 +16,7 @@
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
 
-      <q-card-section>
+      <q-card-section class="modal-content">
         <q-scroll-area ref="scrollArea" style="height: calc(80vh - 120px);">
           <div v-if="loading" class="row justify-center q-my-md">
             <q-spinner color="primary" size="3em" />

@@ -4,12 +4,10 @@
     @hide="fecharModal"
     @show="abrirModal"
     persistent
+    class="modal-modern"
   >
-    <q-card
-      class="q-pa-md"
-      style="width: 500px"
-    >
-      <q-card-section>
+    <q-card style="width: 500px">
+      <q-card-section class="modal-header">
         <div class="text-h6">
           <q-icon
             size="50px"
@@ -21,7 +19,7 @@
           Canal
         </div>
       </q-card-section>
-      <q-card-section>
+      <q-card-section class="modal-content">
         <div class="row">
           <div class="col-12 q-my-sm">
             <q-select

@@ -4,14 +4,14 @@
     :value="modalMensagemRapida"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
-    <q-card
-      :style="$q.screen.width < 500 ? 'width: 95vw' : 'min-width: 700px; max-width: 700px'"
-      class="q-pa-lg"
-    >
-      <div class="text-h6">{{ mensagemRapida.id ? 'Editar': 'Criar' }} Mensagem Rápida {{ mensagemRapida.id  ? `(ID: ${mensagemRapida.id})` : '' }}</div>
-      <q-card-section class="q-pa-none">
-        <div class="row q-my-md">
+    <q-card :style="$q.screen.width < 500 ? 'width: 95vw' : 'min-width: 700px; max-width: 700px'">
+      <q-card-section class="modal-header">
+        <div class="text-h6">{{ mensagemRapida.id ? 'Editar': 'Criar' }} Mensagem Rápida {{ mensagemRapida.id  ? `(ID: ${mensagemRapida.id})` : '' }}</div>
+      </q-card-section>
+              <q-card-section class="modal-content">
+          <div class="row q-my-md">
           <div class="col">
             <q-input
               style="width: 200px; margin-left: 62px"

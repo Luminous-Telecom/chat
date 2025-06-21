@@ -4,15 +4,13 @@
     :value="modalApi"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
-    <q-card
-      style="min-width: 80vw; width: 80vw"
-      class="q-pa-lg"
-    >
-      <q-card-section>
+    <q-card style="min-width: 80vw; width: 80vw">
+      <q-card-section class="modal-header">
         <div class="text-h6">{{  apiEdicao.id ? 'Editar' : 'Criar'  }} Configuração API</div>
       </q-card-section>
-      <q-card-section>
+      <q-card-section class="modal-content">
         <fieldset class="q-pa-md full-width rounded-all">
           <legend class="q-px-sm">Dados API</legend>
           <div class="row q-col-gutter-md">

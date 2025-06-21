@@ -4,19 +4,14 @@
     @hide="fecharModal"
     @show="abrirModal"
     persistent
+    class="modal-modern"
   >
-    <q-card
-      style="width: 500px"
-      class="q-pa-lg"
-    >
-      <q-card-section>
-        <div class="text-h6">{{ chatFlow.isDuplicate ? 'Duplicar' : chatFlowEdicao.id ? 'Editar': 'Criar' }} Fluxo <span v-if="chatFlow.isDuplicate"> (Nome: {{ chatFlowEdicao.name }}) </span></div>
-        <div
-          v-if="chatFlow.isDuplicate"
-          class="text-subtitle1"
-        > Nome: {{ chatFlowEdicao.name }} </div>
+    <q-card style="width: 500px">
+      <q-card-section class="modal-header">
+        <div class="text-h6">{{ chatFlow.isDuplicate ? 'Duplicar' : chatFlowEdicao.id ? 'Editar': 'Criar' }} Fluxo</div>
+        <div v-if="chatFlow.isDuplicate" class="text-subtitle2">Nome: {{ chatFlowEdicao.name }}</div>
       </q-card-section>
-      <q-card-section>
+      <q-card-section class="modal-content">
         <q-input
           class="row col"
           outlined
@@ -44,10 +39,7 @@
           />
         </div>
       </q-card-section>
-      <q-card-actions
-        align="right"
-        class="q-mt-md"
-      >
+      <q-card-actions align="right" class="modal-actions">
         <q-btn
           rounded
           label="Cancelar"
@@ -58,7 +50,7 @@
         <q-btn
           rounded
           label="Salvar"
-          color="positive"
+          color="primary"
           @click="handleAutoresposta"
         />
       </q-card-actions>

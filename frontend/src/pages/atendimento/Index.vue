@@ -704,51 +704,51 @@
         v-model="modalTransferirTicket"
         @hide="modalTransferirTicket = false"
         persistent
+        class="modal-modern"
       >
-        <q-card
-          class="q-pa-md"
-          style="width: 500px"
-        >
-          <q-card-section>
+        <q-card style="width: 500px">
+          <q-card-section class="modal-header">
             <div class="text-h6">Transferir Ticket</div>
-            <div class="text-subtitle2 text-grey-6">Selecione o destino para o ticket #{{ ticketFocado.id }}</div>
+            <div class="text-subtitle2">Selecione o destino para o ticket #{{ ticketFocado.id }}</div>
           </q-card-section>
-          <q-card-section class="row q-gutter-sm">
-            <div class="col-12">
-              <q-select
-                dense
-                rounded
-                outlined
-                v-model="filaSelecionada"
-                :options="opcoesFilas"
-                emit-value
-                map-options
-                option-value="id"
-                option-label="label"
-                label="Departamentos"
-                class="full-width"
-                :loading="filas.length === 0"
-                :rules="[val => !!val || 'Departamento é obrigatório']"
-              />
-            </div>
-            <div class="col-12">
-              <q-select
-                rounded
-                dense
-                outlined
-                v-model="usuarioSelecionado"
-                :options="usuariosFiltrados"
-                emit-value
-                map-options
-                option-value="id"
-                option-label="name"
-                label="Usuários"
-                class="full-width"
-                :loading="usuarios.length === 0"
-              />
+          <q-card-section class="modal-content">
+            <div class="row q-gutter-sm">
+              <div class="col-12">
+                <q-select
+                  dense
+                  rounded
+                  outlined
+                  v-model="filaSelecionada"
+                  :options="opcoesFilas"
+                  emit-value
+                  map-options
+                  option-value="id"
+                  option-label="label"
+                  label="Departamentos"
+                  class="full-width"
+                  :loading="filas.length === 0"
+                  :rules="[val => !!val || 'Departamento é obrigatório']"
+                />
+              </div>
+              <div class="col-12">
+                <q-select
+                  rounded
+                  dense
+                  outlined
+                  v-model="usuarioSelecionado"
+                  :options="usuariosFiltrados"
+                  emit-value
+                  map-options
+                  option-value="id"
+                  option-label="name"
+                  label="Usuários"
+                  class="full-width"
+                  :loading="usuarios.length === 0"
+                />
+              </div>
             </div>
           </q-card-section>
-          <q-card-actions align="right">
+          <q-card-actions align="right" class="modal-actions">
             <q-btn
               rounded
               label="Cancelar"
@@ -759,7 +759,7 @@
             <q-btn
               rounded
               label="Transferir"
-              color="positive"
+              color="primary"
               @click="confirmarTransferenciaTicket"
               :disable="!usuarioSelecionado || !filaSelecionada"
             />

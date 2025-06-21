@@ -1,7 +1,8 @@
 <template>
   <q-dialog :value="abrirModalQR"
     @hide="fecharModalQrModal"
-    persistent>
+    persistent
+    class="modal-modern">
     <q-card
       class="modern-modal-professional"
       :class="{ 'light-theme': !$q.dark.isActive, 'dark-theme': $q.dark.isActive }">

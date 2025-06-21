@@ -1,11 +1,11 @@
 <template>
-  <q-dialog :value="value" @input="$emit('update:value', $event)" persistent>
+  <q-dialog :value="value" @input="$emit('update:value', $event)" persistent class="modal-modern">
     <q-card style="min-width: 350px">
-      <q-card-section>
+      <q-card-section class="modal-header">
         <div class="text-h6">Nova Observação</div>
       </q-card-section>
 
-      <q-card-section class="q-pt-none">
+      <q-card-section class="modal-content">
         <q-input
           v-model="observacao"
           type="textarea"
@@ -25,11 +25,12 @@
         </q-file>
       </q-card-section>
 
-      <q-card-actions align="right" class="text-primary">
-        <q-btn flat label="Cancelar" v-close-popup />
+      <q-card-actions align="right" class="modal-actions">
+        <q-btn rounded label="Cancelar" color="negative" v-close-popup />
         <q-btn
-          flat
+          rounded
           label="Salvar"
+          color="primary"
           :loading="loading"
           :disable="!observacao || !ticketId"
           @click="salvarObservacao"

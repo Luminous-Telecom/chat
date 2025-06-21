@@ -4,6 +4,7 @@
     :value="modalCampanha"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
     <q-card
       class="q-pa-sm"

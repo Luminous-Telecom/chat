@@ -4,13 +4,13 @@
     :value="modalFila"
     @hide="fecharModal"
     @show="abrirModal"
+    class="modal-modern"
   >
-    <q-card
-      style="width: 500px"
-      class="q-pa-lg"
-    >
-      <div class="text-h6">{{ filaEdicao.id ? 'Editar': 'Criar' }} Fila</div>
-      <q-card-section>
+    <q-card style="width: 500px">
+      <q-card-section class="modal-header">
+        <div class="text-h6">{{ filaEdicao.id ? 'Editar': 'Criar' }} Departamento</div>
+      </q-card-section>
+      <q-card-section class="modal-content">
         <q-input
           class="row col"
           rounded
@@ -26,7 +26,7 @@
       </q-card-section>
       <q-card-actions
         align="right"
-        class="q-mt-md"
+        class="modal-actions"
       >
         <q-btn
           rounded
@@ -38,7 +38,7 @@
         <q-btn
           rounded
           label="Salvar"
-          color="positive"
+          color="primary"
           @click="handleFila"
         />
       </q-card-actions>

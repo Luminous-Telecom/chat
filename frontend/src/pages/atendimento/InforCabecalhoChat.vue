@@ -111,17 +111,17 @@
       v-model="modalTransferirTicket"
       @hide="modalTransferirTicket = false"
       persistent
+      class="modal-modern"
     >
-      <q-card
-        class="q-pa-md"
-        style="width: 500px"
-      >
-        <q-card-section>
-          <div class="text-h6">Selecione o destino:</div>
+      <q-card style="width: 500px">
+        <q-card-section class="modal-header">
+          <div class="text-h6">Transferir Ticket</div>
+          <div class="text-subtitle2">Selecione o destino para o ticket #{{ cticket.id }}</div>
         </q-card-section>
-        <q-card-section class="row q-gutter-sm">
-          <div class="col-12">
-                          <q-select
+        <q-card-section class="modal-content">
+          <div class="row q-gutter-sm">
+            <div class="col-12">
+              <q-select
                 dense
                 rounded
                 outlined
@@ -136,38 +136,39 @@
                 :loading="filas.length === 0"
                 :rules="[val => !!val || 'Departamento é obrigatório']"
               />
-          </div>
-          <div class="col-12">
-            <q-select
-              rounded
-              dense
-              outlined
-              v-model="usuarioSelecionado"
-              :options="usuariosFiltrados"
-              emit-value
-              map-options
-              option-value="id"
-              option-label="name"
-              label="Usuário destino"
-              class="full-width"
-              :loading="usuarios.length === 0"
-            />
+            </div>
+            <div class="col-12">
+              <q-select
+                rounded
+                dense
+                outlined
+                v-model="usuarioSelecionado"
+                :options="usuariosFiltrados"
+                emit-value
+                map-options
+                option-value="id"
+                option-label="name"
+                label="Usuário destino"
+                class="full-width"
+                :loading="usuarios.length === 0"
+              />
+            </div>
           </div>
         </q-card-section>
-        <q-card-actions align="right">
+        <q-card-actions align="right" class="modal-actions">
           <q-btn
             rounded
-            label="Sair"
+            label="Cancelar"
             color="negative"
             v-close-popup
             class="q-mr-md"
           />
           <q-btn
             rounded
-            label="Salvar"
-            color="positive"
+            label="Transferir"
+            color="primary"
             @click="confirmarTransferenciaTicket"
-            :disable="!usuarioSelecionado"
+            :disable="!usuarioSelecionado || !filaSelecionada"
           />
         </q-card-actions>
       </q-card>

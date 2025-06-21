@@ -4,20 +4,17 @@
     @hide="$emit('update:modalContato', false)"
     :value="modalContato"
     persistent
+    class="modal-modern"
   >
-    <q-card
-      class="q-pa-lg"
-      style="min-width: 700px"
-    >
-      <q-card-section>
+    <q-card style="min-width: 700px">
+      <q-card-section class="modal-header">
         <div class="text-h6">
           {{ contactId ? 'Editar Contato' : 'Adicionar Contato'  }}
         </div>
       </q-card-section>
-      <q-card-section class="q-pa-sm q-pl-md text-bold">
-        Dados Contato
-      </q-card-section>
-      <q-card-section class="q-pa-sm q-pl-md row q-col-gutter-md">
+      <q-card-section class="modal-content">
+        <div class="text-bold q-mb-md">Dados Contato</div>
+        <div class="row q-col-gutter-md">
         <c-input
           class="col-12"
           outlined
@@ -49,11 +46,9 @@
           v-model="contato.email"
           label="E-mail"
         />
-      </q-card-section>
-      <q-card-section class="q-pa-sm q-pl-md text-bold">
-        Informações adicionais
-      </q-card-section>
-      <q-card-section class="q-pa-sm q-pl-md row q-col-gutter-md justify-center">
+        </div>
+        <div class="text-bold q-my-md">Informações adicionais</div>
+        <div class="row q-col-gutter-md justify-center">
         <template v-for="(extraInfo, index) in contato.extraInfo">
           <div
             :key="index"
@@ -97,23 +92,24 @@
             @click="contato.extraInfo.push({name: null, value: null})"
           />
         </div>
+        </div>
       </q-card-section>
       <q-card-actions
         align="right"
-        class="q-mt-lg"
+        class="modal-actions"
       >
         <q-btn
           rounded
-          label="Sair"
+          label="Cancelar"
           color="negative"
           v-close-popup
-          class="q-px-md "
+          class="q-px-md"
         />
         <q-btn
           class="q-ml-lg q-px-md"
           rounded
           label="Salvar"
-          color="positive"
+          color="primary"
           @click="saveContact"
         />
       </q-card-actions>
