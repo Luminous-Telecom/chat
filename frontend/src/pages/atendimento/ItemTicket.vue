@@ -17,19 +17,6 @@
 
       <!-- Main Content -->
       <div class="ticket-content">
-        <!-- Avatar Section - apenas para botão atender -->
-        <div class="ticket-avatar-section" v-if="shouldShowAttendButton">
-          <div
-            class="attend-button-container"
-            @click.stop="iniciarAtendimento(ticket)"
-          >
-            <div class="attend-button">
-              <q-icon name="mdi-send-circle" size="20px" />
-              <div class="attend-button-label">Atender</div>
-            </div>
-          </div>
-        </div>
-
         <!-- Info Section -->
         <div class="ticket-info-section">
           <!-- Header -->
@@ -117,12 +104,7 @@ export default {
     }
   },
   computed: {
-    shouldShowAttendButton () {
-      const ticket = this.ticket
-      const isPending = ticket.status === 'pending'
-      const isNotInSearch = this.buscaTicket === false || this.buscaTicket === undefined
-      return isPending && isNotInSearch
-    }
+    // Computed removido - shouldShowAttendButton não é mais necessário
   },
   props: {
     ticket: {
@@ -279,47 +261,7 @@ export default {
 
 .ticket-content {
   display: flex;
-  gap: 8px;
   align-items: center;
-}
-
-.ticket-avatar-section {
-  flex-shrink: 0;
-  position: relative;
-}
-
-.attend-button-container {
-  position: relative;
-  cursor: pointer;
-
-  .attend-button {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #4caf50, #66bb6a);
-    border-radius: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
-
-    &:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-    }
-
-    &:active {
-      transform: scale(0.95);
-    }
-
-    .attend-button-label {
-      font-size: 8px;
-      font-weight: 600;
-      margin-top: 1px;
-    }
-  }
 }
 
 .unread-badge {
@@ -584,9 +526,5 @@ export default {
     font-size: 10px;
   }
 
-  .attend-button-container .attend-button {
-    width: 32px;
-    height: 32px;
-  }
 }
 </style>
