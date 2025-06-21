@@ -327,14 +327,14 @@ export default {
           position: 'bottom-right'
         })
 
-        // Atualizar a mensagem na lista local
+        // Remover a mensagem da lista local imediatamente
         const index = this.mensagensAgendadas.findIndex(m => m.id === mensagem.id)
         if (index !== -1) {
-          this.mensagensAgendadas[index] = {
-            ...this.mensagensAgendadas[index],
-            status: 'canceled'
-          }
+          this.mensagensAgendadas.splice(index, 1)
         }
+
+        // Emitir evento para notificar o componente pai sobre a remoção
+        this.$emit('mensagem-cancelada', mensagem.id)
       } catch (error) {
         this.$q.notify({
           type: 'negative',

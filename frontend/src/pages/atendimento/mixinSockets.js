@@ -70,12 +70,21 @@ export default {
 
             self.$store.commit('UPDATE_MESSAGES', messageWithTicket)
           } else if (data.action === 'update' && data.message) {
-            // Atualizar a mensagem no store para refletir mudanças como isDeleted
+            // Atualizar a mensagem no store para refletir mudanças como isDeleted ou status canceled
             const messageWithTicket = {
               ...data.message,
               ticket: data.ticket
             }
+
             self.$store.commit('UPDATE_MESSAGES', messageWithTicket)
+
+            // Se a mensagem tem scheduleDate e foi cancelada, chamar também UPDATE_MESSAGE_STATUS
+            if (data.message.scheduleDate && data.message.status === 'canceled') {
+              self.$store.commit('UPDATE_MESSAGE_STATUS', {
+                ...data.message,
+                ticket: data.ticket
+              })
+            }
           }
         })
       })

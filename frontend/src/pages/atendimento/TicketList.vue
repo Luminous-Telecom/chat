@@ -332,6 +332,14 @@ export default {
           this.$store.commit('UPDATE_MESSAGES', messageWithTicket)
           // console.log('[DEBUG TICKETLIST] UPDATE_MESSAGES executado')
 
+          // Se a mensagem tem scheduleDate e foi cancelada, chamar também UPDATE_MESSAGE_STATUS
+          if (data.message.scheduleDate && data.message.status === 'canceled') {
+            this.$store.commit('UPDATE_MESSAGE_STATUS', {
+              ...data.message,
+              ticket: data.ticket
+            })
+          }
+
           // Atualizar contagem de mensagens não lidas se necessário
           this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', { type: this.status, ticket: data.ticket })
           // console.log('[DEBUG TICKETLIST] UPDATE_TICKET_UNREAD_MESSAGES executado')

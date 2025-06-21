@@ -685,6 +685,7 @@
         :ticket-id="ticketFocado.id || null"
         :mensagens-agendadas="ticketFocado.scheduledMessages || []"
         @nova-mensagem-agendada="abrirModalAgendarMensagem"
+        @mensagem-cancelada="handleMensagemCancelada"
       />
 
       <ModalAgendarMensagem
@@ -1862,6 +1863,21 @@ export default {
         position: 'bottom-right',
         timeout: 3000
       })
+    },
+
+    handleMensagemCancelada (mensagemId) {
+      // Remover a mensagem cancelada da lista local do ticketFocado
+      if (this.ticketFocado && this.ticketFocado.scheduledMessages) {
+        const index = this.ticketFocado.scheduledMessages.findIndex(m => m.id === mensagemId)
+        if (index !== -1) {
+          this.ticketFocado.scheduledMessages.splice(index, 1)
+        }
+      }
+
+      // Força atualização da interface
+      this.$forceUpdate()
+
+      console.log('Mensagem cancelada:', mensagemId)
     }
   },
   beforeMount () {

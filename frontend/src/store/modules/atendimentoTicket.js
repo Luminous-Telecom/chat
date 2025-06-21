@@ -487,15 +487,28 @@ const atendimentoTicket = {
           state.mensagens = orderMessages(newMessages)
         }
 
-        if (payload.scheduleDate && payload.status == 'pending') {
+        if (payload.scheduleDate) {
           const idxScheduledMessages = state.ticketFocado.scheduledMessages.findIndex(m => m.id === payload.id)
-          if (idxScheduledMessages === -1) {
-            // CORREÇÃO: Adicionar chave única para nova mensagem agendada
-            const newScheduledMessage = {
-              ...payload,
-              uniqueKey: `msg-${payload.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+          if (payload.status === 'pending') {
+            if (idxScheduledMessages === -1) {
+              // CORREÇÃO: Adicionar chave única para nova mensagem agendada
+              const newScheduledMessage = {
+                ...payload,
+                uniqueKey: `msg-${payload.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+              }
+              state.ticketFocado.scheduledMessages.push(newScheduledMessage)
+            } else {
+              // Atualizar mensagem agendada existente
+              state.ticketFocado.scheduledMessages[idxScheduledMessages] = {
+                ...state.ticketFocado.scheduledMessages[idxScheduledMessages],
+                ...payload,
+                uniqueKey: state.ticketFocado.scheduledMessages[idxScheduledMessages].uniqueKey
+              }
             }
-            state.ticketFocado.scheduledMessages.push(newScheduledMessage)
+          } else if (payload.status === 'canceled' && idxScheduledMessages !== -1) {
+            // Remover mensagem cancelada da lista
+            state.ticketFocado.scheduledMessages.splice(idxScheduledMessages, 1)
           }
         }
       }
