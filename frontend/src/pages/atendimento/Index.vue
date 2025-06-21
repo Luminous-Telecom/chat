@@ -568,7 +568,12 @@
                       </q-btn>
                     </q-item-section>
                     <q-tooltip :delay="500">
-                      <MensagemChat :mensagens="[message]" />
+                      <MensagemChat
+                        :mensagens="[message]"
+                        :ticketFocado="ticketFocado"
+                        :isShowOptions="false"
+                        :isLineDate="false"
+                      />
                     </q-tooltip>
                   </q-item>
                   <q-item v-if="ticketFocado.scheduledMessages.length > 3" class="text-center">
@@ -682,6 +687,14 @@
         @nova-mensagem-agendada="abrirModalAgendarMensagem"
       />
 
+      <ModalAgendarMensagem
+        :value.sync="modalAgendarMensagem"
+        :ticket-id="ticketFocado.id || null"
+        :mensagens-rapidas="mensagensRapidas"
+        :scheduled-messages="ticketFocado.scheduledMessages || []"
+        @mensagem-agendada="handleMensagemAgendada"
+      />
+
       <ModalTimeline
         :modalTimeline.sync="modalTimeline"
         :contato="ticketFocado.contact || {}"
@@ -785,6 +798,7 @@ import ModalObservacao from './ModalObservacao.vue'
 import { ListarObservacoes } from '../../service/observacoes'
 import ModalListarObservacoes from './ModalListarObservacoes.vue'
 import ModalListarMensagensAgendadas from './ModalListarMensagensAgendadas.vue'
+import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
 import ModalTimeline from './ModalTimeline.vue'
 import ModernSearch from 'src/components/ModernSearch'
 
@@ -807,6 +821,7 @@ export default {
     ModalObservacao,
     ModalListarObservacoes,
     ModalListarMensagensAgendadas,
+    ModalAgendarMensagem,
     ModalTimeline,
     ModernSearch
 
@@ -1506,10 +1521,8 @@ export default {
         })
         return
       }
-      // Emite evento global para abrir o modal do cabeçalho do chat
-      this.$root.$emit('abrir:modalAgendamentoMensagem')
-      // Remove a abertura do modal local para evitar dois modais abertos
-      // this.modalAgendarMensagem = true
+      // Abrir o modal de agendamento local
+      this.modalAgendarMensagem = true
     },
 
     resolverTicket () {
@@ -1833,6 +1846,22 @@ export default {
           this.loadingEntrarConversa = false
         }
       })
+    },
+    handleMensagemAgendada (mensagem) {
+      // Atualizar a lista de tickets para refletir a nova mensagem agendada
+      this.BuscarTicketFiltro()
+
+      // Força atualização do ticket focado para mostrar a nova mensagem agendada
+      this.$forceUpdate()
+
+      console.log('Mensagem agendada com sucesso:', mensagem)
+
+      this.$q.notify({
+        type: 'info',
+        message: `Mensagem agendada para ${this.$formatarData(mensagem.scheduleDate, 'dd/MM/yyyy HH:mm')}`,
+        position: 'bottom-right',
+        timeout: 3000
+      })
     }
   },
   beforeMount () {
@@ -1894,10 +1923,6 @@ export default {
 
     this.$root.$on('ticket:update', () => {
       this.$forceUpdate()
-    })
-
-    this.$root.$on('abrir:modalAgendamentoMensagem', () => {
-      this.modalAgendarMensagem = true
     })
 
     // Define configurações iniciais

@@ -149,11 +149,13 @@ const SendWhatsAppMedia = async (
           JSON.stringify(sentMessage, null, 2)
         );
 
-        // Tentar extrair o ID da mensagem
+        // Tentar extrair o ID da mensagem (Baileys usa key.id)
         let messageId: string | null = null;
         if (sentMessage) {
           if (typeof sentMessage === "string") {
             messageId = sentMessage;
+          } else if (sentMessage.key && sentMessage.key.id) {
+            messageId = sentMessage.key.id;
           } else if (sentMessage.id) {
             if (typeof sentMessage.id === "string") {
               messageId = sentMessage.id;
@@ -162,8 +164,6 @@ const SendWhatsAppMedia = async (
             } else if (sentMessage.id._serialized) {
               messageId = sentMessage.id._serialized;
             }
-          } else if (sentMessage.key && sentMessage.key.id) {
-            messageId = sentMessage.key.id;
           }
         }
 
@@ -208,11 +208,9 @@ const SendWhatsAppMedia = async (
         logger.info("[SendWhatsAppMedia] Enviado como documento");
 
         // Atualizar a mensagem no banco
-        if (sentMessage?.id) {
-          const messageId =
-            typeof sentMessage.id === "string"
-              ? sentMessage.id
-              : sentMessage.id.id;
+        if (sentMessage?.key?.id || sentMessage?.id) {
+          const messageId = sentMessage?.key?.id || 
+            (typeof sentMessage.id === "string" ? sentMessage.id : sentMessage.id.id);
           const updateData = {
             messageId,
             status: "sended",

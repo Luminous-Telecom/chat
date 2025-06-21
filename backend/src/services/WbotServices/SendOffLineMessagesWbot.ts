@@ -55,7 +55,7 @@ const SendOffLineMessagesWbot = async (
           try {
             if (message.userId) {
               await UserMessagesLog.create({
-                messageId: sendMessage.id.id,
+                messageId: sendMessage?.key?.id || sendMessage?.id?.id || null,
                 userId: message.userId,
                 ticketId: message.ticketId,
               });

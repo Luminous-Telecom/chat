@@ -280,6 +280,8 @@
             :isShowOptions="false"
             :replyingMessage.sync="replyingMessage"
             :mensagens="[mensagemEncaminhamento]"
+            :ticketFocado="ticketFocado"
+            :isLineDate="false"
           />
         </q-card-section>
         <q-card-section>

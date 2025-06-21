@@ -296,6 +296,8 @@
                   size="8"
                   class="full-width rounded-all"
                   :mensagens="cMessages"
+                  :ticketFocado="{ id: -1, channel: 'whatsapp', contact: { name: 'Preview' } }"
+                  :isShowOptions="false"
                 />
               </cMolduraCelular>
             </q-card-section>

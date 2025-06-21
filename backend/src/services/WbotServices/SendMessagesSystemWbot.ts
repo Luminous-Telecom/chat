@@ -106,7 +106,7 @@ const SendMessagesSystemWbot = async (
         });
         logger.info("sendMessage media");
       } else {
-        sendedMessage = await wbot.sendMessage(chatId, message.body, {
+        sendedMessage = await wbot.sendMessage(chatId, { text: message.body }, {
           quotedMessageId: quotedMsgSerializedId,
           linkPreview: false, // fix: send a message takes 2 seconds when there's a link on message body
         });
@@ -118,7 +118,7 @@ const SendMessagesSystemWbot = async (
         ...message,
         ...sendedMessage,
         id: message.id,
-        messageId: sendedMessage.id.id,
+        messageId: sendedMessage?.key?.id || sendedMessage?.id?.id || null,
         status: "sended",
       };
 
@@ -136,7 +136,7 @@ const SendMessagesSystemWbot = async (
         maxMilliseconds: Number(process.env.MAX_SLEEP_INTERVAL || 2000),
       });
 
-      logger.info("sendMessage", sendedMessage.id.id);
+      logger.info("sendMessage", sendedMessage?.key?.id || sendedMessage?.id?.id || "no-id");
     } catch (error) {
       const idMessage = message.id;
       const ticketId = message.ticket.id;

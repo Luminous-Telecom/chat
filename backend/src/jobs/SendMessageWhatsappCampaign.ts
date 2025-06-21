@@ -57,7 +57,7 @@ export default {
 
         message = await wbot.sendMessage(`${data.number}@c.us`, mediaMessage);
       } else {
-        message = await wbot.sendMessage(`${data.number}@c.us`, data.message, {
+        message = await wbot.sendMessage(`${data.number}@c.us`, { text: data.message }, {
           quotedMessageId: undefined,
           linkPreview: false,
           sendAudioAsVoice: false,
@@ -66,7 +66,7 @@ export default {
 
       await CampaignContacts.update(
         {
-          messageId: message.id.id,
+          messageId: message?.key?.id || message?.id?.id || null,
           messageRandom: data.messageRandom,
           body: data.message,
           mediaName: data.mediaName,

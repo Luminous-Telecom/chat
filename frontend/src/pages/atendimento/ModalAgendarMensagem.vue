@@ -203,6 +203,8 @@
 <script>
 import { format, isValid, isBefore } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { EnviarMensagemTexto } from 'src/service/tickets'
+import { uid } from 'quasar'
 
 export default {
   name: 'ModalAgendarMensagem',
@@ -216,6 +218,10 @@ export default {
       default: null
     },
     mensagensRapidas: {
+      type: Array,
+      default: () => []
+    },
+    scheduledMessages: {
       type: Array,
       default: () => []
     }
@@ -335,9 +341,21 @@ export default {
       this.loading = true
 
       try {
-        // Aqui você implementaria a chamada para a API
-        // Por enquanto, vamos simular o agendamento
-        await this.simularAgendamento()
+        // Preparar dados da mensagem para agendamento
+        const messageData = {
+          body: this.agendamento.mensagem,
+          fromMe: true,
+          read: 1,
+          mediaUrl: '',
+          scheduleDate: this.dataHoraCompleta.toISOString(),
+          sendType: 'schedule',
+          quotedMsg: null,
+          quotedMsgId: null,
+          id: uid()
+        }
+
+        // Enviar mensagem agendada para a API
+        await EnviarMensagemTexto(this.ticketId, messageData)
 
         this.$q.notify({
           type: 'positive',
@@ -365,13 +383,6 @@ export default {
       } finally {
         this.loading = false
       }
-    },
-
-    async simularAgendamento () {
-      // Simula uma chamada de API
-      return new Promise((resolve) => {
-        setTimeout(resolve, 1500)
-      })
     },
 
     cancelar () {

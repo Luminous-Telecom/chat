@@ -41,7 +41,7 @@ const SendMessage = async (message: Message): Promise<void> => {
       linkPreview: false,
       sendAudioAsVoice: false,
     };
-    sendedMessage = await wbot.sendMessage(chatId, message.body, options);
+    sendedMessage = await wbot.sendMessage(chatId, { text: message.body }, options);
   }
 
   // enviar old_id para substituir no front a mensagem corretamente
@@ -49,13 +49,13 @@ const SendMessage = async (message: Message): Promise<void> => {
     ...message,
     ...sendedMessage,
     id: message.id,
-    messageId: sendedMessage.id.id,
+    messageId: sendedMessage?.key?.id || sendedMessage?.id?.id || null,
     status: "sended",
   };
 
   await Message.update({ ...messageToUpdate }, { where: { id: message.id } });
 
-  logger.info("rabbit::sendedMessage", sendedMessage.id.id);
+  logger.info("rabbit::sendedMessage", sendedMessage?.key?.id || sendedMessage?.id?.id || "no-id");
 };
 
 export default SendMessage;
