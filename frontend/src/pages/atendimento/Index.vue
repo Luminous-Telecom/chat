@@ -17,99 +17,104 @@
         :breakpoint="769"
         bordered
         :width="$q.screen.lt.md ? $q.screen.width : 380"
-        content-class="full-width"
+        content-class="full-width tickets-drawer"
       >
         <StatusWhatsapp
           v-if="false"
           class="q-mx-sm full-width"
         />
-        <q-toolbar class="modern-search-toolbar">
-          <ModernSearch
-            v-model="searchTickets"
-            placeholder="Buscar atendimentos..."
-            :debounce="300"
-            @search="onSearchTickets"
-          />
-          <div class="toolbar-actions">
-            <q-btn
-              flat
-              round
-              dense
-              class="modern-action-btn"
-              icon="mdi-account-multiple"
-              @click="$q.screen.lt.md ? modalNovoTicket = true : $router.push({ name: 'chat-contatos' })"
-            >
-              <q-tooltip content-class="modern-tooltip">
-                Contatos
-              </q-tooltip>
-            </q-btn>
-          </div>
-        </q-toolbar>
 
-        <!-- Filtros condicionais baseado no status -->
-        <div class="modern-filters-section" v-if="(pesquisaTickets.status && pesquisaTickets.status.includes('pending')) || $route.query.status === 'pending'">
-          <div class="filter-chip filter-chip--active">
-            <q-icon name="mdi-clock-outline" size="14px" />
-            <span>Tickets não atendidos</span>
+        <!-- Área fixa com busca e filtros -->
+        <div class="tickets-drawer-header">
+          <q-toolbar class="modern-search-toolbar">
+            <ModernSearch
+              v-model="searchTickets"
+              placeholder="Buscar atendimentos..."
+              :debounce="300"
+              @search="onSearchTickets"
+            />
+            <div class="toolbar-actions">
+              <q-btn
+                flat
+                round
+                dense
+                class="modern-action-btn"
+                icon="mdi-account-multiple"
+                @click="$q.screen.lt.md ? modalNovoTicket = true : $router.push({ name: 'chat-contatos' })"
+              >
+                <q-tooltip content-class="modern-tooltip">
+                  Contatos
+                </q-tooltip>
+              </q-btn>
+            </div>
+          </q-toolbar>
+
+          <!-- Filtros condicionais baseado no status -->
+          <div class="modern-filters-section" v-if="(pesquisaTickets.status && pesquisaTickets.status.includes('pending')) || $route.query.status === 'pending'">
+            <div class="filter-chip filter-chip--active">
+              <q-icon name="mdi-clock-outline" size="14px" />
+              <span>Tickets não atendidos</span>
+            </div>
+          </div>
+
+          <!-- Filtros originais para outros status -->
+          <div class="modern-filters-section" v-else>
+            <div class="filters-container">
+              <button
+                :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'meus' }]"
+                @click="setFilterMode('meus')"
+              >
+                <q-icon name="mdi-account" size="14px" />
+                <span>Meus atendimentos</span>
+              </button>
+              <button
+                :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'fila' }]"
+                @click="setFilterMode('fila')"
+              >
+                <q-icon name="mdi-account-group" size="14px" />
+                <span>Meus departamentos</span>
+              </button>
+              <button
+                :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'todos' }]"
+                @click="setFilterMode('todos')"
+              >
+                <q-icon name="mdi-view-list" size="14px" />
+                <span>Todos</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Filtros originais para outros status -->
-        <div class="modern-filters-section" v-else>
-          <div class="filters-container">
-            <button
-              :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'meus' }]"
-              @click="setFilterMode('meus')"
-            >
-              <q-icon name="mdi-account" size="14px" />
-              <span>Meus atendimentos</span>
-            </button>
-            <button
-              :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'fila' }]"
-              @click="setFilterMode('fila')"
-            >
-              <q-icon name="mdi-account-group" size="14px" />
-              <span>Meus departamentos</span>
-            </button>
-            <button
-              :class="['filter-chip', { 'filter-chip--active': cFiltroSelecionado === 'todos' }]"
-              @click="setFilterMode('todos')"
-            >
-              <q-icon name="mdi-view-list" size="14px" />
-              <span>Todos</span>
-            </button>
-          </div>
+        <!-- Área com scroll apenas para a lista de tickets -->
+        <div class="tickets-drawer-content">
+          <q-scroll-area
+            ref="scrollAreaTickets"
+            class="modern-scrollbar tickets-scroll-area"
+            @scroll="onScroll"
+          >
+                        <!-- <q-separator /> -->
+            <ItemTicket
+              v-for="ticket in tickets"
+              :key="`ticket-${ticket.id}`"
+              :ticket="ticket"
+              :filas="filas"
+              :buscaTicket="false"
+
+            />
+            <div v-if="loading">
+              <div class="row justify-center q-my-md">
+                <q-spinner
+                  color="white"
+                  size="3em"
+                  :thickness="3"
+                />
+              </div>
+              <div class="row col justify-center q-my-sm text-white">
+                Carregando...
+              </div>
+            </div>
+          </q-scroll-area>
         </div>
-
-        <q-scroll-area
-          ref="scrollAreaTickets"
-          :thumb-style="thumbStyle"
-          :bar-style="barStyle"
-          style="height: calc(100% - 130px)"
-          @scroll="onScroll"
-        >
-          <!-- <q-separator /> -->
-          <ItemTicket
-            v-for="ticket in tickets"
-            :key="`ticket-${ticket.id}`"
-            :ticket="ticket"
-            :filas="filas"
-            :buscaTicket="false"
-
-          />
-          <div v-if="loading">
-            <div class="row justify-center q-my-md">
-              <q-spinner
-                color="white"
-                size="3em"
-                :thickness="3"
-              />
-            </div>
-            <div class="row col justify-center q-my-sm text-white">
-              Carregando...
-            </div>
-          </div>
-        </q-scroll-area>
       </q-drawer>
 
       <q-page-container>
@@ -130,8 +135,7 @@
 
         <q-separator />
         <q-scroll-area
-          :thumb-style="thumbStyle"
-          :bar-style="barStyle"
+          class="modern-scrollbar"
           style="height: calc(100vh - 60px)"
         >
           <div class="contact-data-container">
@@ -541,8 +545,7 @@
                 </q-btn>
               </div>
               <q-scroll-area
-                :thumb-style="thumbStyle"
-                :bar-style="barStyle"
+                class="thin-scrollbar"
                 style="height: 200px"
               >
                 <q-list>
@@ -610,8 +613,7 @@
                 </q-btn>
               </div>
               <q-scroll-area
-                :thumb-style="thumbStyle"
-                :bar-style="barStyle"
+                class="thin-scrollbar"
                 style="height: 200px"
               >
                 <q-list>
@@ -917,22 +919,7 @@ export default {
 
       return null
     },
-    thumbStyle () {
-      return {
-        borderRadius: '5px',
-        backgroundColor: '#1a202c',
-        width: '5px',
-        opacity: 0.75
-      }
-    },
-    barStyle () {
-      return {
-        borderRadius: '0px',
-        backgroundColor: 'transparent',
-        width: '5px',
-        opacity: 0.2
-      }
-    },
+
     opcoesFilas () {
       const opcoes = []
 
@@ -1573,6 +1560,7 @@ export default {
     },
     async BuscarTicketFiltro () {
       this.loading = true
+
       localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
       this.pesquisaTickets = {
         ...this.pesquisaTickets,
@@ -2062,7 +2050,7 @@ export default {
   }
 }
 
-/* Global scroll area styles */
+/* Global scroll area styles - NOTA: Agora usando estilos globais de scrollbar-styles.scss */
 .q-scroll-area {
   background: transparent;
 
@@ -3267,7 +3255,7 @@ export default {
 /* Modern Filters Section */
 .modern-filters-section {
   background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
-  padding: 12px 16px;
+  padding: 12px 0 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: center;
@@ -3437,5 +3425,90 @@ export default {
 
 .filter-chip--active {
   animation: filter-pulse 0.3s ease-out;
+}
+
+/* Layout do drawer de tickets */
+.tickets-drawer {
+  display: flex;
+  flex-direction: column;
+  height: 100vh !important;
+  overflow: hidden;
+  max-height: 100vh;
+}
+
+.tickets-drawer-header {
+  flex-shrink: 0;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tickets-drawer-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: transparent;
+  height: calc(100vh - 140px) !important;
+  min-height: calc(100vh - 140px) !important;
+}
+
+.tickets-scroll-area {
+  height: calc(100vh - 140px) !important;
+  width: 100%;
+  min-height: 300px;
+}
+
+/* Garantir que o q-scroll-area ocupe toda a altura disponível */
+.tickets-drawer-content .q-scroll-area {
+  height: calc(100vh - 140px) !important;
+  min-height: 300px;
+}
+
+.tickets-drawer-content .q-scroll-area > div {
+  min-height: 100% !important;
+}
+
+/* Garantir que os tickets sejam visíveis */
+.tickets-drawer-content .q-scroll-area .q-scrollarea__content {
+  min-height: 100% !important;
+}
+
+/* Dark mode para o drawer */
+.body--dark .tickets-drawer-header {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Força o q-drawer a usar o layout correto */
+.q-drawer .tickets-drawer {
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
+
+/* Garantir que os ItemTicket sejam visíveis */
+.tickets-drawer-content .item-ticket,
+.tickets-drawer-content .q-item {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+}
+
+/* Responsive para o drawer de tickets */
+@media (max-width: 768px) {
+  .tickets-drawer {
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+
+  .tickets-drawer-header {
+    flex-shrink: 0;
+    max-height: 140px;
+    min-height: 140px;
+  }
+
+  .tickets-scroll-area {
+    height: calc(100vh - 140px) !important;
+    min-height: calc(100vh - 140px) !important;
+  }
 }
 </style>

@@ -34,7 +34,7 @@
       <q-separator class="separator-custom" />
 
       <q-card-section class="q-pa-none scroll-container">
-        <q-scroll-area class="full-height">
+        <q-scroll-area class="full-height modern-scrollbar">
           <div v-if="mensagensAgendadas.length === 0" class="text-center q-pa-lg">
             <q-icon name="mdi-calendar-clock" size="4rem" color="grey-5" />
             <div class="text-h6 text-grey-6 q-mt-md">Nenhuma mensagem agendada</div>

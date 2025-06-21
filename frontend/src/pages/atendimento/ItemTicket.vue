@@ -17,72 +17,69 @@
 
       <!-- Main Content -->
       <div class="ticket-content">
-        <!-- Info Section -->
-        <div class="ticket-info-section">
-          <!-- Header -->
-          <div class="ticket-header">
-            <div class="ticket-contact-name">
-              {{ !ticket.name ? ticket.contact.name : ticket.name }}
-              <!-- Badge de mensagens não lidas movido para cá -->
-              <div
-                v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
-                class="unread-badge unread-badge--inline"
-              >
-                {{ ticket.unreadMessages }}
-              </div>
+        <!-- Header -->
+        <div class="ticket-header">
+          <div class="ticket-contact-name">
+            {{ !ticket.name ? ticket.contact.name : ticket.name }}
+            <!-- Badge de mensagens não lidas -->
+            <div
+              v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
+              class="unread-badge"
+            >
+              {{ ticket.unreadMessages }}
             </div>
-            <div class="ticket-time">
-              {{ dataInWords(ticket.lastMessageAt, ticket.updatedAt) }}
+          </div>
+          <div class="ticket-time">
+            {{ dataInWords(ticket.lastMessageAt, ticket.updatedAt) }}
+          </div>
+        </div>
+
+        <!-- Last Message -->
+        <div class="ticket-last-message">
+          {{ ticket.lastMessage }}
+        </div>
+
+        <!-- Footer Info -->
+        <div class="ticket-footer">
+          <div class="ticket-details">
+            <div class="ticket-channel">
+              <q-icon
+                :name="`img:${ticket.channel}-logo.png`"
+                size="12px"
+                class="channel-icon"
+              />
+              <span class="channel-name">{{ ticket.whatsapp && ticket.whatsapp.name }}</span>
+            </div>
+            <div class="ticket-queue">
+              <q-icon name="mdi-account-group" size="10px" />
+              <span>{{ `${ticket.queue || obterNomeFila(ticket) || 'Sem fila'}` }}</span>
             </div>
           </div>
 
-          <!-- Last Message -->
-          <div class="ticket-last-message">
-            {{ ticket.lastMessage }}
+          <div class="ticket-metadata">
+            <div class="ticket-id">#{{ ticket.id }}</div>
+            <div class="ticket-user">{{ ticket.username }}</div>
           </div>
 
-          <!-- Footer Info -->
-          <div class="ticket-footer">
-            <div class="ticket-details">
-                             <div class="ticket-channel">
-                 <q-icon
-                   :name="`img:${ticket.channel}-logo.png`"
-                   size="12px"
-                   class="channel-icon"
-                 />
-                 <span class="channel-name">{{ ticket.whatsapp && ticket.whatsapp.name }}</span>
-               </div>
-               <div class="ticket-queue">
-                 <q-icon name="mdi-account-group" size="10px" />
-                 <span>{{ `${ticket.queue || obterNomeFila(ticket) || 'Sem fila'}` }}</span>
-               </div>
-            </div>
-
-            <div class="ticket-metadata">
-              <div class="ticket-id">#{{ ticket.id }}</div>
-              <div class="ticket-user">{{ ticket.username }}</div>
-            </div>
-          </div>
-
-          <!-- Status Icons -->
+          <!-- Status Icons - movido para o footer -->
           <div class="ticket-status-icons">
-                         <!-- Ticket Resolvido -->
-             <div
-               v-if="ticket.status === 'closed'"
-               class="status-icon status-icon--resolved"
-             >
-               <q-icon name="mdi-check-circle" size="14px" />
-               <q-tooltip>Atendimento Resolvido</q-tooltip>
-             </div>
+            <!-- Ticket Resolvido -->
+            <div
+              v-if="ticket.status === 'closed'"
+              class="status-icon status-icon--resolved"
+            >
+              <q-icon name="mdi-check-circle" size="14px" />
+              <q-tooltip>Atendimento Resolvido</q-tooltip>
+            </div>
 
-             <!-- ChatBot ativo -->
-             <div
-               v-if="(ticket.stepAutoReplyId && ticket.autoReplyId && ticket.status === 'pending') || (ticket.chatFlowId && ticket.stepChatFlow && ticket.status === 'pending')"
-               class="status-icon status-icon--bot"
-             >
-               <q-icon name="mdi-robot" size="14px" />
-               <q-tooltip>ChatBot atendendo</q-tooltip>
-             </div>
+            <!-- ChatBot ativo -->
+            <div
+              v-if="(ticket.stepAutoReplyId && ticket.autoReplyId && ticket.status === 'pending') || (ticket.chatFlowId && ticket.stepChatFlow && ticket.status === 'pending')"
+              class="status-icon status-icon--bot"
+            >
+              <q-icon name="mdi-robot" size="14px" />
+              <q-tooltip>ChatBot atendendo</q-tooltip>
+            </div>
           </div>
         </div>
       </div>
@@ -181,22 +178,22 @@ export default {
 
 <style lang="scss" scoped>
 .ticket-item-container {
-  margin-bottom: 4px;
-  padding: 0 8px;
+  margin: 6px;
 }
 
 .ticket-item {
   position: relative;
   background: white;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 12px 16px;
   margin-bottom: 4px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 
   &:hover {
     transform: translateY(-2px);
@@ -261,7 +258,9 @@ export default {
 
 .ticket-content {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
 }
 
 .unread-badge {
@@ -277,17 +276,7 @@ export default {
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(244, 67, 54, 0.3);
   animation: badge-bounce 0.6s ease-out;
-
-  &--inline {
-    margin-left: 6px;
-    position: static;
-  }
-}
-
-.ticket-info-section {
-  flex: 1;
-  min-width: 0;
-  position: relative;
+  margin-left: 6px;
 }
 
 .ticket-header {
@@ -332,8 +321,9 @@ export default {
 .ticket-footer {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   font-size: 9px;
+  gap: 8px;
 }
 
 .ticket-details {
@@ -385,11 +375,9 @@ export default {
 }
 
 .ticket-status-icons {
-  position: absolute;
-  bottom: 0;
-  right: 0;
   display: flex;
   gap: 4px;
+  align-items: center;
 
     .status-icon {
     display: flex;
@@ -507,13 +495,13 @@ export default {
 // Responsive
 @media (max-width: 768px) {
   .ticket-item {
-    padding: 6px 8px;
+    padding: 8px 10px;
     margin-bottom: 3px;
-    min-height: 55px;
+    gap: 6px;
   }
 
   .ticket-content {
-    gap: 6px;
+    gap: 4px;
   }
 
   .ticket-header {
@@ -526,5 +514,9 @@ export default {
     font-size: 10px;
   }
 
+  .ticket-footer {
+    font-size: 8px;
+    gap: 6px;
+  }
 }
 </style>

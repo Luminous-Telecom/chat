@@ -1,0 +1,292 @@
+// Estilos globais de scrollbar
+// Seguindo a paleta azul escuro do projeto
+
+// Variáveis para scrollbar
+$scrollbar-width: 6px;
+$scrollbar-border-radius: 6px;
+
+// Cores modo claro
+$scrollbar-track-light: rgba(0, 0, 0, 0.05);
+$scrollbar-thumb-light: linear-gradient(180deg, #90a4ae 0%, #607d8b 100%);
+$scrollbar-thumb-hover-light: linear-gradient(180deg, #607d8b 0%, #455a64 100%);
+
+// Cores modo escuro (paleta azul escuro)
+$scrollbar-track-dark: rgba(52, 73, 94, 0.3);
+$scrollbar-thumb-dark: linear-gradient(180deg, #2c3e54 0%, #34495e 100%);
+$scrollbar-thumb-hover-dark: linear-gradient(180deg, #34495e 0%, #3b4b66 100%);
+
+// Mixin base para scrollbar
+@mixin base-scrollbar {
+  &::-webkit-scrollbar {
+    width: $scrollbar-width;
+    height: $scrollbar-width;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $scrollbar-track-light;
+    border-radius: $scrollbar-border-radius;
+    margin: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $scrollbar-thumb-light;
+    border-radius: $scrollbar-border-radius;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: $scrollbar-thumb-hover-light;
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(96, 125, 139, 0.3);
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: #607d8b $scrollbar-track-light;
+}
+
+// Mixin para modo escuro
+@mixin dark-scrollbar {
+  &::-webkit-scrollbar-track {
+    background: $scrollbar-track-dark;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $scrollbar-thumb-dark;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: $scrollbar-thumb-hover-dark;
+    box-shadow: 0 4px 8px rgba(52, 73, 94, 0.4);
+  }
+
+  // Firefox
+  scrollbar-color: #34495e $scrollbar-track-dark;
+}
+
+// Aplicação global
+* {
+  @include base-scrollbar;
+}
+
+// Estilos específicos para elementos comuns
+.q-scroll-area {
+  @include base-scrollbar;
+}
+
+.q-virtual-scroll {
+  @include base-scrollbar;
+}
+
+.q-table__container {
+  @include base-scrollbar;
+}
+
+.q-menu {
+  @include base-scrollbar;
+}
+
+.q-dialog {
+  @include base-scrollbar;
+}
+
+.q-drawer {
+  @include base-scrollbar;
+}
+
+// Scrollbar refinado para areas especiais
+.modern-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    margin: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #64b5f6 0%, #1976d2 100%);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(25, 118, 210, 0.2);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #1976d2 0%, #1565c0 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+  }
+}
+
+// Scrollbar muito fino para áreas compactas
+.thin-scrollbar {
+  &::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(96, 125, 139, 0.6);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(96, 125, 139, 0.8);
+  }
+}
+
+// Scrollbar invisível mas funcional
+.invisible-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Modo escuro
+body.body--dark {
+  * {
+    @include dark-scrollbar;
+  }
+
+  .q-scroll-area {
+    @include dark-scrollbar;
+  }
+
+  .q-virtual-scroll {
+    @include dark-scrollbar;
+  }
+
+  .q-table__container {
+    @include dark-scrollbar;
+  }
+
+  .q-menu {
+    @include dark-scrollbar;
+  }
+
+  .q-dialog {
+    @include dark-scrollbar;
+  }
+
+  .q-drawer {
+    @include dark-scrollbar;
+  }
+
+  .modern-scrollbar {
+    &::-webkit-scrollbar-track {
+      background: rgba(52, 73, 94, 0.2);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #64b5f6 0%, #42a5f5 100%);
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 6px rgba(100, 181, 246, 0.3);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #42a5f5 0%, #1e88e5 100%);
+      box-shadow: 0 4px 12px rgba(100, 181, 246, 0.5);
+    }
+  }
+
+  .thin-scrollbar {
+    &::-webkit-scrollbar-track {
+      background: rgba(52, 73, 94, 0.1);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(232, 244, 248, 0.4);
+
+      &:hover {
+        background: rgba(232, 244, 248, 0.6);
+      }
+    }
+  }
+}
+
+// Animações para scrollbar
+@keyframes scrollbar-glow {
+  0% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+  }
+  100% {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Scrollbar com efeito especial para dashboard
+.dashboard-scrollbar {
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: linear-gradient(45deg, rgba(0, 0, 0, 0.03) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(0, 0, 0, 0.03) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.03) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.03) 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+    animation: scrollbar-glow 2s infinite;
+  }
+}
+
+// Scrollbar para modo escuro do dashboard
+body.body--dark .dashboard-scrollbar {
+  &::-webkit-scrollbar-track {
+    background: linear-gradient(45deg, rgba(52, 73, 94, 0.2) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(52, 73, 94, 0.2) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(52, 73, 94, 0.2) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(52, 73, 94, 0.2) 75%);
+    background-size: 8px 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #64b5f6 0%, #1976d2 100%);
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(100, 181, 246, 0.4);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #1976d2 0%, #64b5f6 100%);
+    box-shadow: 0 4px 16px rgba(100, 181, 246, 0.6);
+  }
+} 

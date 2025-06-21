@@ -2,7 +2,7 @@
   <div class="ticket-list-container">
     <q-scroll-area
       ref="scrollAreaTickets"
-      class="ticket-scroll-area"
+      class="ticket-scroll-area modern-scrollbar"
       :class="{ 'ticket-scroll-area--loading': loading }"
       @scroll="onScroll"
     >
@@ -404,25 +404,7 @@ export default {
     overflow: hidden;
   }
 
-  // Estilização customizada do scroll
-  :deep(.q-scrollarea__thumb--v) {
-    width: 6px;
-    background: rgba(25, 118, 210, 0.3);
-    border-radius: 3px;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: rgba(25, 118, 210, 0.5);
-      width: 8px;
-    }
-  }
-
-  :deep(.q-scrollarea__bar--v) {
-    width: 8px;
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
-    right: 4px;
-  }
+  // Estilização customizada do scroll removida - usando scrollbar global
 }
 
 .tickets-wrapper {

@@ -17,7 +17,7 @@
       </q-card-section>
 
       <q-card-section class="modal-content">
-        <q-scroll-area ref="scrollArea" style="height: calc(80vh - 120px);">
+        <q-scroll-area ref="scrollArea" class="modern-scrollbar" style="height: calc(80vh - 120px);">
           <div v-if="loading" class="row justify-center q-my-md">
             <q-spinner color="primary" size="3em" />
           </div>

@@ -20,7 +20,7 @@
       :breakpoint="400"
       class="bg-grey-1"
     >
-      <q-scroll-area class="fit">
+      <q-scroll-area class="fit modern-scrollbar">
         <q-list padding :key="userProfile">
           <q-item clickable v-ripple class="houverList" @click="miniState = !miniState">
             <q-item-section avatar>

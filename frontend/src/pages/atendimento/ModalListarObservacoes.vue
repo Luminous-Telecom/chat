@@ -23,7 +23,7 @@
       <q-card-section class="q-pt-md">
         <q-scroll-area
           style="height: calc(100vh - 100px)"
-          class="scroll"
+          class="scroll modern-scrollbar"
         >
           <q-list>
             <q-item

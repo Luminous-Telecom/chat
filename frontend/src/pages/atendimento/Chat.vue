@@ -4,8 +4,7 @@
     :style="style"
   >
     <q-scroll-area
-      :thumb-style="thumbStyle"
-      :bar-style="barStyle"
+      class="modern-scrollbar"
       :style="cStyleScroll"
       @scroll="scrollArea"
       ref="scrollAreaMessageChat"
@@ -409,23 +408,8 @@ export default {
       const loading = 0 // this.loading ? 72 : 0
       const add = this.heigthInputMensagem + loading
       return `min-height: calc(100vh - ${12 + add}px); height: calc(100vh - ${12 + add}px); width: 100%`
-    },
-    thumbStyle () {
-      return {
-        borderRadius: '5px',
-        backgroundColor: '#1a202c',
-        width: '5px',
-        opacity: 0.75
-      }
-    },
-    barStyle () {
-      return {
-        borderRadius: '0px',
-        backgroundColor: 'transparent',
-        width: '5px',
-        opacity: 0.2
-      }
     }
+
   },
   methods: {
     async onResizeInputMensagem (size) {
