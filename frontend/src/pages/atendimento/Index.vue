@@ -863,16 +863,7 @@ export default {
       }
 
       const filteredTickets = allTickets.filter(ticket => {
-        // Garantir que tickets pendentes permaneçam na lista de pendentes
-        // mesmo após serem visualizados (mensagens marcadas como lidas)
-        const matchesStatus = currentStatus.includes(ticket.status)
-
-        // Log para debug apenas quando necessário
-        if (ticket.status === 'pending' && !matchesStatus) {
-          console.log(`[tickets computed] Ticket pendente ${ticket.id} não deveria ser removido da lista`)
-        }
-
-        return matchesStatus
+        return currentStatus.includes(ticket.status)
       })
 
       return filteredTickets
@@ -961,10 +952,8 @@ export default {
 
     // Método para tocar áudio de notificação
     async playNotificationSound () {
-      console.log('[playNotificationSound] Chamado')
       try {
         await tocarSomNotificacao()
-        console.log('[playNotificationSound] Som tocado com sucesso')
       } catch (error) {
         console.error('[playNotificationSound] Erro ao tocar som:', error)
       }
@@ -977,8 +966,6 @@ export default {
     },
 
     setFilterMode (filterMode) {
-      // console.log('[setFilterMode] Mudando filtro para:', filterMode, 'Status atual:', this.pesquisaTickets.status)
-
       // Resetar filtros
       this.pesquisaTickets.showAll = false
       this.pesquisaTickets.withUnreadMessages = false
@@ -990,7 +977,6 @@ export default {
 
       // Para status que inclui 'pending' (tickets não atendidos)
       if (currentStatus && (currentStatus.includes('pending') || this.$route.query.status === 'pending')) {
-        // console.log('[setFilterMode] Aplicando filtros para tickets pendentes')
         // Para tickets pendentes, mostrar todos os tickets pendentes
         this.pesquisaTickets.isNotAssignedUser = false
         this.pesquisaTickets.showAll = true // Permitir ver todos os tickets pendentes
@@ -998,7 +984,6 @@ export default {
         this.pesquisaTickets.queuesIds = []
       } else {
         // Para outros status (incluindo 'open'), aplicar filtros baseado no modo selecionado
-        // console.log('[setFilterMode] Aplicando filtros para status:', currentStatus, 'modo:', filterMode)
 
         if (filterMode === 'meus') {
           this.pesquisaTickets.showAll = false
@@ -1013,13 +998,10 @@ export default {
         }
       }
 
-      // console.log('[setFilterMode] Filtros aplicados:', this.pesquisaTickets)
       this.debounce(this.BuscarTicketFiltro(), 700)
     },
 
     handlerNotifications (data) {
-      console.log('[handlerNotifications] CHAMADO com data:', data)
-
       // Verificar se deve mostrar notificação do navegador
       // Verificar se data tem a estrutura esperada
       if (!data) {
@@ -1038,23 +1020,14 @@ export default {
         return
       }
 
-      console.log('[handlerNotifications] Verificando condições:', {
-        fromMe: message.fromMe,
-        read: message.read,
-        shouldSkip: message.fromMe || message.read
-      })
-
       // Só mostrar notificação e tocar som se não for do usuário atual e não estiver lida
       if (message.fromMe || message.read) {
-        console.log('[handlerNotifications] Pulando notificação (fromMe ou read)')
         return
       }
 
-      console.log('[handlerNotifications] Tocando som de notificação...')
       // Tocar áudio de notificação para cada mensagem recebida de outro usuário
       this.playNotificationSound()
 
-      console.log('[handlerNotifications] Verificando suporte a notificações do navegador...')
       // Verificar se notificações são suportadas
       if (!('Notification' in window) || Notification.permission !== 'granted') {
         console.warn('[handlerNotifications] Notificações não suportadas ou sem permissão:', {
@@ -1064,7 +1037,6 @@ export default {
         return
       }
 
-      console.log('[handlerNotifications] Criando notificação do navegador...')
       const options = {
         body: `${message.body} - ${format(new Date(), 'HH:mm')}`,
         icon: contact.profilePicUrl,
@@ -1088,8 +1060,6 @@ export default {
         this.$router.push({ name: 'atendimento' })
         // history.push(`/tickets/${ticket.id}`);
       }
-
-      console.log('[handlerNotifications] Notificação criada com sucesso')
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()
@@ -1683,6 +1653,28 @@ export default {
       }
       // Abrir modal de timeline
       this.modalTimeline = true
+    },
+    trocarParaMeusAtendimentos () {
+      // Mudar para status 'open' (tickets em atendimento)
+      this.pesquisaTickets.status = ['open']
+
+      // Aplicar filtro "meus atendimentos"
+      this.setFilterMode('meus')
+
+      // Atualizar a rota para refletir a mudança
+      this.$router.push({
+        name: this.$route.name,
+        params: this.$route.params,
+        query: { ...this.$route.query, status: 'open' }
+      }).catch(err => {
+        // Ignorar erro de navegação duplicada
+        if (err.name !== 'NavigationDuplicated') {
+          console.error('Erro de navegação:', err)
+        }
+      })
+
+      // Buscar tickets com os novos filtros
+      this.BuscarTicketFiltro()
     }
   },
   beforeMount () {
@@ -1701,8 +1693,7 @@ export default {
     // Solicitar permissão de notificação
     if ('Notification' in window && Notification.permission === 'default') {
       try {
-        const permission = await Notification.requestPermission()
-        console.log('[mounted] Permissão de notificação:', permission)
+        await Notification.requestPermission()
       } catch (error) {
         console.error('[mounted] Erro ao solicitar permissão de notificação:', error)
       }
@@ -1739,6 +1730,7 @@ export default {
 
     // Listeners para eventos globais
     this.$root.$on('handlerNotifications', this.handlerNotifications)
+    this.$root.$on('trocar-para-meus-atendimentos', this.trocarParaMeusAtendimentos)
 
     this.$root.$on('ticket:update', () => {
       this.$forceUpdate()
@@ -1757,21 +1749,8 @@ export default {
   },
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
-    this.$root.$off('infor-cabecalo-chat:acao-menu', this.setValueMenu)
-    this.$root.$off('ticket:transferido', this.consultarTickets)
-    // this.socketDisconnect()
-
-    // Só limpar o ticket focado se estivermos realmente saindo da área de atendimento
-    // e não apenas navegando entre diferentes status de atendimento
-    const nextRoute = this.$router.currentRoute
-    const isLeavingAttendanceArea = !nextRoute ||
-                                    !nextRoute.path.includes('/atendimento') ||
-                                    nextRoute.name === 'login' ||
-                                    nextRoute.name === 'home-dashboard'
-
-    if (isLeavingAttendanceArea) {
-      this.$store.commit('TICKET_FOCADO', {})
-    }
+    this.$root.$off('trocar-para-meus-atendimentos', this.trocarParaMeusAtendimentos)
+    this.socketDisconnect()
   },
   watch: {
     searchTickets: {

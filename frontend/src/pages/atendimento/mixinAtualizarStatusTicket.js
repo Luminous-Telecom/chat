@@ -39,6 +39,9 @@ export default {
           this.$store.commit('TICKET_FOCADO', {})
           this.$store.commit('SET_HAS_MORE', true)
 
+          // Mudar para "meus atendimentos" após atender o ticket
+          this.$root.$emit('trocar-para-meus-atendimentos')
+
           // Pequeno delay para garantir que o backend processou a atualização
           setTimeout(() => {
             this.$store.dispatch('AbrirChatMensagens', ticketAtualizado)
@@ -48,18 +51,11 @@ export default {
               this.$forceUpdate()
             })
           }, 500)
-
-          // Removido: não forçar mudança automática de filtros
-          // this.$root.$emit('trocar-para-meus-atendimentos')
-          // if (this.$parent && this.$parent.pesquisaTickets && this.$parent.setFilterMode) {
-          //   this.$parent.pesquisaTickets.status = ['open']
-          //   this.$parent.setFilterMode('meus')
-          // }
         })
-        .catch(error => {
+        .catch(err => {
           this.loading = false
-          console.error(error)
-          this.$notificarErro('Não foi possível atualizar o status', error)
+          console.error('Erro ao iniciar atendimento:', err)
+          this.$notificarErro('Erro ao iniciar atendimento', err)
         })
     },
     atualizarStatusTicket (status) {
