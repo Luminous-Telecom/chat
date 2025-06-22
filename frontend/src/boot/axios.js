@@ -18,6 +18,15 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => response,
   error => {
+    // Verificar se a notificação deve ser silenciada
+    const config = error.config || {}
+    const silentError = config.silentError || false
+
+    if (silentError) {
+      // Não mostrar notificação automática, deixar o código da página tratar
+      return Promise.reject(error)
+    }
+
     let message = 'Problemas internos do servidor'
     if (error.response) {
       if (error.response.status === 400) {

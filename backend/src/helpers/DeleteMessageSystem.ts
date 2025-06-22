@@ -13,12 +13,6 @@ const DeleteMessageSystem = async (
   messageId: string,
   tenantId: string | number
 ): Promise<void> => {
-  console.log("[DEBUG DELETE SYSTEM] Received params:", {
-    id,
-    messageId,
-    tenantId,
-  });
-
   const message = await Message.findOne({
     where: { id },
     include: [
@@ -31,31 +25,17 @@ const DeleteMessageSystem = async (
     ],
   });
 
-  console.log("[DEBUG DELETE SYSTEM] Message found:", message ? "YES" : "NO");
-  if (message) {
-    console.log("[DEBUG DELETE SYSTEM] Message details:", {
-      id: message.id,
-      messageId: message.messageId,
-      createdAt: message.createdAt,
-      ticketId: message.ticketId,
-    });
-  }
-
-  if (message) {
-    const diffHoursDate = differenceInHours(
-      new Date(),
-      parseJSON(message?.createdAt)
-    );
-    console.log("[DEBUG DELETE SYSTEM] Hours difference:", diffHoursDate);
-    if (diffHoursDate > 2) {
-      console.log("[DEBUG DELETE SYSTEM] Message too old, throwing error");
-      throw new AppError("No delete message afeter 2h sended");
-    }
-  }
-
   if (!message) {
-    console.log("[DEBUG DELETE SYSTEM] No message found, throwing error");
-    throw new AppError("No message found with this ID.");
+    throw new AppError("Mensagem não encontrada com este ID.");
+  }
+
+  const diffHoursDate = differenceInHours(
+    new Date(),
+    parseJSON(message?.createdAt)
+  );
+  
+  if (diffHoursDate > 2) {
+    throw new AppError(`Não é possível deletar mensagens enviadas há mais de 2 horas. Esta mensagem foi enviada há ${diffHoursDate} horas.`, 400);
   }
 
   const { ticket } = message;

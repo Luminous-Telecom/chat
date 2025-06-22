@@ -76,6 +76,10 @@ service.interceptors.response.use(
   error => {
     // loading.hide(error.config) // Removido para evitar loading desnecessário
 
+    // Verificar se a notificação deve ser silenciada
+    const config = error.config || {}
+    const silentError = config.silentError || false
+
     if (error.response?.status === 403 || error.response?.status === 401) {
       const isLogged = localStorage.getItem('token')
 
@@ -89,7 +93,8 @@ service.interceptors.response.use(
         // Use router navigation instead of window.location
         router.push('/login')
       }
-    } else {
+    } else if (!silentError) {
+      // Só mostrar erro se não for silenciado
       handlerError(error)
     }
     return Promise.reject(error)

@@ -71,11 +71,12 @@ export function EncaminharMensagem (messages, contato) {
   })
 }
 
-export function DeletarMensagem (mensagem) {
+export function DeletarMensagem (mensagem, silentError = false) {
   return request({
     url: `/api/messages/${mensagem.messageId}`,
     method: 'delete',
-    data: mensagem
+    data: mensagem,
+    silentError: silentError
   })
 }
 

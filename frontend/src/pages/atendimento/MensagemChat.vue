@@ -642,7 +642,6 @@ export default {
           .catch(error => {
             this.loading = false
             console.error(error)
-            this.$notificarErro('Não foi possível apagar a mensagem', error)
           })
       }).onCancel(() => {
       })
