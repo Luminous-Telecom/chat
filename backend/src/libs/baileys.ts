@@ -52,11 +52,11 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 // Track sessions being initialized to prevent duplicates
 const initializingSession = new Set<number>();
 
-// Sistema de throttling para evitar sobrecarga
+// Sistema de throttling otimizado para resposta mais rápida
 const messageQueue = new Map<number, proto.IWebMessageInfo[]>();
 const processingLock = new Set<number>();
 const MAX_QUEUE_SIZE = 50;
-const PROCESSING_DELAY = 100; // 100ms entre processamentos
+const PROCESSING_DELAY = 50; // Reduzido de 100ms para 50ms
 
 const processMessageQueue = async (whatsappId: number): Promise<void> => {
   if (processingLock.has(whatsappId)) {
@@ -182,7 +182,7 @@ export const removeBaileysSession = async (
   }
 };
 
-// Simple session getter
+// Simple session getter otimizado
 export const getBaileysSession = (
   whatsappId: number
 ): BaileysClient | undefined => {
@@ -191,12 +191,15 @@ export const getBaileysSession = (
 
   const connectionState = (session as any)?.connection;
   
-  // Session é usável se estiver open ou connecting
-  const isUsable = connectionState === "open" || connectionState === "connecting";
+  // OTIMIZADO: Sessão é usável se estiver open, connecting ou até mesmo undefined durante reconexão
+  const isUsable = connectionState === "open" || 
+                   connectionState === "connecting" ||
+                   connectionState === undefined; // Durante transições
 
-  if (!isUsable) {
+  if (!isUsable && connectionState === "close") {
+    // Log apenas quando realmente fechada
     baseLogger.warn(
-      `Session ${whatsappId} is not usable - connection: ${connectionState}`
+      `Session ${whatsappId} is closed - connection: ${connectionState}`
     );
     return undefined;
   }
@@ -300,16 +303,16 @@ export async function initBaileys(
       auth: state,
       printQRInTerminal: false,
       browser: Browsers.macOS("Chrome"),
-      connectTimeoutMs: phoneNumber ? 90000 : 30000, // Reduzido para acelerar
-      defaultQueryTimeoutMs: 30000, // Reduzido de 60s para 30s
+      connectTimeoutMs: phoneNumber ? 60000 : 20000, // Reduzido para acelerar conexão
+      defaultQueryTimeoutMs: 20000, // Reduzido de 30s para 20s
       emitOwnEvents: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
-      retryRequestDelayMs: phoneNumber ? 8000 : 3000, // Reduzido
+      retryRequestDelayMs: phoneNumber ? 5000 : 2000, // Reduzido para reconexões mais rápidas
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
-      keepAliveIntervalMs: 15000,
-      qrTimeout: phoneNumber ? 0 : 45000, // Reduzido de 60s para 45s
+      keepAliveIntervalMs: 10000, // Reduzido para 10s (mais frequente)
+      qrTimeout: phoneNumber ? 0 : 30000, // Reduzido de 45s para 30s
       getMessage: async () => undefined,
       shouldIgnoreJid: (jid) => {
         return !!(jid && typeof jid === 'string' && jid.includes('@broadcast'));
@@ -317,8 +320,8 @@ export async function initBaileys(
       linkPreviewImageThumbnailWidth: 0,
       fireInitQueries: true,
       transactionOpts: {
-        maxCommitRetries: phoneNumber ? 10 : 5,
-        delayBetweenTriesMs: phoneNumber ? 5000 : 3000
+        maxCommitRetries: phoneNumber ? 8 : 3, // Reduzido
+        delayBetweenTriesMs: phoneNumber ? 3000 : 2000 // Reduzido
       },
       patchMessageBeforeSending: message => {
         const requiresPatch = !!(

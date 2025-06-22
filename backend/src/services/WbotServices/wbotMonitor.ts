@@ -22,14 +22,14 @@ const sessionMonitor = new Map<
   }
 >();
 
-// Configurações conservadoras
+// Configurações mais responsivas para acelerar detecção de problemas
 const MONITOR_CONFIG = {
-  CHECK_INTERVAL: 120000, // 2 minutos - bem espaçado
-  MAX_RECONNECT_ATTEMPTS: 2,
-  MIN_RECONNECT_DELAY: 60000, // 1 minuto entre tentativas
-  ERROR_THRESHOLD: 2,
-  ERROR_RESET_TIME: 300000, // 5 minutos
-  STABLE_TIME: 30000, // 30 segundos para considerar estável
+  CHECK_INTERVAL: 60000, // Reduzido para 1 minuto (era 2 minutos)
+  MAX_RECONNECT_ATTEMPTS: 3, // Aumentado para dar mais chances
+  MIN_RECONNECT_DELAY: 30000, // Reduzido para 30 segundos
+  ERROR_THRESHOLD: 1, // Reduzido para reagir mais rápido a problemas
+  ERROR_RESET_TIME: 180000, // Reduzido para 3 minutos
+  STABLE_TIME: 15000, // Reduzido para 15 segundos
 };
 
 // Inicializa estado
@@ -266,11 +266,11 @@ const runMonitor = async (): Promise<void> => {
 
 // Inicia o monitor
 const startSingleMonitor = (): void => {
-  // Aguarda inicialização
+  // Delay inicial reduzido para começar monitoramento mais cedo
   setTimeout(() => {
     runMonitor();
     setInterval(runMonitor, MONITOR_CONFIG.CHECK_INTERVAL);
-  }, 15000); // 15 segundos de delay inicial
+  }, 5000); // Reduzido de 15 segundos para 5 segundos
 };
 
 export default startSingleMonitor;

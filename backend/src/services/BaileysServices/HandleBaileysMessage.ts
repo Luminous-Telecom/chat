@@ -45,13 +45,14 @@ const isSessionReady = (wbot: BaileysClient): boolean => {
     const wsExists = !!(wbot as any)?.ws;
     const wsState = (wbot as any)?.ws?.readyState;
     
-    // CORREÇÃO: Ser mais flexível com estados de conexão
-    // Aceitar 'connecting' temporariamente se temos WebSocket ativo
+    // MELHORADO: Aceitar mais estados de conexão como válidos
+    // 'open' é o ideal, mas 'connecting' com WebSocket ativo também deve processar mensagens
     const isStateValid = sessionState === "open" || 
-                        (sessionState === "connecting" && wsExists);
+                        (sessionState === "connecting" && wsExists) ||
+                        (sessionState === "connecting" && !wsExists); // Pode estar reconectando
     
     // WebSocket states: CONNECTING = 0, OPEN = 1, CLOSING = 2, CLOSED = 3
-    // Aceitar undefined, 0 ou 1 quando connection está válida
+    // Aceitar estados 0, 1 e até mesmo undefined durante reconexão
     const isWsOk = !wsExists || 
                    wsState === undefined || 
                    wsState === 0 || 
@@ -59,9 +60,9 @@ const isSessionReady = (wbot: BaileysClient): boolean => {
     
     const isConnected = isStateValid && isWsOk;
     
-    // Log detalhado apenas quando debug está habilitado
-    if (!isConnected && process.env.NODE_ENV === 'development') {
-      logger.debug(`[isSessionReady] Session ${wbot.id} not ready - State: ${sessionState}, WS: ${wsExists}, WS State: ${wsState}`);
+    // Log apenas quando realmente há problema
+    if (!isConnected && sessionState === "close") {
+      logger.debug(`[isSessionReady] Session ${wbot.id} truly not ready - State: ${sessionState}, WS: ${wsExists}, WS State: ${wsState}`);
     }
     
     return isConnected;
