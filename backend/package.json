@@ -28,8 +28,7 @@
     "session-diagnose": "ts-node src/commands/sessionDiagnostics.ts diagnose",
     "session-restart": "ts-node src/commands/sessionDiagnostics.ts restart",
     "session-monitor-continuous": "ts-node src/commands/sessionDiagnostics.ts monitor",
-    "session-fix-all": "ts-node src/commands/sessionDiagnostics.ts fix-all",
-    "campaign-diagnostics": "node src/commands/campaignDiagnostics.js"
+    "session-fix-all": "ts-node src/commands/sessionDiagnostics.ts fix-all"
   },
   "engines": {
     "node": ">=18"
