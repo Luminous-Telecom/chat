@@ -551,6 +551,41 @@ export default {
             this.$notificarErro('Não foi possível excluir o contato da campanha', error)
           })
       })
+    },
+    iniciarSocketCampanhaContatos () {
+      if (this.$socket) {
+        // Ouvir eventos de atualização de ACK de campanhas
+        this.$socket.on(`${this.$store.getters.tenantId}:campaignUpdate`, this.handleCampaignContactAckUpdate)
+        console.log('🔌 Socket campaign contacts ACK listener started')
+      }
+    },
+    pararSocketCampanhaContatos () {
+      if (this.$socket) {
+        this.$socket.off(`${this.$store.getters.tenantId}:campaignUpdate`, this.handleCampaignContactAckUpdate)
+        console.log('🔌 Socket campaign contacts ACK listener stopped')
+      }
+    },
+    handleCampaignContactAckUpdate (data) {
+      if (data.type === 'campaign:ack' && data.payload.campaignId == this.$route.params.campanhaId) {
+        const payload = data.payload
+        console.log('🎯 Campaign Contact ACK Update:', payload)
+
+        // Encontrar o contato na lista
+        const contactIndex = this.contatosCampanha.findIndex(c => c.id === payload.contactId)
+        if (contactIndex !== -1) {
+          const contact = this.contatosCampanha[contactIndex]
+
+          // Com modelo simplificado, sempre atualizar o ACK diretamente
+          if (contact.campaignContacts && contact.campaignContacts.length > 0) {
+            contact.campaignContacts[0].ack = payload.ack
+            contact.campaignContacts[0].messageRandom = payload.messageRandom
+
+            // Atualizar o contato na lista
+            this.$set(this.contatosCampanha, contactIndex, { ...contact })
+            console.log(`✅ Updated contact ${payload.contactId} ACK to ${payload.ack} (${payload.messageRandom})`)
+          }
+        }
+      }
     }
   },
   beforeMount () {
@@ -564,6 +599,10 @@ export default {
       return
     }
     this.listarContatosCampanha()
+    this.iniciarSocketCampanhaContatos()
+  },
+  beforeDestroy () {
+    this.pararSocketCampanhaContatos()
   }
 }
 </script>

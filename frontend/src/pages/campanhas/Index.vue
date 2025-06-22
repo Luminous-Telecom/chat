@@ -162,6 +162,7 @@ export default {
         lastIndex: 0
       },
       loading: false,
+      updateTimeouts: {}, // Para controlar debounce das atualizações
       columns: [
         { name: 'id', label: '#', field: 'id', align: 'left' },
         { name: 'name', label: 'Campanha', field: 'name', align: 'left' },
@@ -298,10 +299,82 @@ export default {
       }).catch(err => {
         this.$notificarErro('Não foi possível iniciar a campanha.', err)
       })
+    },
+    iniciarSocketCampanhas () {
+      if (this.$socket) {
+        // Ouvir eventos de atualização de ACK de campanhas
+        this.$socket.on(`${this.$store.getters.tenantId}:campaignUpdate`, this.handleCampaignAckUpdate)
+        console.log('🔌 Socket campaigns ACK listener started')
+      }
+    },
+    pararSocketCampanhas () {
+      if (this.$socket) {
+        this.$socket.off(`${this.$store.getters.tenantId}:campaignUpdate`, this.handleCampaignAckUpdate)
+        console.log('🔌 Socket campaigns ACK listener stopped')
+      }
+    },
+    handleCampaignAckUpdate (data) {
+      if (data.type === 'campaign:ack') {
+        const payload = data.payload
+        console.log('🎯 Campaign ACK Update:', payload)
+
+        // Encontrar a campanha na lista
+        const campaignIndex = this.campanhas.findIndex(c => c.id === payload.campaignId)
+        if (campaignIndex !== -1) {
+          // Com modelo simplificado, qualquer ACK update significa mudança no status do contato
+          this.atualizarCampanhaEspecificaDebounced(payload.campaignId)
+          console.log(`📊 Scheduled update for campaign ${payload.campaignId} due to ACK change to ${payload.ack} (${payload.messageRandom})`)
+        }
+      }
+    },
+    atualizarCampanhaEspecificaDebounced (campanhaId) {
+      // Cancelar timeout anterior se existir
+      if (this.updateTimeouts[campanhaId]) {
+        clearTimeout(this.updateTimeouts[campanhaId])
+      }
+
+      // Agendar nova atualização com debounce de 1 segundo
+      this.updateTimeouts[campanhaId] = setTimeout(() => {
+        this.atualizarCampanhaEspecifica(campanhaId)
+        delete this.updateTimeouts[campanhaId]
+      }, 1000)
+    },
+    async atualizarCampanhaEspecifica (campanhaId) {
+      try {
+        // Buscar dados atualizados da campanha específica
+        const { data } = await ListarCampanhas()
+        const campanhaAtualizada = data.find(c => c.id === campanhaId)
+
+        if (campanhaAtualizada) {
+          const campanhaIndex = this.campanhas.findIndex(c => c.id === campanhaId)
+          if (campanhaIndex !== -1) {
+            // Atualizar apenas a campanha específica na lista
+            this.$set(this.campanhas, campanhaIndex, campanhaAtualizada)
+
+            // Verificar se a campanha foi finalizada
+            const totalProcessado = campanhaAtualizada.pendentesEntrega + campanhaAtualizada.recebidas + campanhaAtualizada.lidas
+            if (totalProcessado === campanhaAtualizada.contactsCount && campanhaAtualizada.status === 'processing') {
+              console.log(`🎯 Campaign ${campanhaId} completed! Total processed: ${totalProcessado}/${campanhaAtualizada.contactsCount}`)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error updating specific campaign:', error)
+      }
     }
   },
   mounted () {
     this.listarCampanhas()
+    this.iniciarSocketCampanhas()
+  },
+  beforeDestroy () {
+    this.pararSocketCampanhas()
+
+    // Limpar todos os timeouts pendentes
+    Object.values(this.updateTimeouts).forEach(timeout => {
+      clearTimeout(timeout)
+    })
+    this.updateTimeouts = {}
   }
 }
 

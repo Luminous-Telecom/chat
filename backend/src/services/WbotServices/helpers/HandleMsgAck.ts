@@ -51,20 +51,17 @@ const updateCampaignContactAck = async (
   transaction?: any
 ): Promise<void> => {
   try {
-    console.log(`[CAMPAIGN ACK] 🔍 Searching for campaign contact with messageId: ${messageId}`);
     
     // Primeiro, verificar se existem contatos de campanha no geral
     const totalCampaignContacts = await CampaignContacts.count({ transaction });
-    console.log(`[CAMPAIGN ACK] 📊 Total campaign contacts in database: ${totalCampaignContacts}`);
     
     // Verificar se existem contatos com messageId preenchido
     const contactsWithMessageId = await CampaignContacts.count({
       transaction
     });
-    console.log(`[CAMPAIGN ACK] 📱 Campaign contacts with messageId: ${contactsWithMessageId}`);
     
     // Forçar refresh do cache do Sequelize para esta consulta
-    await sequelize.query('SELECT 1', { transaction, type: sequelize.QueryTypes.SELECT });
+    await sequelize.query('SELECT 1', { transaction, type: 'SELECT' });
     
     const campaignContact = await CampaignContacts.findOne({
       where: { messageId },
@@ -85,31 +82,20 @@ const updateCampaignContactAck = async (
       // FORÇA UM RELOAD FRESCO DO BANCO para garantir dados atualizados
       await campaignContact.reload({ transaction });
       
-      console.log(`[CAMPAIGN ACK] ✅ Found campaign contact ${campaignContact.id}`);
-      console.log(`[CAMPAIGN ACK] 📋 Campaign: ${campaignContact.campaign?.name} (ID: ${campaignContact.campaignId})`);
-      console.log(`[CAMPAIGN ACK] 👤 Contact: ${campaignContact.contact?.name} (${campaignContact.contact?.number})`);
-      console.log(`[CAMPAIGN ACK] 📊 Current ACK: ${campaignContact.ack} → New ACK: ${ack} (FRESH FROM DB)`);
-      console.log(`[CAMPAIGN ACK] 📱 Message: ${campaignContact.messageRandom}`);
-      
       // Verificar se este messageId é realmente da mensagem atual do contato
       const isCurrentMessage = campaignContact.messageId === messageId;
       
       if (!isCurrentMessage) {
-        console.log(`[CAMPAIGN ACK] 📱 ACK for previous message (${messageId}) - current is (${campaignContact.messageId})`);
-        console.log(`[CAMPAIGN ACK] 🔄 Checking if ACK should still be processed...`);
         
         // Se o ACK é maior que o atual, processar mesmo sendo de mensagem anterior
         if (ack > campaignContact.ack) {
-          console.log(`[CAMPAIGN ACK] ✅ Processing ACK ${ack} from previous message (higher than current ${campaignContact.ack})`);
         } else {
-          console.log(`[CAMPAIGN ACK] ⏭️ Skipping ACK ${ack} from previous message (not higher than current ${campaignContact.ack})`);
           return;
         }
       }
       
       // Não permitir que um ACK menor sobrescreva um ACK maior
       if (ack <= campaignContact.ack) {
-        console.log(`[CAMPAIGN ACK] ⏭️ Skipping ACK update - new ACK ${ack} <= current ACK ${campaignContact.ack}`);
         return;
       }
 
@@ -117,9 +103,6 @@ const updateCampaignContactAck = async (
       
       // Recarregar para confirmar a atualização
       await campaignContact.reload({ transaction });
-      
-      console.log(`[CAMPAIGN ACK] ✅ Successfully updated campaign contact ${campaignContact.id} to ACK ${ack}`);
-      console.log(`[CAMPAIGN ACK] 🔍 VERIFICATION - Reloaded ACK from DB: ${campaignContact.ack}`);
 
       // Emitir evento para o frontend (agora sempre porque temos apenas um registro por contato)
       const io = getIO();
@@ -139,12 +122,7 @@ const updateCampaignContactAck = async (
       
       io.to(tenantId.toString()).emit(`${tenantId}:campaignUpdate`, eventData);
 
-      console.log(`[CAMPAIGN ACK] 🔔 Emitted socket event:`);
-      console.log(`[CAMPAIGN ACK]    Channel: ${tenantId}:campaignUpdate`);
-      console.log(`[CAMPAIGN ACK]    Campaign: ${campaignContact.campaignId} | Contact: ${campaignContact.contactId}`);
-      console.log(`[CAMPAIGN ACK]    ACK: ${ack} | Status: ${getMessageStatus(ack)}`);
     } else {
-      console.log(`[CAMPAIGN ACK] ❌ No campaign contact found for messageId: ${messageId}`);
       
       // Debug adicional: listar alguns messageIds existentes
       const existingMessageIds = await CampaignContacts.findAll({
@@ -154,10 +132,7 @@ const updateCampaignContactAck = async (
         raw: true
       });
       
-      console.log(`[CAMPAIGN ACK] 🔍 Sample existing messageIds in database:`);
-      existingMessageIds.forEach((cc: any) => {
-        console.log(`[CAMPAIGN ACK]    ID: ${cc.id} | MessageId: ${cc.messageId} | CampaignId: ${cc.campaignId}`);
-      });
+
     }
   } catch (error) {
     logger.error(`[HandleMsgAck] Error updating campaign contact ACK for messageId ${messageId}: ${error}`);
@@ -175,7 +150,6 @@ export const HandleMsgAck = async (
   }
 
   const messageId = msg.key.id;
-  console.log(`[HandleMsgAck] Processing ACK ${ack} for messageId: ${messageId}`);
   
   // Primeiro, tentar atualizar campanhas (com transação separada)
   const campaignTransaction = await sequelize.transaction({
@@ -185,10 +159,8 @@ export const HandleMsgAck = async (
   try {
     await updateCampaignContactAck(messageId, ack, campaignTransaction);
     await campaignTransaction.commit();
-    console.log(`[HandleMsgAck] ✅ Campaign transaction committed successfully for messageId: ${messageId}`);
   } catch (campaignError) {
     await campaignTransaction.rollback();
-    console.log(`[HandleMsgAck] ❌ Campaign transaction rolled back for messageId: ${messageId}`);
     logger.error(`[HandleMsgAck] Error in campaign transaction: ${campaignError}`);
   }
 
@@ -209,7 +181,6 @@ export const HandleMsgAck = async (
 
     if (messages.length === 0) {
       await messageTransaction.rollback();
-      console.log(`[HandleMsgAck] ❌ No regular messages found for messageId: ${messageId} - rolled back message transaction`);
       return;
     }
 
@@ -224,7 +195,7 @@ export const HandleMsgAck = async (
       // Primeiro, vamos verificar se alguma mensagem já tem um ACK maior
       const messagesWithHigherAck = messages.filter(m => m.ack >= ack);
       if (messagesWithHigherAck.length > 0) {
-        await t.rollback();
+        await messageTransaction.rollback();
         return;
       }
 
@@ -234,9 +205,12 @@ export const HandleMsgAck = async (
       // 2. Foi criada mais recentemente
       messageToUpdate = messages.reduce((best, current) => {
         if (!best) return current;
-        if (current.ack > best.ack) return current;
-        if (current.ack === best.ack && current.createdAt > best.createdAt)
+        if (current.ack > best.ack) {
           return current;
+        }
+        if (current.ack === best.ack && current.createdAt > best.createdAt) {
+          return current;
+        }
         return best;
       }, null as Message | null);
 
@@ -319,7 +293,6 @@ export const HandleMsgAck = async (
     }
 
     await messageTransaction.commit();
-    console.log(`[HandleMsgAck] ✅ Message transaction committed successfully for messageId: ${messageId}`);
   } catch (err) {
     await messageTransaction.rollback();
     logger.error(
