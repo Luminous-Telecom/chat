@@ -30,6 +30,11 @@ interface MessageUpdate {
   // outros campos da mensagem
 }
 
+// Helper function to validate ACK values
+const isValidAck = (ack: number): boolean => {
+  return ack >= 0 && ack <= 3;
+};
+
 // Helper function to get message status from ack
 const getMessageStatus = (ack: number): string => {
   switch (ack) {
@@ -151,6 +156,15 @@ export const HandleMsgAck = async (
 
   const messageId = msg.key.id;
   
+  // CRÍTICO: Validar ACK antes de processar
+  if (!isValidAck(ack)) {
+    logger.error(`[HandleMsgAck] ⚠️  ACK INVÁLIDO DETECTADO: ${ack} para messageId: ${messageId}`);
+    logger.error(`[HandleMsgAck] ACKs válidos são apenas 0, 1, 2, 3. Ignorando ACK ${ack}`);
+    return;
+  }
+
+  logger.info(`[HandleMsgAck] Processando ACK ${ack} para messageId: ${messageId}`);
+  
   // Primeiro, tentar atualizar campanhas (com transação separada)
   const campaignTransaction = await sequelize.transaction({
     isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED
@@ -180,6 +194,7 @@ export const HandleMsgAck = async (
     });
 
     if (messages.length === 0) {
+      logger.info(`[HandleMsgAck] Nenhuma mensagem encontrada para messageId: ${messageId}`);
       await messageTransaction.rollback();
       return;
     }
@@ -190,11 +205,13 @@ export const HandleMsgAck = async (
     if (messages.length === 1) {
       // Se só temos uma mensagem, ela é a que devemos atualizar
       messageToUpdate = messages[0];
+      logger.info(`[HandleMsgAck] Mensagem única encontrada: ${messageToUpdate.id} (${messageToUpdate.mediaType})`);
     } else {
       // Se temos múltiplas mensagens, vamos analisar cada uma
       // Primeiro, vamos verificar se alguma mensagem já tem um ACK maior
       const messagesWithHigherAck = messages.filter(m => m.ack >= ack);
       if (messagesWithHigherAck.length > 0) {
+        logger.info(`[HandleMsgAck] ACK ${ack} ignorado - mensagem já tem ACK maior ou igual`);
         await messageTransaction.rollback();
         return;
       }
@@ -216,6 +233,7 @@ export const HandleMsgAck = async (
 
       // Todas as outras mensagens são duplicadas
       duplicateMessages = messages.filter(m => m.id !== messageToUpdate?.id);
+      logger.info(`[HandleMsgAck] ${messages.length} mensagens encontradas, atualizando: ${messageToUpdate?.id}`);
     }
 
     if (!messageToUpdate) {
@@ -228,6 +246,7 @@ export const HandleMsgAck = async (
 
     // Não permitir que um ACK menor sobrescreva um ACK maior
     if (ack <= messageToUpdate.ack) {
+      logger.info(`[HandleMsgAck] ACK ${ack} ignorado - mensagem ${messageToUpdate.id} já tem ACK ${messageToUpdate.ack}`);
       await messageTransaction.rollback();
       return;
     }
@@ -248,6 +267,9 @@ export const HandleMsgAck = async (
     }
 
     const newStatus = getMessageStatus(ack);
+    
+    logger.info(`[HandleMsgAck] Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
+    
     // Atualiza a mensagem com lock
     await messageToUpdate.update(
       {
@@ -259,7 +281,7 @@ export const HandleMsgAck = async (
 
     // Emitir evento no canal correto
     const io = getIO();
-    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, {
+    const socketPayload = {
       type: "chat:ack",
       payload: {
         id: messageToUpdate.id,
@@ -268,6 +290,7 @@ export const HandleMsgAck = async (
         status: newStatus,
         read: ack >= 3,
         fromMe: messageToUpdate.fromMe,
+        mediaType: messageToUpdate.mediaType, // ADICIONADO: incluir mediaType no payload
         ticket: {
           id: ticket.id,
           status: ticket.status,
@@ -275,7 +298,11 @@ export const HandleMsgAck = async (
           answered: ticket.answered,
         },
       },
-    });
+    };
+    
+    logger.info(`[HandleMsgAck] Emitindo evento socket para ${messageToUpdate.mediaType} com ACK ${ack}`);
+    
+    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, socketPayload);
 
     // Se temos mensagens duplicadas, marca como deletadas
     if (duplicateMessages.length > 0) {
@@ -293,6 +320,7 @@ export const HandleMsgAck = async (
     }
 
     await messageTransaction.commit();
+    logger.info(`[HandleMsgAck] ✅ ACK ${ack} processado com sucesso para mensagem ${messageToUpdate.id}`);
   } catch (err) {
     await messageTransaction.rollback();
     logger.error(

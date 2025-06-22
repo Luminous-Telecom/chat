@@ -35,6 +35,62 @@ const createSafeFilename = (originalName: string, timestamp: number, ext: string
   return safeName;
 };
 
+// Função padronizada para extrair o ID da mensagem do WhatsApp
+const extractMessageId = (sentMessage: any): string | null => {
+  logger.info(
+    "[SendWhatsAppMedia] Resposta completa do WhatsApp:",
+    JSON.stringify(sentMessage, null, 2)
+  );
+
+  let messageId: string | null = null;
+  
+  if (sentMessage) {
+    if (typeof sentMessage === "string") {
+      messageId = sentMessage;
+    } else if (sentMessage.key && sentMessage.key.id) {
+      messageId = sentMessage.key.id;
+    } else if (sentMessage.id) {
+      if (typeof sentMessage.id === "string") {
+        messageId = sentMessage.id;
+      } else if (sentMessage.id.id) {
+        messageId = sentMessage.id.id;
+      } else if (sentMessage.id._serialized) {
+        messageId = sentMessage.id._serialized;
+      }
+    }
+  }
+
+  logger.info("[SendWhatsAppMedia] ID extraído da mensagem:", messageId);
+  return messageId;
+};
+
+// Função padronizada para atualizar a mensagem no banco
+const updateMessageWithId = async (dbMessage: Message, messageId: string | null, mediaType: string): Promise<void> => {
+  if (messageId) {
+    const updateData = {
+      messageId,
+      status: "sended",
+      ack: 1,
+      mediaType,
+    };
+
+    logger.info(
+      "[SendWhatsAppMedia] Dados para atualização:",
+      JSON.stringify(updateData, null, 2)
+    );
+
+    await dbMessage.update(updateData);
+    logger.info(
+      `[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`
+    );
+  } else {
+    logger.error(
+      "[SendWhatsAppMedia] WhatsApp não retornou ID da mensagem!"
+    );
+    throw new AppError("ERR_WAPP_MESSAGE_ID_NOT_FOUND");
+  }
+};
+
 interface Request {
   media: Express.Multer.File;
   ticket: Ticket;
@@ -140,56 +196,10 @@ const SendWhatsAppMedia = async (
         });
         logger.info("[SendWhatsAppMedia] Enviado como áudio");
 
-        // Log detalhado da resposta
-        logger.info(
-          "[SendWhatsAppMedia] Resposta completa do WhatsApp:",
-          JSON.stringify(sentMessage, null, 2)
-        );
+        // Extrair o ID da mensagem usando função padronizada
+        const messageId = extractMessageId(sentMessage);
+        await updateMessageWithId(dbMessage, messageId, "audio");
 
-        // Tentar extrair o ID da mensagem (Baileys usa key.id)
-        let messageId: string | null = null;
-        if (sentMessage) {
-          if (typeof sentMessage === "string") {
-            messageId = sentMessage;
-          } else if (sentMessage.key && sentMessage.key.id) {
-            messageId = sentMessage.key.id;
-          } else if (sentMessage.id) {
-            if (typeof sentMessage.id === "string") {
-              messageId = sentMessage.id;
-            } else if (sentMessage.id.id) {
-              messageId = sentMessage.id.id;
-            } else if (sentMessage.id._serialized) {
-              messageId = sentMessage.id._serialized;
-            }
-          }
-        }
-
-        logger.info("[SendWhatsAppMedia] ID extraído da mensagem:", messageId);
-
-        // Atualizar a mensagem no banco com o ID do WhatsApp
-        if (messageId) {
-          const updateData = {
-            messageId,
-            status: "sended",
-            ack: 1,
-            mediaType: "audio", // Manter como áudio
-          };
-
-          logger.info(
-            "[SendWhatsAppMedia] Dados para atualização:",
-            JSON.stringify(updateData, null, 2)
-          );
-
-          await dbMessage.update(updateData);
-          logger.info(
-            `[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`
-          );
-        } else {
-          logger.error(
-            "[SendWhatsAppMedia] WhatsApp não retornou ID da mensagem!"
-          );
-          throw new AppError("ERR_WAPP_MESSAGE_ID_NOT_FOUND");
-        }
       } catch (audioError) {
         logger.warn(
           `[SendWhatsAppMedia] Falha ao enviar como áudio: ${audioError.message}`
@@ -204,133 +214,47 @@ const SendWhatsAppMedia = async (
         });
         logger.info("[SendWhatsAppMedia] Enviado como documento");
 
-        // Atualizar a mensagem no banco
-        if (sentMessage?.key?.id || sentMessage?.id) {
-          const messageId = sentMessage?.key?.id || 
-            (typeof sentMessage.id === "string" ? sentMessage.id : sentMessage.id.id);
-          const updateData = {
-            messageId,
-            status: "sended",
-            ack: 1,
-            mediaType: "document", // Atualizar para documento já que falhou como áudio
-          };
-
-          await dbMessage.update(updateData);
-          logger.info(
-            `[SendWhatsAppMedia] Mensagem atualizada como documento com ID: ${messageId}`
-          );
-        }
+        // Extrair o ID da mensagem usando função padronizada
+        const messageId = extractMessageId(sentMessage);
+        await updateMessageWithId(dbMessage, messageId, "document");
       }
     } else if (mimeType && mimeType.startsWith("image/")) {
+      logger.info("[SendWhatsAppMedia] Tentando enviar como imagem");
       sentMessage = await wbot.sendMessage(`${numberToSend}@c.us`, {
         image: fileBuffer,
         caption: body,
       });
-      // Atualizar a mensagem no banco
-      if (sentMessage?.id) {
-        const messageId =
-          typeof sentMessage.id === "string"
-            ? sentMessage.id
-            : sentMessage.id.id;
-        const mediaType = mimeType.startsWith("image/")
-          ? "image"
-          : mimeType.startsWith("video/")
-          ? "video"
-          : mimeType.startsWith("audio/")
-          ? "audio"
-          : "document";
+      logger.info("[SendWhatsAppMedia] Enviado como imagem");
 
-        const updateData = {
-          messageId,
-          status: "sended",
-          ack: 1,
-          mediaType,
-        };
+      // Extrair o ID da mensagem usando função padronizada
+      const messageId = extractMessageId(sentMessage);
+      await updateMessageWithId(dbMessage, messageId, "image");
 
-        logger.info(
-          "[SendWhatsAppMedia] Dados para atualização:",
-          JSON.stringify(updateData, null, 2)
-        );
-
-        await dbMessage.update(updateData);
-        logger.info(
-          `[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`
-        );
-      }
     } else if (mimeType && mimeType.startsWith("video/")) {
+      logger.info("[SendWhatsAppMedia] Tentando enviar como vídeo");
       sentMessage = await wbot.sendMessage(`${numberToSend}@c.us`, {
         video: fileBuffer,
         caption: body,
       });
-      // Atualizar a mensagem no banco
-      if (sentMessage?.id) {
-        const messageId =
-          typeof sentMessage.id === "string"
-            ? sentMessage.id
-            : sentMessage.id.id;
-        const mediaType = mimeType.startsWith("image/")
-          ? "image"
-          : mimeType.startsWith("video/")
-          ? "video"
-          : mimeType.startsWith("audio/")
-          ? "audio"
-          : "document";
+      logger.info("[SendWhatsAppMedia] Enviado como vídeo");
 
-        const updateData = {
-          messageId,
-          status: "sended",
-          ack: 1,
-          mediaType,
-        };
+      // Extrair o ID da mensagem usando função padronizada
+      const messageId = extractMessageId(sentMessage);
+      await updateMessageWithId(dbMessage, messageId, "video");
 
-        logger.info(
-          "[SendWhatsAppMedia] Dados para atualização:",
-          JSON.stringify(updateData, null, 2)
-        );
-
-        await dbMessage.update(updateData);
-        logger.info(
-          `[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`
-        );
-      }
     } else {
+      logger.info("[SendWhatsAppMedia] Tentando enviar como documento");
       sentMessage = await wbot.sendMessage(`${numberToSend}@c.us`, {
         document: fileBuffer,
         fileName: safeFilename,
         mimetype: mimeType,
         caption: body,
       });
-      // Atualizar a mensagem no banco
-      if (sentMessage?.id) {
-        const messageId =
-          typeof sentMessage.id === "string"
-            ? sentMessage.id
-            : sentMessage.id.id;
-        const mediaType = mimeType.startsWith("image/")
-          ? "image"
-          : mimeType.startsWith("video/")
-          ? "video"
-          : mimeType.startsWith("audio/")
-          ? "audio"
-          : "document";
+      logger.info("[SendWhatsAppMedia] Enviado como documento");
 
-        const updateData = {
-          messageId,
-          status: "sended",
-          ack: 1,
-          mediaType,
-        };
-
-        logger.info(
-          "[SendWhatsAppMedia] Dados para atualização:",
-          JSON.stringify(updateData, null, 2)
-        );
-
-        await dbMessage.update(updateData);
-        logger.info(
-          `[SendWhatsAppMedia] Mensagem atualizada com ID do WhatsApp: ${messageId}`
-        );
-      }
+      // Extrair o ID da mensagem usando função padronizada
+      const messageId = extractMessageId(sentMessage);
+      await updateMessageWithId(dbMessage, messageId, "document");
     }
 
     // Registrar atividade do usuário se houver userId

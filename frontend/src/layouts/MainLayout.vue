@@ -899,11 +899,6 @@ export default {
 
 }
 
-/* Cores dos ícones no tema escuro */
-.body--dark .q-icon {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-
 .body--dark .houverList .q-icon {
   color: rgba(255, 255, 255, 0.6) !important;
 }
