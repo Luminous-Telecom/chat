@@ -202,6 +202,7 @@
                 :isSent="mensagem.fromMe"
                 :audioName="getAudioFileName(mensagem)"
                 :showSpeedControl="true"
+                :ackStatus="mensagem.ack || 0"
               />
             </template>
             <template v-if=" mensagem.mediaType === 'vcard' ">
