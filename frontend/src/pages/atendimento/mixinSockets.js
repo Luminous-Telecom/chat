@@ -295,12 +295,37 @@ export default {
               ticket: data.payload.ticket
             }
 
-            // Atualizar status imediatamente para ack >= 3 (mensagem lida)
-            // ou quando o ack é maior que o atual
+            // Verificar se deve processar imediatamente
             const chave = `${ticketId}-${messageId}`
             const statusAtual = self.ultimoStatusMensagem.get(chave)
 
-            if (data.payload.ack >= 3 || !statusAtual || data.payload.ack > statusAtual.ack) {
+            // Processar imediatamente nos casos:
+            // 1. ACK >= 3 (mensagem lida)
+            // 2. Não existe status atual
+            // 3. ACK é maior que o atual
+            // 4. ACK 5 (áudio ouvido) mesmo se atual for 3 (visualizado)
+            const processarImediatamente = data.payload.ack >= 3 ||
+                                         !statusAtual ||
+                                         data.payload.ack > statusAtual.ack ||
+                                         (data.payload.ack === 5 && statusAtual?.ack === 3)
+
+            console.log('[DEBUG] ACK recebido:', {
+              messageId,
+              ack: data.payload.ack,
+              mediaType: data.payload.mediaType,
+              statusAtual: statusAtual?.ack,
+              processarImediatamente
+            })
+
+            if (processarImediatamente) {
+              // Processar áudios imediatamente para melhor responsividade
+              if (data.payload.mediaType === 'audio') {
+                console.log('[DEBUG] Processando ÁUDIO imediatamente:', {
+                  messageId,
+                  ack: data.payload.ack,
+                  mediaType: data.payload.mediaType
+                })
+              }
               self.atualizarStatusMensagem(statusPayload)
             } else {
               // Para outros casos, usar debounce
@@ -414,8 +439,18 @@ export default {
 
       // Se já temos um status atual, verificar se a nova atualização é relevante
       if (statusAtual) {
-        // Se o ack atual é maior que o novo, ignorar a atualização silenciosamente
-        if (statusAtual.ack > ack) {
+        // Permitir ACK 5 sobrescrever ACK 3 (áudio ouvido sobrescreve visualizado)
+        const podeAtualizar = ack > statusAtual.ack ||
+                             (ack === 5 && statusAtual.ack === 3)
+
+        // Se o ack atual é maior que o novo e não é o caso especial do ACK 5
+        if (!podeAtualizar) {
+          console.log('[DEBUG] ACK ignorado:', {
+            messageId,
+            ackAtual: statusAtual.ack,
+            novoAck: ack,
+            motivo: 'ACK não pode ser aplicado'
+          })
           return
         }
 
@@ -452,12 +487,16 @@ export default {
     // Método auxiliar para obter status a partir do ack
     getStatusFromAck (ack) {
       switch (ack) {
+        case 5:
+          return 'played' // ACK 5 = áudio ouvido/reproduzido
         case 3:
           return 'received'
         case 2:
           return 'delivered' // Keep as 'delivered' for display purposes
-        default:
+        case 1:
           return 'sended'
+        default:
+          return 'pending'
       }
     },
 

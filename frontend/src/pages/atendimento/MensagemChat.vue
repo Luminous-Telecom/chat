@@ -188,13 +188,33 @@
                 </q-list>
               </q-menu>
             </q-btn>
-            <q-icon
-              v-if=" mensagem.fromMe "
-              class="absolute-bottom-right q-pr-xs q-pb-xs"
-              :name=" ackIcons[mensagem.ack] "
-              size="1.2em"
-              :color=" mensagem.ack >= 3 ? 'blue-12' : '' "
-            />
+            <!-- Ícones de ACK para mensagens enviadas -->
+            <div v-if="mensagem.fromMe" class="absolute-bottom-right q-pr-xs q-pb-xs ack-icons-container">
+              <!-- Para ACK 5 (áudio ouvido), mostrar ícone de lido + ícone de ouvido -->
+              <template v-if="mensagem.ack === 5 && mensagem.mediaType === 'audio'">
+                <!-- Ícone de lido (check duplo) -->
+                <q-icon
+                  name="mdi-check-all"
+                  size="1.2em"
+                  color="blue-12"
+                  class="ack-read-icon"
+                />
+                <!-- Ícone de ouvido (fone) -->
+                <q-icon
+                  name="mdi-headphones"
+                  size="1.0em"
+                  color="blue-12"
+                  class="ack-played-icon"
+                />
+              </template>
+              <!-- Para outros ACKs, comportamento normal -->
+              <q-icon
+                v-else
+                :name="getAckIcon(mensagem.ack)"
+                size="1.2em"
+                :color="getAckColor(mensagem.ack)"
+              />
+            </div>
             <template v-if=" mensagem.mediaType === 'audio' ">
               <WhatsAppAudioPlayer
                 :audioUrl="mensagem.mediaUrl"
@@ -497,7 +517,8 @@ export default {
         1: 'mdi-check',
         2: 'mdi-check-all',
         3: 'mdi-check-all',
-        4: 'mdi-check-all'
+        4: 'mdi-check-all',
+        5: 'mdi-check-all' // ACK 5 base (será sobrescrito para áudios)
       },
       showPdfModal: false,
       currentPdfUrl: '',
@@ -555,6 +576,22 @@ export default {
       this.$emit('update:mensagensParaEncaminhar', [])
       this.$emit('update:ativarMultiEncaminhamento', !this.ativarMultiEncaminhamento)
       // this.verificarEncaminharMensagem(mensagem)
+    },
+    getAckIcon (ack) {
+      // Retorna o ícone apropriado para cada ACK
+      const icons = this.ackIcons || this.localAckIcons
+      return icons[ack] || 'mdi-clock-outline'
+    },
+    getAckColor (ack) {
+      // Retorna a cor apropriada para cada ACK
+      if (ack >= 3) {
+        return 'blue-12' // Azul para lido/ouvido
+      } else if (ack === 2) {
+        return 'grey-7' // Cinza para entregue
+      } else if (ack === 1) {
+        return 'grey-5' // Cinza claro para enviado
+      }
+      return 'grey-4' // Cinza mais claro para pendente
     },
     isPDF (url) {
       if (!url) return false
@@ -1272,4 +1309,36 @@ export default {
 }
 
 /* Player de áudio agora integrado com design do WhatsApp */
+
+/* Estilos para os ícones de ACK */
+.ack-icons-container {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  .ack-read-icon {
+    opacity: 1;
+  }
+
+  .ack-played-icon {
+    margin-left: -2px;
+    opacity: 0.9;
+  }
+}
+
+/* Animação para o ícone de ouvido */
+.ack-played-icon {
+  animation: fadeInScale 0.3s ease-in-out;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
 </style>

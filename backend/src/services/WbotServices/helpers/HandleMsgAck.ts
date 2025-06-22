@@ -31,7 +31,11 @@ interface MessageUpdate {
 }
 
 // Helper function to validate ACK values
-const isValidAck = (ack: number): boolean => {
+const isValidAck = (ack: number, mediaType?: string): boolean => {
+  // ACK 5 é válido apenas para mensagens de áudio (quando o áudio foi ouvido/reproduzido)
+  if (ack === 5) {
+    return mediaType === 'audio';
+  }
   return ack >= 0 && ack <= 3;
 };
 
@@ -44,6 +48,8 @@ const getMessageStatus = (ack: number): string => {
       return "delivered";
     case 3:
       return "received";
+    case 5:
+      return "played"; // ACK 5 = áudio foi ouvido/reproduzido
     default:
       return "pending";
   }
@@ -100,7 +106,11 @@ const updateCampaignContactAck = async (
       }
       
       // Não permitir que um ACK menor sobrescreva um ACK maior
-      if (ack <= campaignContact.ack) {
+      // Exceção: ACK 5 pode sobrescrever ACK 3 para áudios
+      const canUpdateCampaignAck = ack > campaignContact.ack || 
+                                  (ack === 5 && campaignContact.ack === 3);
+      
+      if (!canUpdateCampaignAck) {
         return;
       }
 
@@ -156,14 +166,36 @@ export const HandleMsgAck = async (
 
   const messageId = msg.key.id;
   
+  logger.info(`[HandleMsgAck] Processando ACK ${ack} para messageId: ${messageId}`);
+  
+  // Para ACK 5, precisamos verificar se é uma mensagem de áudio
+  let mediaType: string | undefined;
+  if (ack === 5) {
+    try {
+      const audioMessage = await Message.findOne({
+        where: {
+          [Op.or]: [{ messageId }, { id: messageId }],
+        },
+        attributes: ['mediaType'],
+      });
+      mediaType = audioMessage?.mediaType;
+      logger.info(`[HandleMsgAck] MediaType encontrado para ACK 5: ${mediaType}`);
+    } catch (error) {
+      logger.error(`[HandleMsgAck] Erro ao buscar mediaType: ${error}`);
+    }
+  }
+  
   // CRÍTICO: Validar ACK antes de processar
-  if (!isValidAck(ack)) {
-    logger.error(`[HandleMsgAck] ⚠️  ACK INVÁLIDO DETECTADO: ${ack} para messageId: ${messageId}`);
-    logger.error(`[HandleMsgAck] ACKs válidos são apenas 0, 1, 2, 3. Ignorando ACK ${ack}`);
+  if (!isValidAck(ack, mediaType)) {
+    if (ack === 5) {
+      logger.error(`[HandleMsgAck] ⚠️  ACK 5 INVÁLIDO: messageId ${messageId} não é áudio (mediaType: ${mediaType})`);
+      logger.error(`[HandleMsgAck] ACK 5 é válido apenas para mensagens de áudio. Ignorando ACK ${ack}`);
+    } else {
+      logger.error(`[HandleMsgAck] ⚠️  ACK INVÁLIDO DETECTADO: ${ack} para messageId: ${messageId}`);
+      logger.error(`[HandleMsgAck] ACKs válidos são 0, 1, 2, 3 (ou 5 para áudio). Ignorando ACK ${ack}`);
+    }
     return;
   }
-
-  logger.info(`[HandleMsgAck] Processando ACK ${ack} para messageId: ${messageId}`);
   
   // Primeiro, tentar atualizar campanhas (com transação separada)
   const campaignTransaction = await sequelize.transaction({
@@ -209,7 +241,14 @@ export const HandleMsgAck = async (
     } else {
       // Se temos múltiplas mensagens, vamos analisar cada uma
       // Primeiro, vamos verificar se alguma mensagem já tem um ACK maior
-      const messagesWithHigherAck = messages.filter(m => m.ack >= ack);
+      // Exceção: ACK 5 pode ser aplicado mesmo se já existe ACK 3 para áudios
+      const messagesWithHigherAck = messages.filter(m => {
+        if (ack === 5 && m.ack === 3 && m.mediaType === 'audio') {
+          return false; // Permite ACK 5 sobrescrever ACK 3 para áudios
+        }
+        return m.ack >= ack;
+      });
+      
       if (messagesWithHigherAck.length > 0) {
         logger.info(`[HandleMsgAck] ACK ${ack} ignorado - mensagem já tem ACK maior ou igual`);
         await messageTransaction.rollback();
@@ -245,7 +284,11 @@ export const HandleMsgAck = async (
     }
 
     // Não permitir que um ACK menor sobrescreva um ACK maior
-    if (ack <= messageToUpdate.ack) {
+    // Exceção: ACK 5 pode sobrescrever ACK 3 para áudios (3=visualizado, 5=ouvido)
+    const canUpdateAck = ack > messageToUpdate.ack || 
+                        (ack === 5 && messageToUpdate.ack === 3 && messageToUpdate.mediaType === 'audio');
+    
+    if (!canUpdateAck) {
       logger.info(`[HandleMsgAck] ACK ${ack} ignorado - mensagem ${messageToUpdate.id} já tem ACK ${messageToUpdate.ack}`);
       await messageTransaction.rollback();
       return;
@@ -268,7 +311,11 @@ export const HandleMsgAck = async (
 
     const newStatus = getMessageStatus(ack);
     
-    logger.info(`[HandleMsgAck] Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
+    if (ack === 5) {
+      logger.info(`[HandleMsgAck] 🔊 ÁUDIO OUVIDO: Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
+    } else {
+      logger.info(`[HandleMsgAck] Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
+    }
     
     // Atualiza a mensagem com lock
     await messageToUpdate.update(
@@ -289,6 +336,7 @@ export const HandleMsgAck = async (
         ack,
         status: newStatus,
         read: ack >= 3,
+        played: ack === 5, // ADICIONADO: indicar se áudio foi ouvido
         fromMe: messageToUpdate.fromMe,
         mediaType: messageToUpdate.mediaType, // ADICIONADO: incluir mediaType no payload
         ticket: {

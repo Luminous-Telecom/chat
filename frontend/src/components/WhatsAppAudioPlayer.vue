@@ -12,14 +12,6 @@
         :loading="isLoading"
       />
 
-      <!-- Ícone do tipo de áudio -->
-      <q-icon
-        :name="isPTT ? 'mic' : 'music_note'"
-        size="16px"
-        class="audio-type-icon"
-        :style="{ color: audioIconColor }"
-      />
-
             <!-- Visualização de ondas -->
       <div class="audio-waveform" @click="seekToPosition">
         <div
@@ -112,41 +104,7 @@ export default {
       waveformGenerated: false
     }
   },
-  computed: {
-    audioIconColor () {
-      const isDark = this.$q.dark.isActive
 
-      // ACK 5 = áudio foi ouvido/reproduzido - ícone azul
-      if (this.ackStatus === 5) {
-        if (isDark) {
-          return this.isSent ? '#64b5f6' : '#42a5f5'
-        }
-        return this.isSent ? '#4fc3f7' : '#2196f3'
-      }
-
-      // ACK 3 = áudio foi visualizado - ícone verde
-      if (this.ackStatus === 3) {
-        if (isDark) {
-          return this.isSent ? '#66bb6a' : '#4caf50'
-        }
-        return this.isSent ? '#4caf50' : '#06d755'
-      }
-
-      // Cores padrão baseadas no tipo e tema
-      if (this.isPTT) {
-        if (isDark) {
-          return this.isSent ? '#ffb74d' : '#ff9800'
-        }
-        return this.isSent ? '#e65100' : '#ff9800'
-      }
-
-      // Cor padrão
-      if (isDark) {
-        return this.isSent ? 'rgba(255, 255, 255, 0.6)' : '#8696a0'
-      }
-      return this.isSent ? 'rgba(0, 0, 0, 0.45)' : '#667781'
-    }
-  },
   mounted () {
     // Gerar waveform com pequeno delay para evitar sobrecarga
     this.$nextTick(() => {
@@ -474,12 +432,6 @@ export default {
       }
     }
 
-    .audio-type-icon {
-      flex-shrink: 0;
-      margin-left: 2px;
-      transition: color 0.3s ease;
-    }
-
     .audio-waveform {
       flex: 1;
       display: flex;
@@ -562,10 +514,6 @@ export default {
       }
     }
 
-    .audio-type-icon {
-      color: rgba(0, 0, 0, 0.45);
-    }
-
     .audio-info {
       .audio-time,
       .speed-btn {
@@ -578,7 +526,7 @@ export default {
     }
   }
 
-  // Cor do ícone PTT agora é dinâmica via computed property
+      // Ícone de tipo de áudio removido
 }
 
 // Tema escuro
@@ -593,8 +541,6 @@ export default {
         background: #008f72;
       }
     }
-
-    // Cor do ícone dinâmica via computed property
 
     .audio-info {
       .audio-time,
@@ -618,8 +564,6 @@ export default {
         background: #008f72;
       }
     }
-
-    // Cor do ícone dinâmica via computed property
 
     .audio-info {
       .audio-time,
@@ -685,10 +629,6 @@ export default {
         .q-icon {
           font-size: 16px;
         }
-      }
-
-      .audio-type-icon {
-        font-size: 14px;
       }
 
       .audio-waveform {
