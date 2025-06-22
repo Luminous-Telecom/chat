@@ -1,13 +1,12 @@
 <template>
-  <q-layout view="hHh Lpr lFf">
+  <q-layout view="lHh Lpr lFf">
     <q-drawer
       :value="true"
       persistent
-      no-swipe-open
-      no-swipe-close
-      no-swipe-backdrop
       :width="70"
       :breakpoint="1024"
+      :mini="false"
+      mini-to-overlay
       class="bg-sidebar-custom icon-only-sidebar"
     >
             <div class="sidebar-content">
@@ -1196,40 +1195,24 @@ export default {
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
-  /* Ajuste para menu lateral fixo - conteúdo inicia após o menu */
+  /* Garantir que o conteúdo seja empurrado pelo menu */
+  .q-layout__section--marginal.fixed-left {
+    z-index: 2000;
+  }
+
   .q-page-container {
-    margin-left: 70px !important;
-    padding-left: 0 !important;
-    transition: margin-left 0.3s ease;
+    padding-left: 70px;
+  }
+
+  @media (max-width: 1023px) {
+    .q-page-container {
+      padding-left: 0;
+    }
   }
 
   .q-page {
     padding-left: 0 !important;
     margin-left: 0 !important;
-  }
-
-  /* Garantir que outros elementos do layout não interfiram */
-  .q-layout__section--marginal {
-    margin-left: 0 !important;
-  }
-
-  /* Layout responsivo - manter o menu lateral em todos os tamanhos */
-  @media (max-width: 1024px) {
-    .q-page-container {
-      margin-left: 70px !important;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .q-page-container {
-      margin-left: 70px !important;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .q-page-container {
-      margin-left: 70px !important;
-    }
   }
 
   /* Estilo para o botão do menu do topo */
