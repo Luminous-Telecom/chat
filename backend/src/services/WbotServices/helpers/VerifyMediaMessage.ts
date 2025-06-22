@@ -122,8 +122,7 @@ const VerifyMediaMessage = async (
           downloadResult = await Promise.race([
             (msg as any).downloadMedia(),
             new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("Download timeout")), 30000)
-            ),
+              setTimeout(() => reject(new Error("Download timeout")), 30000))
           ]);
         }
 

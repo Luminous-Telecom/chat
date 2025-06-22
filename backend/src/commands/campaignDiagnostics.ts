@@ -70,8 +70,12 @@ const campaignDiagnostics = async () => {
           for (let i = 0; i < Math.min(5, delayed.length); i++) {
             const job = delayed[i];
             const delay = job.opts.delay;
-            const executeAt = new Date(Date.now() + delay);
-            console.log(`        - Job ${job.id}: executa em ${executeAt.toLocaleString()}`);
+            if (delay !== undefined) {
+              const executeAt = new Date(Date.now() + delay);
+              console.log(`        - Job ${job.id}: executa em ${executeAt.toLocaleString()}`);
+            } else {
+              console.log(`        - Job ${job.id}: delay não definido`);
+            }
           }
         }
 
@@ -102,8 +106,8 @@ const campaignDiagnostics = async () => {
     // 4. Verificar processamento da fila
     console.log("\n4. Verificando processamento da fila...");
     if (campaignQueue) {
-      const processing = campaignQueue.bull.process;
-      console.log(`   ${processing ? '✅' : '❌'} Fila está sendo processada`);
+      const processing = campaignQueue.bull.process.length;
+      console.log(`   ${processing > 0 ? '✅' : '❌'} Fila está sendo processada (${processing} processadores ativos)`);
     }
 
     console.log("\n=== FIM DO DIAGNÓSTICO ===");

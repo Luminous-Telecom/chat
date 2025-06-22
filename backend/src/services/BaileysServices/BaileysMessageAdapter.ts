@@ -227,7 +227,13 @@ export class BaileysMessageAdapter {
       case "documentMessage":
         return content.mimetype || "application/octet-stream";
       case "audioMessage":
-        return content.mimetype || "audio/ogg; codecs=opus";
+        // Melhor detecção de áudio baseado no mimetype original ou fallback inteligente
+        if (content.mimetype) {
+          return content.mimetype;
+        }
+        // Verificar se é PTT (Push to Talk) ou áudio normal
+        const isPtt = content.ptt || false;
+        return isPtt ? "audio/ogg; codecs=opus" : "audio/mpeg";
       case "stickerMessage":
         return "image/webp";
       default:
@@ -244,7 +250,27 @@ export class BaileysMessageAdapter {
       case "documentMessage":
         return content.fileName || `document-${Date.now()}`;
       case "audioMessage":
-        return content.fileName || `audio-${Date.now()}.ogg`;
+        if (content.fileName) {
+          return content.fileName;
+        }
+        // Gerar nome baseado no tipo de áudio
+        const isPtt = content.ptt || false;
+        const timestamp = Date.now();
+        if (isPtt) {
+          return `ptt-${timestamp}.ogg`;
+        }
+        // Detectar extensão baseada no mimetype
+        const mimetype = content.mimetype || "";
+        if (mimetype.includes("mpeg") || mimetype.includes("mp3")) {
+          return `audio-${timestamp}.mp3`;
+        } else if (mimetype.includes("ogg")) {
+          return `audio-${timestamp}.ogg`;
+        } else if (mimetype.includes("wav")) {
+          return `audio-${timestamp}.wav`;
+        } else if (mimetype.includes("m4a")) {
+          return `audio-${timestamp}.m4a`;
+        }
+        return `audio-${timestamp}.ogg`;
       case "stickerMessage":
         return `sticker-${Date.now()}.webp`;
       default:

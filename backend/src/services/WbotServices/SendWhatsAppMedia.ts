@@ -1,5 +1,4 @@
 import fs from "fs";
-import path from "path";
 import mime from "mime-types";
 import AppError from "../../errors/AppError";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
@@ -8,8 +7,6 @@ import UserMessagesLog from "../../models/UserMessagesLog";
 import { logger } from "../../utils/logger";
 import Message from "../../models/Message";
 import socketEmit from "../../helpers/socketEmit";
-import { join } from "path";
-import Contact from "../../models/Contact";
 
 // Função para criar nomes de arquivo seguros
 const createSafeFilename = (originalName: string, timestamp: number, ext: string): string => {
@@ -139,7 +136,7 @@ const SendWhatsAppMedia = async (
         sentMessage = await wbot.sendMessage(`${numberToSend}@c.us`, {
           audio: fileBuffer,
           mimetype: mimeType,
-          ptt: false, // Não forçar como áudio de voz
+          ptt: true, // Forçar como áudio de voz
         });
         logger.info("[SendWhatsAppMedia] Enviado como áudio");
 

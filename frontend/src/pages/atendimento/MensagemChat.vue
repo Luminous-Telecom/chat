@@ -196,17 +196,64 @@
               :color=" mensagem.ack >= 3 ? 'blue-12' : '' "
             />
             <template v-if=" mensagem.mediaType === 'audio' ">
-              <div>
-                <audio
-                  controls
-                  ref="audioMessage"
-                  controlsList="nodownload noplaybackrate volume novolume"
-                >
-                  <source
-                    :src=" mensagem.mediaUrl "
-                    type="audio/ogg"
+              <div class="audio-message-container">
+                <div class="audio-player-wrapper">
+                  <q-icon
+                    :name="isAudioPTT(mensagem) ? 'mdi-microphone' : 'mdi-music-note'"
+                    size="20px"
+                    :color="isAudioPTT(mensagem) ? 'orange' : 'primary'"
+                    class="audio-icon"
                   />
-                </audio>
+                  <audio
+                    controls
+                    ref="audioMessage"
+                    controlsList="nodownload noplaybackrate"
+                    preload="metadata"
+                    class="audio-player"
+                  >
+                    <!-- Múltiplos formatos para compatibilidade -->
+                    <source
+                      :src="mensagem.mediaUrl"
+                      :type="getAudioMimeType(mensagem)"
+                    />
+                    <source
+                      :src="mensagem.mediaUrl"
+                      type="audio/mpeg"
+                    />
+                    <source
+                      :src="mensagem.mediaUrl"
+                      type="audio/ogg"
+                    />
+                    <source
+                      :src="mensagem.mediaUrl"
+                      type="audio/wav"
+                    />
+                    Seu navegador não suporta reprodução de áudio.
+                  </audio>
+                  <q-btn
+                    flat
+                    dense
+                    icon="mdi-download"
+                    size="sm"
+                    :href="mensagem.mediaUrl"
+                    download
+                    class="download-btn"
+                  >
+                    <q-tooltip>Baixar áudio</q-tooltip>
+                  </q-btn>
+                </div>
+                                 <div v-if="isAudioPTT(mensagem)" class="audio-ptt-label">
+                   Mensagem de voz
+                   <span v-if="getAudioDuration(mensagem)" class="audio-duration">
+                     • {{ getAudioDuration(mensagem) }}
+                   </span>
+                 </div>
+                 <div v-else class="audio-file-label">
+                   {{ getAudioFileName(mensagem) }}
+                   <span v-if="getAudioDuration(mensagem)" class="audio-duration">
+                     • {{ getAudioDuration(mensagem) }}
+                   </span>
+                 </div>
               </div>
             </template>
             <template v-if=" mensagem.mediaType === 'vcard' ">
@@ -577,6 +624,78 @@ export default {
     returnCardContato (str) {
       // return btoa(str)
       return Base64.encode(str)
+    },
+    isAudioPTT (mensagem) {
+      // Verificar se é uma mensagem de voz (PTT - Push to Talk)
+      // Primeiro verificar nos dados salvos
+      if (mensagem.dataPayload) {
+        try {
+          const payload = typeof mensagem.dataPayload === 'string'
+            ? JSON.parse(mensagem.dataPayload)
+            : mensagem.dataPayload
+          if (typeof payload.isPtt === 'boolean') {
+            return payload.isPtt
+          }
+        } catch (e) {
+          // Se falhar ao parsear, continuar com verificação manual
+        }
+      }
+
+      // Fallback para verificação manual
+      return mensagem.body?.includes('ptt') ||
+             mensagem.mediaUrl?.includes('ptt') ||
+             (mensagem.mediaName && mensagem.mediaName.includes('ptt'))
+    },
+    getAudioMimeType (mensagem) {
+      // Tentar detectar o mimetype correto baseado na URL ou nome do arquivo
+      const url = mensagem.mediaUrl || ''
+      const mediaName = mensagem.mediaName || ''
+
+      if (url.includes('.mp3') || mediaName.includes('.mp3')) {
+        return 'audio/mpeg'
+      } else if (url.includes('.ogg') || mediaName.includes('.ogg')) {
+        return 'audio/ogg; codecs=opus'
+      } else if (url.includes('.wav') || mediaName.includes('.wav')) {
+        return 'audio/wav'
+      } else if (url.includes('.m4a') || mediaName.includes('.m4a')) {
+        return 'audio/mp4'
+      }
+
+      // Fallback baseado no tipo de áudio
+      return this.isAudioPTT(mensagem) ? 'audio/ogg; codecs=opus' : 'audio/mpeg'
+    },
+    getAudioFileName (mensagem) {
+      // Retornar nome do arquivo de áudio mais amigável
+      if (mensagem.mediaName) {
+        return mensagem.mediaName
+      }
+
+      const url = mensagem.mediaUrl || ''
+      const filename = url.split('/').pop() || ''
+
+      if (filename) {
+        return filename
+      }
+
+      return this.isAudioPTT(mensagem) ? 'Mensagem de voz' : 'Arquivo de áudio'
+    },
+    getAudioDuration (mensagem) {
+      // Obter duração do áudio se disponível
+      if (mensagem.dataPayload) {
+        try {
+          const payload = typeof mensagem.dataPayload === 'string'
+            ? JSON.parse(mensagem.dataPayload)
+            : mensagem.dataPayload
+          if (payload.duration && payload.duration > 0) {
+            const minutes = Math.floor(payload.duration / 60)
+            const seconds = payload.duration % 60
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`
+          }
+        } catch (e) {
+          // Se falhar ao parsear, não mostrar duração
+        }
+      }
+      return null
     },
     isDesactivatDelete (msg) {
       // if (msg) {
@@ -1102,6 +1221,78 @@ export default {
   gap: 8px;
   padding-top: 12px;
   padding-bottom: 16px;
+}
+
+/* Estilos para componente de áudio melhorado */
+.audio-message-container {
+  max-width: 300px;
+  margin: 8px 0;
+}
+
+.audio-player-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.audio-icon {
+  flex-shrink: 0;
+}
+
+.audio-player {
+  flex: 1;
+  height: 32px;
+  min-width: 200px;
+}
+
+.download-btn {
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.download-btn:hover {
+  opacity: 1;
+}
+
+.audio-ptt-label {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  padding-left: 32px;
+  font-style: italic;
+}
+
+.audio-file-label {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  padding-left: 32px;
+  font-weight: 500;
+}
+
+.audio-duration {
+  color: #999;
+  font-weight: normal;
+}
+
+/* Dark mode para áudio */
+.body--dark .audio-player-wrapper {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.body--dark .audio-ptt-label,
+.body--dark .audio-file-label {
+  color: #aaa;
+}
+
+.body--dark .audio-duration {
+  color: #777;
 }
 
 .pdf-action-btn {
