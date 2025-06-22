@@ -52,7 +52,7 @@
         :ativarMultiEncaminhamento.sync="ativarMultiEncaminhamento"
         :mensagensParaEncaminhar.sync="mensagensParaEncaminhar"
       />
-      <div id="inicioListaMensagensChat" style="height: 1px;"></div>
+      <div id="fimListaMensagensChat" style="height: 1px;"></div>
     </q-scroll-area>
 
     <div
@@ -413,13 +413,6 @@ export default {
   methods: {
     async onResizeInputMensagem (size) {
       this.heigthInputMensagem = size.height
-      // Força recálculo do scroll area
-      this.$nextTick(() => {
-        if (this.$refs.scrollContainer) {
-          this.$refs.scrollContainer.setScrollPosition('vertical',
-            this.$refs.scrollContainer.getScrollPosition().top)
-        }
-      })
     },
     async onLoadMore (infiniteState) {
       if (this.loading) return
@@ -448,7 +441,7 @@ export default {
       }, 200)
     },
     scrollToBottom () {
-      document.getElementById('inicioListaMensagensChat').scrollIntoView()
+      document.getElementById('fimListaMensagensChat').scrollIntoView()
     },
     abrirModalEncaminharMensagem (msg) {
       this.mensagemEncaminhamento = msg
