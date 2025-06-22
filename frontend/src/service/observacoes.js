@@ -76,7 +76,7 @@ export const ListarObservacoes = async (ticketId) => {
   }
 
   const response = await request.get(
-    `/ticket-observations/ticket/${ticketId}/observations`
+    `/api/ticket-observations/ticket/${ticketId}/observations`
   )
   return response.data
 }

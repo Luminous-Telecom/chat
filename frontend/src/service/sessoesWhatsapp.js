@@ -2,21 +2,21 @@ import request from 'src/service/request'
 
 export function ListarWhatsapps (whatsAppId) {
   return request({
-    url: '/whatsapp/',
+    url: '/api/whatsapp/',
     method: 'get'
   })
 }
 
 export function StartWhatsappSession (whatsAppId) {
   return request({
-    url: `/whatsappsession/${whatsAppId}/start`,
+    url: `/api/whatsappsession/${whatsAppId}/start`,
     method: 'post'
   })
 }
 
 export const DeleteWhatsappSession = async (whatsAppId) => {
   const { data } = await request({
-    url: `/whatsappsession/${whatsAppId}`,
+    url: `/api/whatsappsession/${whatsAppId}`,
     method: 'DELETE'
   })
 
@@ -25,7 +25,7 @@ export const DeleteWhatsappSession = async (whatsAppId) => {
 
 export function RequestNewQrCode (data) {
   return request({
-    url: `/whatsappsession/${data.id}`,
+    url: `/api/whatsappsession/${data.id}`,
     method: 'put',
     data
   })
@@ -33,14 +33,14 @@ export function RequestNewQrCode (data) {
 
 export function GetWhatSession (whatsAppId) {
   return request({
-    url: `/whatsapp/${whatsAppId}`,
+    url: `/api/whatsapp/${whatsAppId}`,
     method: 'get'
   })
 }
 
 export function UpdateWhatsapp (whatsAppId, data) {
   return request({
-    url: `/whatsapp/${whatsAppId}`,
+    url: `/api/whatsapp/${whatsAppId}`,
     method: 'put',
     data
   })
@@ -48,7 +48,7 @@ export function UpdateWhatsapp (whatsAppId, data) {
 
 export function CriarWhatsapp (data) {
   return request({
-    url: '/whatsapp',
+    url: '/api/whatsapp',
     method: 'post',
     data
   })
@@ -56,7 +56,7 @@ export function CriarWhatsapp (data) {
 
 export function DeletarWhatsapp (whatsAppId) {
   return request({
-    url: `/whatsapp/${whatsAppId}`,
+    url: `/api/whatsapp/${whatsAppId}`,
     method: 'delete'
   })
 }

@@ -49,19 +49,34 @@ const mountMessageData = (
   // eslint-disable-next-line @typescript-eslint/ban-types
   options: object | undefined
 ) => {
-  const messageRandom = randomInteger(1, 3);
-  let bodyMessage = "";
-  if (messageRandom === 1) bodyMessage = campaign.message1;
-  if (messageRandom === 2) bodyMessage = campaign.message2;
-  if (messageRandom === 3) bodyMessage = campaign.message3;
+  // Criar array apenas com mensagens que existem e não estão vazias
+  const availableMessages: { message: string, index: number }[] = [];
+  if (campaign.message1 && campaign.message1.trim()) {
+    availableMessages.push({ message: campaign.message1, index: 1 });
+  }
+  if (campaign.message2 && campaign.message2.trim()) {
+    availableMessages.push({ message: campaign.message2, index: 2 });
+  }
+  if (campaign.message3 && campaign.message3.trim()) {
+    availableMessages.push({ message: campaign.message3, index: 3 });
+  }
+
+  // Se não há mensagens disponíveis, usar message1 como fallback
+  if (availableMessages.length === 0) {
+    availableMessages.push({ message: campaign.message1 || "", index: 1 });
+  }
+
+  // Selecionar uma mensagem aleatória das disponíveis
+  const randomIndex = randomInteger(0, availableMessages.length - 1);
+  const selectedMessage = availableMessages[randomIndex];
 
   return {
     whatsappId: campaign.sessionId,
-    message: bodyMessage,
+    message: selectedMessage.message,
     number: campaignContact.contact.number,
     mediaUrl: campaign.mediaUrl,
     mediaName: cArquivoName(campaign.mediaUrl),
-    messageRandom: `message${messageRandom}`,
+    messageRandom: `message${selectedMessage.index}`,
     campaignContact,
     options,
   };

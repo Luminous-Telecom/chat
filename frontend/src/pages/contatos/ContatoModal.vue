@@ -6,7 +6,7 @@
     persistent
     class="modal-modern"
   >
-    <q-card style="min-width: 700px">
+    <q-card style="width: 600px; max-width: 90vw; max-height: 75vh; overflow-y: auto;">
       <q-card-section class="modal-header">
         <div class="text-h6">
           {{ contactId ? 'Editar Contato' : 'Adicionar Contato'  }}

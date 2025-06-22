@@ -9,9 +9,12 @@
       <q-separator />
     </div>
 
-    <q-dialog full-height
+    <q-dialog
+      v-model="visualizarFiltros"
       position="right"
-      v-model="visualizarFiltros">
+      transition-show="scale"
+      transition-hide="scale"
+    >
       <q-card style="width: 300px">
         <q-card-section>
           <div class="text-h6">Filtros</div>

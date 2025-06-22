@@ -12,6 +12,7 @@ import {
   HasMany,
   Default,
   AfterFind,
+  AllowNull,
 } from "sequelize-typescript";
 import CampaignContacts from "./CampaignContacts";
 import Tenant from "./Tenant";
@@ -37,14 +38,16 @@ class Campaign extends Model<Campaign> {
   )
   status: string;
 
-  @Column
+  @Column(DataType.TEXT)
   message1: string;
 
-  @Column
-  message2: string;
+  @AllowNull(true)
+  @Column(DataType.TEXT)
+  message2: string | null;
 
-  @Column
-  message3: string;
+  @AllowNull(true)
+  @Column(DataType.TEXT)
+  message3: string | null;
 
   @Column(DataType.STRING)
   get mediaUrl(): string | null {

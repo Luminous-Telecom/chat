@@ -48,7 +48,7 @@ export default async function modules(app): Promise<void> {
     })
   );
 
-  app.use(routes);
+  app.use("/api", routes);
   app.use(Sentry.Handlers.errorHandler());
 
   // error handle

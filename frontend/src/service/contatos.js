@@ -2,7 +2,7 @@ import request from 'src/service/request'
 
 export function ListarContatos (params) {
   return request({
-    url: '/contacts',
+    url: '/api/contacts',
     method: 'get',
     params
   })
@@ -10,14 +10,14 @@ export function ListarContatos (params) {
 
 export function ObterContato (contactId) {
   return request({
-    url: `/contacts/${contactId}`,
+    url: `/api/contacts/${contactId}`,
     method: 'get'
   })
 }
 
 export function CriarContato (data) {
   return request({
-    url: '/contacts',
+    url: '/api/contacts',
     method: 'post',
     data
   })
@@ -25,7 +25,7 @@ export function CriarContato (data) {
 
 export function ImportarArquivoContato (data) {
   return request({
-    url: '/contacts/upload',
+    url: '/api/contacts/upload',
     method: 'post',
     data,
     timeout: 120000
@@ -34,7 +34,7 @@ export function ImportarArquivoContato (data) {
 
 export function ExportarArquivoContato (data) {
   return request({
-    url: '/contacts/export',
+    url: '/api/contacts/export',
     method: 'post',
     data,
     timeout: 120000
@@ -43,14 +43,14 @@ export function ExportarArquivoContato (data) {
 
 export function SyncronizarContatos () {
   return request({
-    url: '/contacts/sync',
+    url: '/api/contacts/sync',
     method: 'post'
   })
 }
 
 export function EditarContato (contactId, data) {
   return request({
-    url: `/contacts/${contactId}`,
+    url: `/api/contacts/${contactId}`,
     method: 'put',
     data
   })
@@ -58,7 +58,7 @@ export function EditarContato (contactId, data) {
 
 export function DeletarContato (contactId) {
   return request({
-    url: `/contacts/${contactId}`,
+    url: `/api/contacts/${contactId}`,
     method: 'delete'
   })
 }
@@ -68,7 +68,7 @@ export function EditarEtiquetasContato (contactId, tags) {
     tags
   }
   return request({
-    url: `/contact-tags/${contactId}`,
+    url: `/api/contact-tags/${contactId}`,
     method: 'put',
     data
   })
@@ -79,7 +79,7 @@ export function EditarCarteiraContato (contactId, wallets) {
     wallets
   }
   return request({
-    url: `/contact-wallet/${contactId}`,
+    url: `/api/contact-wallet/${contactId}`,
     method: 'put',
     data
   })

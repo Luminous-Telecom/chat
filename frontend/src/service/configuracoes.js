@@ -2,7 +2,7 @@ import request from 'src/service/request'
 
 export function ListarConfiguracoes (params) {
   return request({
-    url: '/settings/',
+    url: '/api/settings/',
     method: 'get',
     params
   })
@@ -10,7 +10,7 @@ export function ListarConfiguracoes (params) {
 
 export function AlterarConfiguracao (data) {
   return request({
-    url: `/settings/${data.Key}/`,
+    url: `/api/settings/${data.Key}/`,
     method: 'put',
     data
   })

@@ -63,8 +63,16 @@ export default async function application() {
     // Inicia o monitoramento do WhatsApp
     startMonitoring();
 
-    // Inicia todas as sessões do WhatsApp
-    await StartAllWhatsAppsSessions();
+    // Inicia todas as sessões do WhatsApp em background para não bloquear o servidor
+    if (process.env.WHATSAPP_STARTUP_ASYNC === "true") {
+      console.info("🔄 Iniciando sessões WhatsApp em background...");
+      StartAllWhatsAppsSessions().catch(err => {
+        console.error("❌ Erro ao iniciar sessões WhatsApp:", err);
+      });
+    } else {
+      // Modo síncrono (comportamento original)
+      await StartAllWhatsAppsSessions();
+    }
 
     GracefulShutdown(app.server, {
       signals: "SIGINT SIGTERM",

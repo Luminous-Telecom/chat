@@ -3,12 +3,12 @@
     :value="value"
     @input="$emit('update:value', $event)"
     persistent
-    maximized
-    transition-show="slide-up"
-    transition-hide="slide-down"
+    transition-show="scale"
+    transition-hide="scale"
+    class="modal-modern"
   >
-    <q-card class="column">
-      <q-card-section class="row items-center q-pb-none">
+    <q-card class="column" style="width: 700px; max-width: 90vw; max-height: 80vh; overflow-y: auto;">
+      <q-card-section class="modal-header row items-center q-pb-none">
         <div class="text-h6">Observações</div>
         <q-space />
         <q-btn
@@ -16,13 +16,16 @@
           flat
           round
           dense
+          class="close-btn"
           v-close-popup
         />
       </q-card-section>
 
-      <q-card-section class="q-pt-md">
+      <q-separator />
+
+      <q-card-section class="modal-content">
         <q-scroll-area
-          style="height: calc(100vh - 100px)"
+          style="height: calc(80vh - 120px)"
           class="scroll modern-scrollbar"
         >
           <q-list>
@@ -43,7 +46,7 @@
                     style="max-width: 150px; max-height: 150px; display: block; margin-top: 8px; object-fit: cover; border-radius: 8px;"
                     class="rounded-borders cursor-pointer"
                     @click="abrirModalImagem(obs.anexo)"
-                    @error="() => console.error('ModalListarObservacoes - Erro ao carregar imagem:', obs.anexo)"
+                    @error="() => {}"
                   >
                     <template v-slot:loading>
                       <q-spinner-dots color="primary" />
@@ -123,29 +126,15 @@ export default {
     },
     async carregarObservacoes () {
       try {
-        console.log('ModalListarObservacoes - Carregando observações para ticketId:', this.ticketId)
         if (!this.ticketId) {
           this.observacoes = []
           return
         }
 
-        console.log('ModalListarObservacoes - Fazendo requisição para API')
         const data = await ListarObservacoes(this.ticketId)
-        console.log('ModalListarObservacoes - Dados recebidos:', data)
-
-        // Log detalhado de cada observação
-        data.forEach((obs, index) => {
-          console.log(`ModalListarObservacoes - Observação ${index}:`, {
-            id: obs.id,
-            anexo: obs.anexo,
-            texto: obs.texto,
-            createdAt: obs.createdAt
-          })
-        })
 
         this.observacoes = data
       } catch (error) {
-        console.error('ModalListarObservacoes - Erro ao carregar observações:', error)
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao carregar observações'
@@ -153,24 +142,13 @@ export default {
       }
     },
     isImage (filename) {
-      if (!filename) {
-        console.log('ModalListarObservacoes - isImage: filename é null ou undefined')
-        return false
-      }
+      if (!filename) return false
       const ext = filename.toLowerCase().split('.').pop()
-      console.log('ModalListarObservacoes - isImage: verificando extensão:', ext, 'do arquivo:', filename)
-      const isImageFile = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
-      console.log('ModalListarObservacoes - isImage: é imagem?', isImageFile)
-      return isImageFile
+      return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
     },
     getAnexoUrl (filename) {
-      if (!filename) {
-        console.log('ModalListarObservacoes - getAnexoUrl: filename é null ou undefined')
-        return ''
-      }
-      const url = `${process.env.VUE_URL_API}/public/sent/${filename}`
-      console.log('ModalListarObservacoes - getAnexoUrl: URL gerada:', url)
-      return url
+      if (!filename) return ''
+      return `${process.env.VUE_URL_API}/public/sent/${filename}`
     },
     abrirModalImagem (anexo) {
       this.currentImage = anexo
@@ -194,12 +172,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.q-card {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
 .q-img {
   border: 1px solid #ddd;
   transition: transform 0.2s;
@@ -209,8 +181,43 @@ export default {
   }
 }
 
+.modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 12px 16px;
+  border-bottom: 1px solid #dee2e6;
+
+  .text-h6 {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .close-btn {
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+      transform: scale(1.1);
+    }
+  }
+}
+
+.modal-content {
+  padding: 8px 12px 12px 12px;
+}
+
 /* Dark mode styles */
-body.body--dark .q-img {
-        border: 1px solid $dark-border;
-      }
+.body--dark {
+  .q-img {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+
+    .close-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
 </style>

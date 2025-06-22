@@ -282,6 +282,8 @@ export async function initBaileys(
         `Session ${whatsapp.name} already exists, cleaning up first`
       );
       await removeBaileysSession(whatsapp.id);
+      // Pequeno delay após limpeza para estabilidade
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     const sessionDir = join(
@@ -298,16 +300,16 @@ export async function initBaileys(
       auth: state,
       printQRInTerminal: false,
       browser: Browsers.macOS("Chrome"),
-      connectTimeoutMs: phoneNumber ? 120000 : 60000,
-      defaultQueryTimeoutMs: 60000,
+      connectTimeoutMs: phoneNumber ? 90000 : 30000, // Reduzido para acelerar
+      defaultQueryTimeoutMs: 30000, // Reduzido de 60s para 30s
       emitOwnEvents: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
-      retryRequestDelayMs: phoneNumber ? 10000 : 5000,
+      retryRequestDelayMs: phoneNumber ? 8000 : 3000, // Reduzido
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
       keepAliveIntervalMs: 15000,
-      qrTimeout: phoneNumber ? 0 : 60000,
+      qrTimeout: phoneNumber ? 0 : 45000, // Reduzido de 60s para 45s
       getMessage: async () => undefined,
       shouldIgnoreJid: (jid) => {
         return !!(jid && typeof jid === 'string' && jid.includes('@broadcast'));

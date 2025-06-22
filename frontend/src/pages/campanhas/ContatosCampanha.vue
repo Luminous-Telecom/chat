@@ -115,7 +115,7 @@
       persistent
       v-model="modalAddContatosCampanha"
     >
-      <q-card style="min-width: 80vw; width: 80vw">
+      <q-card style="width: 1000px; max-width: 95vw; max-height: 85vh; overflow-y: auto;">
         <q-card-section class="q-pt-none q-pt-md">
           <fieldset class="rounded-all">
             <legend class="q-px-sm">Filtros (Data criação do contato)</legend>

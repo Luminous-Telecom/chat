@@ -6,7 +6,7 @@
     @show="abrirModal"
     class="modal-modern"
   >
-    <q-card :style="$q.screen.width < 500 ? 'width: 95vw' : 'min-width: 700px; max-width: 700px'">
+    <q-card style="width: 700px; max-width: 90vw; max-height: 75vh; overflow-y: auto;">
       <q-card-section class="modal-header">
         <div class="text-h6">{{ mensagemRapida.id ? 'Editar': 'Criar' }} Mensagem Rápida {{ mensagemRapida.id  ? `(ID: ${mensagemRapida.id})` : '' }}</div>
       </q-card-section>

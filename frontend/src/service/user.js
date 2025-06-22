@@ -2,7 +2,7 @@ import request from 'src/service/request'
 
 export function ListarUsuarios (params) {
   return request({
-    url: '/users/',
+    url: '/api/users/',
     method: 'get',
     params
   })
@@ -10,7 +10,7 @@ export function ListarUsuarios (params) {
 
 export function CriarUsuario (data) {
   return request({
-    url: '/users',
+    url: '/api/users',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export function CriarUsuario (data) {
 
 export function UpdateUsuarios (userId, data) {
   return request({
-    url: `/users/${userId}`,
+    url: `/api/users/${userId}`,
     method: 'put',
     data
   })
@@ -26,7 +26,7 @@ export function UpdateUsuarios (userId, data) {
 
 export function UpdateConfiguracoesUsuarios (userId, data) {
   return request({
-    url: `/users/${userId}/configs`,
+    url: `/api/users/${userId}/configs`,
     method: 'put',
     data
   })
@@ -34,14 +34,14 @@ export function UpdateConfiguracoesUsuarios (userId, data) {
 
 export function DadosUsuario (userId) {
   return request({
-    url: `/users/${userId}`,
+    url: `/api/users/${userId}`,
     method: 'get'
   })
 }
 
 export function DeleteUsuario (userId) {
   return request({
-    url: `/users/${userId}`,
+    url: `/api/users/${userId}`,
     method: 'delete'
   })
 }

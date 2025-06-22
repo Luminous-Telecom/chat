@@ -14,9 +14,9 @@ interface CampaignData {
   start: string;
   end: string;
   message1: string;
-  message2: string;
-  message3: string;
-  mediaUrl: string;
+  message2?: string;
+  message3?: string;
+  mediaUrl?: string;
   userId: string;
   sessionId: string;
   delay: string;
@@ -40,8 +40,8 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     name: Yup.string().required(),
     start: Yup.string().required(),
     message1: Yup.string().required(),
-    message2: Yup.string().required(),
-    message3: Yup.string().required(),
+    message2: Yup.string().nullable(),
+    message3: Yup.string().nullable(),
     userId: Yup.string().required(),
     sessionId: Yup.string().required(),
     tenantId: Yup.number().required(),
@@ -89,9 +89,9 @@ export const update = async (
     name: Yup.string().required(),
     start: Yup.string().required(),
     message1: Yup.string().required(),
-    message2: Yup.string().required(),
-    message3: Yup.string().required(),
-    mediaUrl: Yup.string().required(),
+    message2: Yup.string().nullable(),
+    message3: Yup.string().nullable(),
+    mediaUrl: Yup.string().nullable(),
     userId: Yup.string().required(),
     sessionId: Yup.string().required(),
     tenantId: Yup.number().required(),

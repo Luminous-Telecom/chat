@@ -6,9 +6,13 @@ import { StartMessengerBot } from "../MessengerChannelServices/StartMessengerBot
 import { StartTbotSession } from "../TbotServices/StartTbotSession";
 import { StartWaba360 } from "../WABA360/StartWaba360";
 import { StartWhatsAppSession } from "./StartWhatsAppSession";
+import { logger } from "../../utils/logger";
 // import { StartTbotSession } from "../TbotServices/StartTbotSession";
 
 export const StartAllWhatsAppsSessions = async (): Promise<void> => {
+  logger.info("🚀 Iniciando todas as sessões WhatsApp...");
+  const startTime = Date.now();
+  
   const whatsapps = await Whatsapp.findAll({
     where: {
       [Op.or]: [
@@ -44,9 +48,16 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
   const messengerSessions = whatsapps.filter(w => w.type === "messenger");
 
   if (whatsappSessions.length > 0) {
-    whatsappSessions.forEach(whatsapp => {
-      StartWhatsAppSession(whatsapp, whatsapp.tenantId);
-    });
+    // Inicialização paralela para acelerar o processo
+    const promises = whatsappSessions.map(whatsapp => 
+      StartWhatsAppSession(whatsapp, whatsapp.tenantId).catch(err => {
+        logger.error(`Error starting WhatsApp session ${whatsapp.name}: ${err}`);
+        return null; // Não interrompe outras sessões
+      })
+    );
+    
+    await Promise.allSettled(promises);
+    logger.info(`Iniciadas ${whatsappSessions.length} sessões WhatsApp em paralelo`);
   }
 
   if (telegramSessions.length > 0) {
@@ -78,4 +89,9 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
       }
     });
   }
+
+  const endTime = Date.now();
+  const totalTime = (endTime - startTime) / 1000;
+  logger.info(`✅ Inicialização concluída em ${totalTime.toFixed(2)}s`);
+  logger.info(`📊 Sessões iniciadas: WhatsApp(${whatsappSessions.length}), Telegram(${telegramSessions.length}), Instagram(${instagramSessions.length}), WABA(${waba360Sessions.length}), Messenger(${messengerSessions.length})`);
 };

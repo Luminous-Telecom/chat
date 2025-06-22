@@ -4,10 +4,11 @@
     @input="$emit('update:modalTimeline', $event)"
     @hide="fecharModal"
     persistent
-    maximized
+    transition-show="scale"
+    transition-hide="scale"
     class="modal-modern"
   >
-    <q-card style="min-width: 80vw; max-width: 80vw; min-height: 80vh; max-height: 80vh">
+    <q-card style="width: 900px; max-width: 95vw; max-height: 85vh; overflow-y: auto;">
       <q-card-section class="modal-header row items-center q-pb-none">
         <div class="text-h6">
           Timeline do Contato: {{ contato.name }}
@@ -17,7 +18,7 @@
       </q-card-section>
 
       <q-card-section class="modal-content">
-        <q-scroll-area ref="scrollArea" class="modern-scrollbar" style="height: calc(80vh - 120px);">
+        <q-scroll-area ref="scrollArea" class="modern-scrollbar" style="height: calc(85vh - 140px);">
           <div v-if="loading" class="row justify-center q-my-md">
             <q-spinner color="primary" size="3em" />
           </div>

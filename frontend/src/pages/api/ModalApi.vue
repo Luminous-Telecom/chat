@@ -6,7 +6,7 @@
     @show="abrirModal"
     class="modal-modern"
   >
-    <q-card style="min-width: 80vw; width: 80vw">
+    <q-card style="width: 800px; max-width: 90vw; max-height: 80vh; overflow-y: auto;">
       <q-card-section class="modal-header">
         <div class="text-h6">{{  apiEdicao.id ? 'Editar' : 'Criar'  }} Configuração API</div>
       </q-card-section>

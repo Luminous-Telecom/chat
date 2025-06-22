@@ -2,14 +2,14 @@ import request from 'src/service/request'
 
 export function MostrarHorariosAtendiemento () {
   return request({
-    url: '/tenants/business-hours/',
+    url: '/api/tenants/business-hours/',
     method: 'get'
   })
 }
 
 export function AtualizarHorariosAtendiemento (data) {
   return request({
-    url: '/tenants/business-hours/',
+    url: '/api/tenants/business-hours/',
     method: 'put',
     data
   })
@@ -17,7 +17,7 @@ export function AtualizarHorariosAtendiemento (data) {
 
 export function AtualizarMensagemHorariosAtendiemento (data) {
   return request({
-    url: '/tenants/message-business-hours/',
+    url: '/api/tenants/message-business-hours/',
     method: 'put',
     data
   })

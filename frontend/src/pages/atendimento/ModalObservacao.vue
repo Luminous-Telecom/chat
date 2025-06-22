@@ -1,6 +1,6 @@
 <template>
-  <q-dialog :value="value" @input="$emit('update:value', $event)" persistent class="modal-modern">
-    <q-card style="min-width: 350px">
+  <q-dialog :value="value" @input="$emit('update:value', $event)" persistent transition-show="scale" transition-hide="scale" class="modal-modern">
+    <q-card style="width: 500px; max-width: 90vw;">
       <q-card-section class="modal-header">
         <div class="text-h6">Nova Observação</div>
       </q-card-section>
@@ -66,35 +66,23 @@ export default {
   watch: {
     value (newVal) {
       if (newVal) {
-        console.log('ModalObservacao - Modal aberto, ticketId:', this.ticketId, 'tipo:', typeof this.ticketId)
       }
     }
   },
   methods: {
     async salvarObservacao () {
-      console.log('ModalObservacao - Tentando salvar, ticketId:', this.ticketId, 'tipo:', typeof this.ticketId)
       if (!this.observacao || !this.ticketId) {
-        console.log('ModalObservacao - Validação falhou:', { observacao: !!this.observacao, ticketId: !!this.ticketId })
         return
       }
 
       try {
         this.loading = true
-        console.log('ModalObservacao - Dados para salvar:', {
-          texto: this.observacao,
-          anexo: this.anexo ? {
-            name: this.anexo.name,
-            type: this.anexo.type,
-            size: this.anexo.size
-          } : null
-        })
 
         const data = await CriarObservacao(this.ticketId, {
           texto: this.observacao,
           anexo: this.anexo
         })
 
-        console.log('ModalObservacao - Observação salva com sucesso:', data)
         this.$emit('observacao-salva', data)
         this.$q.notify({
           type: 'positive',

@@ -681,7 +681,7 @@ export default {
 
       this.loading = true
       try {
-        await this.$axios.post(`/tickets/${this.ticketFocado.id}/read`)
+        await this.$axios.post(`/api/tickets/${this.ticketFocado.id}/read`)
 
         // Atualiza o estado através da mutation
         this.updateTicketUnreadMessages({

@@ -8,8 +8,8 @@ interface CampaignRequest {
   name: string;
   start: string;
   message1: string;
-  message2: string;
-  message3: string;
+  message2?: string;
+  message3?: string;
   mediaUrl?: string;
   mediaType?: string;
   userId: string;

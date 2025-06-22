@@ -3,6 +3,7 @@
 import * as Yup from "yup";
 import AppError from "../../errors/AppError";
 import CampaignContacts from "../../models/CampaignContacts";
+import Campaign from "../../models/Campaign";
 
 interface CampaignContact {
   campaignId: string | number;
@@ -27,6 +28,29 @@ const CreateCampaignContactsService = async ({
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
+  // Buscar a campanha para verificar quais mensagens estão disponíveis
+  const campaign = await Campaign.findByPk(campaignId);
+  if (!campaign) {
+    throw new AppError("ERR_NO_CAMPAIGN_FOUND", 404);
+  }
+
+  // Criar array apenas com mensagens que existem e não estão vazias
+  const availableMessages: number[] = [];
+  if (campaign.message1 && campaign.message1.trim()) {
+    availableMessages.push(1);
+  }
+  if (campaign.message2 && campaign.message2.trim()) {
+    availableMessages.push(2);
+  }
+  if (campaign.message3 && campaign.message3.trim()) {
+    availableMessages.push(3);
+  }
+
+  // Se não há mensagens disponíveis, usar message1 como fallback
+  if (availableMessages.length === 0) {
+    availableMessages.push(1);
+  }
+
   const isCreateds = await CampaignContacts.findAll({
     where: {
       campaignId,
@@ -34,10 +58,14 @@ const CreateCampaignContactsService = async ({
   });
 
   const data: CampaignContactData[] = campaignContacts.map((contact: any) => {
+    // Selecionar uma mensagem aleatória das disponíveis
+    const randomIndex = randomInteger(0, availableMessages.length - 1);
+    const selectedMessageNumber = availableMessages[randomIndex];
+    
     return {
       contactId: contact.id,
       campaignId,
-      messageRandom: `message${randomInteger(1, 3)}`,
+      messageRandom: `message${selectedMessageNumber}`,
     };
   });
 

@@ -4,129 +4,145 @@
     :value="modalCampanha"
     @hide="fecharModal"
     @show="abrirModal"
+    transition-show="scale"
+    transition-hide="scale"
     class="modal-modern"
   >
     <q-card
-      class="q-pa-sm"
-      style="min-width: 70vw;"
+      class="modal-card"
+      style="width: 900px; max-width: 90vw; max-height: 90vh;"
     >
-      <q-card-section class="q-pa-none q-px-md">
-        <div class="text-h6 text-bold">{{ campanhaEdicao.id ? 'Editar' : 'Criar' }} Campanha</div>
-        <div class="row">
-          As mensagens sempre serão enviadas em horário comercial e dias úteis.
+      <q-card-section class="modal-header row items-center q-pb-none">
+        <div class="col">
+          <div class="text-h6">{{ campanhaEdicao.id ? 'Editar' : 'Criar' }} Campanha</div>
+          <div class="text-caption text-grey-6">
+            As mensagens sempre serão enviadas em horário comercial e dias úteis.
+          </div>
         </div>
+        <q-btn
+          icon="close"
+          flat
+          round
+          dense
+          class="close-btn"
+          v-close-popup
+        />
       </q-card-section>
-      <q-card-section class="q-pb-none">
-        <div class="row q-gutter-sm">
-          <q-input
-            outlined
-            dense
-            rounded
-            style="width: 500px"
-            v-model="campanha.name"
-            label="Nome da Campanha"
-            @blur="$v.campanha.name.$touch"
-            :error="$v.campanha.name.$error"
-            error-message="Obrigatório"
-          />
-          <q-datetime-picker
-            style="width: 200px"
-            dense
-            rounded
-            hide-bottom-space
-            outlined
-            stack-label
-            bottom-slots
-            label="Data/Hora início"
-            mode="datetime"
-            color="primary"
-            format24h
-            v-model="campanha.start"
-            @blur="$v.campanha.start.$touch"
-            :error="$v.campanha.start.$error"
-            error-message="Não pode ser inferior ao dia atual"
-          />
-          <q-select
-            rounded
-            dense
-            outlined
-            emit-value
-            map-options
-            label="Enviar por"
-            color="primary"
-            v-model="campanha.sessionId"
-            :options="cSessions"
-            :input-debounce="700"
-            option-value="id"
-            option-label="name"
-            input-style="width: 280px; max-width: 280px;"
-            @blur="$v.campanha.sessionId.$touch"
-            :error="$v.campanha.sessionId.$error"
-            error-message="Obrigatório"
-            style="width: 250px"
-          />
-          <q-input
-            rounded
-            outlined
-            dense
-            style="width: 160px"
-            v-model="campanha.delay"
-            input-class="text-right"
-            suffix="segundos"
-            label="Delay"
-            error-message="Obrigatório"
-          />
-          <q-file
-            dense
-            rounded
-            v-if="!campanha.mediaUrl"
-            :loading="loading"
-            label="Mídia composição mensagem"
-            ref="PickerFileMessage"
-            v-model="arquivos"
-            class="col-grow"
-            bg-color="blue-grey-1"
-            input-style="max-height: 30vh"
-            outlined
-            clearable
-            autogrow
-            append
-            :max-files="1"
-            counter
-            :max-file-size="10485760"
-            :max-total-size="30485760"
-            accept=".jpg, .png, image/jpeg, .pdf, .doc, .docx, .mp4, .xls, .xlsx, .jpeg, .zip, .ppt, .pptx, image/*"
-            @rejected="onRejectedFiles"
-            style="width: 350px"
-          />
-          <q-input
-            v-if="campanha.mediaUrl"
-            readonly
-            rounded
-            label="Mídia composição mensagem"
-            :value="cArquivoName"
-            class=" col-grow "
-            bg-color="blue-grey-1"
-            input-style="max-height: 30vh"
-            outlined
-            autogrow
-            append
-            counter
-            style="width: 350px"
-          >
-            <template v-slot:append>
-              <q-btn
-                round
-                dense
-                flat
-                icon="close"
-                @click="campanha.mediaUrl = null; arquivos = []"
-              />
-            </template>
-          </q-input>
-        </div>
-      </q-card-section>
-      <q-card-section class="row q-pt-sm q-gutter-sm justify-center">
+
+      <q-separator />
+
+      <div class="modal-scroll-area">
+        <q-card-section class="modal-content">
+          <div class="row q-gutter-sm">
+            <q-input
+              outlined
+              dense
+              rounded
+              style="width: 500px"
+              v-model="campanha.name"
+              label="Nome da Campanha"
+              @blur="$v.campanha.name.$touch"
+              :error="$v.campanha.name.$error"
+              error-message="Obrigatório"
+            />
+            <q-datetime-picker
+              style="width: 200px"
+              dense
+              rounded
+              hide-bottom-space
+              outlined
+              stack-label
+              bottom-slots
+              label="Data/Hora início"
+              mode="datetime"
+              color="primary"
+              format24h
+              v-model="campanha.start"
+              @blur="$v.campanha.start.$touch"
+              :error="$v.campanha.start.$error"
+              error-message="Não pode ser inferior ao dia atual"
+            />
+            <q-select
+              rounded
+              dense
+              outlined
+              emit-value
+              map-options
+              label="Enviar por"
+              color="primary"
+              v-model="campanha.sessionId"
+              :options="cSessions"
+              :input-debounce="700"
+              option-value="id"
+              option-label="name"
+              input-style="width: 280px; max-width: 280px;"
+              @blur="$v.campanha.sessionId.$touch"
+              :error="$v.campanha.sessionId.$error"
+              error-message="Obrigatório"
+              style="width: 250px"
+            />
+            <q-input
+              rounded
+              outlined
+              dense
+              style="width: 160px"
+              v-model="campanha.delay"
+              input-class="text-right"
+              suffix="segundos"
+              label="Delay"
+              error-message="Obrigatório"
+            />
+            <q-file
+              dense
+              rounded
+              v-if="!campanha.mediaUrl"
+              :loading="loading"
+              label="Mídia composição mensagem"
+              ref="PickerFileMessage"
+              v-model="arquivos"
+              class="col-grow"
+              bg-color="blue-grey-1"
+              input-style="max-height: 30vh"
+              outlined
+              clearable
+              autogrow
+              append
+              :max-files="1"
+              counter
+              :max-file-size="10485760"
+              :max-total-size="30485760"
+              accept=".jpg, .png, image/jpeg, .pdf, .doc, .docx, .mp4, .xls, .xlsx, .jpeg, .zip, .ppt, .pptx, image/*"
+              @rejected="onRejectedFiles"
+              style="width: 350px"
+            />
+            <q-input
+              v-if="campanha.mediaUrl"
+              readonly
+              rounded
+              label="Mídia composição mensagem"
+              :value="cArquivoName"
+              class=" col-grow "
+              bg-color="blue-grey-1"
+              input-style="max-height: 30vh"
+              outlined
+              autogrow
+              append
+              counter
+              style="width: 350px"
+            >
+              <template v-slot:append>
+                <q-btn
+                  round
+                  dense
+                  flat
+                  icon="close"
+                  @click="campanha.mediaUrl = null; arquivos = []"
+                />
+              </template>
+            </q-input>
+          </div>
+        </q-card-section>
+        <q-card-section class="modal-content row q-gutter-sm justify-center">
         <div style="min-width: 400px;">
           <div class="row items-center q-pt-none">
             <label class="text-heading text-bold">1ª Mensagem</label>
@@ -176,7 +192,7 @@
             </div>
           </div>
           <div class="row items-center q-pt-none">
-            <label class="text-heading text-bold">2ª Mensagem</label>
+            <label class="text-heading text-bold">2ª Mensagem <span class="text-caption text-grey-6">(Opcional)</span></label>
             <div class="col-xs-3 col-sm-2 col-md-1">
               <q-btn
                 round
@@ -208,14 +224,10 @@
                 ref="message2"
                 style="min-height: 12.5vh; max-height: 12.5vh;"
                 class="q-pa-sm bg-white full-width rounded-all"
-                placeholder="Digite a mensagem"
+                placeholder="Digite a 2ª mensagem (opcional)"
                 autogrow
                 dense
                 outlined
-                :class="{
-                  'bg-red-1': $v.campanha.message2.$error
-                }"
-                @blur="$v.campanha.message2.$touch"
                 @input="(v) => campanha.message2 = v.target.value"
                 :value="campanha.message2"
               />
@@ -223,7 +235,7 @@
             </div>
           </div>
           <div class="row items-center q-pt-none">
-            <label class="text-heading text-bold">3ª Mensagem</label>
+            <label class="text-heading text-bold">3ª Mensagem <span class="text-caption text-grey-6">(Opcional)</span></label>
             <div class="col-xs-3 col-sm-2 col-md-1">
               <q-btn
                 round
@@ -255,14 +267,10 @@
                 ref="message3"
                 style="min-height: 12.5vh; max-height: 12.5vh;"
                 class="q-pa-sm bg-white full-width rounded-all"
-                placeholder="Digite a mensagem"
+                placeholder="Digite a 3ª mensagem (opcional)"
                 autogrow
                 dense
                 outlined
-                :class="{
-                  'bg-red-1': $v.campanha.message3.$error
-                }"
-                @blur="$v.campanha.message3.$touch"
                 @input="(v) => campanha.message3 = v.target.value"
                 :value="campanha.message3"
               />
@@ -284,7 +292,7 @@
                 inline
                 dense
                 v-model="messagemPreview"
-                :options="optRadio"
+                :options="availableMessages"
                 color="primary"
               />
               <cMolduraCelular
@@ -305,24 +313,26 @@
         </div>
 
       </q-card-section>
-      <q-card-section>
-        <div class="row justify-center">
-          <q-btn
-            label="Cancelar"
-            color="negative"
-            v-close-popup
-            class="q-mr-md"
-            rounded
-          />
-          <q-btn
-            rounded
-            label="Salvar"
-            color="positive"
-            icon="save"
-            @click="handleCampanha"
-          />
-        </div>
-      </q-card-section>
+      </div>
+
+      <q-separator />
+
+      <q-card-actions align="right" class="modal-actions">
+        <q-btn
+          label="Cancelar"
+          color="negative"
+          v-close-popup
+          class="q-mr-md"
+          rounded
+        />
+        <q-btn
+          rounded
+          label="Salvar"
+          color="primary"
+          icon="save"
+          @click="handleCampanha"
+        />
+      </q-card-actions>
     </q-card>
   </q-dialog>
 
@@ -368,11 +378,6 @@ export default {
   },
   data () {
     return {
-      optRadio: [
-        { label: 'Msg.1', value: 'message1' },
-        { label: 'Msg. 2', value: 'message2' },
-        { label: 'Msg. 3', value: 'message3' }
-      ],
       messagemPreview: 'message1',
       loading: false,
       abrirModalImagem: false,
@@ -414,8 +419,6 @@ export default {
       name: { required },
       start: { required, isValidDate },
       message1: { required },
-      message2: { required },
-      message3: { required },
       sessionId: { required }
     }
   },
@@ -431,6 +434,19 @@ export default {
       const split = this.campanha.mediaUrl.split('/')
       const name = split[split.length - 1]
       return name
+    },
+    availableMessages () {
+      const options = [{ label: 'Msg.1', value: 'message1' }]
+
+      if (this.campanha.message2 && this.campanha.message2.trim()) {
+        options.push({ label: 'Msg.2', value: 'message2' })
+      }
+
+      if (this.campanha.message3 && this.campanha.message3.trim()) {
+        options.push({ label: 'Msg.3', value: 'message3' })
+      }
+
+      return options
     },
     cMessages () {
       const messages = []
@@ -454,7 +470,7 @@ export default {
         })
       }
       msgArray.forEach(el => {
-        if (this.messagemPreview === el) {
+        if (this.messagemPreview === el && this.campanha[el] && this.campanha[el].trim()) {
           const body = this.campanha[el]
           const msg = {
             ...this.messageTemplate,
@@ -465,6 +481,18 @@ export default {
         }
       })
       return messages
+    }
+  },
+  watch: {
+    availableMessages: {
+      handler (newOptions) {
+        // Se a mensagem atualmente selecionada não está mais disponível, volta para message1
+        const isCurrentMessageAvailable = newOptions.some(opt => opt.value === this.messagemPreview)
+        if (!isCurrentMessageAvailable) {
+          this.messagemPreview = 'message1'
+        }
+      },
+      immediate: true
     }
   },
   methods: {
@@ -551,6 +579,7 @@ export default {
         delay: 20,
         sessionId: null
       }
+      this.messagemPreview = 'message1'
     },
     fecharModal () {
       this.resetarCampanha()
@@ -601,9 +630,36 @@ export default {
     async handleCampanha () {
       this.$v.campanha.$touch()
       if (this.$v.campanha.$error) {
+        const camposInvalidos = []
+
+        if (this.$v.campanha.name.$error) {
+          camposInvalidos.push('Nome da Campanha')
+        }
+        if (this.$v.campanha.start.$error) {
+          camposInvalidos.push('Data/Hora de início')
+        }
+        if (this.$v.campanha.sessionId.$error) {
+          camposInvalidos.push('Sessão WhatsApp (Enviar por)')
+        }
+        if (this.$v.campanha.message1.$error) {
+          camposInvalidos.push('1ª Mensagem')
+        }
+
+        const mensagem = camposInvalidos.length > 0
+          ? `Os seguintes campos são obrigatórios:<br><br>• ${camposInvalidos.join('<br>• ')}`
+          : 'Verifique se todos os campos obrigatórios estão preenchidos.'
+
         this.$q.notify({
           type: 'negative',
-          message: 'Verifique se todas os campos obrigatórios estão preenchidos '
+          html: true,
+          message: mensagem,
+          timeout: 6000,
+          position: 'top-right',
+          actions: [{
+            icon: 'close',
+            round: true,
+            color: 'white'
+          }]
         })
         return
       }
@@ -648,7 +704,7 @@ export default {
         this.loading = false
         this.fecharModal()
       } catch (error) {
-        console.error(error)
+        // console.error(error)
         this.$notificarErro('Algum problema ao criar campanha', error)
       }
     }
@@ -664,9 +720,113 @@ export default {
 }
 </script>
 
-<style lang="scss" >
-border-error {
+<style lang="scss" scoped>
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 12px 16px;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+
+  .text-h6 {
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  .close-btn {
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+      transform: scale(1.1);
+    }
+  }
+}
+
+.modal-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+
+  /* Estilo personalizado da scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.modal-content {
+  padding: 16px;
+}
+
+.modal-actions {
+  padding: 16px;
+  flex-shrink: 0;
+  border-top: 1px solid #dee2e6;
+}
+
+.border-error {
   border: 3px solid red;
   background: red !important;
+}
+
+/* Dark mode styles */
+.body--dark {
+  .modal-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+
+    .close-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .modal-actions {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .modal-scroll-area {
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+
+  .bg-white {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--q-color-on-surface) !important;
+  }
+
+  .bg-grey-3 {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--q-color-on-surface) !important;
+  }
 }
 </style>
