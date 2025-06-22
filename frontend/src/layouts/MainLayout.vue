@@ -1196,17 +1196,38 @@ export default {
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 
-  /* Ajuste para menu lateral fixo */
-  .q-layout-page {
-    margin-left: 70px !important;
-  }
-
+  /* Ajuste para menu lateral fixo - conteúdo inicia após o menu */
   .q-page-container {
+    margin-left: 70px !important;
     padding-left: 0 !important;
+    transition: margin-left 0.3s ease;
   }
 
+  .q-page {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  /* Garantir que outros elementos do layout não interfiram */
+  .q-layout__section--marginal {
+    margin-left: 0 !important;
+  }
+
+  /* Layout responsivo - manter o menu lateral em todos os tamanhos */
   @media (max-width: 1024px) {
-    .q-layout-page {
+    .q-page-container {
+      margin-left: 70px !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .q-page-container {
+      margin-left: 70px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .q-page-container {
       margin-left: 70px !important;
     }
   }
