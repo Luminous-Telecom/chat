@@ -8,6 +8,9 @@
     class="houverList"
     :class="{'text-negative text-bolder': color === 'negative'}"
   >
+    <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+      {{ title }}
+    </q-tooltip>
     <q-item-section
       v-if="icon"
       avatar
@@ -73,6 +76,11 @@ export default {
     badge: {
       type: Number,
       default: 0
+    },
+
+    miniState: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {

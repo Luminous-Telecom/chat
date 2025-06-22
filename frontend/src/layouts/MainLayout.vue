@@ -18,11 +18,14 @@
       mini-to-overlay
       :width="220"
       :breakpoint="400"
-      class="bg-grey-1"
+      class="bg-sidebar-custom"
     >
       <q-scroll-area class="fit modern-scrollbar">
         <q-list padding :key="userProfile">
           <q-item clickable v-ripple class="houverList" @click="miniState = !miniState">
+            <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+              Menu
+            </q-tooltip>
             <q-item-section avatar>
               <q-icon name="menu" />
             </q-item-section>
@@ -31,8 +34,11 @@
             </q-item-section>
           </q-item>
           <q-item clickable v-ripple class="houverList">
+            <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+              Alertas
+            </q-tooltip>
             <q-item-section avatar>
-              <q-icon name="notifications" />
+              <q-icon name="notifications_none" />
               <q-badge
                 color="red"
                 text-color="white"
@@ -67,7 +73,7 @@
                       color="red"
                       text-color="white"
                     >
-                      <q-icon name="mdi-alert" size="2rem" />
+                      <q-icon name="warning" size="2rem" />
                     </q-avatar>
                   </q-item-section>
                   <q-item-section
@@ -94,6 +100,7 @@
             v-for="item in cMenuData"
             :key="item.title"
             v-bind="item"
+            :miniState="miniState"
           />
           <div v-if="userProfile === 'admin'">
             <q-separator spaced />
@@ -103,14 +110,18 @@
                 v-if="exibirMenuBeta(item)"
                 :key="item.title"
                 v-bind="item"
+                :miniState="miniState"
               />
             </template>
             <q-separator spaced />
           </div>
           <div class="q-mt-lg">
             <q-item clickable v-ripple class="houverList">
+              <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+                Usuário
+              </q-tooltip>
               <q-item-section avatar>
-                <q-icon name="mdi-account-circle-outline" />
+                <q-icon name="account_circle" />
               </q-item-section>
               <q-item-section>
                 <q-item-label>Usuário</q-item-label>
@@ -142,8 +153,11 @@
               </q-menu>
             </q-item>
             <q-item clickable v-ripple class="houverList" @click="$setConfigsUsuario({ isDark: !$q.dark.isActive })">
+              <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+                {{ $q.dark.isActive ? 'Modo Claro' : 'Modo Escuro' }}
+              </q-tooltip>
               <q-item-section avatar>
-                <q-icon :name="$q.dark.isActive ? 'mdi-weather-night' : 'mdi-weather-sunny'" />
+                <q-icon :name="$q.dark.isActive ? 'light_mode' : 'dark_mode'" />
               </q-item-section>
               <q-item-section>
                 <q-item-label>{{ $q.dark.isActive ? 'Modo Claro' : 'Modo Escuro' }}</q-item-label>
@@ -190,34 +204,34 @@ const objMenu = [
   {
     title: 'Dashboard',
     caption: '',
-    icon: 'mdi-view-dashboard-outline',
+    icon: 'dashboard',
     routeName: 'home-dashboard'
   },
   {
     title: 'Atendimentos na Fila',
     caption: 'Tickets em espera',
-    icon: 'mdi-clock-outline',
+    icon: 'schedule',
     routeName: 'atendimento',
     query: { status: 'pending' }
   },
   {
     title: 'Atendimentos em Andamento',
     caption: 'Lista de atendimentos',
-    icon: 'mdi-message-text-outline',
+    icon: 'chat_bubble_outline',
     routeName: 'atendimento',
     query: { status: 'open' }
   },
   {
     title: 'Atendimentos Finalizados',
     caption: 'Histórico de atendimentos',
-    icon: 'mdi-folder-outline',
+    icon: 'task_alt',
     routeName: 'atendimento',
     query: { status: 'closed' }
   },
   {
     title: 'Contatos',
     caption: 'Lista de contatos',
-    icon: 'mdi-account-group-outline',
+    icon: 'contacts',
     routeName: 'contatos'
   }
 ]
@@ -226,73 +240,73 @@ const objMenuAdmin = [
   {
     title: 'Canais',
     caption: 'Canais de Comunicação',
-    icon: 'mdi-whatsapp',
+    icon: 'phone_iphone',
     routeName: 'sessoes'
   },
   {
     title: 'Painel Atendimentos',
     caption: 'Visão geral dos atendimentos',
-    icon: 'mdi-view-dashboard-variant',
+    icon: 'grid_view',
     routeName: 'painel-atendimentos'
   },
   {
     title: 'Relatórios',
     caption: 'Relatórios gerais',
-    icon: 'mdi-file-chart',
+    icon: 'analytics',
     routeName: 'relatorios'
   },
   {
     title: 'Usuarios',
     caption: 'Admin de usuários',
-    icon: 'mdi-account-group',
+    icon: 'people_outline',
     routeName: 'usuarios'
   },
   {
     title: 'Filas',
     caption: 'Cadastro de Filas',
-    icon: 'mdi-arrow-decision-outline',
+    icon: 'format_list_bulleted',
     routeName: 'filas'
   },
   {
     title: 'Mensagens Rápidas',
     caption: 'Mensagens pré-definidas',
-    icon: 'mdi-lightning-bolt-outline',
+    icon: 'flash_on',
     routeName: 'mensagens-rapidas'
   },
   {
     title: 'Chatbot',
     caption: 'Robô de atendimento',
-    icon: 'mdi-robot-outline',
+    icon: 'smart_toy',
     routeName: 'chat-flow'
   },
   {
     title: 'Etiquetas',
     caption: 'Cadastro de etiquetas',
-    icon: 'mdi-tag-multiple-outline',
+    icon: 'local_offer',
     routeName: 'etiquetas'
   },
   {
     title: 'Horário de Atendimento',
     caption: 'Horário de funcionamento',
-    icon: 'mdi-clock-time-four-outline',
+    icon: 'access_time',
     routeName: 'horarioAtendimento'
   },
   {
     title: 'Configurações',
     caption: 'Configurações gerais',
-    icon: 'mdi-cog-outline',
+    icon: 'settings',
     routeName: 'configuracoes'
   },
   {
     title: 'Campanha',
     caption: 'Campanhas de envio',
-    icon: 'mdi-bullhorn-outline',
+    icon: 'send',
     routeName: 'campanhas'
   },
   {
     title: 'API',
     caption: 'Integração sistemas externos',
-    icon: 'mdi-api',
+    icon: 'api',
     routeName: 'api-service'
   }
 ]
@@ -725,8 +739,116 @@ export default {
   }
 }
 </script>
-<style scoped>
+<style>
 .q-img__image {
   background-size: contain;
+}
+
+/* Borda no menu lateral esquerdo */
+.q-drawer {
+  border-right: 2px solid rgba(0, 0, 0, 0.12) !important;
+
+}
+
+/* Borda no tema escuro */
+.body--dark .q-drawer {
+  border-right: 2px solid rgba(255, 255, 255, 0.12) !important;
+
+}
+
+/* Estilo específico para o drawer lateral */
+.q-drawer--left {
+  border-right: 2px solid rgba(0, 0, 0, 0.12) !important;
+
+}
+
+.body--dark .q-drawer--left {
+  border-right: 2px solid rgba(255, 255, 255, 0.12) !important;
+
+}
+
+/* Cores dos ícones no tema escuro */
+.body--dark .q-icon {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.body--dark .houverList .q-icon {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.body--dark .houverList:hover .q-icon {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Cores dos ícones no tema claro */
+.q-drawer .q-icon {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.houverList .q-icon {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.houverList:hover .q-icon {
+  color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Cores dos ícones quando selecionados/ativos */
+.q-item--active .q-icon {
+  color: #1976d2 !important;
+}
+
+.body--dark .q-item--active .q-icon {
+  color: #64b5f6 !important;
+}
+
+.router-link-active .q-icon {
+  color: #1976d2 !important;
+}
+
+.body--dark .router-link-active .q-icon {
+  color: #64b5f6 !important;
+}
+
+/* Estilo para item ativo/selecionado */
+.q-item--active {
+  background: rgba(25, 118, 210, 0.1) !important;
+  border-left: 3px solid #1976d2 !important;
+}
+
+.body--dark .q-item--active {
+  background: rgba(100, 181, 246, 0.15) !important;
+  border-left: 3px solid #64b5f6 !important;
+}
+
+.router-link-active {
+  background: rgba(25, 118, 210, 0.1) !important;
+  border-left: 3px solid #1976d2 !important;
+}
+
+.body--dark .router-link-active {
+  background: rgba(100, 181, 246, 0.15) !important;
+  border-left: 3px solid #64b5f6 !important;
+}
+
+/* Estilos para tooltips */
+.q-tooltip {
+  background: rgba(55, 65, 81, 0.96) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  letter-spacing: 0.2px !important;
+}
+
+.body--dark .q-tooltip {
+  background: rgba(71, 85, 105, 0.95) !important;
+  color: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 </style>

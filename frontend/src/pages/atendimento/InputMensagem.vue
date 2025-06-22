@@ -249,38 +249,43 @@
               class="col-grow q-mx-md"
               type="text"
             />
-            <div
-              style="width: 200px"
-              class="flex flex-center items-center"
-              v-if="isRecordingAudio"
-            >
-              <q-btn
-                @click="handleStopRecordingAudio"
-                flat
-                icon="mdi-stop-circle"
-                class="bg-negative btn-rounded q-mx-xs"
-                color="white"
+                                       <div
+                style="width: 120px"
+                class="flex flex-center items-center q-pa-xs recording-controls"
+                :class="{ 'bg-grey-1': !$q.dark.isActive, 'bg-grey-8': $q.dark.isActive }"
+                v-if="isRecordingAudio"
               >
-                <q-tooltip content-class="text-bold">
-                  Parar Gravação
-                </q-tooltip>
-              </q-btn>
-              <q-btn
-                @click="handleCancelRecordingAudio"
-                flat
-                icon="mdi-close-circle"
-                class="bg-grey-7 btn-rounded q-mx-xs"
-                color="white"
-              >
-                <q-tooltip content-class="text-bold">
-                  Cancelar Gravação
-                </q-tooltip>
-              </q-btn>
-              <RecordingTimer
-                class="text-bold"
-                :class="{ 'text-white': $q.dark.isActive }"
-              />
-            </div>
+               <q-btn
+                 @click="handleStopRecordingAudio"
+                 flat
+                 dense
+                 size="sm"
+                 icon="mdi-stop"
+                 class="btn-rounded q-mx-xs"
+                 color="negative"
+               >
+                 <q-tooltip content-class="text-bold">
+                   Parar
+                 </q-tooltip>
+               </q-btn>
+               <q-btn
+                 @click="handleCancelRecordingAudio"
+                 flat
+                 dense
+                 size="sm"
+                 icon="mdi-close"
+                 class="btn-rounded q-mx-xs"
+                 color="grey-7"
+               >
+                 <q-tooltip content-class="text-bold">
+                   Cancelar
+                 </q-tooltip>
+               </q-btn>
+                               <RecordingTimer
+                  class="text-caption"
+                  :class="{ 'text-grey-7': !$q.dark.isActive, 'text-grey-5': $q.dark.isActive }"
+                />
+             </div>
           </div>
         </template>
 
@@ -933,4 +938,51 @@ export default {
   .inputEnvioMensagem,
   .PickerFileMessage
     width: 200px !important
+
+// Menu de gravação compacto e elegante
+.recording-controls
+  border-radius: 20px
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)
+  border: 1px solid rgba(0, 0, 0, 0.08)
+  backdrop-filter: blur(10px)
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06)
+  animation: slideInFade 0.3s ease-out
+
+  &:hover
+    transform: translateY(-1px)
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1)
+
+// Modo escuro para o menu de gravação
+.body--dark .recording-controls
+  border-color: rgba(255, 255, 255, 0.08)
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3)
+
+  &:hover
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4)
+
+// Botões super compactos
+.recording-controls .q-btn
+  min-height: 24px !important
+  min-width: 24px !important
+  font-size: 12px !important
+  margin: 0 2px !important
+
+  .q-btn__wrapper
+    padding: 2px !important
+
+// Timer compacto
+.recording-controls .text-caption
+  margin-left: 6px
+  font-size: 10px !important
+  font-weight: 600
+  letter-spacing: 0.5px
+
+// Animação elegante de entrada
+@keyframes slideInFade
+  from
+    opacity: 0
+    transform: translateX(15px) scale(0.95)
+  to
+    opacity: 1
+    transform: translateX(0) scale(1)
 </style>
