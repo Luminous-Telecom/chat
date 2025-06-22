@@ -3,11 +3,10 @@
     :value="value"
     @input="$emit('update:value', $event)"
     persistent
-    :maximized="$q.screen.lt.md"
-    transition-show="slide-up"
-    transition-hide="slide-down"
+    transition-show="scale"
+    transition-hide="scale"
   >
-    <q-card class="modal-listar-mensagens" :style="$q.screen.width < 770 ? 'min-width: 95vw; max-width: 95vw; max-height: 90vh; overflow: hidden' : 'min-width: 70vw; max-width: 70vw; max-height: 85vh; overflow: hidden'">
+    <q-card class="modal-listar-mensagens" style="width: 600px; max-width: 90vw; max-height: 70vh; overflow: hidden;">
       <q-card-section class="modal-header row items-center q-pb-none">
         <div class="text-subtitle1 text-primary">
           <q-icon name="mdi-calendar-clock" class="q-mr-xs text-primary" size="sm" />
@@ -45,7 +44,7 @@
             <q-item
               v-for="(mensagem, index) in mensagensOrdenadas"
               :key="mensagem.id || index"
-              class="q-pa-md"
+              class="q-pa-sm"
             >
               <q-item-section avatar>
                 <q-avatar color="primary" text-color="white" size="sm">
@@ -55,20 +54,16 @@
 
               <q-item-section>
                 <q-item-label class="text-weight-medium text-body2">
-                  {{ $formatarData(mensagem.scheduleDate, 'dd/MM/yyyy HH:mm') }}
+                  {{ $formatarData(mensagem.scheduleDate, 'dd/MM HH:mm') }}
                 </q-item-label>
-                <q-item-label caption class="q-mt-xs">
+                <q-item-label caption class="q-mt-xs" style="max-height: 40px; overflow: hidden;">
                   <div class="message-content">
-                    {{ mensagem.body || 'Mensagem sem conteúdo' }}
+                    {{ (mensagem.body || 'Mensagem sem conteúdo').substring(0, 80) + (mensagem.body && mensagem.body.length > 80 ? '...' : '') }}
                   </div>
                 </q-item-label>
-                <q-item-label caption class="q-mt-sm text-grey-6">
+                <q-item-label caption class="q-mt-xs text-grey-6 text-caption">
                   <q-icon name="mdi-account" size="xs" class="q-mr-xs" />
-                  Criado por: {{ mensagem.user?.name || 'Sistema' }}
-                </q-item-label>
-                <q-item-label caption class="text-grey-6">
-                  <q-icon name="mdi-clock" size="xs" class="q-mr-xs" />
-                  Criado em: {{ $formatarData(mensagem.createdAt, 'dd/MM/yyyy HH:mm') }}
+                  {{ mensagem.user?.name || 'Sistema' }}
                 </q-item-label>
               </q-item-section>
 
@@ -152,24 +147,26 @@
 
     <!-- Modal de visualização de mensagem -->
     <q-dialog v-model="modalVisualizacao" persistent>
-      <q-card style="min-width: 400px">
-        <q-card-section>
-          <div class="text-subtitle1">Detalhes da Mensagem Agendada</div>
+      <q-card style="width: 450px; max-width: 90vw;">
+        <q-card-section class="q-pb-none">
+          <div class="text-subtitle2">Detalhes da Mensagem</div>
         </q-card-section>
 
-        <q-card-section v-if="mensagemSelecionada">
-          <div class="q-mb-md">
-            <div class="text-weight-medium">Data/Hora Agendada:</div>
-            <div>{{ $formatarData(mensagemSelecionada.scheduleDate, 'dd/MM/yyyy HH:mm') }}</div>
+        <q-card-section v-if="mensagemSelecionada" class="q-pt-sm">
+          <div class="q-mb-sm">
+            <div class="text-body2 text-weight-medium">Agendada para:</div>
+            <div class="text-body2">{{ $formatarData(mensagemSelecionada.scheduleDate, 'dd/MM/yyyy HH:mm') }}</div>
           </div>
 
-          <div class="q-mb-md">
-            <div class="text-weight-medium">Conteúdo:</div>
-            <div class="message-preview">{{ mensagemSelecionada.body || 'Mensagem sem conteúdo' }}</div>
+          <div class="q-mb-sm">
+            <div class="text-body2 text-weight-medium">Conteúdo:</div>
+            <div class="message-preview-content q-pa-sm rounded-borders" style="max-height: 120px; overflow-y: auto;">
+              {{ mensagemSelecionada.body || 'Mensagem sem conteúdo' }}
+            </div>
           </div>
 
-          <div class="q-mb-md">
-            <div class="text-weight-medium">Status:</div>
+          <div class="row q-gutter-sm items-center">
+            <div class="text-caption text-grey-6">Status:</div>
             <q-chip
               :color="getStatusColor(mensagemSelecionada)"
               text-color="white"
@@ -177,20 +174,11 @@
             >
               {{ getStatusText(mensagemSelecionada) }}
             </q-chip>
-          </div>
-
-          <div class="q-mb-md">
-            <div class="text-weight-medium">Criado por:</div>
-            <div>{{ mensagemSelecionada.user?.name || 'Sistema' }}</div>
-          </div>
-
-          <div>
-            <div class="text-weight-medium">Criado em:</div>
-            <div>{{ $formatarData(mensagemSelecionada.createdAt, 'dd/MM/yyyy HH:mm') }}</div>
+            <div class="text-caption text-grey-6">{{ mensagemSelecionada.user?.name || 'Sistema' }}</div>
           </div>
         </q-card-section>
 
-        <q-card-actions align="right">
+        <q-card-actions align="right" class="q-pt-none">
           <q-btn flat label="Fechar" color="primary" size="sm" @click="fecharModalVisualizacao" />
         </q-card-actions>
       </q-card>
@@ -200,6 +188,7 @@
     <ModalEditarMensagemAgendada
       v-model="modalEditarMensagem"
       :mensagem="mensagemParaEditar"
+      :nome-contato="nomeContato"
       @mensagem-editada="mensagemEditada"
     />
   </q-dialog>
@@ -226,6 +215,10 @@ export default {
     mensagensAgendadas: {
       type: Array,
       default: () => []
+    },
+    contato: {
+      type: Object,
+      default: () => ({})
     }
   },
   data () {
@@ -241,6 +234,10 @@ export default {
       return [...this.mensagensAgendadas].sort((a, b) => {
         return new Date(a.scheduleDate) - new Date(b.scheduleDate)
       })
+    },
+
+    nomeContato () {
+      return this.contato?.name || 'Contato não identificado'
     }
   },
   methods: {
@@ -421,7 +418,7 @@ export default {
   }
 
   .scroll-container {
-    height: calc(85vh - 140px);
+    height: calc(70vh - 120px);
     overflow: hidden;
   }
 }
@@ -498,6 +495,14 @@ export default {
 }
 
 // Empty state styling
+
+.message-preview-content {
+  background: var(--q-color-grey-1);
+  border: 1px solid var(--q-color-grey-3);
+  color: var(--q-color-on-surface);
+}
+
+// Dark theme support
 .text-center {
   .q-icon {
     opacity: 0.6;
@@ -548,6 +553,12 @@ export default {
 
   .q-scroll-area {
     background: linear-gradient(180deg, rgba(45, 55, 72, 0.5) 0%, rgba(26, 32, 44, 0.3) 100%);
+  }
+
+  .message-preview-content {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--q-color-on-surface);
   }
 }
 

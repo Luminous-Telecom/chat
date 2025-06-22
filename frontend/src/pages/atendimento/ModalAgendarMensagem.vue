@@ -3,12 +3,11 @@
     :value="value"
     @input="$emit('input', $event)"
     persistent
-    :maximized="$q.screen.lt.md"
-    transition-show="slide-up"
-    transition-hide="slide-down"
+    transition-show="scale"
+    transition-hide="scale"
     class="modal-modern"
   >
-    <q-card class="modal-agendar-mensagem" :style="$q.screen.width < 770 ? 'min-width: 95vw; max-width: 95vw; max-height: 90vh; overflow-y: auto' : 'min-width: 60vw; max-width: 60vw; max-height: 85vh; overflow-y: auto'">
+    <q-card class="modal-agendar-mensagem" style="width: 600px; max-width: 90vw; max-height: 75vh; overflow-y: auto;">
       <q-card-section class="modal-header row items-center q-pb-none">
         <div class="text-subtitle1 text-primary">
           <q-icon name="mdi-calendar-plus" class="q-mr-xs text-primary" size="sm" />
@@ -128,7 +127,7 @@
             v-model="agendamento.mensagem"
             label="Digite sua mensagem"
             type="textarea"
-            rows="6"
+            rows="4"
             counter
             maxlength="4096"
             :rules="[val => !!val || 'Mensagem é obrigatória']"
@@ -459,16 +458,16 @@ export default {
 }
 
 .q-card-section {
-  padding: 12px;
+  padding: 8px 12px;
 }
 
 .modal-agendar-mensagem {
   .q-card-section:first-child {
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .q-card-actions {
-    padding: 12px;
+    padding: 8px 12px;
   }
 }
 

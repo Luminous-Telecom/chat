@@ -684,6 +684,7 @@
         :value.sync="modalListarMensagensAgendadas"
         :ticket-id="ticketFocado.id || null"
         :mensagens-agendadas="ticketFocado.scheduledMessages || []"
+        :contato="ticketFocado.contact || {}"
         @nova-mensagem-agendada="abrirModalAgendarMensagem"
         @mensagem-cancelada="handleMensagemCancelada"
       />
