@@ -1,43 +1,35 @@
 <template>
   <q-layout view="hHh Lpr lFf">
-    <q-btn
-      flat
-      dense
-      round
-      icon="menu"
-      aria-label="Menu"
-      @click="leftDrawerOpen = !leftDrawerOpen"
-      class="q-ml-sm"
-      v-show="!leftDrawerOpen"
-    />
     <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      :mini="miniState"
-
-      mini-to-overlay
-      :width="220"
-      :breakpoint="400"
-      class="bg-sidebar-custom"
+      :value="true"
+      persistent
+      no-swipe-open
+      no-swipe-close
+      no-swipe-backdrop
+      :width="70"
+      :breakpoint="1024"
+      class="bg-sidebar-custom icon-only-sidebar"
     >
-      <q-scroll-area class="fit modern-scrollbar">
-        <q-list padding :key="userProfile">
-          <q-item clickable v-ripple class="houverList" @click="miniState = !miniState">
-            <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
-              Menu
+            <div class="sidebar-content">
+        <q-list class="compact-list" :key="userProfile">
+          <!-- Botão Menu do Sistema -->
+          <q-item clickable v-ripple class="houverList icon-only-item" @click="topMenuOpen = !topMenuOpen">
+            <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
+              Menu do Sistema
             </q-tooltip>
-            <q-item-section avatar>
+            <q-item-section avatar class="icon-centered">
               <q-icon name="menu" />
             </q-item-section>
-            <q-item-section>
-              <q-item-label>Menu</q-item-label>
-            </q-item-section>
           </q-item>
-          <q-item clickable v-ripple class="houverList">
-            <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+
+          <!-- Separador -->
+          <q-separator spaced />
+
+          <q-item clickable v-ripple class="houverList icon-only-item">
+            <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
               Alertas
             </q-tooltip>
-            <q-item-section avatar>
+            <q-item-section avatar class="icon-centered">
               <q-icon name="notifications_none" />
               <q-badge
                 color="red"
@@ -47,9 +39,6 @@
               >
                 {{ errorNotificationsCount }}
               </q-badge>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>Alertas</q-item-label>
             </q-item-section>
             <q-menu anchor="top right" self="top left">
               <q-list style="min-width: 300px">
@@ -100,31 +89,25 @@
             v-for="item in cMenuData"
             :key="item.title"
             v-bind="item"
-            :miniState="miniState"
           />
           <div v-if="userProfile === 'admin'">
             <q-separator spaced />
-            <div class="q-mb-lg"></div>
             <template v-for="item in menuDataAdmin">
               <EssentialLink
                 v-if="exibirMenuBeta(item)"
                 :key="item.title"
                 v-bind="item"
-                :miniState="miniState"
               />
             </template>
             <q-separator spaced />
           </div>
-          <div class="q-mt-lg">
-            <q-item clickable v-ripple class="houverList">
-              <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+          <div class="q-mt-sm">
+            <q-item clickable v-ripple class="houverList icon-only-item">
+              <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
                 Usuário
               </q-tooltip>
-              <q-item-section avatar>
+              <q-item-section avatar class="icon-centered">
                 <q-icon name="account_circle" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>Usuário</q-item-label>
               </q-item-section>
               <q-menu anchor="top right" self="top left">
                 <q-list style="min-width: 100px">
@@ -152,18 +135,204 @@
                 </q-list>
               </q-menu>
             </q-item>
-            <q-item clickable v-ripple class="houverList" @click="$setConfigsUsuario({ isDark: !$q.dark.isActive })">
-              <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+            <q-item clickable v-ripple class="houverList icon-only-item" @click="$setConfigsUsuario({ isDark: !$q.dark.isActive })">
+              <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
                 {{ $q.dark.isActive ? 'Modo Claro' : 'Modo Escuro' }}
               </q-tooltip>
-              <q-item-section avatar>
+              <q-item-section avatar class="icon-centered">
                 <q-icon :name="$q.dark.isActive ? 'light_mode' : 'dark_mode'" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ $q.dark.isActive ? 'Modo Claro' : 'Modo Escuro' }}</q-item-label>
               </q-item-section>
             </q-item>
           </div>
+        </q-list>
+      </div>
+    </q-drawer>
+
+    <!-- Menu lateral do topo -->
+    <q-drawer
+      v-model="topMenuOpen"
+      side="left"
+      overlay
+      :width="300"
+      class="top-menu-drawer"
+    >
+      <div class="top-menu-header">
+        <div class="top-menu-brand">
+          <q-avatar size="60px" class="brand-avatar">
+            <q-icon name="chat" size="32px" />
+          </q-avatar>
+          <div class="brand-info">
+            <div class="brand-title">NOC Chat System</div>
+            <div class="brand-subtitle">
+              <q-icon name="circle" size="8px" color="positive" />
+              Online
+            </div>
+          </div>
+        </div>
+        <q-btn
+          flat
+          dense
+          round
+          icon="arrow_back"
+          @click="topMenuOpen = false"
+          class="close-menu-btn"
+        />
+      </div>
+
+      <q-scroll-area class="top-menu-content">
+        <q-list class="top-menu-list">
+          <!-- Seção Principal -->
+          <q-item-label header class="menu-section-header">
+            NAVEGAÇÃO PRINCIPAL
+          </q-item-label>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('chat-empty')"
+          >
+            <q-item-section avatar>
+              <q-icon name="chat" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Abrir novo atendimento</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('campanhas')"
+          >
+            <q-item-section avatar>
+              <q-icon name="send" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Envio em massa</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-separator class="menu-separator" />
+
+          <!-- Seção Administrativa -->
+          <q-item-label header class="menu-section-header">
+            ADMINISTRAÇÃO
+          </q-item-label>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('usuarios')"
+            v-if="userProfile === 'admin'"
+          >
+            <q-item-section avatar>
+              <q-icon name="people_outline" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Usuários</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('contatos')"
+          >
+            <q-item-section avatar>
+              <q-icon name="contacts" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Leads/Contatos</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('sessoes')"
+            v-if="userProfile === 'admin'"
+          >
+            <q-item-section avatar>
+              <q-icon name="phone_iphone" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Canais de comunicação</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('api-service')"
+            v-if="userProfile === 'admin'"
+          >
+            <q-item-section avatar>
+              <q-icon name="api" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Integrações</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-separator class="menu-separator" />
+
+          <!-- Seção Sistema -->
+          <q-item-label header class="menu-section-header">
+            SISTEMA
+          </q-item-label>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('chat-flow')"
+            v-if="userProfile === 'admin'"
+          >
+            <q-item-section avatar>
+              <q-icon name="smart_toy" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Fluxo de comunicação</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item"
+            @click="navigateAndClose('configuracoes')"
+            v-if="userProfile === 'admin'"
+          >
+            <q-item-section avatar>
+              <q-icon name="settings" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Configurações</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-separator class="menu-separator" />
+
+          <!-- Seção Usuário -->
+          <q-item
+            clickable
+            v-ripple
+            class="top-menu-item logout-item"
+            @click="efetuarLogout"
+          >
+            <q-item-section avatar>
+              <q-icon name="logout" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Sair</q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-scroll-area>
     </q-drawer>
@@ -227,22 +396,10 @@ const objMenu = [
     icon: 'task_alt',
     routeName: 'atendimento',
     query: { status: 'closed' }
-  },
-  {
-    title: 'Contatos',
-    caption: 'Lista de contatos',
-    icon: 'contacts',
-    routeName: 'contatos'
   }
 ]
 
 const objMenuAdmin = [
-  {
-    title: 'Canais',
-    caption: 'Canais de Comunicação',
-    icon: 'phone_iphone',
-    routeName: 'sessoes'
-  },
   {
     title: 'Painel Atendimentos',
     caption: 'Visão geral dos atendimentos',
@@ -254,12 +411,6 @@ const objMenuAdmin = [
     caption: 'Relatórios gerais',
     icon: 'analytics',
     routeName: 'relatorios'
-  },
-  {
-    title: 'Usuarios',
-    caption: 'Admin de usuários',
-    icon: 'people_outline',
-    routeName: 'usuarios'
   },
   {
     title: 'Filas',
@@ -274,12 +425,6 @@ const objMenuAdmin = [
     routeName: 'mensagens-rapidas'
   },
   {
-    title: 'Chatbot',
-    caption: 'Robô de atendimento',
-    icon: 'smart_toy',
-    routeName: 'chat-flow'
-  },
-  {
     title: 'Etiquetas',
     caption: 'Cadastro de etiquetas',
     icon: 'local_offer',
@@ -290,24 +435,6 @@ const objMenuAdmin = [
     caption: 'Horário de funcionamento',
     icon: 'access_time',
     routeName: 'horarioAtendimento'
-  },
-  {
-    title: 'Configurações',
-    caption: 'Configurações gerais',
-    icon: 'settings',
-    routeName: 'configuracoes'
-  },
-  {
-    title: 'Campanha',
-    caption: 'Campanhas de envio',
-    icon: 'send',
-    routeName: 'campanhas'
-  },
-  {
-    title: 'API',
-    caption: 'Integração sistemas externos',
-    icon: 'api',
-    routeName: 'api-service'
   }
 ]
 
@@ -319,11 +446,10 @@ export default {
     return {
       username,
       domainExperimentalsMenus: ['@'],
-      miniState: true,
       userProfile: 'user',
       modalUsuario: false,
       usuario: {},
-      leftDrawerOpen: true, // Alterado de false para true
+      topMenuOpen: false, // Menu lateral do topo
       menuData: [
         ...objMenu.filter(item => item.routeName === 'dashboard'),
         ...objMenu.filter(item => item.routeName !== 'dashboard')
@@ -386,6 +512,7 @@ export default {
     }
   },
   methods: {
+
     requestNotificationPermissionOnInteraction () {
       const requestPermission = () => {
         if ('Notification' in window && Notification.permission === 'default') {
@@ -584,6 +711,12 @@ export default {
     async abrirDetalhesErro (errorNotification) {
       // Implemente a lógica para abrir detalhes do erro
       console.log('Abrir detalhes do erro:', errorNotification)
+    },
+    navigateAndClose (routeName) {
+      this.topMenuOpen = false
+      this.$router.push({ name: routeName }).catch(err => {
+        if (err.name !== 'NavigationDuplicated') throw err
+      })
     },
     // Métodos para gerenciar notificações de erro
     adicionarNotificacaoErro (tipo, titulo, mensagem, detalhes = null) {
@@ -845,10 +978,376 @@ export default {
   letter-spacing: 0.2px !important;
 }
 
-.body--dark .q-tooltip {
-  background: rgba(71, 85, 105, 0.95) !important;
-  color: rgba(255, 255, 255, 0.98) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-</style>
+  .body--dark .q-tooltip {
+    background: rgba(71, 85, 105, 0.95) !important;
+    color: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* Estilos para o novo menu lateral do topo */
+  .top-menu-drawer {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+    box-shadow: 2px 0 30px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .body--dark .top-menu-drawer {
+    background: linear-gradient(145deg, #1e293b 0%, #334155 100%) !important;
+    box-shadow: 2px 0 30px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  .top-menu-header {
+    padding: 24px 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .top-menu-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,255,255,0.1)"/></svg>');
+    opacity: 0.3;
+  }
+
+  .top-menu-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-avatar {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .brand-info {
+    flex: 1;
+  }
+
+  .brand-title {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .brand-subtitle {
+    font-size: 12px;
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .close-menu-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+  }
+
+  .close-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+
+  .top-menu-content {
+    flex: 1;
+    height: calc(100vh - 120px);
+  }
+
+  .top-menu-list {
+    padding: 16px 0;
+  }
+
+  .menu-section-header {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 12px 24px 8px 24px;
+    margin: 0;
+  }
+
+  .body--dark .menu-section-header {
+    color: #94a3b8;
+  }
+
+  .top-menu-item {
+    margin: 2px 16px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 48px;
+  }
+
+  .top-menu-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+  }
+
+  .top-menu-item:hover {
+    background: rgba(59, 130, 246, 0.05);
+    transform: translateX(6px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  }
+
+  .top-menu-item:hover::before {
+    opacity: 1;
+  }
+
+  .body--dark .top-menu-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .top-menu-item .q-item__section--avatar {
+    min-width: 50px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .top-menu-item .q-icon {
+    font-size: 20px;
+    color: #64748b;
+    transition: all 0.3s ease;
+  }
+
+  .body--dark .top-menu-item .q-icon {
+    color: #94a3b8;
+  }
+
+  .top-menu-item:hover .q-icon {
+    color: #3b82f6;
+    transform: scale(1.1);
+  }
+
+  .top-menu-item .q-item__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    position: relative;
+    z-index: 1;
+  }
+
+  .body--dark .top-menu-item .q-item__label {
+    color: #e5e7eb;
+  }
+
+  .top-menu-item:hover .q-item__label {
+    color: #1e293b;
+  }
+
+  .body--dark .top-menu-item:hover .q-item__label {
+    color: #f8fafc;
+  }
+
+  .logout-item {
+    margin-top: 16px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .logout-item:hover {
+    background: rgba(239, 68, 68, 0.05) !important;
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .logout-item:hover .q-icon {
+    color: #ef4444 !important;
+  }
+
+  .logout-item:hover .q-item__label {
+    color: #ef4444 !important;
+  }
+
+  .menu-separator {
+    margin: 16px 24px;
+    opacity: 0.2;
+  }
+
+  .body--dark .menu-separator {
+    opacity: 0.3;
+  }
+
+  /* Animação de entrada do menu */
+  .q-drawer--left.q-drawer--overlay.top-menu-drawer {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  /* Ajuste para menu lateral fixo */
+  .q-layout-page {
+    margin-left: 70px !important;
+  }
+
+  .q-page-container {
+    padding-left: 0 !important;
+  }
+
+  @media (max-width: 1024px) {
+    .q-layout-page {
+      margin-left: 70px !important;
+    }
+  }
+
+  /* Estilo para o botão do menu do topo */
+  .top-menu-btn {
+    position: fixed;
+    top: 16px;
+    left: 240px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    color: #374151 !important;
+  }
+
+  .body--dark .top-menu-btn {
+    background: rgba(30, 41, 59, 0.95) !important;
+    color: #e5e7eb !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .top-menu-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: #3b82f6 !important;
+  }
+
+  .body--dark .top-menu-btn:hover {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+  }
+
+  @media (max-width: 1023px) {
+    .top-menu-btn {
+      left: 76px;
+    }
+  }
+
+  /* Estilos para menu apenas com ícones */
+  .icon-only-sidebar {
+    min-width: 70px !important;
+    max-width: 70px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .icon-only-sidebar .q-drawer__content {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .icon-only-item {
+    justify-content: center !important;
+    padding: 6px 4px !important;
+    min-height: 42px;
+  }
+
+  .icon-centered {
+    min-width: auto !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100%;
+  }
+
+  .icon-centered .q-icon {
+    font-size: 20px !important;
+    margin: 0 !important;
+  }
+
+  /* Ajustar separadores para menu apenas com ícones */
+  .icon-only-sidebar .q-separator {
+    margin: 8px 8px !important;
+  }
+
+  /* Ajuste dos badges para menu apenas com ícones */
+  .icon-centered .q-badge {
+    top: -4px !important;
+    right: -4px !important;
+  }
+
+  /* Ajustes dos tooltips para o menu apenas com ícones */
+  .icon-only-sidebar .q-tooltip {
+    font-size: 12px !important;
+    padding: 6px 10px !important;
+    max-width: 200px;
+    text-align: center;
+  }
+
+  /* Espaçamento da lista no menu apenas com ícones */
+  .icon-only-sidebar .q-list {
+    padding: 8px 0 !important;
+  }
+
+  /* Lista compacta para economizar espaço */
+  .compact-list {
+    padding: 4px 0 !important;
+  }
+
+  .icon-only-sidebar .compact-list {
+    padding: 6px 0 !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Container do conteúdo do sidebar */
+  .sidebar-content {
+    flex: 1;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 8px 0;
+  }
+
+  /* Menu apenas com ícones - sem scroll */
+  .icon-only-sidebar .sidebar-content {
+    overflow: visible;
+    height: 100vh;
+    flex: 1;
+    padding: 8px 0;
+  }
+
+  /* Ajustar itens ativos no menu apenas com ícones */
+  .icon-only-sidebar .q-item--active,
+  .icon-only-sidebar .router-link-active {
+    border-left: 3px solid #1976d2 !important;
+    border-radius: 0 !important;
+    background: rgba(25, 118, 210, 0.1) !important;
+  }
+
+  .body--dark .icon-only-sidebar .q-item--active,
+  .body--dark .icon-only-sidebar .router-link-active {
+    border-left: 3px solid #64b5f6 !important;
+    background: rgba(100, 181, 246, 0.15) !important;
+  }
+
+  </style>

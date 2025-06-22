@@ -5,15 +5,16 @@
     :active="isActive"
     active-class="bg-blue-1 text-grey-8 text-bold menu-link-active-item-top"
     @click="handleNavigation"
-    class="houverList"
+    class="houverList icon-only-item"
     :class="{'text-negative text-bolder': color === 'negative'}"
   >
-    <q-tooltip v-if="miniState" anchor="center right" self="center left" :offset="[10, 0]">
+    <q-tooltip anchor="center right" self="center left" :offset="[10, 0]">
       {{ title }}
     </q-tooltip>
     <q-item-section
       v-if="icon"
       avatar
+      class="icon-centered"
     >
       <q-icon :name="color === 'negative' ? 'mdi-cellphone-nfc-off' : icon" />
       <q-badge
@@ -24,12 +25,6 @@
       >
         {{ badge }}
       </q-badge>
-    </q-item-section>
-
-    <q-item-section>
-      <q-item-label>{{ title }}</q-item-label>
-      <q-item-label caption>
-      </q-item-label>
     </q-item-section>
   </q-item>
 </template>
@@ -76,11 +71,6 @@ export default {
     badge: {
       type: Number,
       default: 0
-    },
-
-    miniState: {
-      type: Boolean,
-      default: false
     }
   },
   computed: {
