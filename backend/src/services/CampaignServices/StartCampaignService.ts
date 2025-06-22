@@ -168,15 +168,37 @@ const StartCampaignService = async ({
     throw new AppError("ERR_CAMPAIGN_CONTACTS_NOT_EXISTS", 404);
   }
 
-  const timeDelay = campaign.delay ? campaign.delay * 1000 : 20000;
-  // const today = zonedTimeToUtc(new Date(), "America/Sao_Paulo");
-  // let dateDelay = setHours(
-  //   setMinutes(
-  //     zonedTimeToUtc(campaign.start, "America/Sao_Paulo"),
-  //     today.getMinutes() + 1
-  //   ),
-  //   today.getHours()
-  // );
+  // Limpar registros existentes da campanha
+  await CampaignContacts.destroy({
+    where: { campaignId }
+  });
+
+  // Recriar apenas contatos únicos
+  const uniqueContacts = [...new Map(campaignContacts.map(cc => [cc.contactId, cc])).values()];
+
+  // Criar UM registro por contato (será atualizado a cada mensagem enviada)
+  for (const campaignContact of uniqueContacts) {
+    await CampaignContacts.create({
+      campaignId: campaign.id,
+      contactId: campaignContact.contactId,
+      messageRandom: "message1", // Sempre começamos com message1
+      ack: 0,
+      body: campaign.message1,
+      mediaName: campaign.mediaName || null,
+      mediaPath: campaign.mediaPath || null,
+      messageId: null,
+      timestamp: null,
+      jobId: null,
+    });
+  }
+
+  // Recarregar os registros criados com a relação contact
+  const newCampaignContacts = await CampaignContacts.findAll({
+    where: { campaignId },
+    include: ["contact"]
+  });
+
+  const timeDelay = campaign.delay ? campaign.delay * 1000 : 30000; // Aumentei de 20s para 30s
   let dateDelay = zonedTimeToUtc(campaign.start, "America/Sao_Paulo");
   
   console.log(`[CAMPAIGN] Starting campaign ${campaignId}: ${campaign.name}`);
@@ -196,7 +218,7 @@ const StartCampaignService = async ({
 
   const data: any[] = [];
   
-  for (const campaignContact of campaignContacts) {
+  for (const campaignContact of newCampaignContacts) {
     // Para cada contato, criar jobs para cada mensagem que existe
     for (let messageIndex = 1; messageIndex <= 3; messageIndex++) {
       let shouldCreateJob = false;
@@ -218,7 +240,7 @@ const StartCampaignService = async ({
         
         const messageData = mountMessageData(campaign, campaignContact, messageIndex, {
           ...options,
-          jobId: `campaginId_${campaign.id}_contact_${campaignContact.contactId}_id_${campaignContact.id}_msg_${messageIndex}`,
+          jobId: `campaginId_${campaign.id}_contact_${campaignContact.contactId}_msg_${messageIndex}`,
           delay: calcDelay(dateDelay, timeDelay),
         });
         

@@ -87,100 +87,6 @@ export const setupAdditionalHandlers = (
           const messageId = update.key.id;
           const updateData = update.update;
 
-          // Busca a mensagem atual para verificar o ACK
-          let currentMessage = await Message.findOne({
-            where: {
-              [Op.or]: [
-                { messageId },
-                { messageId: messageId?.toString() },
-                { messageId: messageId?.toLowerCase() },
-                { messageId: messageId?.toUpperCase() },
-              ],
-              fromMe: true,
-              isDeleted: false,
-            },
-            order: [["createdAt", "DESC"]],
-            lock: true,
-          });
-
-          if (!currentMessage) {
-            // Busca em mensagens recentes (últimas 10 minutos) com mais critérios
-            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-            const recentMessage = await Message.findOne({
-              where: {
-                fromMe: true,
-                isDeleted: false,
-                createdAt: {
-                  [Op.gte]: tenMinutesAgo,
-                },
-                // Busca por messageId nulo ou igual
-                [Op.or]: [
-                  { messageId: null },
-                  { messageId },
-                  { messageId: messageId?.toString() },
-                  { messageId: messageId?.toLowerCase() },
-                  { messageId: messageId?.toUpperCase() },
-                ],
-              },
-              order: [["createdAt", "DESC"]],
-              lock: true,
-            });
-
-            if (recentMessage) {
-              // Se a mensagem já tem um messageId diferente, ignora a atualização
-              if (
-                recentMessage.messageId &&
-                recentMessage.messageId !== messageId
-              ) {
-                continue;
-              }
-
-              // Atualiza o messageId da mensagem recente
-              await recentMessage.update({ messageId });
-
-              // Atualiza a referência da mensagem atual para continuar o processamento
-              currentMessage = recentMessage;
-              await currentMessage.reload();
-            } else {
-              // Só loga warning se for uma mensagem realmente recente (últimos 10 minutos) e em situações críticas
-              const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-              const veryRecentMessage = await Message.findOne({
-                where: {
-                  fromMe: true,
-                  isDeleted: false,
-                  createdAt: {
-                    [Op.gte]: tenMinutesAgo,
-                  },
-                },
-                order: [["createdAt", "DESC"]],
-              });
-
-              // Criar cache para throttling de warnings por messageId
-              const warningKey = `sync-issue-${messageId.substring(0, 10)}`;
-              const lastWarning = global.warningCache?.get(warningKey) || 0;
-              const now = Date.now();
-              
-              // Só logar se passou mais de 5 minutos desde o último warning para este tipo de messageId
-              if (veryRecentMessage && (now - lastWarning > 300000)) {
-                if (!global.warningCache) global.warningCache = new Map();
-                global.warningCache.set(warningKey, now);
-                
-                logger.warn(
-                  `[messages.update] Message ID ${messageId} not found but recent messages exist. Possible sync issue (throttled).`
-                );
-              }
-              continue;
-            }
-          }
-
-          // Se a mensagem já tem um messageId diferente, ignora a atualização
-          if (
-            currentMessage.messageId &&
-            currentMessage.messageId !== messageId
-          ) {
-            continue;
-          }
-
           // Determina o novo ACK baseado no update recebido
           let newAck = null;
 
@@ -205,14 +111,38 @@ export const setupAdditionalHandlers = (
             continue;
           }
 
-          // Verifica se o novo ACK é válido (não regressivo)
-          if (currentMessage.ack >= newAck) {
-            continue;
-          }
+          console.log(`[messages.update] Processing ACK ${newAck} for messageId: ${messageId}`);
 
-          // CORREÇÃO PRINCIPAL: Processa ACKs intermediários para arquivos de mídia
-          // Se pular diretamente de ACK 1 para ACK 3, processa primeiro o ACK 2
-          if (currentMessage.ack === 1 && newAck === 3) {
+          // CORREÇÃO CRÍTICA: Sempre chamar HandleMsgAck para que ele decida se é campanha ou mensagem regular
+          // O HandleMsgAck vai verificar primeiro se é uma mensagem de campanha e depois mensagem regular
+          await HandleMsgAck(
+            {
+              key: update.key,
+              ...update,
+            },
+            newAck
+          );
+
+          // Busca a mensagem regular para lógica adicional (apenas se necessário)
+          const currentMessage = await Message.findOne({
+            where: {
+              [Op.or]: [
+                { messageId },
+                { messageId: messageId?.toString() },
+                { messageId: messageId?.toLowerCase() },
+                { messageId: messageId?.toUpperCase() },
+              ],
+              fromMe: true,
+              isDeleted: false,
+            },
+            order: [["createdAt", "DESC"]],
+            lock: true,
+          });
+
+          // Se encontrou mensagem regular e o ACK pula de 1 para 3, processar intermediário
+          if (currentMessage && currentMessage.ack === 1 && newAck === 3) {
+            console.log(`[messages.update] Processing intermediate ACK 2 for media message: ${messageId}`);
+            
             // Primeiro processa ACK 2 (delivered)
             await HandleMsgAck(
               {
@@ -224,23 +154,14 @@ export const setupAdditionalHandlers = (
 
             // Aguarda um pouco para garantir que o frontend processe o ACK 2
             await new Promise(resolve => setTimeout(resolve, 300));
-
-            // Recarrega a mensagem para ter o ACK atualizado
-            await currentMessage.reload();
           }
-
-          // Agora processa o ACK final
-          await HandleMsgAck(
-            {
-              key: update.key,
-              ...update,
-            },
-            newAck
-          );
         }
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.error(`[messages.update] Error processing message update: ${err}`);
+    }
   });
+
   // Handler para atualizações de contatos
   wbot.ev.on("contacts.update", async (contactUpdate: any) => {
     try {

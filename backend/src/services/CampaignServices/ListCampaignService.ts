@@ -19,31 +19,38 @@ const ListCampaignService = async ({
     where,
     attributes: {
       include: [
-        [
-          Sequelize.fn("COUNT", Sequelize.col("campaignContacts.id")),
-          "contactsCount",
-        ],
+        // Total de contatos únicos na campanha
         [
           Sequelize.literal(
-            '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 0 )'
+            '(select count(distinct "contactId") from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id")'
+          ),
+          "contactsCount",
+        ],
+        // Contatos pendentes de envio (ACK = 0)
+        [
+          Sequelize.literal(
+            '(select count(*) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 0)'
           ),
           "pendentesEnvio",
         ],
+        // Contatos pendentes de entrega (ACK = 1)
         [
           Sequelize.literal(
-            '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 1 )'
+            '(select count(*) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 1)'
           ),
           "pendentesEntrega",
         ],
+        // Contatos que receberam a última mensagem (ACK = 2)
         [
           Sequelize.literal(
-            '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 2 )'
+            '(select count(*) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 2)'
           ),
           "recebidas",
         ],
+        // Contatos que leram a última mensagem (ACK = 3)
         [
           Sequelize.literal(
-            '(select count(1) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 3 )'
+            '(select count(*) from "CampaignContacts" as "w" where "w"."campaignId" = "Campaign"."id" and "w"."ack" = 3)'
           ),
           "lidas",
         ],

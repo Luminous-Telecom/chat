@@ -1,5 +1,6 @@
 import CampaignContacts from "../../models/CampaignContacts";
 import Contact from "../../models/Contact";
+import { Sequelize } from "sequelize";
 
 interface Request {
   tenantId: string | number;
@@ -23,7 +24,6 @@ const ListCampaignContactsService = async ({
       },
     ],
     order: [["name", "ASC"]],
-    // logging: console.log
   });
 
   return contactsData;

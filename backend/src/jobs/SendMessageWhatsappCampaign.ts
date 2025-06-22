@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import { logger } from "../utils/logger";
 import { getBaileysSession } from "../libs/baileys";
 import CampaignContacts from "../models/CampaignContacts";
+import { getIO } from "../libs/socket";
 
 export default {
   key: "SendMessageWhatsappCampaign",
@@ -102,17 +103,82 @@ export default {
         });
       }
 
-      await CampaignContacts.update(
-        {
-          messageId: message?.key?.id || message?.id?.id || null,
+      const messageId = message?.key?.id || message?.id?.id || null;
+      
+      // Buscar o registro único do contato e sobrescrever com a mensagem atual
+      // USAR TRANSAÇÃO para evitar condições de corrida
+      const sequelize = require('../database').default;
+      const transaction = await sequelize.transaction();
+      
+      try {
+        const campaignContact = await CampaignContacts.findOne({
+          where: {
+            campaignId: data.campaignContact.campaignId,
+            contactId: data.campaignContact.contactId
+          },
+          lock: true, // Lock pessimista para evitar concorrência
+          transaction
+        });
+
+        if (campaignContact) {
+          // CORREÇÃO: Manter o ACK mais alto entre o atual e 1 (enviado)
+          const currentAck = campaignContact.ack || 0;
+          const newAck = Math.max(currentAck, 1); // Nunca diminuir o ACK
+          
+          console.log(`[CAMPAIGN JOB] 🔄 BEFORE UPDATE - Contact ${campaignContact.id}:`);
+          console.log(`[CAMPAIGN JOB]    Current messageId: ${campaignContact.messageId}`);
+          console.log(`[CAMPAIGN JOB]    Current messageRandom: ${campaignContact.messageRandom}`);
+          console.log(`[CAMPAIGN JOB]    Current ACK: ${currentAck}`);
+          console.log(`[CAMPAIGN JOB]    New messageId: ${messageId}`);
+          console.log(`[CAMPAIGN JOB]    New messageRandom: ${data.messageRandom}`);
+          console.log(`[CAMPAIGN JOB]    New ACK will be: ${newAck} (max of ${currentAck} and 1)`);
+          
+          await campaignContact.update({
+            messageId,
+            messageRandom: data.messageRandom, // Atualizar para a mensagem atual
+            body: data.message,
+            mediaName: data.mediaName || null,
+            mediaPath: data.mediaName ? data.campaignContact.mediaPath : null,
+            timestamp: message.timestamp,
+            jobId: data.options?.jobId || data.jobId,
+            ack: newAck, // Manter o ACK mais alto
+          }, { transaction });
+
+          // Commit da transação
+          await transaction.commit();
+
+          console.log(`[CAMPAIGN JOB] ✅ AFTER UPDATE - Contact ${campaignContact.id}:`);
+          console.log(`[CAMPAIGN JOB]    Final messageId: ${messageId}`);
+          console.log(`[CAMPAIGN JOB]    Final messageRandom: ${data.messageRandom}`);
+          console.log(`[CAMPAIGN JOB]    Final ACK: ${newAck} (COMMITTED)`);
+          console.log(`[CAMPAIGN JOB]    ACK Change: ${currentAck} → ${newAck}`);
+        } else {
+          await transaction.rollback();
+          console.error(`[CAMPAIGN JOB] CampaignContact not found for campaignId: ${data.campaignContact.campaignId}, contactId: ${data.campaignContact.contactId}`);
+        }
+      } catch (error) {
+        await transaction.rollback();
+        console.error(`[CAMPAIGN JOB] ❌ Transaction error:`, error);
+        throw error;
+      }
+
+      // Emitir evento WebSocket para atualização em tempo real
+      const io = getIO();
+      const tenantId = data.campaignContact.campaign?.tenantId || 1;
+      io.to(tenantId.toString()).emit(`${tenantId}:campaignUpdate`, {
+        type: "campaign:ack",
+        payload: {
+          campaignId: data.campaignContact.campaignId,
+          contactId: data.campaignContact.contactId,
+          messageId,
           messageRandom: data.messageRandom,
-          body: data.message,
-          mediaName: data.mediaName || null,
-          timestamp: message.timestamp,
-          jobId: data.options?.jobId || data.jobId,
+          ack: 1,
+          status: "sended",
+          campaignContactId: data.campaignContact.id,
         },
-        { where: { id: data.campaignContact.id } }
-      );
+      });
+
+      console.log(`[CAMPAIGN JOB] Emitted socket event for campaign ${data.campaignContact.campaignId}, contact ${data.campaignContact.contactId}, message ${data.messageRandom}, ACK: 1`);
 
       console.log(`[CAMPAIGN JOB] ✅ Sent to ${data.number} - ID: ${message?.key?.id || message?.id?.id}`);
 
@@ -120,14 +186,20 @@ export default {
     } catch (error) {
       console.error(`[CAMPAIGN JOB] ❌ Failed to send to ${data.number}: ${error.message}`);
       
-      // Atualizar o contato com erro (sem messageId)
-      await CampaignContacts.update(
-        {
+      // Buscar o registro do contato e atualizar com erro
+      const campaignContact = await CampaignContacts.findOne({
+        where: {
+          campaignId: data.campaignContact.campaignId,
+          contactId: data.campaignContact.contactId
+        }
+      });
+
+      if (campaignContact) {
+        await campaignContact.update({
           body: `ERROR: ${error.message}`,
           jobId: data.options?.jobId || data.jobId,
-        },
-        { where: { id: data.campaignContact.id } }
-      );
+        });
+      }
       
       logger.error(`Error enviar message campaign: ${error}`);
       throw new Error(error);
