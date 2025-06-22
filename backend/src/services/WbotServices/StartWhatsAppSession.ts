@@ -111,8 +111,6 @@ export const setupAdditionalHandlers = (
             continue;
           }
 
-          console.log(`[messages.update] Processing ACK ${newAck} for messageId: ${messageId}`);
-
           // CORREÇÃO CRÍTICA: Sempre chamar HandleMsgAck para que ele decida se é campanha ou mensagem regular
           // O HandleMsgAck vai verificar primeiro se é uma mensagem de campanha e depois mensagem regular
           await HandleMsgAck(
@@ -141,7 +139,6 @@ export const setupAdditionalHandlers = (
 
           // Se encontrou mensagem regular e o ACK pula de 1 para 3, processar intermediário
           if (currentMessage && currentMessage.ack === 1 && newAck === 3) {
-            console.log(`[messages.update] Processing intermediate ACK 2 for media message: ${messageId}`);
             
             // Primeiro processa ACK 2 (delivered)
             await HandleMsgAck(
