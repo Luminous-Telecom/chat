@@ -271,9 +271,9 @@ export const joinConversation = async (
 
   try {
     logger.info(`[joinConversation] Iniciando - TicketId: ${ticketId}, UserId: ${userId}, TenantId: ${tenantId}`);
-    
+
     const participantService = new TicketParticipantService();
-    
+
     // Verificar se o ticket existe
     const ticket = await ShowTicketService({ id: ticketId, tenantId });
     if (!ticket) {
@@ -326,7 +326,7 @@ export const joinConversation = async (
       parseInt(ticketId),
       +tenantId
     );
-    
+
     io.to(`${tenantId}:${ticket.status}`)
       .to(`${tenantId}:${ticketId}`)
       .emit(`${tenantId}:ticket`, {
@@ -338,9 +338,9 @@ export const joinConversation = async (
         participant: participant.toJSON ? participant.toJSON() : participant,
       });
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       message: "Successfully joined conversation",
-      participant 
+      participant
     });
   } catch (error) {
     logger.error("[joinConversation] Erro ao entrar na conversa:", error);
@@ -358,7 +358,7 @@ export const leaveConversation = async (
 
   try {
     const participantService = new TicketParticipantService();
-    
+
     // Verificar se o ticket existe
     const ticket = await ShowTicketService({ id: ticketId, tenantId });
     if (!ticket) {
@@ -390,7 +390,7 @@ export const leaveConversation = async (
       parseInt(ticketId),
       +tenantId
     );
-    
+
     io.to(`${tenantId}:${ticket.status}`)
       .to(`${tenantId}:${ticketId}`)
       .emit(`${tenantId}:ticket`, {
@@ -402,8 +402,8 @@ export const leaveConversation = async (
         userId,
       });
 
-    return res.status(200).json({ 
-      message: "Successfully left conversation" 
+    return res.status(200).json({
+      message: "Successfully left conversation"
     });
   } catch (error) {
     logger.error("[leaveConversation] Erro ao sair da conversa:", error);
@@ -420,7 +420,7 @@ export const getParticipants = async (
 
   try {
     const participantService = new TicketParticipantService();
-    
+
     const participants = await participantService.getTicketParticipants(
       parseInt(ticketId),
       +tenantId
