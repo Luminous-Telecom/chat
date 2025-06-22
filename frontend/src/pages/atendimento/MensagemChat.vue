@@ -196,65 +196,13 @@
               :color=" mensagem.ack >= 3 ? 'blue-12' : '' "
             />
             <template v-if=" mensagem.mediaType === 'audio' ">
-              <div class="audio-message-container">
-                <div class="audio-player-wrapper">
-                  <q-icon
-                    :name="isAudioPTT(mensagem) ? 'mdi-microphone' : 'mdi-music-note'"
-                    size="20px"
-                    :color="isAudioPTT(mensagem) ? 'orange' : 'primary'"
-                    class="audio-icon"
-                  />
-                  <audio
-                    controls
-                    ref="audioMessage"
-                    controlsList="nodownload noplaybackrate"
-                    preload="metadata"
-                    class="audio-player"
-                  >
-                    <!-- Múltiplos formatos para compatibilidade -->
-                    <source
-                      :src="mensagem.mediaUrl"
-                      :type="getAudioMimeType(mensagem)"
-                    />
-                    <source
-                      :src="mensagem.mediaUrl"
-                      type="audio/mpeg"
-                    />
-                    <source
-                      :src="mensagem.mediaUrl"
-                      type="audio/ogg"
-                    />
-                    <source
-                      :src="mensagem.mediaUrl"
-                      type="audio/wav"
-                    />
-                    Seu navegador não suporta reprodução de áudio.
-                  </audio>
-                  <q-btn
-                    flat
-                    dense
-                    icon="mdi-download"
-                    size="sm"
-                    :href="mensagem.mediaUrl"
-                    download
-                    class="download-btn"
-                  >
-                    <q-tooltip>Baixar áudio</q-tooltip>
-                  </q-btn>
-                </div>
-                                 <div v-if="isAudioPTT(mensagem)" class="audio-ptt-label">
-                   Mensagem de voz
-                   <span v-if="getAudioDuration(mensagem)" class="audio-duration">
-                     • {{ getAudioDuration(mensagem) }}
-                   </span>
-                 </div>
-                 <div v-else class="audio-file-label">
-                   {{ getAudioFileName(mensagem) }}
-                   <span v-if="getAudioDuration(mensagem)" class="audio-duration">
-                     • {{ getAudioDuration(mensagem) }}
-                   </span>
-                 </div>
-              </div>
+              <WhatsAppAudioPlayer
+                :audioUrl="mensagem.mediaUrl"
+                :isPTT="isAudioPTT(mensagem)"
+                :isSent="mensagem.fromMe"
+                :audioName="getAudioFileName(mensagem)"
+                :showSpeedControl="true"
+              />
             </template>
             <template v-if=" mensagem.mediaType === 'vcard' ">
               <q-btn
@@ -499,6 +447,7 @@ const downloadImageCors = axios.create({
 })
 import { DeletarMensagem, EnviarRespostaBotao } from 'src/service/tickets'
 import { Base64 } from 'js-base64'
+import WhatsAppAudioPlayer from 'src/components/WhatsAppAudioPlayer.vue'
 export default {
   name: 'MensagemChat',
   mixins: [mixinCommon],
@@ -579,7 +528,8 @@ export default {
     }
   },
   components: {
-    MensagemRespondida
+    MensagemRespondida,
+    WhatsAppAudioPlayer
   },
   methods: {
     ...mapMutations({
@@ -1223,77 +1173,7 @@ export default {
   padding-bottom: 16px;
 }
 
-/* Estilos para componente de áudio melhorado */
-.audio-message-container {
-  max-width: 300px;
-  margin: 8px 0;
-}
-
-.audio-player-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  padding: 8px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.audio-icon {
-  flex-shrink: 0;
-}
-
-.audio-player {
-  flex: 1;
-  height: 32px;
-  min-width: 200px;
-}
-
-.download-btn {
-  flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.download-btn:hover {
-  opacity: 1;
-}
-
-.audio-ptt-label {
-  font-size: 11px;
-  color: #666;
-  margin-top: 4px;
-  padding-left: 32px;
-  font-style: italic;
-}
-
-.audio-file-label {
-  font-size: 11px;
-  color: #666;
-  margin-top: 4px;
-  padding-left: 32px;
-  font-weight: 500;
-}
-
-.audio-duration {
-  color: #999;
-  font-weight: normal;
-}
-
-/* Dark mode para áudio */
-.body--dark .audio-player-wrapper {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.body--dark .audio-ptt-label,
-.body--dark .audio-file-label {
-  color: #aaa;
-}
-
-.body--dark .audio-duration {
-  color: #777;
-}
+/* Estilos removidos - agora usando WhatsAppAudioPlayer */
 
 .pdf-action-btn {
   min-width: 70px;
@@ -1389,4 +1269,6 @@ export default {
     padding: 4px 8px;
   }
 }
+
+/* Player de áudio agora integrado com design do WhatsApp */
 </style>
