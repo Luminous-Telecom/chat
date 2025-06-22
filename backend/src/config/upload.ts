@@ -3,18 +3,47 @@ import multer from "multer";
 import { format } from "date-fns";
 import fs from "fs";
 
-// Criar pasta para arquivos enviados se não existir
+// Criar pastas se não existirem
 const sentMediaFolder = path.resolve(__dirname, "..", "..", "public", "sent");
+const publicMediaFolder = path.resolve(__dirname, "..", "..", "public");
+
 if (!fs.existsSync(sentMediaFolder)) {
   fs.mkdirSync(sentMediaFolder, { recursive: true });
 }
 
+if (!fs.existsSync(publicMediaFolder)) {
+  fs.mkdirSync(publicMediaFolder, { recursive: true });
+}
+
+// Função para determinar a pasta baseada na rota/contexto
+const getDestination = (req: any): string => {
+  // Log para debug
+  console.log('Upload - URL:', req.url);
+  console.log('Upload - Body:', req.body);
+  
+  // Se for campanha, logo ou arquivo do sistema → pasta public
+  if (req.url?.includes('/campaigns') || 
+      req.url?.includes('/campaign') ||
+      req.body?.type === 'campaign' ||
+      req.body?.isCampaign === 'true' ||
+      req.query?.type === 'campaign' ||
+      req.headers?.['x-upload-type'] === 'campaign') {
+    console.log('Upload - Destination: PUBLIC (campaign)');
+    return publicMediaFolder;
+  }
+  
+  // Caso contrário (mensagens) → pasta sent
+  console.log('Upload - Destination: SENT (message)');
+  return sentMediaFolder;
+};
+
 export default {
-  directory: sentMediaFolder,
+  directory: sentMediaFolder, // Padrão para compatibilidade
 
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, sentMediaFolder);
+      const destination = getDestination(req);
+      cb(null, destination);
     },
     filename(req, file, cb) {
       let fileName;
