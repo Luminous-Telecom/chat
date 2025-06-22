@@ -92,9 +92,9 @@ export const regenerateSession = async (req: Request, res: Response): Promise<Re
     }
 
     // Importar a função de regeneração
-    const { regenerateSessionForCryptoIssues } = await import("../libs/baileys");
+    const { restartBaileysSession } = await import("../libs/baileys");
     
-    const newSession = await regenerateSessionForCryptoIssues(whatsapp.id);
+    const newSession = await restartBaileysSession(whatsapp.id);
     
     if (newSession) {
       return res.status(200).json({
@@ -102,11 +102,11 @@ export const regenerateSession = async (req: Request, res: Response): Promise<Re
         whatsappId: whatsapp.id,
         status: "regenerated"
       });
-    } else {
+    } 
       return res.status(500).json({
         error: "Falha ao regenerar sessão"
       });
-    }
+    
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Erro interno do servidor" });

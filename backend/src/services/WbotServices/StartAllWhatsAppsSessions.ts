@@ -53,10 +53,9 @@ export const StartAllWhatsAppsSessions = async (): Promise<void> => {
       StartWhatsAppSession(whatsapp, whatsapp.tenantId).catch(err => {
         logger.error(`Error starting WhatsApp session ${whatsapp.name}: ${err}`);
         return null; // Não interrompe outras sessões
-      })
-    );
+      }));
     
-    await Promise.allSettled(promises);
+    await Promise.all(promises);
     logger.info(`Iniciadas ${whatsappSessions.length} sessões WhatsApp em paralelo`);
   }
 

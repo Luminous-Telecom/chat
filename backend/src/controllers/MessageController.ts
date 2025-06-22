@@ -44,7 +44,9 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { pageNumber } = req.query as IndexQuery;
   const { tenantId } = req.user;
 
-  const { count, messages, messagesOffLine, ticket, hasMore } =
+  const {
+    count, messages, messagesOffLine, ticket, hasMore
+  } =
     await ListMessagesService({
       pageNumber,
       ticketId,
@@ -134,7 +136,7 @@ export const update = async (
       where: { 
         id: messageId,
         status: "pending",
-        scheduleDate: { [Op.not]: null }
+        scheduleDate: { [Op.not]: "" }
       },
       include: [
         {
@@ -197,7 +199,7 @@ export const cancel = async (
       where: { 
         id: messageId,
         status: "pending",
-        scheduleDate: { [Op.not]: null }
+        scheduleDate: { [Op.not]: "" }
       },
       include: [
         {
@@ -379,7 +381,9 @@ export const buttonResponse = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { ticketId, messageId, buttonText, buttonId } = req.body;
+  const {
+    ticketId, messageId, buttonText, buttonId
+  } = req.body;
 
   try {
     logger.info(`[buttonResponse] Processando resposta do botão:`, {
@@ -391,7 +395,7 @@ export const buttonResponse = async (
 
     // Validar e converter ticketId
     const parsedTicketId = parseInt(ticketId as string, 10);
-    if (isNaN(parsedTicketId)) {
+    if (Number.isNaN(parsedTicketId)) {
       return res.status(400).json({ error: "ticketId inválido" });
     }
 
@@ -443,8 +447,8 @@ export const buttonResponse = async (
       dataPayload: JSON.stringify({
         isButtonResponse: true,
         originalMessageId: messageId,
-        buttonId: buttonId,
-        buttonText: buttonText,
+        buttonId,
+        buttonText,
       }),
     });
 

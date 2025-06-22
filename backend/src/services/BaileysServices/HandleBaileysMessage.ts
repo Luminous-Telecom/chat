@@ -335,17 +335,14 @@ const processMessageContact = async (
     // Mensagem enviada por mim - o contato da conversa é o destinatário
     contactJid = msg.key.remoteJid || "";
     contactNumber = contactJid.split("@")[0].replace(/\D/g, "");
+  } else if (isGroup) {
+    // Em grupos, o remetente individual é o participant
+    contactJid = msg.key.participant || msg.key.remoteJid || "";
+    contactNumber = contactJid.split("@")[0].replace(/\D/g, "");
   } else {
-    // Mensagem recebida - o contato é o remetente
-    if (isGroup) {
-      // Em grupos, o remetente individual é o participant
-      contactJid = msg.key.participant || msg.key.remoteJid || "";
-      contactNumber = contactJid.split("@")[0].replace(/\D/g, "");
-    } else {
-      // Em conversas individuais, o remetente é o remoteJid
-      contactJid = msg.key.remoteJid || "";
-      contactNumber = contactJid.split("@")[0].replace(/\D/g, "");
-    }
+    // Em conversas individuais, o remetente é o remoteJid
+    contactJid = msg.key.remoteJid || "";
+    contactNumber = contactJid.split("@")[0].replace(/\D/g, "");
   }
 
   // Validar se temos um número válido
@@ -445,9 +442,9 @@ const processMessage = async (
         body: "⚠️ Mensagem não pôde ser descriptografada",
         fromMe: false,
         read: false,
-        mediaUrl: null,
-        mediaType: null,
-        quotedMsgId: null,
+        mediaUrl: undefined,
+        mediaType: undefined,
+        quotedMsgId: undefined,
         timestamp: Number(msg.messageTimestamp) || Date.now(),
         status: "received",
         dataPayload: JSON.stringify({

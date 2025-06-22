@@ -40,8 +40,6 @@ const cArquivoName = (url: string | null) => {
   return name;
 };
 
-
-
 const mountMessageData = (
   campaign: Campaign,
   campaignContact: CampaignContacts,
@@ -55,8 +53,8 @@ const mountMessageData = (
   };
 
   let message = '';
-  let mediaUrl = null;
-  let mediaName = null;
+  let mediaUrl: string | null = null;
+  let mediaName: string | null = null;
 
   if (messageIndex === 1) {
     // Primeira mensagem - pode ter mídia
@@ -73,9 +71,9 @@ const mountMessageData = (
       mediaName = cArquivoName(campaign.mediaUrl);
     }
   } else if (messageIndex === 2 && isValidMessage(campaign.message2)) {
-    message = campaign.message2;
+    message = campaign.message2 || '';
   } else if (messageIndex === 3 && isValidMessage(campaign.message3)) {
-    message = campaign.message3;
+    message = campaign.message3 || '';
   } else {
     return null; // Mensagem não existe ou é inválida
   }
@@ -184,11 +182,9 @@ const StartCampaignService = async ({
       messageRandom: "message1", // Sempre começamos com message1
       ack: 0,
       body: campaign.message1,
-      mediaName: campaign.mediaName || null,
-      mediaPath: campaign.mediaPath || null,
+      mediaName: cArquivoName(campaign.mediaUrl),
       messageId: null,
       timestamp: null,
-      jobId: null,
     });
   }
 
