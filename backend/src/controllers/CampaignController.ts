@@ -21,6 +21,7 @@ interface CampaignData {
   sessionId: string;
   delay: string;
   tenantId: string;
+  businessHoursOnly?: boolean;
 }
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
@@ -45,6 +46,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     userId: Yup.string().required(),
     sessionId: Yup.string().required(),
     tenantId: Yup.number().required(),
+    businessHoursOnly: Yup.boolean().nullable(),
   });
 
   try {
@@ -95,6 +97,7 @@ export const update = async (
     userId: Yup.string().required(),
     sessionId: Yup.string().required(),
     tenantId: Yup.number().required(),
+    businessHoursOnly: Yup.boolean().nullable(),
   });
 
   try {

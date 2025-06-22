@@ -51,6 +51,29 @@
           />
         </q-td>
       </template>
+      <template v-slot:body-cell-businessHoursOnly="props">
+        <q-td class="text-center">
+          <q-chip
+            v-if="props.row.businessHoursOnly"
+            color="primary"
+            text-color="white"
+            size="sm"
+            icon="mdi-clock-outline"
+          >
+            Sim
+          </q-chip>
+          <q-chip
+            v-else
+            color="grey-4"
+            text-color="dark"
+            size="sm"
+            icon="mdi-clock-off-outline"
+          >
+            Não
+          </q-chip>
+        </q-td>
+      </template>
+
       <template v-slot:body-cell-acoes="props">
         <q-td class="text-center">
           <q-btn
@@ -150,6 +173,7 @@ export default {
           align: 'center',
           format: (v) => v ? this.status[v] : ''
         },
+        { name: 'businessHoursOnly', label: 'Horário Comercial', field: 'businessHoursOnly', align: 'center' },
         { name: 'contactsCount', label: 'Qtd. Contatos', field: 'contactsCount', align: 'center' },
         { name: 'pendentesEnvio', label: 'À Enviar', field: 'pendentesEnvio', align: 'center' },
         { name: 'pendentesEntrega', label: 'À Entregar', field: 'pendentesEntrega', align: 'center' },

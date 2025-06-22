@@ -16,6 +16,7 @@ interface CampaignRequest {
   delay: string;
   sessionId: string;
   tenantId: string;
+  businessHoursOnly?: boolean;
 }
 
 interface Request {
@@ -55,6 +56,7 @@ const CreateCampaignService = async ({
     mediaType: mediaData?.mimetype.substr(0, mediaData.mimetype.indexOf("/")),
     sessionId: campaign.sessionId,
     tenantId: campaign.tenantId,
+    businessHoursOnly: campaign.businessHoursOnly || false,
   };
   const campaignData = await Campaign.create(data);
 

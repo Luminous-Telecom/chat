@@ -16,7 +16,7 @@
         <div class="col">
           <div class="text-h6">{{ campanhaEdicao.id ? 'Editar' : 'Criar' }} Campanha</div>
           <div class="text-caption text-grey-6">
-            As mensagens sempre serão enviadas em horário comercial e dias úteis.
+            Configure quando as mensagens devem ser enviadas.
           </div>
         </div>
         <q-btn
@@ -92,7 +92,29 @@
               label="Delay"
               error-message="Obrigatório"
             />
-            <q-file
+          </div>
+
+          <div class="row q-mt-md">
+            <q-checkbox
+              v-model="campanha.businessHoursOnly"
+              label="Enviar apenas em horário comercial e dias úteis"
+              color="primary"
+            >
+              <q-tooltip>
+                <div v-if="campanha.businessHoursOnly">
+                  <strong>Ativado:</strong> As mensagens serão enviadas apenas nos horários comerciais configurados.<br/>
+                  Mensagens fora do horário serão reagendadas para o próximo horário válido.
+                </div>
+                                 <div v-else>
+                   <strong>Desativado:</strong> As mensagens serão enviadas exatamente conforme agendado,<br/>
+                   sem qualquer restrição de horário (24h por dia, 7 dias por semana).
+                 </div>
+                </q-tooltip>
+             </q-checkbox>
+          </div>
+
+          <div class="row q-mt-md">
+              <q-file
               dense
               rounded
               v-if="!campanha.mediaUrl"
@@ -390,7 +412,8 @@ export default {
         message2: null,
         message3: null,
         sessionId: null,
-        delay: 20
+        delay: 20,
+        businessHoursOnly: false
       },
       messageTemplate: {
         mediaUrl: null,
@@ -577,7 +600,8 @@ export default {
         mediaUrl: null,
         userId: null,
         delay: 20,
-        sessionId: null
+        sessionId: null,
+        businessHoursOnly: false
       }
       this.messagemPreview = 'message1'
     },
@@ -588,7 +612,10 @@ export default {
     },
     abrirModal () {
       if (this.campanhaEdicao.id) {
-        this.campanha = { ...this.campanhaEdicao }
+        this.campanha = {
+          ...this.campanhaEdicao,
+          businessHoursOnly: this.campanhaEdicao.businessHoursOnly || false
+        }
       } else {
         this.resetarCampanha()
       }
@@ -666,6 +693,7 @@ export default {
       try {
         this.loading = true
         const campanha = { ...this.campanha }
+
         const medias = new FormData()
         Object.keys(campanha).forEach((key) => {
           medias.append(key, campanha[key])

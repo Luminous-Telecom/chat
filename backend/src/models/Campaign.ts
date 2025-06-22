@@ -52,7 +52,7 @@ class Campaign extends Model<Campaign> {
   @Column(DataType.STRING)
   get mediaUrl(): string | null {
     const value = this.getDataValue("mediaUrl");
-    if (value && value !== "null") {
+    if (value && value !== "null" && value.trim() !== "") {
       const { BACKEND_URL } = process.env;
       return `${BACKEND_URL}:${process.env.PROXY_PORT}/public/${value}`;
     }
@@ -94,6 +94,10 @@ class Campaign extends Model<Campaign> {
 
   @Column
   delay: number;
+
+  @Default(false)
+  @Column
+  businessHoursOnly: boolean;
 
   @AfterFind
   static async updatedInstances(instances: any): Promise<void | any> {

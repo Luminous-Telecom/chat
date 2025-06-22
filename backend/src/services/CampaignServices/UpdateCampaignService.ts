@@ -20,6 +20,7 @@ interface CampaignData {
   userId: string;
   delay: string;
   sessionId: string;
+  businessHoursOnly?: boolean;
 }
 
 interface Request {
@@ -39,7 +40,7 @@ const UpdateCampaignService = async ({
   let data: any = {
     ...campaignData,
     mediaUrl: cArquivoName(campaignData.mediaUrl),
-    start: setHours(setMinutes(parseISO(campaignData.start), 0), 8),
+    start: parseISO(campaignData.start), // Mantém o horário original conforme agendado
   };
 
   const campaignModel = await Campaign.findOne({

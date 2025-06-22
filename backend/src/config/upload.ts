@@ -17,9 +17,6 @@ if (!fs.existsSync(publicMediaFolder)) {
 
 // Função para determinar a pasta baseada na rota/contexto
 const getDestination = (req: any): string => {
-  // Log para debug
-  console.log('Upload - URL:', req.url);
-  console.log('Upload - Body:', req.body);
   
   // Se for campanha, logo ou arquivo do sistema → pasta public
   if (req.url?.includes('/campaigns') || 
