@@ -1,4 +1,3 @@
-import { Op } from "sequelize";
 import type { proto } from "@whiskeysockets/baileys";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
@@ -31,54 +30,24 @@ export const SendWhatsAppMessage = async (
       ticket.isGroup ? "g.us" : "s.whatsapp.net"
     }`;
 
-    // Primeiro, verifica se já existe uma mensagem pendente nos últimos 5 segundos
-    const existingMessage = await Message.findOne({
-      where: {
+    // Sempre criar uma nova mensagem (sem proteção anti-spam)
+    const messageToUpdate = await Message.create(
+      {
         ticketId: ticket.id,
-        fromMe: true,
         body,
-        createdAt: {
-          [Op.gte]: new Date(Date.now() - 5000),
-        },
-        isDeleted: false,
+        contactId: contact.id,
+        fromMe: true,
+        read: true,
+        mediaType: media ? "document" : "chat",
+        timestamp: Date.now(),
+        quotedMsgId: quotedMsg?.id || null,
+        status: "pending",
+        ack: 0,
+        messageId: null,
+        tenantId: ticket.tenantId,
       },
-      order: [["createdAt", "DESC"]],
-      lock: true,
-      transaction: t,
-    });
-
-    let messageToUpdate: Message;
-
-    if (existingMessage) {
-      if (existingMessage.status === "error") {
-        await existingMessage.update(
-          {
-            status: "pending",
-            ack: 0,
-          },
-          { transaction: t }
-        );
-      }
-      messageToUpdate = existingMessage;
-    } else {
-      messageToUpdate = await Message.create(
-        {
-          ticketId: ticket.id,
-          body,
-          contactId: contact.id,
-          fromMe: true,
-          read: true,
-          mediaType: media ? "document" : "chat",
-          timestamp: Date.now(),
-          quotedMsgId: quotedMsg?.id || null,
-          status: "pending",
-          ack: 0,
-          messageId: null,
-          tenantId: ticket.tenantId,
-        },
-        { transaction: t }
-      );
-    }
+      { transaction: t }
+    );
 
     // Prepara as opções da mensagem incluindo a citação se houver
     const messageOptions: any = {
