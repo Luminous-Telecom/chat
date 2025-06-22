@@ -40,59 +40,55 @@ const cArquivoName = (url: string | null) => {
   return name;
 };
 
-const randomInteger = (min: number, max: number) => {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
+
 
 const mountMessageData = (
   campaign: Campaign,
   campaignContact: CampaignContacts,
+  messageIndex: number,
   // eslint-disable-next-line @typescript-eslint/ban-types
   options: object | undefined
 ) => {
-  // Criar array apenas com mensagens que existem e não estão vazias
-  const availableMessages: { message: string, index: number }[] = [];
-  
   // Função helper para validar se uma mensagem é válida
   const isValidMessage = (msg: string | null | undefined): boolean => {
     return !!(msg && msg.trim() && msg.trim() !== 'null' && msg.trim() !== 'undefined');
   };
-  
-  if (isValidMessage(campaign.message1)) {
-    availableMessages.push({ message: campaign.message1, index: 1 });
-  }
-  if (isValidMessage(campaign.message2)) {
-    availableMessages.push({ message: campaign.message2, index: 2 });
-  }
-  if (isValidMessage(campaign.message3)) {
-    availableMessages.push({ message: campaign.message3, index: 3 });
-  }
 
-  // Se não há mensagens disponíveis, tentar usar message1 como fallback ou erro
-  if (availableMessages.length === 0) {
+  let message = '';
+  let mediaUrl = null;
+  let mediaName = null;
+
+  if (messageIndex === 1) {
+    // Primeira mensagem - pode ter mídia
     if (isValidMessage(campaign.message1)) {
-      availableMessages.push({ message: campaign.message1, index: 1 });
+      message = campaign.message1;
     } else {
-      // Se nem message1 é válida, usar uma mensagem padrão
-      console.error(`[CAMPAIGN] No valid messages found for campaign ${campaign.id}`);
-      availableMessages.push({ message: "Mensagem da campanha", index: 1 });
+      console.error(`[CAMPAIGN] No valid message1 found for campaign ${campaign.id}`);
+      message = "Mensagem da campanha";
     }
+    
+    // Se há mídia, incluir na primeira mensagem
+    if (campaign.mediaUrl) {
+      mediaUrl = campaign.mediaUrl;
+      mediaName = cArquivoName(campaign.mediaUrl);
+    }
+  } else if (messageIndex === 2 && isValidMessage(campaign.message2)) {
+    message = campaign.message2;
+  } else if (messageIndex === 3 && isValidMessage(campaign.message3)) {
+    message = campaign.message3;
+  } else {
+    return null; // Mensagem não existe ou é inválida
   }
 
-  // Selecionar uma mensagem aleatória das disponíveis
-  const randomIndex = randomInteger(0, availableMessages.length - 1);
-  const selectedMessage = availableMessages[randomIndex];
-
-  // Log da mensagem selecionada
-  console.log(`[CAMPAIGN] Selected message ${selectedMessage.index} for campaign ${campaign.id}: "${selectedMessage.message.substring(0, 30)}..."`);
+  console.log(`[CAMPAIGN] Preparing message ${messageIndex} for campaign ${campaign.id}: "${message.substring(0, 30)}..."`);
 
   return {
     whatsappId: campaign.sessionId,
-    message: selectedMessage.message,
+    message,
     number: campaignContact.contact.number,
-    mediaUrl: campaign.mediaUrl,
-    mediaName: campaign.mediaUrl ? cArquivoName(campaign.mediaUrl) : null,
-    messageRandom: `message${selectedMessage.index}`,
+    mediaUrl,
+    mediaName,
+    messageRandom: `message${messageIndex}`,
     campaignContact,
     options,
   };
@@ -193,20 +189,45 @@ const StartCampaignService = async ({
     console.log(`[CAMPAIGN] Date adjusted due to business hours restrictions`);
   }
 
-  const data = await Promise.all(
-    campaignContacts.map(async (campaignContact: CampaignContacts) => {
-      dateDelay = addSeconds(dateDelay, timeDelay / 1000);
+  // Função helper para validar se uma mensagem é válida
+  const isValidMessage = (msg: string | null | undefined): boolean => {
+    return !!(msg && msg.trim() && msg.trim() !== 'null' && msg.trim() !== 'undefined');
+  };
+
+  const data: any[] = [];
+  
+  for (const campaignContact of campaignContacts) {
+    // Para cada contato, criar jobs para cada mensagem que existe
+    for (let messageIndex = 1; messageIndex <= 3; messageIndex++) {
+      let shouldCreateJob = false;
       
-      // Aplica validação de horário se necessário
-      dateDelay = await nextDayHoursValid(dateDelay, campaign, Number(tenantId));
+      // Verificar se deve criar job para esta mensagem
+      if (messageIndex === 1 && isValidMessage(campaign.message1)) {
+        shouldCreateJob = true;
+      } else if (messageIndex === 2 && isValidMessage(campaign.message2)) {
+        shouldCreateJob = true;
+      } else if (messageIndex === 3 && isValidMessage(campaign.message3)) {
+        shouldCreateJob = true;
+      }
       
-      return mountMessageData(campaign, campaignContact, {
-        ...options,
-        jobId: `campaginId_${campaign.id}_contact_${campaignContact.contactId}_id_${campaignContact.id}`,
-        delay: calcDelay(dateDelay, timeDelay),
-      });
-    })
-  );
+      if (shouldCreateJob) {
+        dateDelay = addSeconds(dateDelay, timeDelay / 1000);
+        
+        // Aplica validação de horário se necessário
+        dateDelay = await nextDayHoursValid(dateDelay, campaign, Number(tenantId));
+        
+        const messageData = mountMessageData(campaign, campaignContact, messageIndex, {
+          ...options,
+          jobId: `campaginId_${campaign.id}_contact_${campaignContact.contactId}_id_${campaignContact.id}_msg_${messageIndex}`,
+          delay: calcDelay(dateDelay, timeDelay),
+        });
+        
+        if (messageData) {
+          data.push(messageData);
+        }
+      }
+    }
+  }
 
   console.log(`[CAMPAIGN] Scheduling ${data.length} message(s)...`);
   

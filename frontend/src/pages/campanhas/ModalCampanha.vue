@@ -473,36 +473,81 @@ export default {
     },
     cMessages () {
       const messages = []
-      const msgArray = ['message1', 'message2', 'message3']
-      if (this.arquivos?.type) {
-        const blob = new Blob([this.arquivos], { type: this.arquivos.type })
-        messages.push({
-          ...this.messageTemplate,
-          id: 'mediaUrl',
-          mediaUrl: window.URL.createObjectURL(blob),
-          body: this.arquivos.name,
-          mediaType: this.arquivos.type.substr(0, this.arquivos.type.indexOf('/'))
-        })
-      } else if (this.campanha.mediaUrl) {
-        messages.push({
-          ...this.messageTemplate,
-          id: 'mediaUrl',
-          mediaUrl: this.campanha.mediaUrl,
-          body: '',
-          mediaType: this.campanha.mediaType
-        })
-      }
-      msgArray.forEach(el => {
-        if (this.messagemPreview === el && this.campanha[el] && this.campanha[el].trim()) {
-          const body = this.campanha[el]
-          const msg = {
+
+      // Se existe mídia (arquivo ou URL), criamos a mensagem com mídia
+      if (this.arquivos?.type || this.campanha.mediaUrl) {
+        let mediaMessage
+
+        if (this.arquivos?.type) {
+          const blob = new Blob([this.arquivos], { type: this.arquivos.type })
+          mediaMessage = {
             ...this.messageTemplate,
-            id: el,
-            body
+            id: 'mediaUrl',
+            mediaUrl: window.URL.createObjectURL(blob),
+            body: '', // Inicialmente vazio, será preenchido abaixo
+            mediaType: this.arquivos.type.substr(0, this.arquivos.type.indexOf('/'))
           }
-          messages.push(msg)
+        } else if (this.campanha.mediaUrl) {
+          mediaMessage = {
+            ...this.messageTemplate,
+            id: 'mediaUrl',
+            mediaUrl: this.campanha.mediaUrl,
+            body: '', // Inicialmente vazio, será preenchido abaixo
+            mediaType: this.campanha.mediaType
+          }
         }
-      })
+
+        // Adicionar a primeira mensagem como caption da mídia (se existir)
+        if (this.campanha.message1 && this.campanha.message1.trim()) {
+          mediaMessage.body = this.campanha.message1
+        }
+
+        messages.push(mediaMessage)
+
+        // Adicionar segunda mensagem como texto separado (se existir)
+        if (this.campanha.message2 && this.campanha.message2.trim()) {
+          messages.push({
+            ...this.messageTemplate,
+            id: 'message2',
+            body: this.campanha.message2
+          })
+        }
+
+        // Adicionar terceira mensagem como texto separado (se existir)
+        if (this.campanha.message3 && this.campanha.message3.trim()) {
+          messages.push({
+            ...this.messageTemplate,
+            id: 'message3',
+            body: this.campanha.message3
+          })
+        }
+      } else {
+        // Se não há mídia, criar mensagens de texto para todas que existem
+        if (this.campanha.message1 && this.campanha.message1.trim()) {
+          messages.push({
+            ...this.messageTemplate,
+            id: 'message1',
+            body: this.campanha.message1
+          })
+        }
+
+        if (this.campanha.message2 && this.campanha.message2.trim()) {
+          messages.push({
+            ...this.messageTemplate,
+            id: 'message2',
+            body: this.campanha.message2
+          })
+        }
+
+        if (this.campanha.message3 && this.campanha.message3.trim()) {
+          messages.push({
+            ...this.messageTemplate,
+            id: 'message3',
+            body: this.campanha.message3
+          })
+        }
+      }
+
       return messages
     }
   },
