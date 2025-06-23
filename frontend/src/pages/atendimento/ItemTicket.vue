@@ -191,15 +191,17 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 
   &:hover {
     transform: translateY(-2px);
     border-color: #1976d2;
+    box-shadow: 0 2px 12px rgba(25, 118, 210, 0.15);
   }
 
-  &--active {
+    &--active {
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    border-color: #1976d2;
+    border: 2px solid #1976d2;
 
     .ticket-status-border {
       background: linear-gradient(135deg, #1976d2, #7b1fa2);
@@ -236,7 +238,7 @@ export default {
   top: 0;
   bottom: 0;
   width: 4px;
-  border-radius: 2px 0 0 2px;
+  border-radius: 8px 0 0 8px;
 
   &--open {
     background: linear-gradient(135deg, #1976d2, #1e88e5);
@@ -406,9 +408,9 @@ export default {
       border-color: var(--dark-accent);
     }
 
-    &--active {
+        &--active {
       background: rgba(144, 202, 249, 0.1);
-      border-color: var(--dark-accent);
+      border: 2px solid #90caf9;
     }
 
     &--pending {
