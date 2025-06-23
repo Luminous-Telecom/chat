@@ -10,6 +10,7 @@ import Ticket from "../../models/Ticket";
 
 import Message from "../../models/Message";
 import CreateMessageService from "../MessageServices/CreateMessageService";
+import { createMediaPreviewMessage } from "../../utils/mediaPreviewHelper";
 
 const getExt = (url: string) => {
   const n = url.split("?");
@@ -116,8 +117,16 @@ const VerifyMediaMessage = async (
     status: fromMe ? "sended" : "received",
   };
 
+  // Criar mensagem descritiva para o preview
+  const mimetype = `${mediaType}/jpeg`; // Tipo genérico baseado no mediaType
+  const displayMessage = createMediaPreviewMessage(
+    ctx.message?.text || ctx.message?.caption, 
+    type, 
+    mimetype
+  );
+
   await ticket.update({
-    lastMessage: ctx.message?.text || ctx.message?.caption || type,
+    lastMessage: displayMessage,
     lastMessageAt: new Date().getTime(),
     answered: fromMe || false,
   });

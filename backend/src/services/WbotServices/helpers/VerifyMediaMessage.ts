@@ -10,6 +10,7 @@ import Message from "../../../models/Message";
 import VerifyQuotedMessage from "./VerifyQuotedMessage";
 import CreateMessageService from "../../MessageServices/CreateMessageService";
 import { logger } from "../../../utils/logger";
+import { createMediaPreviewMessage } from "../../../utils/mediaPreviewHelper";
 
 // Cache para mensagens em processamento
 const processingMessages = new Set<string>();
@@ -21,6 +22,8 @@ const getMediaType = (mimetype: string | undefined): string => {
   const [type] = mimetype.split("/");
   return type || "application";
 };
+
+
 
 const getFileExtension = (mimetype: string | undefined): string => {
   if (!mimetype) return "bin";
@@ -345,8 +348,11 @@ const VerifyMediaMessage = async (
     // Incrementar contador se mensagem não for própria
     const newUnreadCount = msg.fromMe ? currentUnread : currentUnread + 1;
 
+    // Criar mensagem descritiva para o preview
+    const displayMessage = createMediaPreviewMessage(msg.body, filename, media.mimetype);
+
     await ticket.update({
-      lastMessage: msg.body || filename,
+      lastMessage: displayMessage,
       lastMessageAt: new Date().getTime(),
       answered: msg.fromMe || false,
       unreadMessages: newUnreadCount,

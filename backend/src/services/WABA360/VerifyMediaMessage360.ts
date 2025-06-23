@@ -5,6 +5,22 @@ import Message from "../../models/Message";
 import CreateMessageService from "../MessageServices/CreateMessageService";
 import GetMediaWaba360 from "./GetMediaWaba360";
 import Whatsapp from "../../models/Whatsapp";
+import { createMediaPreviewMessage } from "../../utils/mediaPreviewHelper";
+
+const getMimetypeFromWabaType = (type: string): string => {
+  switch (type) {
+    case "audio":
+      return "audio/ogg";
+    case "video":
+      return "video/mp4";
+    case "image":
+      return "image/jpeg";
+    case "document":
+      return "application/pdf";
+    default:
+      return "application/octet-stream";
+  }
+};
 
 const VerifyMediaMessage = async (
   channel: Whatsapp,
@@ -42,8 +58,12 @@ const VerifyMediaMessage = async (
     status: msg.fromMe ? "sended" : "received",
   };
 
+  // Criar mensagem descritiva para o preview baseada no tipo
+  const mimetype = getMimetypeFromWabaType(msg.type);
+  const displayMessage = createMediaPreviewMessage(msg?.text?.body, filename || "", mimetype);
+
   await ticket.update({
-    lastMessage: msg?.text?.body || filename,
+    lastMessage: displayMessage,
     lastMessageAt: new Date().getTime(),
     answered: msg.fromMe || false,
   });

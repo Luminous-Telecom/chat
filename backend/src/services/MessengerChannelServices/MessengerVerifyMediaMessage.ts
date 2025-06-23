@@ -10,6 +10,7 @@ import CreateMessageService from "../MessageServices/CreateMessageService";
 import Whatsapp from "../../models/Whatsapp";
 import { EventMessage, MessengerRawEvent } from "./MessengerTypes";
 import getQuotedForMessageId from "../../helpers/getQuotedForMessageId";
+import { createMediaPreviewMessage } from "../../utils/mediaPreviewHelper";
 
 interface IMessage extends EventMessage {
   type: string;
@@ -107,8 +108,16 @@ const MessengerVerifyMediaMessage = async (
         status: "received",
       };
 
+      // Criar mensagem descritiva para o preview
+      const mimetype = "application/octet-stream";// Tipo genérico para Messenger
+      const displayMessage = createMediaPreviewMessage(
+        msg.message?.text, 
+        filename || "arquivo", 
+        mimetype
+      );
+
       await ticket.update({
-        lastMessage: msg.message?.text || filename || "",
+        lastMessage: displayMessage,
         lastMessageAt: new Date().getTime(),
         answered: false,
       });

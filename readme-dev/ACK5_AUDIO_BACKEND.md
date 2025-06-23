@@ -5,6 +5,7 @@
 ### ✅ **HandleMsgAck.ts - Modificações Principais**
 
 #### **1. Validação ACK 5 para Áudios**
+
 ```typescript
 const isValidAck = (ack: number, mediaType?: string): boolean => {
   // ACK 5 é válido apenas para mensagens de áudio
@@ -16,6 +17,7 @@ const isValidAck = (ack: number, mediaType?: string): boolean => {
 ```
 
 #### **2. Novo Status "played"**
+
 ```typescript
 const getMessageStatus = (ack: number): string => {
   switch (ack) {
@@ -29,6 +31,7 @@ const getMessageStatus = (ack: number): string => {
 ```
 
 #### **3. Lógica Especial para ACK 5**
+
 - **Verificação de MediaType**: Busca o `mediaType` da mensagem antes de validar ACK 5
 - **Sobrescrita Permitida**: ACK 5 pode sobrescrever ACK 3 para áudios
 - **Logs Específicos**: Logs diferenciados para áudios ouvidos
@@ -36,6 +39,7 @@ const getMessageStatus = (ack: number): string => {
 ## 🔄 **Fluxo de ACK para Áudio**
 
 ### **Estados Possíveis:**
+
 1. **ACK 0**: Pendente
 2. **ACK 1**: Enviado  
 3. **ACK 2**: Entregue
@@ -43,6 +47,7 @@ const getMessageStatus = (ack: number): string => {
 5. **ACK 5**: Ouvido (usuário reproduziu o áudio) ✨
 
 ### **Transições Permitidas:**
+
 - ✅ **0 → 1 → 2 → 3**: Fluxo normal
 - ✅ **3 → 5**: Áudio visualizado → Áudio ouvido
 - ❌ **5 → 3**: Não permite regressão
@@ -51,6 +56,7 @@ const getMessageStatus = (ack: number): string => {
 ## 🛠 **Implementação Técnica**
 
 ### **Busca de MediaType para ACK 5:**
+
 ```typescript
 let mediaType: string | undefined;
 if (ack === 5) {
@@ -63,12 +69,14 @@ if (ack === 5) {
 ```
 
 ### **Validação de Atualização:**
+
 ```typescript
 const canUpdateAck = ack > messageToUpdate.ack || 
                     (ack === 5 && messageToUpdate.ack === 3 && messageToUpdate.mediaType === 'audio');
 ```
 
 ### **Payload Socket com ACK 5:**
+
 ```typescript
 const socketPayload = {
   type: "chat:ack",
@@ -87,17 +95,20 @@ const socketPayload = {
 ## 🧪 **Teste e Validação**
 
 ### **Script de Teste:**
+
 ```bash
 npm run test-ack5-audio
 ```
 
 ### **Logs de Sucesso:**
+
 ```
 [HandleMsgAck] 🔊 ÁUDIO OUVIDO: Atualizando mensagem 123 (audio) de ACK 3 para 5 (played)
 [HandleMsgAck] ✅ ACK 5 processado com sucesso para mensagem 123
 ```
 
 ### **Logs de Rejeição:**
+
 ```
 [HandleMsgAck] ⚠️ ACK 5 INVÁLIDO: messageId xxx não é áudio (mediaType: image)
 [HandleMsgAck] ACK 5 é válido apenas para mensagens de áudio. Ignorando ACK 5
@@ -106,16 +117,19 @@ npm run test-ack5-audio
 ## 📊 **Compatibilidade**
 
 ### **Frontend:**
+
 - ✅ **Player de Áudio**: Recebe ACK 5 via WebSocket
 - ✅ **Ícone**: Muda para azul quando ACK 5
 - ✅ **Store**: Processa ACK 5 corretamente
 
 ### **Campanhas:**
+
 - ✅ **CampaignContacts**: Suporta ACK 5
 - ✅ **Relatórios**: ACK 5 = "played"
 - ✅ **WebSocket**: Eventos em tempo real
 
 ### **API:**
+
 - ✅ **Baileys**: Integração transparente
 - ✅ **WhatsApp Web**: Compatível
 - ✅ **Logs**: Rastreamento completo
@@ -133,4 +147,4 @@ npm run test-ack5-audio
 - **WhatsApp Oficial**: Depende do comportamento do WhatsApp
 - **Fallback**: ACK 3 continua funcionando normalmente
 
-**Sistema de ACK 5 para áudios 100% funcional!** 🎉 
+**Sistema de ACK 5 para áudios 100% funcional!** 🎉

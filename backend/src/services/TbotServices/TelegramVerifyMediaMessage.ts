@@ -11,11 +11,11 @@ import Message from "../../models/Message";
 import CreateMessageService from "../MessageServices/CreateMessageService";
 import { logger } from "../../utils/logger";
 import getQuotedForMessageId from "../../helpers/getQuotedForMessageId";
+import { createMediaPreviewMessage } from "../../utils/mediaPreviewHelper";
 
 const writeFileAsync = promisify(writeFile);
 
 const getMediaInfo = (msg: any) => {
-  // eslint-disable-next-line prettier/prettier
   const mediaType = msg.photo
     ? "photo"
     : msg.video
@@ -28,7 +28,6 @@ const getMediaInfo = (msg: any) => {
     ? "sticker"
     : "document";
   const mediaObj = msg[mediaType];
-  // eslint-disable-next-line prettier/prettier
   const [type, mimeType, SAD, fileName, fileId, caption, SAV] = [
     mediaType,
     mediaObj.mime_type ? mediaObj.mime_type : "",
@@ -51,13 +50,19 @@ const getMediaInfo = (msg: any) => {
       };
       break;
     case "video":
-      return { type, mimeType, SAD, fileName, fileId, caption, SAV };
+      return {
+ type, mimeType, SAD, fileName, fileId, caption, SAV 
+};
       break;
     case "audio":
-      return { type, mimeType, SAD, fileName, fileId, caption, SAV };
+      return {
+ type, mimeType, SAD, fileName, fileId, caption, SAV 
+};
       break;
     case "voice":
-      return { type, mimeType, SAD, fileName, fileId, caption, SAV };
+      return {
+ type, mimeType, SAD, fileName, fileId, caption, SAV 
+};
       break;
     case "sticker":
       return {
@@ -158,8 +163,15 @@ const VerifyMediaMessage = async (
     status: fromMe ? "sended" : "received",
   };
 
+  // Criar mensagem descritiva para o preview
+  const displayMessage = createMediaPreviewMessage(
+    message.text || message.caption, 
+    filename, 
+    mediaInfo.mimeType
+  );
+
   await ticket.update({
-    lastMessage: message.text || message.caption || filename,
+    lastMessage: displayMessage,
     lastMessageAt: new Date().getTime(),
     answered: fromMe || false,
   });

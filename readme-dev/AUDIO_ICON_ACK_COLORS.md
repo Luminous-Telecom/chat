@@ -3,28 +3,36 @@
 ## 📊 Estados de ACK e Cores
 
 ### 🔵 **ACK 5 - Áudio Ouvido/Reproduzido**
+
 **Cor: Azul**
+
 - **Tema Claro - Enviado**: `#4fc3f7` (azul claro)
 - **Tema Claro - Recebido**: `#2196f3` (azul médio)
 - **Tema Escuro - Enviado**: `#64b5f6` (azul claro escuro)
 - **Tema Escuro - Recebido**: `#42a5f5` (azul médio escuro)
 
 ### 🟢 **ACK 3 - Áudio Visualizado**
+
 **Cor: Verde**
+
 - **Tema Claro - Enviado**: `#4caf50` (verde médio)
 - **Tema Claro - Recebido**: `#06d755` (verde WhatsApp)
 - **Tema Escuro - Enviado**: `#66bb6a` (verde claro)
 - **Tema Escuro - Recebido**: `#4caf50` (verde médio)
 
 ### 🟠 **PTT (Mensagem de Voz)**
+
 **Cor: Laranja**
+
 - **Tema Claro - Enviado**: `#e65100` (laranja escuro)
 - **Tema Claro - Recebido**: `#ff9800` (laranja médio)
 - **Tema Escuro - Enviado**: `#ffb74d` (laranja claro)
 - **Tema Escuro - Recebido**: `#ff9800` (laranja médio)
 
 ### ⚫ **Padrão (Sem ACK especial)**
+
 **Cor: Cinza**
+
 - **Tema Claro - Enviado**: `rgba(0, 0, 0, 0.45)` (cinza transparente)
 - **Tema Claro - Recebido**: `#667781` (cinza WhatsApp)
 - **Tema Escuro - Enviado**: `rgba(255, 255, 255, 0.6)` (branco transparente)
@@ -33,6 +41,7 @@
 ## 🔧 **Implementação Técnica**
 
 ### **Props do Componente:**
+
 ```vue
 <WhatsAppAudioPlayer
   :audioUrl="mensagem.mediaUrl"
@@ -44,6 +53,7 @@
 ```
 
 ### **Computed Property:**
+
 ```javascript
 computed: {
   audioIconColor() {
@@ -85,4 +95,4 @@ O ícone do áudio (🎤 para PTT ou 🎵 para música) muda de cor dinamicament
 - ✅ Transições suaves (0.3s)
 - ✅ Responsivo mobile
 
-**Sistema visual completo para feedback de status de áudio!** 🎉 
+**Sistema visual completo para feedback de status de áudio!** 🎉

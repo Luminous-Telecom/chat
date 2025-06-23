@@ -13,6 +13,7 @@
 ### 🔬 **Processo de Análise:**
 
 #### 1. **Carregamento do Áudio:**
+
 ```javascript
 // Fetch com timeout e CORS
 const response = await fetch(audioUrl, {
@@ -26,6 +27,7 @@ const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
 ```
 
 #### 2. **Análise de Amplitude:**
+
 ```javascript
 // Segmentação em 27 barras (igual WhatsApp)
 const samplesPerBar = Math.floor(channelData.length / 27)
@@ -35,6 +37,7 @@ const amplitude = (maxSample * 0.7) + (rms * 0.3)
 ```
 
 #### 3. **Normalização e Suavização:**
+
 ```javascript
 // Suavização com barras vizinhas
 normalizedAmplitude = (prev * 0.2 + current * 0.6 + next * 0.2)
@@ -87,6 +90,7 @@ normalizedAmplitude = Math.pow(normalizedAmplitude, 0.6)
 ### 🐛 **Debug:**
 
 Console logs disponíveis:
+
 - `✅ Waveform real gerado com sucesso baseado no áudio`
 - `Erro ao carregar áudio:` (fallback automático)
 - `Erro ao gerar waveform real:` (usa placeholder)
@@ -109,4 +113,4 @@ Console logs disponíveis:
 7. ✅ Mobile responsivo
 8. ✅ Limpeza de recursos
 
-**Sistema 100% funcional e otimizado!** 🎉 
+**Sistema 100% funcional e otimizado!** 🎉

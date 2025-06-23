@@ -10,11 +10,13 @@ O sistema apresentava **dois problemas críticos** com mensagens de áudio:
 ## Análise da Causa Raiz
 
 ### 🔍 ACK 5 (Inválido)
+
 - **WhatsApp oficial**: Só suporta ACKs 0-3
 - **Problema**: Sistema estava permitindo ACK 5, quebrando o frontend
 - **Impacto**: Status desaparecia quando chegava ACK inválido
 
 ### 🔍 ACK 3 para Áudios
+
 - **Backend**: Funcionava corretamente, salvava ACK 3 no banco
 - **Frontend**: Não processava adequadamente ACK 3 para áudios
 - **Diferença**: Áudios têm comportamento diferente de textos/imagens
@@ -37,6 +39,7 @@ if (!isValidAck(ack)) {
 ```
 
 **Melhorias:**
+
 - ✅ Validação rigorosa de ACKs (apenas 0-3)
 - ✅ Logs detalhados para diagnóstico
 - ✅ Inclusão do `mediaType` no payload do socket
@@ -62,6 +65,7 @@ if (shouldProcessImmediate) {
 ```
 
 **Melhorias:**
+
 - ✅ Processamento imediato para áudios
 - ✅ Logs detalhados para debug
 - ✅ Validação melhorada de dados
@@ -92,6 +96,7 @@ UPDATE_MESSAGE_STATUS (state, payload) {
 ```
 
 **Melhorias:**
+
 - ✅ Busca mais robusta de mensagens
 - ✅ Preservação do `mediaType`
 - ✅ Validação de ACK antes de atualizar
@@ -104,6 +109,7 @@ npm run debug-audio-ack
 ```
 
 **Funcionalidades:**
+
 - 🔍 Verifica mensagens de áudio recentes
 - 🚨 Detecta ACKs inválidos no banco
 - 📊 Estatísticas de distribuição de ACKs
@@ -155,4 +161,4 @@ Agora o sistema possui logs detalhados:
 - ✅ Logs detalhados para monitoramento
 - ✅ Script de diagnóstico para detecção precoce
 
-🎉 **Status de áudios agora funciona 100% corretamente!** 
+🎉 **Status de áudios agora funciona 100% corretamente!**
