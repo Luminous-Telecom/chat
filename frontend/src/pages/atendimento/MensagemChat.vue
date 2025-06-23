@@ -956,46 +956,88 @@ export default {
     setupScrollListener () {
       // Configurar listener para detectar quando o usuário está no final da conversa
       this.$nextTick(() => {
-        const scrollContainer = document.querySelector('.q-scrollarea__container')
+        // Tentar múltiplos seletores para encontrar o container de scroll
+        const scrollContainers = [
+          '.q-scrollarea__container',
+          '.scroll-y .q-scrollarea__container',
+          '[ref="scrollContainer"] .q-scrollarea__container',
+          '.chat-container .q-scrollarea__container'
+        ]
+
+        let scrollContainer = null
+        for (const selector of scrollContainers) {
+          scrollContainer = document.querySelector(selector)
+          if (scrollContainer) break
+        }
+
         if (scrollContainer) {
-          scrollContainer.addEventListener('scroll', this.checkScrollPosition)
-          // Verificar posição inicial
+          // Remover listener anterior se existir
+          scrollContainer.removeEventListener('scroll', this.checkScrollPosition)
+
+          // Adicionar novo listener
+          scrollContainer.addEventListener('scroll', this.checkScrollPosition, { passive: true })
+
+          // Verificar posição inicial após um delay maior
           setTimeout(() => {
             this.checkScrollPosition()
-          }, 500)
+          }, 1000)
+
+          console.log('[MensagemChat] Scroll listener configurado em:', scrollContainer)
+        } else {
+          console.warn('[MensagemChat] Container de scroll não encontrado')
         }
       })
     },
     checkScrollPosition () {
       // Verificar se o usuário está no final da conversa
-      const scrollContainer = document.querySelector('.q-scrollarea__container')
-      if (!scrollContainer) return
+      const scrollContainer = document.querySelector('.q-scrollarea__container') ||
+                             document.querySelector('.scroll-y .q-scrollarea__container')
+
+      if (!scrollContainer) {
+        return
+      }
 
       const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-      const threshold = 100 // pixels de tolerância
+      const threshold = 50 // Reduzir threshold para 50px de tolerância
 
       // Usuário está no final se a distância até o final for menor que o threshold
-      const isAtBottom = (scrollHeight - scrollTop - clientHeight) <= threshold
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+      const isAtBottom = distanceFromBottom <= threshold
+
+      // Debug para acompanhar o scroll
+      console.log('[MensagemChat] Scroll check:', {
+        scrollTop,
+        scrollHeight,
+        clientHeight,
+        distanceFromBottom,
+        isAtBottom,
+        hasUnreadMessages: this.ticketFocado?.unreadMessages > 0
+      })
 
       if (isAtBottom && !this.isAtBottom) {
         this.isAtBottom = true
+        console.log('[MensagemChat] Usuário chegou ao final da conversa')
         // Marcar mensagens como lidas quando chegar ao final
         this.markUnreadMessagesAsReadOnScroll()
-      } else if (!isAtBottom) {
+      } else if (!isAtBottom && this.isAtBottom) {
         this.isAtBottom = false
+        console.log('[MensagemChat] Usuário saiu do final da conversa')
       }
     },
     markUnreadMessagesAsReadOnScroll () {
       // Só marcar como lidas se há mensagens não lidas
       if (this.ticketFocado?.unreadMessages > 0) {
-        // Debounce para evitar múltiplas chamadas
+        console.log('[MensagemChat] Iniciando marcação de mensagens como lidas por scroll')
+
+        // Debounce reduzido para 500ms para ser mais responsivo
         if (this.scrollCheckTimeout) {
           clearTimeout(this.scrollCheckTimeout)
         }
 
         this.scrollCheckTimeout = setTimeout(() => {
+          console.log('[MensagemChat] Executando marcação de mensagens como lidas')
           this.markUnreadMessagesAsRead()
-        }, 1000) // Aguardar 1 segundo antes de marcar como lidas
+        }, 500) // Reduzir tempo para 500ms
       }
     }
   },
@@ -1006,9 +1048,25 @@ export default {
         // Deixar que o usuário role até o final para marcar como lidas
         if (newTicket && newTicket.id !== oldTicket?.id) {
           this.isAtBottom = false
+          // Reconfigurar listener quando ticket muda
+          this.$nextTick(() => {
+            this.setupScrollListener()
+          })
         }
       },
       immediate: false
+    },
+    // Watch para mensagens para reconfigurar listener quando novas mensagens chegarem
+    mensagens: {
+      handler () {
+        // Aguardar renderização das novas mensagens e verificar posição
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.checkScrollPosition()
+          }, 300)
+        })
+      },
+      deep: true
     }
   },
   mounted () {

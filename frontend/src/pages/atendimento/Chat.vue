@@ -392,7 +392,8 @@ export default {
         id: '',
         name: ''
       },
-      contatos: []
+      contatos: [],
+      scrollReadTimeout: null
     }
   },
   computed: {
@@ -454,6 +455,24 @@ export default {
       setTimeout(() => {
         if (!e) return
         this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 300
+
+        // Verificar se o usuário rolou manualmente para o final da conversa
+        const distanceFromBottom = e.verticalSize - (e.verticalPosition + e.verticalContainerSize)
+        const isAtBottom = distanceFromBottom <= 50 // 50px de tolerância
+
+        // Se chegou ao final e há mensagens não lidas, marcar como lidas
+        if (isAtBottom && this.ticketFocado?.unreadMessages > 0) {
+          console.log('[Chat] Usuário rolou para o final, marcando mensagens como lidas')
+
+          // Debounce para evitar múltiplas chamadas
+          if (this.scrollReadTimeout) {
+            clearTimeout(this.scrollReadTimeout)
+          }
+
+          this.scrollReadTimeout = setTimeout(() => {
+            this.markUnreadMessagesAsRead()
+          }, 500)
+        }
       }, 200)
     },
     scrollToBottom () {
@@ -546,6 +565,10 @@ export default {
   },
   destroyed () {
     this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
+    // Limpar timeout se existir
+    if (this.scrollReadTimeout) {
+      clearTimeout(this.scrollReadTimeout)
+    }
   }
 }
 </script>
