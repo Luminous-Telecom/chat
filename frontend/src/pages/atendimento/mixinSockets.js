@@ -57,9 +57,6 @@ export default {
     socketMessagesList () {
       const self = this
       socket.on('connect', () => {
-        // console.log('[DEBUG FRONTEND] Registrando listener para canal:', `tenant:${usuario.tenantId}:appMessage`)
-        // console.log('[DEBUG FRONTEND] Usuario tenantId:', usuario.tenantId)
-
         socket.on(`tenant:${usuario.tenantId}:appMessage`, (data) => {
           if (data.action === 'create' && data.message) {
             // Processar a nova mensagem
@@ -114,33 +111,17 @@ export default {
     },
     socketTicketListNew () {
       const self = this // Guardar contexto do componente
-      // console.log('[DEBUG] Inicializando socketTicketListNew para usuário:', userId)
 
       socket.on('connect', () => {
-        // console.log('[DEBUG] Socket conectado com sucesso')
         socket.on(`${usuario.tenantId}:ticketList`, async function (data) {
-          // console.log('[DEBUG] Evento ticketList recebido:', data)
-
           if (data.type === 'chat:create') {
-            // console.log('[DEBUG] Processando chat:create:', data.payload)
             // Verificar se deve enviar notificação
             const shouldNotify = checkTicketFilter(data.payload.ticket) &&
                 !data.payload.fromMe &&
                 !data.payload.read &&
                 data.payload.ticket.userId !== userId
 
-            // console.log('[DEBUG] Verificando se deve notificar:', {
-            // shouldNotify,
-            //  checkTicketFilter: checkTicketFilter(data.payload.ticket),
-            //  fromMe: data.payload.fromMe,
-            //  read: data.payload.read,
-            //  ticketUserId: data.payload.ticket.userId,
-            //  currentUserId: userId
-            // })
-
             if (shouldNotify) {
-              // console.log('[DEBUG] Enviando notificação para mensagem:', data.payload)
-
               // Não tocar som na primeira carga (primeiros 3 segundos)
               if (!self.isFirstLoad || (Date.now() - self.createdTimestamp) > 3000) {
                 self.handlerNotifications(data.payload)
@@ -157,13 +138,11 @@ export default {
             // Garantir que temos o ID do ticket no payload
             if (data.payload.ticket && !data.payload.ticketId) {
               data.payload.ticketId = data.payload.ticket.id
-              // console.log('[DEBUG] Adicionando ticketId ao payload:', data.payload.ticketId)
             }
 
             // Adicionar mensagem ao processamento
             const messageId = data.payload.id || data.payload.messageId
             if (messageId) {
-              // console.log('[DEBUG] Adicionando mensagem ao processamento:', messageId)
               self.$store.commit('ADD_MESSAGE_PROCESSING', messageId)
             } else {
               console.warn('[DEBUG] Mensagem sem ID encontrada:', data.payload)
@@ -174,13 +153,11 @@ export default {
               ...data.payload,
               id: data.payload.id || data.payload.messageId // Garantir que sempre temos um ID
             }
-            // console.log('[DEBUG] Atualizando mensagem no store:', messagePayload)
             self.$store.commit('UPDATE_MESSAGES', messagePayload)
             self.scrollToBottom()
 
             // Remover mensagem do processamento após atualização
             if (messageId) {
-              // console.log('[DEBUG] Removendo mensagem do processamento:', messageId)
               self.$store.commit('REMOVE_MESSAGE_PROCESSING', messageId)
             }
 
@@ -190,14 +167,6 @@ export default {
                 !data.payload.fromMe &&
                 !data.payload.read &&
                 data.payload.ticket.userId !== userId) {
-              // console.log('[DEBUG] Atualizando contagem de não lidas:', {
-            //    ticketId: data.payload.ticket.id,
-            //    unreadMessages: data.payload.ticket.unreadMessages,
-            //    fromMe: data.payload.fromMe,
-            //    read: data.payload.read,
-            //    ticketUserId: data.payload.ticket.userId
-            //  })
-              // Usar o valor do backend diretamente
               self.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
                 type: self.status,
                 ticket: {
@@ -206,13 +175,6 @@ export default {
                 }
               })
             } else {
-              // console.log('[DEBUG] Não atualizando contagem de não lidas:', {
-            //    hasUnreadMessages: data.payload.ticket?.unreadMessages !== undefined,
-            //    fromMe: data.payload.fromMe,
-            //    read: data.payload.read,
-            //    ticketUserId: data.payload.ticket.userId,
-            //    currentUserId: userId
-            //  })
             }
 
             // Atualizar notificações de mensagem
@@ -227,13 +189,8 @@ export default {
               isNotAssignedUser: false,
               includeNotQueueDefined: true
             }
-            // console.log('[DEBUG] Consultando tickets para atualizar notificações:', params)
             try {
               const { data } = await ConsultarTickets(params)
-              // console.log('[DEBUG] Tickets consultados com sucesso:', {
-              //  count: data.count,
-              //  ticketsLength: data.tickets?.length
-              // })
               self.countTickets = data.count
               self.$store.commit('UPDATE_NOTIFICATIONS', data)
             } catch (err) {
@@ -243,7 +200,6 @@ export default {
           }
 
           if (data.type === 'chat:update') {
-            // console.log('[DEBUG] Processando chat:update:', data.payload)
             const messageId = data.payload.messageId
             const ticketId = data.payload.ticket?.id
 
@@ -256,12 +212,6 @@ export default {
               return
             }
 
-            // console.log('[DEBUG] Atualizando status da mensagem com debounce:', {
-            // messageId,
-            //  ticketId,
-            //  read: data.payload.read
-            // })
-            // Usar atualização com debounce
             self.atualizarStatusMensagemComDebounce({
               messageId,
               ticketId,
@@ -309,22 +259,10 @@ export default {
                                          data.payload.ack > statusAtual.ack ||
                                          (data.payload.ack === 5 && statusAtual?.ack === 3)
 
-            console.log('[DEBUG] ACK recebido:', {
-              messageId,
-              ack: data.payload.ack,
-              mediaType: data.payload.mediaType,
-              statusAtual: statusAtual?.ack,
-              processarImediatamente
-            })
-
             if (processarImediatamente) {
               // Processar áudios imediatamente para melhor responsividade
               if (data.payload.mediaType === 'audio') {
-                console.log('[DEBUG] Processando ÁUDIO imediatamente:', {
-                  messageId,
-                  ack: data.payload.ack,
-                  mediaType: data.payload.mediaType
-                })
+
               }
               self.atualizarStatusMensagem(statusPayload)
             } else {
@@ -334,7 +272,6 @@ export default {
           }
 
           if (data.type === 'chat:messagesRead') {
-            // console.log('[DEBUG] Processando chat:messagesRead:', data.payload)
             const ticketId = data.payload.ticketId
             const unreadMessages = data.payload.unreadMessages
 
@@ -368,15 +305,12 @@ export default {
           }
 
           if (data.type === 'ticket:update') {
-            // console.log('[DEBUG] Processando ticket:update:', data.payload)
             const ticket = data.payload
 
             // Verificar se o ticket deve ser exibido com base nos filtros atuais
             if (checkTicketFilter(ticket)) {
-              // console.log('[DEBUG] Ticket passa no filtro, atualizando no store:', ticket.id)
               self.$store.commit('UPDATE_TICKET', ticket)
             } else {
-              // console.log('[DEBUG] Ticket não passa no filtro, removendo da lista:', ticket.id)
               self.$store.commit('DELETE_TICKET', ticket.id)
             }
           }
@@ -445,12 +379,6 @@ export default {
 
         // Se o ack atual é maior que o novo e não é o caso especial do ACK 5
         if (!podeAtualizar) {
-          console.log('[DEBUG] ACK ignorado:', {
-            messageId,
-            ackAtual: statusAtual.ack,
-            novoAck: ack,
-            motivo: 'ACK não pode ser aplicado'
-          })
           return
         }
 

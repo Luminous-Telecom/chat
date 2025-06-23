@@ -611,9 +611,11 @@ export default {
         }
 
         const formData = new FormData()
-        const filename = `${new Date().getTime()}.mp3`
+        // Usar formato consistente para nome do arquivo
+        const timestamp = new Date().getTime()
+        const filename = `audio_${timestamp}.mp3`
         formData.append('medias', blob, filename)
-        formData.append('body', filename)
+        formData.append('body', filename) // Usar o mesmo nome no body
         formData.append('fromMe', true)
         formData.append('id', uid())
         if (this.isScheduleDate) {
