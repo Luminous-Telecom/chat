@@ -181,7 +181,7 @@
 
 <script>
 
-import { ListarWhatsapps, DeletarWhatsapp, UpdateWhatsapp, StartWhatsappSession, RequestNewQrCode, DeleteWhatsappSession } from 'src/service/sessoesWhatsapp'
+import { ListarWhatsapps, DeletarWhatsapp, UpdateWhatsapp, StartWhatsappSession, RequestNewQrCode, DeleteWhatsappSession, GetWhatSession } from 'src/service/sessoesWhatsapp'
 import { format, parseISO } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR/index'
 import ModalQrCode from './ModalQrCode'
@@ -318,10 +318,7 @@ export default {
     async handleStartWhatsAppSession (whatsAppId) {
       try {
         this.loading = true
-        const { data: currentState } = await request({
-          url: `/whatsapp/${whatsAppId}`,
-          method: 'get'
-        })
+        const { data: currentState } = await GetWhatSession(whatsAppId)
         if (['CONNECTING', 'CONNECTED', 'OPENING'].includes(currentState.status)) {
           this.$q.notify({
             type: 'info',
@@ -353,10 +350,7 @@ export default {
             return
           }
           try {
-            const { data: status } = await request({
-              url: `/whatsapp/${whatsAppId}`,
-              method: 'get'
-            })
+            const { data: status } = await GetWhatSession(whatsAppId)
             if (status.status === 'CONNECTED') {
               this.$q.notify({
                 type: 'positive',
@@ -518,7 +512,7 @@ export default {
     async handleSessionError (error) {
       if (error.message && error.message.includes('conflict')) {
         try {
-          await request.post(`/whatsappSession/${this.channel.id}/force-new`)
+          await request.post(`/api/whatsappSession/${this.channel.id}/force-new`)
           this.$q.notify({
             type: 'info',
             message: 'Sessão anterior removida. Tentando nova conexão...'
@@ -540,7 +534,7 @@ export default {
     async loadSession () {
       try {
         const { data } = await request({
-          url: `/whatsappSession/${this.channel.id}`,
+          url: `/api/whatsappSession/${this.channel.id}`,
           method: 'get'
         })
         this.channel = data
@@ -595,7 +589,7 @@ export default {
       this.loading = true
       try {
         await request({
-          url: `/whatsappsession/${channel.id}/connect-by-number`,
+          url: `/api/whatsappsession/${channel.id}/connect-by-number`,
           method: 'post',
           data: { number }
         })

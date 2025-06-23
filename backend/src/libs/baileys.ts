@@ -55,8 +55,8 @@ const initializingSession = new Set<number>();
 // Sistema de throttling otimizado para resposta mais rápida
 const messageQueue = new Map<number, proto.IWebMessageInfo[]>();
 const processingLock = new Set<number>();
-const MAX_QUEUE_SIZE = 50;
-const PROCESSING_DELAY = 50; // Reduzido de 100ms para 50ms
+const MAX_QUEUE_SIZE = 100; // Aumentado para permitir mais mensagens em fila
+const PROCESSING_DELAY = 10; // Reduzido drasticamente de 50ms para 10ms
 
 const processMessageQueue = async (whatsappId: number): Promise<void> => {
   if (processingLock.has(whatsappId)) {
@@ -71,11 +71,12 @@ const processMessageQueue = async (whatsappId: number): Promise<void> => {
   processingLock.add(whatsappId);
 
   try {
-    // Processar mensagens em lotes pequenos
-    const batchSize = 5;
+    // Processar mensagens em lotes maiores para melhor performance
+    const batchSize = 10; // Aumentado de 5 para 10 mensagens por lote
     const batch = queue.splice(0, batchSize);
 
-    for (const msg of batch) {
+    // Processar mensagens em paralelo dentro do lote para máxima velocidade
+    const processingPromises = batch.map(async (msg) => {
       try {
         const { default: HandleBaileysMessage } = await import("../services/BaileysServices/HandleBaileysMessage");
         const session = getBaileysSession(whatsappId);
@@ -83,16 +84,17 @@ const processMessageQueue = async (whatsappId: number): Promise<void> => {
         if (session) {
           await HandleBaileysMessage(msg, session);
         }
-        
-        // Pequeno delay entre mensagens
-        await new Promise(resolve => setTimeout(resolve, PROCESSING_DELAY));
       } catch (msgErr) {
         baseLogger.error(`[processMessageQueue] Error processing message: ${msgErr}`);
       }
-    }
+    });
 
-    // Se ainda há mensagens na fila, continuar processamento
+    // Aguardar todas as mensagens do lote serem processadas
+    await Promise.all(processingPromises);
+    
+    // Delay mínimo apenas entre lotes, não entre mensagens individuais
     if (queue.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, PROCESSING_DELAY));
       setImmediate(() => processMessageQueue(whatsappId));
     }
   } catch (err) {
@@ -303,25 +305,28 @@ export async function initBaileys(
       auth: state,
       printQRInTerminal: false,
       browser: Browsers.macOS("Chrome"),
-      connectTimeoutMs: phoneNumber ? 60000 : 20000, // Reduzido para acelerar conexão
-      defaultQueryTimeoutMs: 20000, // Reduzido de 30s para 20s
+      connectTimeoutMs: phoneNumber ? 45000 : 15000, // Otimizado para conexão mais rápida
+      defaultQueryTimeoutMs: 15000, // Reduzido para 15s para respostas mais rápidas
       emitOwnEvents: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
-      retryRequestDelayMs: phoneNumber ? 5000 : 2000, // Reduzido para reconexões mais rápidas
+      retryRequestDelayMs: phoneNumber ? 3000 : 1000, // Reconexões muito mais rápidas
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
-      keepAliveIntervalMs: 10000, // Reduzido para 10s (mais frequente)
-      qrTimeout: phoneNumber ? 0 : 30000, // Reduzido de 45s para 30s
-      getMessage: async () => undefined,
+      keepAliveIntervalMs: 5000, // Mais frequente para manter conexão ativa
+      qrTimeout: phoneNumber ? 0 : 25000, // Reduzido para QR mais rápido
+      getMessage: async (key) => {
+        // Otimizado: retornar undefined rapidamente para não buscar mensagens antigas
+        return undefined;
+      },
       shouldIgnoreJid: (jid) => {
-        return !!(jid && typeof jid === 'string' && jid.includes('@broadcast'));
+        return !!(jid && typeof jid === 'string' && (jid.includes('@broadcast') || jid.includes('@newsletter')));
       },
       linkPreviewImageThumbnailWidth: 0,
       fireInitQueries: true,
       transactionOpts: {
-        maxCommitRetries: phoneNumber ? 8 : 3, // Reduzido
-        delayBetweenTriesMs: phoneNumber ? 3000 : 2000 // Reduzido
+        maxCommitRetries: phoneNumber ? 5 : 2, // Reduzido ainda mais
+        delayBetweenTriesMs: phoneNumber ? 2000 : 1000 // Delays muito menores
       },
       patchMessageBeforeSending: message => {
         const requiresPatch = !!(
