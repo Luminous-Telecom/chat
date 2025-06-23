@@ -48,10 +48,17 @@ export default {
         fileName = file.originalname;
       } else {
         const { originalname } = file;
-        const ext = path.extname(originalname);
-        const name = originalname.replace(ext, "");
-        const date = format(new Date(), "ddMMyyyyHHmmssSSS");
-        fileName = `${name}_${date}${ext}`;
+        
+        // Para arquivos de áudio gravados, manter o nome original
+        if (originalname.startsWith('audio_') && file.mimetype?.startsWith('audio/')) {
+          fileName = originalname;
+        } else {
+          // Para outros arquivos, usar o formato com timestamp
+          const ext = path.extname(originalname);
+          const name = originalname.replace(ext, "");
+          const date = format(new Date(), "ddMMyyyyHHmmssSSS");
+          fileName = `${name}_${date}${ext}`;
+        }
       }
 
       return cb(null, fileName);
