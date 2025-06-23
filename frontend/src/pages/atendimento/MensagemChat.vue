@@ -523,7 +523,9 @@ export default {
       showPdfModal: false,
       currentPdfUrl: '',
       currentPdfName: '',
-      buttonStates: {} // Para gerenciar estado dos botões
+      buttonStates: {}, // Para gerenciar estado dos botões
+      isAtBottom: false,
+      scrollCheckTimeout: null
     }
   },
   computed: {
@@ -950,29 +952,80 @@ export default {
         const sectionKey = `section_${mensagem.id}_${sectionIndex}`
         this.$set(this.buttonStates, sectionKey, { loading: false })
       }
+    },
+    setupScrollListener () {
+      // Configurar listener para detectar quando o usuário está no final da conversa
+      this.$nextTick(() => {
+        const scrollContainer = document.querySelector('.q-scrollarea__container')
+        if (scrollContainer) {
+          scrollContainer.addEventListener('scroll', this.checkScrollPosition)
+          // Verificar posição inicial
+          setTimeout(() => {
+            this.checkScrollPosition()
+          }, 500)
+        }
+      })
+    },
+    checkScrollPosition () {
+      // Verificar se o usuário está no final da conversa
+      const scrollContainer = document.querySelector('.q-scrollarea__container')
+      if (!scrollContainer) return
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+      const threshold = 100 // pixels de tolerância
+
+      // Usuário está no final se a distância até o final for menor que o threshold
+      const isAtBottom = (scrollHeight - scrollTop - clientHeight) <= threshold
+
+      if (isAtBottom && !this.isAtBottom) {
+        this.isAtBottom = true
+        // Marcar mensagens como lidas quando chegar ao final
+        this.markUnreadMessagesAsReadOnScroll()
+      } else if (!isAtBottom) {
+        this.isAtBottom = false
+      }
+    },
+    markUnreadMessagesAsReadOnScroll () {
+      // Só marcar como lidas se há mensagens não lidas
+      if (this.ticketFocado?.unreadMessages > 0) {
+        // Debounce para evitar múltiplas chamadas
+        if (this.scrollCheckTimeout) {
+          clearTimeout(this.scrollCheckTimeout)
+        }
+
+        this.scrollCheckTimeout = setTimeout(() => {
+          this.markUnreadMessagesAsRead()
+        }, 1000) // Aguardar 1 segundo antes de marcar como lidas
+      }
     }
   },
   watch: {
     ticketFocado: {
-      handler (newTicket) {
-        if (newTicket && newTicket.id) {
-          // Marcar mensagens como lidas apenas uma vez quando o ticket muda
-          this.$nextTick(() => {
-            this.markUnreadMessagesAsRead()
-          })
+      handler (newTicket, oldTicket) {
+        // Não marcar mensagens como lidas automaticamente quando ticket muda
+        // Deixar que o usuário role até o final para marcar como lidas
+        if (newTicket && newTicket.id !== oldTicket?.id) {
+          this.isAtBottom = false
         }
       },
-      immediate: true
+      immediate: false
     }
   },
   mounted () {
     this.scrollToBottom()
-    // Marca mensagens como lidas ao montar o componente
-    this.$nextTick(() => {
-      this.markUnreadMessagesAsRead()
-    })
+    // Não marcar mensagens como lidas automaticamente ao montar
+    // Deixar que o usuário role até o final
+    this.setupScrollListener()
   },
   destroyed () {
+    // Limpar listeners e timeouts
+    const scrollContainer = document.querySelector('.q-scrollarea__container')
+    if (scrollContainer) {
+      scrollContainer.removeEventListener('scroll', this.checkScrollPosition)
+    }
+    if (this.scrollCheckTimeout) {
+      clearTimeout(this.scrollCheckTimeout)
+    }
   }
 }
 </script>
