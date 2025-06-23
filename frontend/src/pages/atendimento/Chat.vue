@@ -462,8 +462,6 @@ export default {
 
         // Se chegou ao final e há mensagens não lidas, marcar como lidas
         if (isAtBottom && this.ticketFocado?.unreadMessages > 0) {
-          console.log('[Chat] Usuário rolou para o final, marcando mensagens como lidas')
-
           // Debounce para evitar múltiplas chamadas
           if (this.scrollReadTimeout) {
             clearTimeout(this.scrollReadTimeout)

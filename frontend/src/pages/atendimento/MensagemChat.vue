@@ -981,10 +981,6 @@ export default {
           setTimeout(() => {
             this.checkScrollPosition()
           }, 1000)
-
-          console.log('[MensagemChat] Scroll listener configurado em:', scrollContainer)
-        } else {
-          console.warn('[MensagemChat] Container de scroll não encontrado')
         }
       })
     },
@@ -1004,38 +1000,23 @@ export default {
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight
       const isAtBottom = distanceFromBottom <= threshold
 
-      // Debug para acompanhar o scroll
-      console.log('[MensagemChat] Scroll check:', {
-        scrollTop,
-        scrollHeight,
-        clientHeight,
-        distanceFromBottom,
-        isAtBottom,
-        hasUnreadMessages: this.ticketFocado?.unreadMessages > 0
-      })
-
       if (isAtBottom && !this.isAtBottom) {
         this.isAtBottom = true
-        console.log('[MensagemChat] Usuário chegou ao final da conversa')
         // Marcar mensagens como lidas quando chegar ao final
         this.markUnreadMessagesAsReadOnScroll()
       } else if (!isAtBottom && this.isAtBottom) {
         this.isAtBottom = false
-        console.log('[MensagemChat] Usuário saiu do final da conversa')
       }
     },
     markUnreadMessagesAsReadOnScroll () {
       // Só marcar como lidas se há mensagens não lidas
       if (this.ticketFocado?.unreadMessages > 0) {
-        console.log('[MensagemChat] Iniciando marcação de mensagens como lidas por scroll')
-
         // Debounce reduzido para 500ms para ser mais responsivo
         if (this.scrollCheckTimeout) {
           clearTimeout(this.scrollCheckTimeout)
         }
 
         this.scrollCheckTimeout = setTimeout(() => {
-          console.log('[MensagemChat] Executando marcação de mensagens como lidas')
           this.markUnreadMessagesAsRead()
         }, 500) // Reduzir tempo para 500ms
       }
