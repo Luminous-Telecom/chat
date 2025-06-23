@@ -162,28 +162,20 @@ const SendWhatsAppMedia = async (
       tenantId: ticket.tenantId,
     };
 
+    logger.info("[SendWhatsAppMedia] Dados da mensagem para o banco:", {
+      body: messageData.body,
+      mediaUrl: messageData.mediaUrl,
+      mediaName: messageData.mediaName,
+      safeFilename
+    });
+
     // Criar a mensagem no banco
     const dbMessage = await Message.create(messageData);
     logger.info(
       `[SendWhatsAppMedia] Mensagem criada no banco com ID: ${dbMessage.id} como ${mediaType}`
     );
 
-    // Emitir evento de criação da mensagem (apenas ack 1, status sended)
-    socketEmit({
-      tenantId: ticket.tenantId,
-      type: "chat:ack",
-      payload: {
-        id: dbMessage.id,
-        messageId: null,
-        status: "sended",
-        ack: 1,
-        fromMe: true,
-        mediaUrl: dbMessage.mediaUrl,
-        mediaType,
-        body: dbMessage.body,
-        timestamp: dbMessage.timestamp,
-      },
-    });
+    // Evento será emitido pelo CreateMessageSystemService na função finalizeMessage
 
     if (isAudio) {
       try {

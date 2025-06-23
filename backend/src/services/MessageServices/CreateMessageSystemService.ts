@@ -320,8 +320,8 @@ const processMediaMessages = async (
           mediaType: media.mimetype.split("/")[0],
           mediaName: media.filename,
           originalName: media.originalname,
-          body: media.originalname,
-          mediaUrl: media.filename,
+          body: media.filename, // Usar apenas o filename sem prefixo
+          mediaUrl: `sent/${media.filename}`, // Manter sent/ apenas na URL interna
           userId,
         };
 
@@ -336,7 +336,7 @@ const processMediaMessages = async (
             media,
             contact.number,
             ticket,
-            mediaMessageData.body
+            media.filename // Usar apenas o filename sem prefixo
           );
         } else {
           // Se for mensagem agendada, criar sem enviar
@@ -509,9 +509,14 @@ const finalizeMessage = async (
       throw new Error("ERR_CREATING_MESSAGE_SYSTEM");
     }
 
-    // Atualizar ticket
+    // Atualizar ticket com lastMessage limpo
+    let cleanLastMessage = messageCreated.body;
+    if (cleanLastMessage && cleanLastMessage.startsWith('sent/')) {
+      cleanLastMessage = cleanLastMessage.replace('sent/', '');
+    }
+    
     await ticket.update({
-      lastMessage: messageCreated.body,
+      lastMessage: cleanLastMessage,
       lastMessageAt: new Date().getTime(),
       answered: true,
     });
@@ -523,7 +528,7 @@ const finalizeMessage = async (
       payload: messageCreated,
     });
 
-    // Emitir evento de status usando chat:ack que é um tipo válido
+    // Emitir evento de ACK
     socketEmit({
       tenantId,
       type: "chat:ack",

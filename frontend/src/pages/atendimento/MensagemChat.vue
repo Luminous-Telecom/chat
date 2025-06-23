@@ -653,16 +653,46 @@ export default {
       return this.isAudioPTT(mensagem) ? 'audio/ogg; codecs=opus' : 'audio/mpeg'
     },
     getAudioFileName (mensagem) {
-      // Retornar nome do arquivo de áudio mais amigável
-      if (mensagem.mediaName) {
-        return mensagem.mediaName
-      }
-
+      // Sempre usar mediaUrl como fonte primária para garantir consistência
       const url = mensagem.mediaUrl || ''
       const filename = url.split('/').pop() || ''
 
       if (filename) {
+        // Se o filename começa com audio_ e é um timestamp, formatar melhor
+        if (filename.startsWith('audio_') && filename.match(/^audio_\d+\.mp3$/)) {
+          const timestamp = filename.match(/audio_(\d+)\.mp3$/)?.[1]
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp))
+            return `Áudio ${date.toLocaleString('pt-BR')}`
+          }
+        }
         return filename
+      }
+
+      // Fallback para mediaName se mediaUrl não estiver disponível
+      if (mensagem.mediaName) {
+        // Se o nome começa com audio_ e é um timestamp, formatar melhor
+        if (mensagem.mediaName.startsWith('audio_') && mensagem.mediaName.match(/^audio_\d+\.mp3$/)) {
+          const timestamp = mensagem.mediaName.match(/audio_(\d+)\.mp3$/)?.[1]
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp))
+            return `Áudio ${date.toLocaleString('pt-BR')}`
+          }
+        }
+        return mensagem.mediaName
+      }
+
+      // Fallback para body se nem mediaUrl nem mediaName estiverem disponíveis
+      if (mensagem.body) {
+        // Se o body começa com audio_ e é um timestamp, formatar melhor
+        if (mensagem.body.startsWith('audio_') && mensagem.body.match(/^audio_\d+\.mp3$/)) {
+          const timestamp = mensagem.body.match(/audio_(\d+)\.mp3$/)?.[1]
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp))
+            return `Áudio ${date.toLocaleString('pt-BR')}`
+          }
+        }
+        return mensagem.body
       }
 
       return this.isAudioPTT(mensagem) ? 'Mensagem de voz' : 'Arquivo de áudio'

@@ -56,7 +56,13 @@ class Message extends Model<Message> {
 
   @Column(DataType.VIRTUAL)
   get mediaName(): string | null {
-    return this.getDataValue("mediaUrl");
+    const mediaUrl = this.getDataValue("mediaUrl");
+    if (mediaUrl) {
+      // Extrair apenas o nome do arquivo sem o prefixo sent/
+      const parts = mediaUrl.split('/');
+      return parts[parts.length - 1]; // Retorna apenas o nome do arquivo
+    }
+    return null;
   }
 
   @Column(DataType.STRING)
