@@ -437,7 +437,7 @@ export default {
       this.hideOptions = true
       setTimeout(() => {
         if (!e) return
-        this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 2000
+        this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 300
       }, 200)
     },
     scrollToBottom () {
