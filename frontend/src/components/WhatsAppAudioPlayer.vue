@@ -12,17 +12,14 @@
         :loading="isLoading"
       />
 
-            <!-- Visualização de ondas -->
+      <!-- Visualização de ondas -->
       <div class="audio-waveform" @click="seekToPosition">
         <div
           v-for="(bar, index) in waveformBars"
           :key="index"
           class="wave-bar"
           :class="{ 'is-loading': !waveformGenerated }"
-          :style="{
-            height: bar.height,
-            backgroundColor: getBarColor(index)
-          }"
+          :style="getBarStyle(index)"
         />
         <!-- Indicador de carregamento do waveform -->
         <div v-if="!waveformGenerated && waveformBars.length > 0" class="waveform-loading">
@@ -32,7 +29,7 @@
 
       <!-- Tempo e velocidade -->
       <div class="audio-info">
-        <div class="audio-time">{{ formatTime(isPlaying ? currentTime : duration) }}</div>
+        <div class="audio-time">{{ displayTime }}</div>
         <q-btn
           v-if="showSpeedControl"
           flat
@@ -55,12 +52,30 @@
       @ended="onEnded"
       @loadstart="onLoadStart"
       @canplay="onCanPlay"
+      @error="onAudioError"
       style="display: none;"
     />
   </div>
 </template>
 
 <script>
+// Cache global para waveforms
+const waveformCache = new Map()
+const audioBufferCache = new Map()
+
+// Debounce helper
+function debounce (func, wait) {
+  let timeout
+  return function executedFunction (...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func.apply(this, args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
+
 export default {
   name: 'WhatsAppAudioPlayer',
   props: {
@@ -101,35 +116,102 @@ export default {
       progressPercent: 0,
       audioContext: null,
       audioBuffer: null,
-      waveformGenerated: false
+      waveformGenerated: false,
+      cleanupHandlers: [],
+      isDestroyed: false,
+      barStyles: [], // Cache para estilos das barras
+      barStylesNeedUpdate: true,
+      styleUpdateTimeout: null,
+      retryAttempted: false
+    }
+  },
+
+  computed: {
+    // Cache do tempo formatado
+    displayTime () {
+      const time = this.isPlaying ? this.currentTime : this.duration
+      return this.formatTime(time)
+    },
+
+    // ID único para cache (mais compacto)
+    cacheKey () {
+      if (!this.audioUrl) return null
+      // Usar hash simples da URL para economizar memória
+      const url = this.audioUrl.split('/').pop() || this.audioUrl
+      return this.audioName ? `${url}_${this.audioName}` : url
     }
   },
 
   mounted () {
-    // Gerar waveform com pequeno delay para evitar sobrecarga
+    // Debounced waveform generation
+    this.debouncedGenerateWaveform = debounce(this.generateWaveform.bind(this), 150)
+
+    // Inicializar com delay mínimo
     this.$nextTick(() => {
-      setTimeout(() => {
-        this.generateWaveform()
-      }, Math.random() * 1000 + 500) // Delay entre 500-1500ms para espalhar carregamento
+      if (!this.isDestroyed) {
+        // Delay reduzido para melhor UX
+        const delay = waveformCache.has(this.cacheKey) ? 50 : Math.random() * 200 + 100
+        setTimeout(() => {
+          if (!this.isDestroyed) {
+            this.debouncedGenerateWaveform()
+          }
+        }, delay)
+      }
     })
   },
+
   methods: {
-    // Método utilitário para verificar se o AudioContext está saudável
-    isAudioContextHealthy () {
-      return this.audioContext &&
-             this.audioContext.state !== 'closed' &&
-             typeof this.audioContext.decodeAudioData === 'function'
+    // Otimização: Style computation cached
+    getBarStyle (index) {
+      if (!this.barStyles[index] || this.barStylesNeedUpdate) {
+        this.updateBarStyles()
+      }
+      return this.barStyles[index] || {}
     },
 
-    togglePlay () {
-      if (!this.$refs.audioElement) return
+    updateBarStyles () {
+      const progressIndex = Math.floor((this.progressPercent / 100) * this.waveformBars.length)
 
-      if (this.isPlaying) {
-        this.$refs.audioElement.pause()
+      this.barStyles = this.waveformBars.map((bar, index) => {
+        const isProgressed = index <= progressIndex
+        return {
+          height: bar.height,
+          backgroundColor: isProgressed
+            ? (this.isSent ? '#ffffff' : '#06d755')
+            : (this.isSent ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.2)')
+        }
+      })
+      this.barStylesNeedUpdate = false
+    },
+
+    async togglePlay () {
+      if (!this.$refs.audioElement || this.isDestroyed) return
+
+      try {
+        if (this.isPlaying) {
+          this.$refs.audioElement.pause()
+          this.isPlaying = false
+        } else {
+          // Aguardar metadados se necessário
+          if (this.$refs.audioElement.readyState < 2) {
+            this.isLoading = true
+            this.$refs.audioElement.addEventListener('loadedmetadata', () => {
+              if (!this.isDestroyed) {
+                this.$refs.audioElement.play()
+                this.isPlaying = true
+                this.isLoading = false
+              }
+            }, { once: true })
+            this.$refs.audioElement.load()
+          } else {
+            await this.$refs.audioElement.play()
+            this.isPlaying = true
+          }
+        }
+      } catch (error) {
+        console.warn('Erro ao controlar reprodução:', error)
         this.isPlaying = false
-      } else {
-        this.$refs.audioElement.play()
-        this.isPlaying = true
+        this.isLoading = false
       }
     },
 
@@ -144,94 +226,98 @@ export default {
     },
 
     async generateWaveform () {
-      if (this.waveformGenerated || !this.audioUrl) {
+      if (this.waveformGenerated || !this.audioUrl || this.isDestroyed) {
         return
       }
 
-      // Primeiro, gerar ondas placeholder
+      // Verificar cache primeiro
+      if (waveformCache.has(this.cacheKey)) {
+        const cachedWaveform = waveformCache.get(this.cacheKey)
+        this.waveformBars = [...cachedWaveform]
+        this.waveformGenerated = true
+        this.barStylesNeedUpdate = true
+        return
+      }
+
+      // Gerar placeholder otimizado
       this.generatePlaceholderWaveform()
 
-      try {
-        // Verificar suporte ao Web Audio API
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext
-        if (!AudioContextClass) {
-          console.warn('Web Audio API não suportada neste navegador')
-          return
-        }
-
-        // Inicializar Web Audio API se ainda não existe
-        if (!this.audioContext || this.audioContext.state === 'closed') {
-          try {
-            this.audioContext = new AudioContextClass()
-          } catch (contextError) {
-            console.warn('Erro ao criar AudioContext:', contextError)
-            return
-          }
-        }
-
-        // Carregar e analisar o áudio
-        const audioBuffer = await this.loadAndAnalyzeAudio()
-        if (audioBuffer) {
-          this.generateRealWaveform(audioBuffer)
-        }
-      } catch (error) {
-        console.warn('Erro ao gerar waveform real, usando placeholder:', error)
-        // Manter o placeholder se houver erro
-      }
+      // Processar waveform real em background
+      this.processRealWaveform()
     },
 
     generatePlaceholderWaveform () {
-      // Gerar ondas placeholder enquanto carrega o áudio real
       const barCount = 27
-      this.waveformBars = []
+      const pattern = [20, 25, 35, 45, 60, 70, 75, 80, 85, 80, 75, 70, 65, 60, 70, 75, 80, 75, 70, 65, 60, 55, 45, 35, 25, 20, 15]
 
-      for (let i = 0; i < barCount; i++) {
-        // Padrão mais natural baseado na posição
-        let heightPercent
-        if (i < 3 || i > 23) {
-          heightPercent = Math.random() * 25 + 15 // Início e fim baixos
-        } else if (i >= 8 && i <= 18) {
-          heightPercent = Math.random() * 35 + 50 // Meio alto
-        } else {
-          heightPercent = Math.random() * 40 + 30 // Variação média
+      this.waveformBars = pattern.slice(0, barCount).map((height, index) => ({
+        height: `${height}%`,
+        index
+      }))
+
+      this.barStylesNeedUpdate = true
+    },
+
+    async processRealWaveform () {
+      try {
+        // Early return se destruído
+        if (this.isDestroyed) return
+
+        // Verificar suporte ao Web Audio API
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext
+        if (!AudioContextClass) return
+
+        // Reutilizar contexto global se possível
+        if (!this.audioContext || this.audioContext.state === 'closed') {
+          this.audioContext = new AudioContextClass()
         }
 
-        this.waveformBars.push({
-          height: `${heightPercent}%`,
-          index: i
-        })
+        const audioBuffer = await this.loadAndAnalyzeAudio()
+        if (audioBuffer && !this.isDestroyed) {
+          this.generateRealWaveform(audioBuffer)
+          // Cache o resultado
+          if (this.cacheKey) {
+            waveformCache.set(this.cacheKey, [...this.waveformBars])
+            // Limitar tamanho do cache (reduzido para economizar memória)
+            if (waveformCache.size > 30) {
+              const firstKey = waveformCache.keys().next().value
+              waveformCache.delete(firstKey)
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Erro ao processar waveform real:', error)
       }
     },
 
     async loadAndAnalyzeAudio () {
       try {
-        // Verificar se o contexto está saudável
-        if (!this.isAudioContextHealthy()) {
-          console.warn('AudioContext não está saudável')
-          return null
-        }
-
-        if (this.audioContext.state === 'suspended') {
-          try {
-            await this.audioContext.resume()
-          } catch (resumeError) {
-            console.warn('Erro ao reativar AudioContext:', resumeError)
-            return null
-          }
-        }
+        if (this.isDestroyed) return null
 
         // Cache do buffer de áudio
-        if (this.audioBuffer) {
-          return this.audioBuffer
+        if (audioBufferCache.has(this.cacheKey)) {
+          return audioBufferCache.get(this.cacheKey)
         }
 
-        // Carregar o arquivo de áudio com timeout
+        if (!this.isAudioContextHealthy()) return null
+
+        if (this.audioContext.state === 'suspended') {
+          await this.audioContext.resume()
+        }
+
+        // Fetch otimizado com cache HTTP
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 8000) // Timeout reduzido
+
+        this.cleanupHandlers.push(() => {
+          clearTimeout(timeoutId)
+          controller.abort()
+        })
 
         const response = await fetch(this.audioUrl, {
           signal: controller.signal,
           mode: 'cors',
+          cache: 'force-cache', // Usar cache do navegador
           headers: {
             Accept: 'audio/*,*/*'
           }
@@ -239,77 +325,82 @@ export default {
 
         clearTimeout(timeoutId)
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
+        if (!response.ok || this.isDestroyed) return null
 
         const arrayBuffer = await response.arrayBuffer()
 
-        // Verificar novamente se o contexto ainda está saudável antes de decodificar
-        if (!this.isAudioContextHealthy()) {
-          console.warn('AudioContext foi corrompido durante o carregamento')
-          return null
+        if (!this.isAudioContextHealthy() || this.isDestroyed) return null
+
+        const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer)
+
+        // Cache o buffer
+        if (this.cacheKey) {
+          audioBufferCache.set(this.cacheKey, audioBuffer)
+          // Limitar tamanho do cache (reduzido para economizar memória)
+          if (audioBufferCache.size > 15) {
+            const firstKey = audioBufferCache.keys().next().value
+            audioBufferCache.delete(firstKey)
+          }
         }
 
-        // Decodificar o áudio
-        this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer)
-        return this.audioBuffer
+        return audioBuffer
       } catch (error) {
-        console.warn('Erro ao carregar áudio:', error)
+        if (error.name !== 'AbortError') {
+          console.warn('Erro au carregar áudio:', error)
+        }
         return null
       }
     },
 
     generateRealWaveform (audioBuffer) {
       try {
+        if (this.isDestroyed) return
+
         const barCount = 27
-        const channelData = audioBuffer.getChannelData(0) // Canal mono ou esquerdo
+        const channelData = audioBuffer.getChannelData(0)
         const samplesPerBar = Math.floor(channelData.length / barCount)
 
-        this.waveformBars = []
+        const amplitudes = new Float32Array(barCount)
         let maxAmplitude = 0
-        const amplitudes = []
 
-        // Primeiro passo: calcular amplitudes e encontrar máximo
+        // Otimização: processar em chunks menores
         for (let i = 0; i < barCount; i++) {
           const startSample = i * samplesPerBar
           const endSample = Math.min(startSample + samplesPerBar, channelData.length)
 
           let maxSample = 0
           let rmsSum = 0
-          let count = 0
+          const count = endSample - startSample
 
-          // Encontrar pico máximo e RMS neste segmento
-          for (let j = startSample; j < endSample; j++) {
-            const sample = Math.abs(channelData[j])
-            maxSample = Math.max(maxSample, sample)
-            rmsSum += sample * sample
-            count++
+          // Processar em batches para evitar travamento
+          for (let j = startSample; j < endSample; j += 10) {
+            const endBatch = Math.min(j + 10, endSample)
+            for (let k = j; k < endBatch; k++) {
+              const sample = Math.abs(channelData[k])
+              maxSample = Math.max(maxSample, sample)
+              rmsSum += sample * sample
+            }
           }
 
           const rms = Math.sqrt(rmsSum / count)
-
-          // Combinar pico e RMS para melhor representação
           const amplitude = (maxSample * 0.7) + (rms * 0.3)
-          amplitudes.push(amplitude)
+          amplitudes[i] = amplitude
           maxAmplitude = Math.max(maxAmplitude, amplitude)
         }
 
-        // Segundo passo: normalizar e aplicar suavização
+        // Aplicar normalização e suavização
+        this.waveformBars = []
         for (let i = 0; i < barCount; i++) {
           let normalizedAmplitude = amplitudes[i] / (maxAmplitude || 1)
 
-          // Suavização com barras vizinhas
+          // Suavização otimizada
           if (i > 0 && i < barCount - 1) {
             const prev = amplitudes[i - 1] / (maxAmplitude || 1)
             const next = amplitudes[i + 1] / (maxAmplitude || 1)
             normalizedAmplitude = (prev * 0.2 + normalizedAmplitude * 0.6 + next * 0.2)
           }
 
-          // Aplicar curva logarítmica para melhor visualização
           normalizedAmplitude = Math.pow(normalizedAmplitude, 0.6)
-
-          // Converter para porcentagem (15% mínimo, 85% máximo)
           const heightPercent = Math.max(15, Math.min(85, normalizedAmplitude * 70 + 15))
 
           this.waveformBars.push({
@@ -320,24 +411,16 @@ export default {
         }
 
         this.waveformGenerated = true
-        console.log('✅ Waveform real gerado com sucesso baseado no áudio')
+        this.barStylesNeedUpdate = true
       } catch (error) {
         console.warn('Erro ao gerar waveform real:', error)
-        // Fallback para placeholder se falhar
-        this.generatePlaceholderWaveform()
       }
     },
 
-    getBarColor (index) {
-      const progressIndex = Math.floor((this.progressPercent / 100) * this.waveformBars.length)
-
-      if (index <= progressIndex) {
-        // Cor de progresso baseada no tema
-        return this.isSent ? '#ffffff' : '#06d755'
-      } else {
-        // Cor não tocada
-        return this.isSent ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.2)'
-      }
+    isAudioContextHealthy () {
+      return this.audioContext &&
+             this.audioContext.state !== 'closed' &&
+             typeof this.audioContext.decodeAudioData === 'function'
     },
 
     formatTime (seconds) {
@@ -349,7 +432,7 @@ export default {
     },
 
     seekToPosition (event) {
-      if (!this.$refs.audioElement || !this.duration) return
+      if (!this.$refs.audioElement || !this.duration || this.isDestroyed) return
 
       const rect = event.currentTarget.getBoundingClientRect()
       const clickX = event.clientX - rect.left
@@ -358,19 +441,26 @@ export default {
 
       this.$refs.audioElement.currentTime = newTime
       this.progressPercent = percent
+      this.barStylesNeedUpdate = true
     },
 
     onMetadataLoaded () {
-      if (this.$refs.audioElement) {
+      if (this.$refs.audioElement && !this.isDestroyed) {
         this.duration = this.$refs.audioElement.duration
         this.$refs.audioElement.playbackRate = this.playbackRate
       }
     },
 
     onTimeUpdate () {
-      if (this.$refs.audioElement) {
+      if (this.$refs.audioElement && !this.isDestroyed) {
         this.currentTime = this.$refs.audioElement.currentTime
-        this.progressPercent = (this.currentTime / this.duration) * 100
+        const newProgress = (this.currentTime / this.duration) * 100
+
+        // Otimização: só atualizar se mudança significativa
+        if (Math.abs(newProgress - this.progressPercent) > 1) {
+          this.progressPercent = newProgress
+          this.barStylesNeedUpdate = true
+        }
       }
     },
 
@@ -378,45 +468,78 @@ export default {
       this.isPlaying = false
       this.currentTime = 0
       this.progressPercent = 0
+      this.barStylesNeedUpdate = true
     },
 
     onLoadStart () {
-      this.isLoading = true
+      if (!this.isDestroyed) {
+        this.isLoading = true
+      }
     },
 
     onCanPlay () {
+      if (!this.isDestroyed) {
+        this.isLoading = false
+      }
+    },
+
+    onAudioError (error) {
+      console.warn('Erro no elemento audio:', error)
       this.isLoading = false
+      this.isPlaying = false
+
+      // Tentar recarregar uma vez se for erro de rede
+      if (!this.retryAttempted && this.$refs.audioElement) {
+        this.retryAttempted = true
+        setTimeout(() => {
+          if (!this.isDestroyed && this.$refs.audioElement) {
+            this.$refs.audioElement.load()
+          }
+        }, 1000)
+      }
     },
 
     cleanup () {
-      // Parar qualquer reprodução
+      this.isDestroyed = true
+
+      // Limpar timeouts
+      if (this.styleUpdateTimeout) {
+        clearTimeout(this.styleUpdateTimeout)
+        this.styleUpdateTimeout = null
+      }
+
+      // Executar handlers de cleanup
+      this.cleanupHandlers.forEach(handler => {
+        try {
+          handler()
+        } catch (error) {
+          console.warn('Erro no cleanup handler:', error)
+        }
+      })
+      this.cleanupHandlers = []
+
+      // Parar reprodução
       if (this.$refs.audioElement) {
         try {
           this.$refs.audioElement.pause()
           this.$refs.audioElement.currentTime = 0
+          this.$refs.audioElement.src = ''
         } catch (error) {
-          console.warn('Erro ao parar reprodução:', error)
+          console.warn('Erro ao limpar elemento audio:', error)
         }
       }
 
-      // Limpar recursos Web Audio API de forma segura
-      if (this.audioContext) {
-        try {
-          if (this.audioContext.state !== 'closed') {
-            this.audioContext.close()
-          }
-        } catch (error) {
-          console.warn('Erro ao fechar AudioContext:', error)
-        } finally {
-          this.audioContext = null
-        }
+      // Limpar contexto de áudio de forma mais suave
+      if (this.audioContext && this.audioContext.state !== 'closed') {
+        // Não fechar o contexto imediatamente, deixar para garbage collection
+        this.audioContext = null
       }
 
-      // Limpar buffers e flags
+      // Limpar referencias
       this.audioBuffer = null
-      this.waveformGenerated = false
-      this.isPlaying = false
-      this.isLoading = false
+      this.waveformBars = []
+      this.barStyles = []
+      this.debouncedGenerateWaveform = null
     }
   },
 
@@ -424,25 +547,37 @@ export default {
     audioUrl: {
       handler (newUrl, oldUrl) {
         if (newUrl !== oldUrl) {
-          // Reset do estado
+          // Reset otimizado
           this.isPlaying = false
           this.currentTime = 0
           this.progressPercent = 0
           this.playbackRate = 1
-
-          // Limpar waveform anterior
           this.waveformGenerated = false
           this.audioBuffer = null
+          this.barStyles = []
+          this.barStylesNeedUpdate = true
+          this.retryAttempted = false
 
-          // Gerar novo waveform
-          if (newUrl) {
+          if (newUrl && !this.isDestroyed) {
             this.$nextTick(() => {
-              this.generateWaveform()
+              if (this.debouncedGenerateWaveform) {
+                this.debouncedGenerateWaveform()
+              }
             })
           }
         }
       },
-      immediate: true
+      immediate: false // Não executar no mount
+    },
+
+    progressPercent () {
+      // Debounce da atualização de estilos
+      if (!this.styleUpdateTimeout) {
+        this.styleUpdateTimeout = setTimeout(() => {
+          this.barStylesNeedUpdate = true
+          this.styleUpdateTimeout = null
+        }, 16) // ~60fps
+      }
     }
   },
 
@@ -498,8 +633,9 @@ export default {
         width: 2px;
         min-height: 2px;
         border-radius: 1px;
-        transition: all 0.1s ease;
         flex-shrink: 0;
+        will-change: background-color; // Otimização para mudanças de cor
+        backface-visibility: hidden; // Força aceleração de hardware
 
         &.is-loading {
           opacity: 0.6;
