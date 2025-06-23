@@ -183,27 +183,22 @@ export default {
 
 .ticket-item {
   position: relative;
-  background: white;
+  background: #f1f1f1;
   border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 4px;
+  padding: 8px 8px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 8px;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-color: rgba(25, 118, 210, 0.2);
+    border-color: #1976d2;
   }
 
   &--active {
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.15);
     border-color: #1976d2;
 
     .ticket-status-border {
@@ -274,7 +269,6 @@ export default {
   justify-content: center;
   font-size: 9px;
   font-weight: 600;
-  box-shadow: 0 1px 4px rgba(244, 67, 54, 0.3);
   animation: badge-bounce 0.6s ease-out;
   margin-left: 6px;
 }
@@ -390,13 +384,11 @@ export default {
     &--resolved {
       background: linear-gradient(135deg, #4caf50, #66bb6a);
       color: white;
-      box-shadow: 0 1px 4px rgba(76, 175, 80, 0.3);
     }
 
     &--bot {
       background: linear-gradient(135deg, #2196f3, #42a5f5);
       color: white;
-      box-shadow: 0 1px 4px rgba(33, 150, 243, 0.3);
       animation: bot-pulse 2s infinite;
     }
   }

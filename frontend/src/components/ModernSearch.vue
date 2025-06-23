@@ -132,21 +132,21 @@ export default {
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
+  border-color: #1976d2;
 
   &:hover {
     background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: #1976d2;
   }
 
   &:focus-within {
     background: rgba(255, 255, 255, 0.22);
     border-color: rgba(25, 118, 210, 0.5);
-    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
   }
 }
 
 .search-icon {
-  color: rgba(255, 255, 255, 0.7);
+  color: #5a6c7d;
   font-size: 18px;
   margin-right: 12px;
   flex-shrink: 0;
@@ -158,18 +158,18 @@ export default {
   border: none;
   outline: none;
   background: transparent;
-  color: white;
+  color: #5a6c7d;
   font-size: 14px;
   font-weight: 400;
   min-width: 0;
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: #5a6c7d;
     font-weight: 400;
   }
 
   &:focus::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: #5a6c7d;
   }
 }
 
@@ -188,7 +188,7 @@ export default {
 body.body--dark {
   .search-input-container {
     background: rgba(30, 42, 58, 0.8);
-    border-color: rgba(52, 73, 94, 0.5);
+    border-color: #1976d2;
 
     &:hover {
       background: rgba(30, 42, 58, 0.9);

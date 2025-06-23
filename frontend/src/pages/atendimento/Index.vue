@@ -2966,7 +2966,6 @@ export default {
   background: linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(227, 242, 253, 0.5) 100%);
   border-color: var(--primary-color);
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
 }
 
 .scheduled-messages-container .q-btn {
@@ -3266,7 +3265,6 @@ export default {
     background: #1976d2;
     color: white;
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
   }
 
   &:active {
@@ -3331,27 +3329,19 @@ export default {
   }
 
   &:hover {
-    border-color: #1976d2;
-    color: #1976d2;
     background: #f3f8ff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.15);
-
     &::before {
       left: 100%;
     }
   }
 
   &--active {
-    background: linear-gradient(135deg, #1976d2, #42a5f5);
     border-color: #1976d2;
-    color: white;
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 
     &:hover {
       background: linear-gradient(135deg, #1565c0, #1976d2);
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(25, 118, 210, 0.4);
     }
   }
 
@@ -3363,7 +3353,7 @@ export default {
 /* Dark Mode Styles */
 .body--dark {
   .modern-search-toolbar {
-    background: linear-gradient(135deg, var(--dark-secondary), var(--dark-tertiary));
+    background: var(--q-color-dark);
     border-bottom-color: var(--dark-border);
   }
 
@@ -3378,7 +3368,7 @@ export default {
   }
 
   .modern-filters-section {
-    background: linear-gradient(135deg, var(--dark-secondary), var(--dark-primary));
+    background: var(--q-color-dark);
     border-bottom-color: var(--dark-border);
   }
 
@@ -3388,18 +3378,15 @@ export default {
     color: var(--dark-text-primary);
 
     &:hover {
-      border-color: var(--dark-accent);
-      color: var(--dark-accent);
+      color: var(--dark-tertiary);
       background: rgba(144, 202, 249, 0.1);
     }
 
     &--active {
-      background: linear-gradient(135deg, var(--dark-accent), #64b5f6);
-      border-color: var(--dark-accent);
-      color: var(--dark-primary);
+      background: #1976d2;
 
       &:hover {
-        background: linear-gradient(135deg, #64b5f6, var(--dark-accent));
+        background: var(--dark-accent);
       }
     }
   }
@@ -3428,17 +3415,6 @@ export default {
     padding: 3px 6px;
     font-size: 11px;
   }
-}
-
-/* Accessibility improvements */
-.filter-chip:focus {
-  outline: 2px solid #1976d2;
-  outline-offset: 2px;
-}
-
-.modern-action-btn:focus {
-  outline: 2px solid #1976d2;
-  outline-offset: 2px;
 }
 
 /* Animation for filter changes */
