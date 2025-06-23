@@ -110,10 +110,17 @@ export default {
     this.$nextTick(() => {
       setTimeout(() => {
         this.generateWaveform()
-      }, Math.random() * 500) // Delay aleatório entre 0-500ms
+      }, Math.random() * 1000 + 500) // Delay entre 500-1500ms para espalhar carregamento
     })
   },
   methods: {
+    // Método utilitário para verificar se o AudioContext está saudável
+    isAudioContextHealthy () {
+      return this.audioContext &&
+             this.audioContext.state !== 'closed' &&
+             typeof this.audioContext.decodeAudioData === 'function'
+    },
+
     togglePlay () {
       if (!this.$refs.audioElement) return
 
@@ -145,9 +152,21 @@ export default {
       this.generatePlaceholderWaveform()
 
       try {
-        // Inicializar Web Audio API
-        if (!this.audioContext) {
-          this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
+        // Verificar suporte ao Web Audio API
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext
+        if (!AudioContextClass) {
+          console.warn('Web Audio API não suportada neste navegador')
+          return
+        }
+
+        // Inicializar Web Audio API se ainda não existe
+        if (!this.audioContext || this.audioContext.state === 'closed') {
+          try {
+            this.audioContext = new AudioContextClass()
+          } catch (contextError) {
+            console.warn('Erro ao criar AudioContext:', contextError)
+            return
+          }
         }
 
         // Carregar e analisar o áudio
@@ -186,9 +205,19 @@ export default {
 
     async loadAndAnalyzeAudio () {
       try {
-        // Verificar se o contexto está disponível
+        // Verificar se o contexto está saudável
+        if (!this.isAudioContextHealthy()) {
+          console.warn('AudioContext não está saudável')
+          return null
+        }
+
         if (this.audioContext.state === 'suspended') {
-          await this.audioContext.resume()
+          try {
+            await this.audioContext.resume()
+          } catch (resumeError) {
+            console.warn('Erro ao reativar AudioContext:', resumeError)
+            return null
+          }
         }
 
         // Cache do buffer de áudio
@@ -215,6 +244,12 @@ export default {
         }
 
         const arrayBuffer = await response.arrayBuffer()
+
+        // Verificar novamente se o contexto ainda está saudável antes de decodificar
+        if (!this.isAudioContextHealthy()) {
+          console.warn('AudioContext foi corrompido durante o carregamento')
+          return null
+        }
 
         // Decodificar o áudio
         this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer)
@@ -354,17 +389,34 @@ export default {
     },
 
     cleanup () {
-      // Limpar recursos Web Audio API
-      if (this.audioContext && this.audioContext.state !== 'closed') {
+      // Parar qualquer reprodução
+      if (this.$refs.audioElement) {
         try {
-          this.audioContext.close()
+          this.$refs.audioElement.pause()
+          this.$refs.audioElement.currentTime = 0
         } catch (error) {
-          console.warn('Erro ao fechar AudioContext:', error)
+          console.warn('Erro ao parar reprodução:', error)
         }
       }
-      this.audioContext = null
+
+      // Limpar recursos Web Audio API de forma segura
+      if (this.audioContext) {
+        try {
+          if (this.audioContext.state !== 'closed') {
+            this.audioContext.close()
+          }
+        } catch (error) {
+          console.warn('Erro ao fechar AudioContext:', error)
+        } finally {
+          this.audioContext = null
+        }
+      }
+
+      // Limpar buffers e flags
       this.audioBuffer = null
       this.waveformGenerated = false
+      this.isPlaying = false
+      this.isLoading = false
     }
   },
 

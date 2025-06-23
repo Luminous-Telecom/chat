@@ -831,77 +831,101 @@ export default {
     handleSign (state) {
       this.sign = state
       LocalStorage.set('sign', this.sign)
+    },
+    // Método para limpar cache de permissão do microfone (útil para logout)
+    clearMicrophonePermissionCache () {
+      localStorage.removeItem('microphonePermissionChecked')
+      localStorage.removeItem('microphonePermissionGranted')
+      this.hasMicrophonePermission = false
     }
   },
   async mounted () {
-    // Verificar permissão do microfone ao iniciar o componente
-    try {
-      // Verificar se o navegador suporta mediaDevices
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        // Fallback para navegadores mais antigos
-        navigator.mediaDevices = {}
-        navigator.mediaDevices.getUserMedia = function (constraints) {
-          const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia
-          if (!getUserMedia) {
-            return Promise.reject(new Error('getUserMedia não é suportado neste navegador'))
+    // Verificar permissão do microfone apenas uma vez por sessão
+    const microphonePermissionChecked = localStorage.getItem('microphonePermissionChecked')
+    const microphonePermissionGranted = localStorage.getItem('microphonePermissionGranted')
+
+    if (microphonePermissionChecked === 'true') {
+      // Se já verificou nesta sessão, apenas restaurar o status
+      this.hasMicrophonePermission = microphonePermissionGranted === 'true'
+    } else {
+      // Primeira verificação da sessão
+      try {
+        // Verificar se o navegador suporta mediaDevices
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          // Fallback para navegadores mais antigos
+          navigator.mediaDevices = {}
+          navigator.mediaDevices.getUserMedia = function (constraints) {
+            const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+            if (!getUserMedia) {
+              return Promise.reject(new Error('getUserMedia não é suportado neste navegador'))
+            }
+            return new Promise((resolve, reject) => {
+              getUserMedia.call(navigator, constraints, resolve, reject)
+            })
           }
-          return new Promise((resolve, reject) => {
-            getUserMedia.call(navigator, constraints, resolve, reject)
-          })
         }
-      }
 
-      // Verificar se o navegador suporta enumerateDevices
-      if (!navigator.mediaDevices.enumerateDevices) {
-        navigator.mediaDevices.enumerateDevices = function () {
-          return Promise.resolve([])
+        // Verificar se o navegador suporta enumerateDevices
+        if (!navigator.mediaDevices.enumerateDevices) {
+          navigator.mediaDevices.enumerateDevices = function () {
+            return Promise.resolve([])
+          }
         }
-      }
 
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const hasAudioInput = devices.some(device => device.kind === 'audioinput')
+        const devices = await navigator.mediaDevices.enumerateDevices()
+        const hasAudioInput = devices.some(device => device.kind === 'audioinput')
 
-      if (!hasAudioInput) {
-        // Se não conseguir enumerar dispositivos, tenta solicitar permissão diretamente
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-          this.hasMicrophonePermission = true
-          stream.getTracks().forEach(track => track.stop())
-        } catch (err) {
-          this.$q.notify({
-            type: 'warning',
-            message: 'Nenhum microfone detectado ou permissão não concedida',
-            position: 'bottom-right',
-            timeout: 5000
-          })
-          return
+        if (!hasAudioInput) {
+          // Se não conseguir enumerar dispositivos, tenta solicitar permissão diretamente
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            this.hasMicrophonePermission = true
+            localStorage.setItem('microphonePermissionGranted', 'true')
+            stream.getTracks().forEach(track => track.stop())
+          } catch (err) {
+            this.hasMicrophonePermission = false
+            localStorage.setItem('microphonePermissionGranted', 'false')
+            this.$q.notify({
+              type: 'warning',
+              message: 'Nenhum microfone detectado ou permissão não concedida',
+              position: 'bottom-right',
+              timeout: 5000
+            })
+          }
+        } else {
+          // Se conseguiu enumerar dispositivos, solicita permissão
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            this.hasMicrophonePermission = true
+            localStorage.setItem('microphonePermissionGranted', 'true')
+            stream.getTracks().forEach(track => track.stop())
+          } catch (err) {
+            console.error('Erro ao solicitar permissão do microfone:', err)
+            this.hasMicrophonePermission = false
+            localStorage.setItem('microphonePermissionGranted', 'false')
+            this.$q.notify({
+              type: 'warning',
+              message: 'Permissão do microfone não concedida. Por favor, verifique as configurações do seu navegador.',
+              position: 'bottom-right',
+              timeout: 5000
+            })
+          }
         }
-      } else {
-        // Se conseguiu enumerar dispositivos, solicita permissão
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-          this.hasMicrophonePermission = true
-          stream.getTracks().forEach(track => track.stop())
-        } catch (err) {
-          console.error('Erro ao solicitar permissão do microfone:', err)
-          this.hasMicrophonePermission = false
-          this.$q.notify({
-            type: 'warning',
-            message: 'Permissão do microfone não concedida. Por favor, verifique as configurações do seu navegador.',
-            position: 'bottom-right',
-            timeout: 5000
-          })
-        }
+
+        // Marcar que a verificação foi feita nesta sessão
+        localStorage.setItem('microphonePermissionChecked', 'true')
+      } catch (error) {
+        console.error('Erro ao verificar microfone:', error)
+        this.hasMicrophonePermission = false
+        localStorage.setItem('microphonePermissionGranted', 'false')
+        localStorage.setItem('microphonePermissionChecked', 'true')
+        this.$q.notify({
+          type: 'warning',
+          message: 'Não foi possível acessar o microfone. Verifique se o navegador suporta esta funcionalidade.',
+          position: 'bottom-right',
+          timeout: 5000
+        })
       }
-    } catch (error) {
-      console.error('Erro ao verificar microfone:', error)
-      this.hasMicrophonePermission = false
-      this.$q.notify({
-        type: 'warning',
-        message: 'Não foi possível acessar o microfone. Verifique se o navegador suporta esta funcionalidade.',
-        position: 'bottom-right',
-        timeout: 5000
-      })
     }
 
     // Restaurar o código original do mounted
@@ -919,6 +943,7 @@ export default {
   beforeDestroy () {
     const self = this
     window.removeEventListener('paste', self.handleInputPaste)
+
     // Remover event listener para fechar modal de emojis
     document.removeEventListener('click', this.handleClickOutsideEmojiPicker)
   },

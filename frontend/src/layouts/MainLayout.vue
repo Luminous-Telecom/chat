@@ -907,11 +907,6 @@ export default {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Cores dos ícones no tema claro */
-.q-drawer .q-icon {
-  color: rgba(0, 0, 0, 0.7) !important;
-}
-
 .houverList .q-icon {
   color: rgba(0, 0, 0, 0.6) !important;
 }
