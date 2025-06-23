@@ -1,5 +1,5 @@
 <template>
-  <div class="text-caption text-center bg-grey-1 q-pa-sm">
+  <div class="text-caption text-center q-pa-sm">
     Versão Sistema:
     <q-badge align="middle"
       color="primary">
