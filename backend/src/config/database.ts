@@ -1,5 +1,8 @@
 import { SequelizeOptions } from "sequelize-typescript";
 import { Dialect } from "sequelize";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const dbConfig: SequelizeOptions = {
   define: {
@@ -18,8 +21,8 @@ const dbConfig: SequelizeOptions = {
   host: process.env.POSTGRES_HOST || "localhost",
   port: Number(process.env.DB_PORT) || 5432,
   database: process.env.POSTGRES_DB || "chat",
-  username: process.env.POSTGRES_USER || "chat",
-  password: process.env.POSTGRES_PASSWORD || "chat123",
+  username: process.env.POSTGRES_USER || "postgres",
+  password: process.env.POSTGRES_PASSWORD || "postgres",
   logging: false,
 };
 

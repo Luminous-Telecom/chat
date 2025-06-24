@@ -250,14 +250,14 @@
 
       <!-- Tabela de performance -->
       <div class="table-section">
-        <div class="table-card">
-          <div class="table-header">
-            <h3 class="table-title">
-              <q-icon name="mdi-table" />
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">
+              <q-icon name="mdi-account-group" />
               Detalhamento de Performance por Usuário
             </h3>
           </div>
-          <div class="table-content">
+          <div class="chart-content">
             <q-table
               :data="ticketsPerUsersDetail"
               :columns="columns"
@@ -288,50 +288,51 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Tabela de Atendimentos por Usuário -->
-    <div class="table-section">
-      <div class="chart-card">
-        <div class="chart-header">
-          <h3 class="chart-title">
-            <q-icon name="mdi-account-group" />
-            Atendimentos por Usuário
-          </h3>
-        </div>
-        <div class="chart-content">
-          <q-table
-            :data="ticketsPerUsersDetail"
-            :columns="columns"
-            :pagination="{
-              rowsPerPage: 10,
-              rowsNumber: ticketsPerUsersDetail.length,
-              lastIndex: 0
-            }"
-            row-key="name"
-            flat
-            bordered
-            class="tickets-table"
-          >
-            <template v-slot:body-cell-name="props">
-              <q-td :props="props">
-                <div class="user-cell">
-                  <q-avatar size="sm">
-                    <q-icon name="mdi-account" />
-                  </q-avatar>
-                  <span>{{ props.value }}</span>
+      <!-- Tabela de Atendimentos por Usuário -->
+      <div class="table-section">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">
+              <q-icon name="mdi-account-group" />
+              Atendimentos por Usuário
+            </h3>
+          </div>
+          <div class="chart-content">
+            <q-table
+              :data="ticketsPerUsersDetail"
+              :columns="columns"
+              :pagination="{
+                rowsPerPage: 10,
+                rowsNumber: ticketsPerUsersDetail.length,
+                lastIndex: 0
+              }"
+              row-key="name"
+              flat
+              bordered
+              class="tickets-table"
+            >
+              <template v-slot:body-cell-name="props">
+                <q-td :props="props">
+                  <div class="user-cell">
+                    <q-avatar size="sm">
+                      <q-icon name="mdi-account" />
+                    </q-avatar>
+                    <span>{{ props.value }}</span>
+                  </div>
+                </q-td>
+              </template>
+              <template v-slot:no-data>
+                <div class="no-data">
+                  <q-icon name="mdi-alert" size="2rem" />
+                  <p>Nenhum dado disponível</p>
                 </div>
-              </q-td>
-            </template>
-            <template v-slot:no-data>
-              <div class="no-data">
-                <q-icon name="mdi-alert" size="2rem" />
-                <p>Nenhum dado disponível</p>
-              </div>
-            </template>
-          </q-table>
+              </template>
+            </q-table>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>
