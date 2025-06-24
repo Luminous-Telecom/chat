@@ -144,8 +144,12 @@ export default {
         this.$root.$emit('infor-cabecalo-chat:acao-menu')
       }
 
-      // Verificar se o ticket já não está focado
-      if (!((ticket.id !== this.$store.getters.ticketFocado.id || this.$route.name !== 'chat'))) {
+      // Verificar se o ticket já está focado
+      const isAlreadyFocused = (ticket.id === this.$store.getters.ticketFocado.id && this.$route.name === 'chat')
+
+      if (isAlreadyFocused) {
+        // Se o ticket já está focado, emitir evento para focar o input
+        this.$root.$emit('ticket:refocus-input')
         return
       }
 

@@ -948,6 +948,18 @@ export default {
 
     // Restaurar o código original do mounted
     this.$root.$on('mensagem-chat:focar-input-mensagem', () => this.$refs.inputEnvioMensagem.focus())
+
+    // Escutar evento de refoco quando o mesmo ticket for clicado novamente
+    this.$root.$on('ticket:refocus-input', () => {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          if (this.$refs.inputEnvioMensagem && this.ticketFocado?.status === 'open') {
+            this.$refs.inputEnvioMensagem.focus()
+          }
+        }, 100)
+      })
+    })
+
     const self = this
     window.addEventListener('paste', self.handleInputPaste)
 
@@ -976,6 +988,7 @@ export default {
   },
   destroyed () {
     this.$root.$off('mensagem-chat:focar-input-mensagem')
+    this.$root.$off('ticket:refocus-input')
   }
 }
 </script>
