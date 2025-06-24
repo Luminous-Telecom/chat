@@ -1597,12 +1597,6 @@ export default {
   }
 }
 
-/* Modo escuro para mensagem focada */
-.body--dark .pulseIdentications {
-  &::before {
-  }
-}
-
 /* Animações para destaque da mensagem */
 @keyframes pulseHighlight {
   0% {
