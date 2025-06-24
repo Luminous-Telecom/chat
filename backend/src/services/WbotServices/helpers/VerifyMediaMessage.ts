@@ -71,6 +71,17 @@ const VerifyMediaMessage = async (
   contact: Contact
 ): Promise<Message | void> => {
   try {
+    // Log detalhado para debug de mensagens de imagem
+    logger.info(
+      `[VerifyMediaMessage] DEBUG - Processing message ${msg.id.id} for ticket ${ticket.id}`
+    );
+    logger.info(
+      `[VerifyMediaMessage] DEBUG - Message type: ${msg.type}, hasMedia: ${msg.hasMedia}, fromMe: ${msg.fromMe}`
+    );
+    logger.info(
+      `[VerifyMediaMessage] DEBUG - Message body: ${msg.body || 'empty'}`
+    );
+
     // Verificar se a mensagem já está sendo processada
     if (processingMessages.has(msg.id.id)) {
       logger.warn(
@@ -88,21 +99,49 @@ const VerifyMediaMessage = async (
     });
 
     if (existingMessage) {
+      logger.info(
+        `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} already exists in database, skipping`
+      );
       processingMessages.delete(msg.id.id);
       return existingMessage;
     }
 
+    logger.info(
+      `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} is new, proceeding with processing`
+    );
+
     const quotedMsg = await VerifyQuotedMessage(msg, ticket);
 
     // Verificar se a mensagem tem mídia antes de tentar baixar
-    // Permitir tentativa de download mesmo se hasMedia for false para alguns tipos de mensagem
-    const mediaTypes = ["image", "video", "audio", "document", "sticker"];
-    if (!msg.hasMedia && !mediaTypes.includes(msg.type)) {
-      logger.warn(
-        `[VerifyMediaMessage] Message ${msg.id.id} has no media content for ticket ${ticket.id}`
+    // Permitir tentativa de download apenas para tipos de mensagem de mídia válidos
+    const validMediaTypes = ["image", "video", "audio", "document", "sticker", "contactMessage", "imageMessage", "videoMessage", "audioMessage", "documentMessage", "stickerMessage"];
+    const invalidTypes = ["messageContextInfo", "conversation", "extendedTextMessage", "chat", "text", "ephemeralMessage"];
+    
+    // Log para debug de tipos de mensagem
+    logger.info(
+      `[VerifyMediaMessage] DEBUG - Message type validation - type: ${msg.type}, hasMedia: ${msg.hasMedia}`
+    );
+    
+    // Rejeitar tipos explicitamente não-mídia
+    if (invalidTypes.includes(msg.type)) {
+      logger.info(
+        `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} rejected - type '${msg.type}' is not a media type`
       );
+      processingMessages.delete(msg.id.id);
       return;
     }
+    
+    if (!msg.hasMedia && !validMediaTypes.includes(msg.type)) {
+      logger.warn(
+        `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} has no media content for ticket ${ticket.id} - hasMedia: ${msg.hasMedia}, type: ${msg.type}`
+      );
+      processingMessages.delete(msg.id.id);
+      return;
+    }
+
+    logger.info(
+      `[VerifyMediaMessage] DEBUG - Starting media download for message ${msg.id.id}`
+    );
 
     // Tentar baixar a mídia com retry
     let media: MediaData | null = null;

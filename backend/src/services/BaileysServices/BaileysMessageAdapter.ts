@@ -16,8 +16,8 @@ export class BaileysMessageAdapter {
     msg: proto.IWebMessageInfo,
     wbot?: BaileysClient
   ): BaileysMessageWithDownload {
-    // Get message type from the message object
-    const messageType = msg.message ? Object.keys(msg.message)[0] : "chat";
+    // Get message type from the message object - filtering out non-media context info
+    const messageType = this.getCorrectMessageType(msg);
 
     // Extract message body correctly
     const body = this.getMessageBody(msg);
@@ -298,5 +298,90 @@ export class BaileysMessageAdapter {
       };
     }
     return null;
+  }
+
+  private static getCorrectMessageType(msg: proto.IWebMessageInfo): string {
+    if (!msg.message) return "chat";
+
+    const messageKeys = Object.keys(msg.message);
+    
+    // Log para debug quando messageContextInfo é detectado
+    if (messageKeys.includes("messageContextInfo")) {
+      console.log(`[BaileysMessageAdapter] DEBUG - Message with messageContextInfo detected. All keys:`, messageKeys);
+    }
+    
+    // Tipos que devem ser ignorados pois são contexto, não conteúdo real
+    const ignoredTypes = [
+      "messageContextInfo",
+      "senderKeyDistributionMessage", 
+      "reactionMessage",
+      "pollCreationMessage",
+      "pollUpdateMessage"
+    ];
+
+    // Tipos de mídia válidos
+    const mediaTypes = [
+      "imageMessage",
+      "videoMessage", 
+      "audioMessage",
+      "documentMessage",
+      "stickerMessage",
+      "contactMessage" // vCard
+    ];
+
+    // Tipos de texto/mensagem válidos
+    const textTypes = [
+      "conversation",
+      "extendedTextMessage",
+      "buttonsMessage",
+      "listMessage",
+      "templateMessage",
+      "buttonsResponseMessage",
+      "listResponseMessage",
+      "templateButtonReplyMessage"
+    ];
+
+    // Procurar primeiro por tipos de mídia
+    for (const key of messageKeys) {
+      if (mediaTypes.includes(key)) {
+        console.log(`[BaileysMessageAdapter] DEBUG - Detected media type: ${key}`);
+        return key;
+      }
+    }
+
+    // Depois procurar por tipos de texto
+    for (const key of messageKeys) {
+      if (textTypes.includes(key)) {
+        console.log(`[BaileysMessageAdapter] DEBUG - Detected text type: ${key}`);
+        return key;
+      }
+    }
+
+    // Procurar por mensagens especiais como viewOnceMessage e ephemeralMessage
+    if (msg.message.viewOnceMessage?.message) {
+      console.log(`[BaileysMessageAdapter] DEBUG - Processing viewOnceMessage`);
+      return this.getCorrectMessageType({ 
+        message: msg.message.viewOnceMessage.message 
+      } as proto.IWebMessageInfo);
+    }
+
+    if (msg.message.ephemeralMessage?.message) {
+      console.log(`[BaileysMessageAdapter] DEBUG - Processing ephemeralMessage`);
+      return this.getCorrectMessageType({ 
+        message: msg.message.ephemeralMessage.message 
+      } as proto.IWebMessageInfo);
+    }
+
+    // Filtrar tipos ignorados e pegar o primeiro tipo restante
+    const validKeys = messageKeys.filter(key => !ignoredTypes.includes(key));
+    
+    if (validKeys.length > 0) {
+      console.log(`[BaileysMessageAdapter] DEBUG - Using first valid key: ${validKeys[0]} from keys:`, messageKeys);
+      return validKeys[0];
+    }
+
+    // Default para chat se nada for encontrado
+    console.log(`[BaileysMessageAdapter] DEBUG - Defaulting to 'chat' for message keys:`, messageKeys);
+    return "chat";
   }
 }
