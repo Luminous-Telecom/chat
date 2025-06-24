@@ -8,7 +8,6 @@ import DeleteMessageSystem from "../helpers/DeleteMessageSystem";
 
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
 import Message from "../models/Message";
-import CreateForwardMessageService from "../services/MessageServices/CreateForwardMessageService";
 // import CreateMessageOffilineService from "../services/MessageServices/CreateMessageOfflineService";
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
 
@@ -270,26 +269,6 @@ export const remove = async (
     }
     
     throw new AppError("ERR_DELETE_SYSTEM_MSG");
-  }
-
-  return res.send();
-};
-
-export const forward = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const data = req.body;
-  const { user } = req;
-
-  for (const message of data.messages) {
-    await CreateForwardMessageService({
-      userId: user.id,
-      tenantId: user.tenantId,
-      message,
-      contact: data.contact,
-      ticketIdOrigin: message.ticketId,
-    });
   }
 
   return res.send();

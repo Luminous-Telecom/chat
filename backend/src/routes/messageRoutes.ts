@@ -27,8 +27,6 @@ messageRoutes.post(
   MessageController.markAsRead
 );
 
-messageRoutes.post("/forward-messages/", isAuth, MessageController.forward);
-
 messageRoutes.get("/messages/:ticketId", isAuth, MessageController.index);
 
 messageRoutes.post(
