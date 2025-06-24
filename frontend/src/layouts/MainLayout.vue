@@ -1,15 +1,20 @@
 <template>
   <q-layout view="lHh Lpr lFf">
+    <q-btn
+      v-if="$q.screen.lt.md"
+      icon="menu"
+      class="top-menu-btn"
+      @click="topMenuOpen = true"
+    />
     <q-drawer
-      :value="true"
+      v-if="$q.screen.gt.sm"
       persistent
-      :width="70"
       :breakpoint="1024"
-      :mini="false"
-      mini-to-overlay
-      class="bg-sidebar-custom icon-only-sidebar"
+      class="icon-only-sidebar"
+      show-if-above
+      :width="70"
     >
-            <div class="sidebar-content">
+      <div class="sidebar-content">
         <q-list class="compact-list" :key="userProfile">
           <!-- Botão Menu do Sistema -->
           <q-item clickable v-ripple class="houverList icon-only-item" @click="topMenuOpen = !topMenuOpen">
@@ -1190,19 +1195,14 @@ export default {
     z-index: 2000;
   }
 
-  .q-page-container {
-    padding-left: 70px;
+  .with-sidebar {
+    padding-left: 56px;
   }
 
   @media (max-width: 1023px) {
-    .q-page-container {
-      padding-left: 0;
+    .with-sidebar {
+      padding-left: 0 !important;
     }
-  }
-
-  .q-page {
-    padding-left: 0 !important;
-    margin-left: 0 !important;
   }
 
   /* Estilo para o botão do menu do topo */
@@ -1248,19 +1248,18 @@ export default {
   .icon-only-sidebar {
     min-width: 70px !important;
     max-width: 70px !important;
+    width: 70px !important;
     display: flex !important;
     flex-direction: column !important;
   }
 
-  .icon-only-sidebar .q-drawer__content {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
+  .icon-only-sidebar .sidebar-content {
+    padding: 0 !important;
   }
 
   .icon-only-item {
     justify-content: center !important;
-    padding: 6px 4px !important;
+    padding: 6px 0 !important;
     min-height: 42px;
   }
 
@@ -1273,7 +1272,7 @@ export default {
   }
 
   .icon-centered .q-icon {
-    font-size: 20px !important;
+    font-size: 24px !important;
     margin: 0 !important;
   }
 
@@ -1301,11 +1300,6 @@ export default {
     padding: 8px 0 !important;
   }
 
-  /* Lista compacta para economizar espaço */
-  .compact-list {
-    padding: 4px 0 !important;
-  }
-
   .icon-only-sidebar .compact-list {
     padding: 6px 0 !important;
     flex-shrink: 0 !important;
@@ -1324,7 +1318,7 @@ export default {
 
   /* Menu apenas com ícones - sem scroll */
   .icon-only-sidebar .sidebar-content {
-    overflow: visible;
+    overflow-y: auto;
     height: 100vh;
     flex: 1;
     padding: 8px 0;
