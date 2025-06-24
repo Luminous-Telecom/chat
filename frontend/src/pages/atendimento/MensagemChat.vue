@@ -50,18 +50,6 @@
             style="min-width: 100px; max-width: 350px;"
             :style="mensagem.isDeleted ? 'color: var(--text-color-secondary) !important; opacity: 0.6;' : ''"
           >
-            <q-checkbox
-              v-if="ativarMultiEncaminhamento"
-              :key="`cheked-chat-message-${mensagem.id}`"
-              :class="{
-                  'absolute-top-right checkbox-encaminhar-right': !mensagem.fromMe,
-                  'absolute-top-left checkbox-encaminhar-left': mensagem.fromMe
-                }"
-              :ref="`box-chat-message-${mensagem.id}`"
-              @click.native="verificarEncaminharMensagem(mensagem)"
-              :value="false"
-            />
-
             <q-icon
               class="q-ma-xs"
               name="mdi-calendar"
@@ -153,18 +141,6 @@
                     <q-tooltip v-if="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')">
                       Disponível apenas para WhatsApp e Telegram
                     </q-tooltip>
-                  </q-item>
-                  <q-item
-                    clickable
-                    @click=" encaminharMensagem(mensagem) "
-                  >
-                    <q-item-section>Encaminhar</q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    @click=" marcarMensagensParaEncaminhar(mensagem) "
-                  >
-                    <q-item-section>Marcar (encaminhar várias)</q-item-section>
                   </q-item>
                   <q-separator />
                   <q-item
@@ -477,10 +453,6 @@ export default {
       type: Array,
       default: () => []
     },
-    mensagensParaEncaminhar: {
-      type: Array,
-      default: () => []
-    },
     ticketFocado: {
       type: Object,
       required: true
@@ -496,10 +468,6 @@ export default {
     isShowOptions: {
       type: Boolean,
       default: true
-    },
-    ativarMultiEncaminhamento: {
-      type: Boolean,
-      default: false
     },
     replyingMessage: {
       type: Object,
@@ -559,26 +527,6 @@ export default {
     ...mapMutations({
       updateTicketUnreadMessages: 'UPDATE_TICKET_UNREAD_MESSAGES'
     }),
-    verificarEncaminharMensagem (mensagem) {
-      const mensagens = [...this.mensagensParaEncaminhar]
-      const msgIdx = mensagens.findIndex(m => m.id === mensagem.id)
-      if (msgIdx !== -1) {
-        mensagens.splice(msgIdx, 1)
-      } else {
-        if (this.mensagensParaEncaminhar.length > 9) {
-          this.$notificarErro('Permitido no máximo 10 mensagens.')
-          return
-        }
-        mensagens.push(mensagem)
-      }
-      this.$refs[`box-chat-message-${mensagem.id}`][0].value = !this.$refs[`box-chat-message-${mensagem.id}`][0].value
-      this.$emit('update:mensagensParaEncaminhar', mensagens)
-    },
-    marcarMensagensParaEncaminhar (mensagem) {
-      this.$emit('update:mensagensParaEncaminhar', [])
-      this.$emit('update:ativarMultiEncaminhamento', !this.ativarMultiEncaminhamento)
-      // this.verificarEncaminharMensagem(mensagem)
-    },
     getAckIcon (ack) {
       // Retorna o ícone apropriado para cada ACK
       const icons = this.ackIcons || this.localAckIcons
@@ -742,9 +690,6 @@ export default {
     citarMensagem (mensagem) {
       this.$emit('update:replyingMessage', mensagem)
       this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
-    },
-    encaminharMensagem (mensagem) {
-      this.$emit('mensagem-chat:encaminhar-mensagem', mensagem)
     },
     deletarMensagem (mensagem) {
       if (this.isDesactivatDelete(mensagem)) {
