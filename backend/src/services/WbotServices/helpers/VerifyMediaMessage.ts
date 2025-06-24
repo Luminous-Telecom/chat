@@ -11,6 +11,7 @@ import VerifyQuotedMessage from "./VerifyQuotedMessage";
 import CreateMessageService from "../../MessageServices/CreateMessageService";
 import { logger } from "../../../utils/logger";
 import { createMediaPreviewMessage } from "../../../utils/mediaPreviewHelper";
+import socketEmit from "../../../helpers/socketEmit";
 
 // Cache para mensagens em processamento
 const processingMessages = new Set<string>();
@@ -356,6 +357,16 @@ const VerifyMediaMessage = async (
       lastMessageAt: new Date().getTime(),
       answered: msg.fromMe || false,
       unreadMessages: newUnreadCount,
+    });
+
+    // CORREÇÃO: Recarregar ticket atualizado para garantir dados corretos
+    await ticket.reload();
+
+    // NOVO: Emitir evento de atualização do ticket para mudança instantânea da cor
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "ticket:update",
+      payload: ticket,
     });
 
     processingMessages.delete(msg.id.id);

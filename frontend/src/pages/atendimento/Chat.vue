@@ -81,7 +81,7 @@
         enter-active-class="animated fadeIn"
         leave-active-class="animated fadeOut"
       >
-        <div v-if="scrollIcon">
+        <div v-if="scrollIcon" class="scroll-to-bottom-container">
           <q-btn
             class="vac-icon-scroll"
             color="white"
@@ -92,7 +92,16 @@
             ripple
             dense
             @click="scrollToBottom"
-          />
+          >
+            <!-- Contador de mensagens não lidas -->
+            <q-badge
+              v-if="unreadMessagesCount > 0"
+              color="green"
+              :label="unreadMessagesCount > 99 ? '99+' : unreadMessagesCount"
+              class="unread-count-badge"
+              floating
+            />
+          </q-btn>
         </div>
       </transition>
     </div>
@@ -141,7 +150,7 @@
             </q-item-label>
             <q-item-label
               lines="4"
-              v-html="farmatarMensagemWhatsapp(replyingMessage.body)"
+              v-html="formatarMensagemWhatsapp(replyingMessage.body)"
             >
             </q-item-label>
           </q-item-section>
@@ -383,7 +392,8 @@ export default {
         id: '',
         name: ''
       },
-      contatos: []
+      contatos: [],
+      scrollReadTimeout: null
     }
   },
   computed: {
@@ -403,11 +413,21 @@ export default {
       // Se há ticket aberto, considera altura do input
       const add = this.heigthInputMensagem + loading
       return `min-height: calc(100vh - ${add}px); height: calc(100vh - ${add}px); width: 100%; padding-bottom: 0px;`
+    },
+    unreadMessagesCount () {
+      // Retorna o número de mensagens não lidas do ticket atual
+      if (!this.ticketFocado || !this.ticketFocado.unreadMessages) {
+        return 0
+      }
+      return this.ticketFocado.unreadMessages
     }
   },
   watch: {
     mensagensTicket () {
       this.replyingMessage = null
+    },
+    replyingMessage (newVal, oldVal) {
+      // Watcher para replyingMessage - pode ser usado para futuras funcionalidades
     }
   },
   methods: {
@@ -437,11 +457,61 @@ export default {
       this.hideOptions = true
       setTimeout(() => {
         if (!e) return
-        this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 2000
+        this.scrollIcon = (e.verticalSize - (e.verticalPosition + e.verticalContainerSize)) > 300
+
+        // Verificar se o usuário rolou manualmente para o final da conversa
+        const distanceFromBottom = e.verticalSize - (e.verticalPosition + e.verticalContainerSize)
+        const isAtBottom = distanceFromBottom <= 50 // 50px de tolerância
+
+        // Se chegou ao final e há mensagens não lidas, marcar como lidas
+        if (isAtBottom && this.ticketFocado?.unreadMessages > 0) {
+          // Debounce para evitar múltiplas chamadas
+          if (this.scrollReadTimeout) {
+            clearTimeout(this.scrollReadTimeout)
+          }
+
+          this.scrollReadTimeout = setTimeout(() => {
+            this.markUnreadMessagesAsRead()
+          }, 500)
+        }
       }, 200)
     },
     scrollToBottom () {
       document.getElementById('fimListaMensagensChat').scrollIntoView()
+      // Marcar mensagens como lidas quando o usuário clicar na seta para ir ao final
+      this.markUnreadMessagesAsRead()
+    },
+    async markUnreadMessagesAsRead () {
+      if (!this.ticketFocado || !this.ticketFocado.id) return
+      if (this.loading) return
+
+      // NÃO marcar mensagens como lidas se o ticket estiver com status 'pending'
+      if (this.ticketFocado.status === 'pending') {
+        return
+      }
+
+      // Verificar se realmente há mensagens não lidas
+      if (!this.ticketFocado.unreadMessages || this.ticketFocado.unreadMessages === 0) {
+        return
+      }
+
+      this.loading = true
+      try {
+        await this.$axios.post(`/api/tickets/${this.ticketFocado.id}/read`)
+
+        // Atualizar o estado local
+        this.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+          type: 'open',
+          ticket: {
+            ...this.ticketFocado,
+            unreadMessages: 0
+          }
+        })
+      } catch (err) {
+        console.error('[Chat] Erro ao marcar mensagens como lidas:', err)
+      } finally {
+        this.loading = false
+      }
     },
     abrirModalEncaminharMensagem (msg) {
       this.mensagemEncaminhamento = msg
@@ -496,6 +566,10 @@ export default {
   },
   destroyed () {
     this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
+    // Limpar timeout se existir
+    if (this.scrollReadTimeout) {
+      clearTimeout(this.scrollReadTimeout)
+    }
   }
 }
 </script>
@@ -679,15 +753,36 @@ body.body--dark .textContentItemDeleted {
   font-weight: 500;
 }
 
-.vac-icon-scroll {
+.scroll-to-bottom-container {
   position: absolute;
   bottom: 20px;
   right: 20px;
+  z-index: 99;
+}
+
+.vac-icon-scroll {
   box-shadow: 0 1px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14),
     0 1px 2px 0 rgba(0, 0, 0, 0.12);
   display: flex;
   cursor: pointer;
-  z-index: 99;
+  position: relative;
+}
+
+.unread-count-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .fade-enter-active,

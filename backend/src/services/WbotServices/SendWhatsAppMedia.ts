@@ -249,6 +249,23 @@ const SendWhatsAppMedia = async (
       await updateMessageWithId(dbMessage, messageId, "document");
     }
 
+    // NOVO: Atualizar ticket com answered: true (mensagem enviada = respondido)
+    await ticket.update({
+      lastMessage: body || media.originalname || safeFilename,
+      lastMessageAt: new Date().getTime(),
+      answered: true, // Mensagem enviada = ticket respondido
+    });
+
+    // NOVO: Recarregar ticket atualizado para garantir dados corretos
+    await ticket.reload();
+
+    // NOVO: Emitir evento de atualização do ticket para mudança instantânea da cor
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "ticket:update",
+      payload: ticket,
+    });
+
     // Registrar atividade do usuário se houver userId
     if (ticket.userId) {
       await UserMessagesLog.create({

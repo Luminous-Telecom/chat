@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger";
 import AppError from "../../errors/AppError";
 import sequelize from "../../database";
 import type Contact from "../../models/Contact";
+import socketEmit from "../../helpers/socketEmit";
 // import { StartWhatsAppSessionVerify } from "./StartWhatsAppSessionVerify";
 
 interface Request {
@@ -90,7 +91,27 @@ export const SendWhatsAppMessage = async (
       { transaction: t }
     );
 
+    // NOVO: Atualizar ticket com answered: true (mensagem enviada = respondido)
+    await ticket.update(
+      {
+        lastMessage: body,
+        lastMessageAt: new Date().getTime(),
+        answered: true, // Mensagem enviada = ticket respondido
+      },
+      { transaction: t }
+    );
+
     await t.commit();
+
+    // NOVO: Recarregar ticket atualizado para garantir dados corretos
+    await ticket.reload();
+
+    // NOVO: Emitir evento de atualização do ticket para mudança instantânea da cor
+    socketEmit({
+      tenantId: ticket.tenantId,
+      type: "ticket:update",
+      payload: ticket,
+    });
 
     return messageToUpdate;
   } catch (error) {

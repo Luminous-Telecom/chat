@@ -3,17 +3,21 @@
 ## Problemas Identificados e Soluções Implementadas
 
 ### 1. **Verificação Muito Rígida do Estado da Sessão**
+
 **Problema:** A função `isSessionReady()` era muito restritiva, rejeitando sessões em estado "connecting" ou com WebSocket temporariamente indefinido.
 
 **Solução:** Tornar a verificação mais flexível para aceitar:
+
 - Sessions em estado "open" (ideal)
 - Sessions em estado "connecting" (durante reconexão)
 - Sessions com WebSocket em estados 0, 1 ou undefined
 
 ### 2. **Timeouts Muito Longos**
+
 **Problema:** Timeouts de conexão muito altos causavam demora na inicialização.
 
 **Soluções aplicadas:**
+
 - `connectTimeoutMs`: 90s → 20s (60s para phone number)
 - `defaultQueryTimeoutMs`: 30s → 20s  
 - `retryRequestDelayMs`: 8s → 2s (5s para phone number)
@@ -21,9 +25,11 @@
 - `qrTimeout`: 45s → 30s
 
 ### 3. **Sistema de Monitor Muito Conservador**
+
 **Problema:** Monitor verificava sessões apenas a cada 2 minutos.
 
 **Soluções aplicadas:**
+
 - `CHECK_INTERVAL`: 2min → 1min
 - `ERROR_THRESHOLD`: 2 → 1 (reage mais rápido)
 - `MIN_RECONNECT_DELAY`: 60s → 30s
@@ -31,11 +37,13 @@
 - Delay inicial do monitor: 15s → 5s
 
 ### 4. **Processamento de Mensagens Lento**
+
 **Problema:** Delay de 100ms entre processamento de mensagens.
 
 **Solução:** Reduzido `PROCESSING_DELAY` de 100ms para 50ms.
 
 ### 5. **Função getBaileysSession Muito Restritiva**
+
 **Problema:** Função rejeitava sessões em estados válidos durante transições.
 
 **Solução:** Aceitar sessões em estados "open", "connecting" e "undefined" (durante transições).
@@ -43,6 +51,7 @@
 ## Configurações Recomendadas
 
 ### Variáveis de Ambiente
+
 Adicione ao seu arquivo `.env`:
 
 ```bash
@@ -54,6 +63,7 @@ NODE_ENV=development
 ```
 
 ### Comandos de Diagnóstico
+
 ```bash
 # Verificar estado das sessões
 npm run session-diagnostics
@@ -78,6 +88,7 @@ Com essas otimizações, você deve observar:
 ## Monitoramento
 
 O sistema agora inclui:
+
 - Monitor mais frequente (1 minuto vs 2 minutos)
 - Diagnósticos detalhados de sessões
 - Logs otimizados (menos spam, mais informação útil)
@@ -92,4 +103,4 @@ Se ainda houver problemas:
 3. Use `npm run clear-sessions` para limpar sessões corrompidas
 4. Reinicie o sistema com as novas configurações
 
-Essas mudanças tornam o sistema muito mais responsivo mantendo a estabilidade. 
+Essas mudanças tornam o sistema muito mais responsivo mantendo a estabilidade.

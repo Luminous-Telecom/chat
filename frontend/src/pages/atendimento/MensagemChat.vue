@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/valid-v-for -->
 <template>
   <div class="q-pa-md">
 
@@ -6,28 +7,23 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <template v-for="(mensagem, index) in mensagens">
+      <div v-for="(mensagem, index) in mensagens" :key="`msg-wrapper-${mensagem.id}-${index}`">
         <hr
           v-if="isLineDate"
-          :key="`hr-${mensagem.id}-${index}`"
           class="hr-text q-mt-lg q-mb-md"
           :data-content="formatarData(mensagem.createdAt)"
           v-show="index === 0 || formatarData(mensagem.createdAt) !== formatarData(mensagens[index - 1].createdAt)"
-        >
-        <template v-if="mensagens.length && index === mensagens.length - 1">
-          <div
-            :key="`ref-${mensagem.id}-${mensagem.createdAt}`"
-            ref="lastMessageRef"
-            id="lastMessageRef"
-            style="float: left; background: black; clear: both;"
-          />
-        </template>
+        />
         <div
-          :key="`chat-message-container-${mensagem.id}`"
+          v-if="mensagens.length && index === mensagens.length - 1"
+          ref="lastMessageRef"
+          id="lastMessageRef"
+          style="float: left; background: black; clear: both;"
+        />
+        <div
           :id="`chat-message-${mensagem.id}`"
         />
         <q-chat-message
-          :key="`chat-message-${mensagem.id}`"
           :stamp="dataInWords(mensagem.createdAt)"
           :sent="mensagem.fromMe"
           class="text-weight-medium"
@@ -42,26 +38,17 @@
             'q-message-text--document': mensagem.mediaType === 'application',
             'q-message-text--contact': mensagem.mediaType === 'vcard',
             'q-message-text--forwarded': mensagem.isForwarded,
-            'q-message-text--edited': mensagem.isEdited
+            'q-message-text--edited': mensagem.isEdited,
+            'mensagem-hover-active': hoveredMessageId === mensagem.id
           }"
+          @mouseenter="showMessageOptions(mensagem.id)"
+          @mouseleave="hideMessageOptions(mensagem.id)"
         >
           <!-- :bg-color="mensagem.fromMe ? 'grey-2' : 'secondary' " -->
           <div
             style="min-width: 100px; max-width: 350px;"
             :style="mensagem.isDeleted ? 'color: var(--text-color-secondary) !important; opacity: 0.6;' : ''"
           >
-            <q-checkbox
-              v-if="ativarMultiEncaminhamento"
-              :key="`cheked-chat-message-${mensagem.id}`"
-              :class="{
-                  'absolute-top-right checkbox-encaminhar-right': !mensagem.fromMe,
-                  'absolute-top-left checkbox-encaminhar-left': mensagem.fromMe
-                }"
-              :ref="`box-chat-message-${mensagem.id}`"
-              @click.native="verificarEncaminharMensagem(mensagem)"
-              :value="false"
-            />
-
             <q-icon
               class="q-ma-xs"
               name="mdi-calendar"
@@ -130,7 +117,8 @@
             </div>
             <q-btn
               v-if=" !mensagem.isDeleted && isShowOptions "
-              class="absolute-top-right mostar-btn-opcoes-chat"
+              class="absolute-top-right mostar-btn-opcoes-chat mensagem-hover-btn"
+              :class="{ 'q-btn--menu-open': $refs[`menu-${mensagem.id}`] && $refs[`menu-${mensagem.id}`][0]?.showing }"
               dense
               flat
               ripple
@@ -138,33 +126,23 @@
               icon="mdi-chevron-down"
             >
               <q-menu
+                :ref="`menu-${mensagem.id}`"
                 square
                 auto-close
                 anchor="bottom left"
                 self="top left"
+                @hide="onMenuClose(mensagem.id)"
               >
                 <q-list style="min-width: 100px">
                   <q-item
                     :disable="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')"
                     clickable
-                    @click=" citarMensagem(mensagem) "
+                    @click="citarMensagem(mensagem)"
                   >
-                    <q-item-section>Responder</q-item-section>
+                                        <q-item-section>Responder</q-item-section>
                     <q-tooltip v-if="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')">
                       Disponível apenas para WhatsApp e Telegram
                     </q-tooltip>
-                  </q-item>
-                  <q-item
-                    clickable
-                    @click=" encaminharMensagem(mensagem) "
-                  >
-                    <q-item-section>Encaminhar</q-item-section>
-                  </q-item>
-                  <q-item
-                    clickable
-                    @click=" marcarMensagensParaEncaminhar(mensagem) "
-                  >
-                    <q-item-section>Marcar (encaminhar várias)</q-item-section>
                   </q-item>
                   <q-separator />
                   <q-item
@@ -423,7 +401,7 @@
             </template>
           </div>
         </q-chat-message>
-      </template>
+      </div>
     </transition-group>
     <!-- Modal para visualizar PDF em tela cheia -->
     <q-dialog v-model="showPdfModal" persistent>
@@ -477,10 +455,6 @@ export default {
       type: Array,
       default: () => []
     },
-    mensagensParaEncaminhar: {
-      type: Array,
-      default: () => []
-    },
     ticketFocado: {
       type: Object,
       required: true
@@ -496,10 +470,6 @@ export default {
     isShowOptions: {
       type: Boolean,
       default: true
-    },
-    ativarMultiEncaminhamento: {
-      type: Boolean,
-      default: false
     },
     replyingMessage: {
       type: Object,
@@ -523,7 +493,10 @@ export default {
       showPdfModal: false,
       currentPdfUrl: '',
       currentPdfName: '',
-      buttonStates: {} // Para gerenciar estado dos botões
+      buttonStates: {}, // Para gerenciar estado dos botões
+      isAtBottom: false,
+      scrollCheckTimeout: null,
+      hoveredMessageId: null // Para controlar qual mensagem está com hover
     }
   },
   computed: {
@@ -557,26 +530,6 @@ export default {
     ...mapMutations({
       updateTicketUnreadMessages: 'UPDATE_TICKET_UNREAD_MESSAGES'
     }),
-    verificarEncaminharMensagem (mensagem) {
-      const mensagens = [...this.mensagensParaEncaminhar]
-      const msgIdx = mensagens.findIndex(m => m.id === mensagem.id)
-      if (msgIdx !== -1) {
-        mensagens.splice(msgIdx, 1)
-      } else {
-        if (this.mensagensParaEncaminhar.length > 9) {
-          this.$notificarErro('Permitido no máximo 10 mensagens.')
-          return
-        }
-        mensagens.push(mensagem)
-      }
-      this.$refs[`box-chat-message-${mensagem.id}`][0].value = !this.$refs[`box-chat-message-${mensagem.id}`][0].value
-      this.$emit('update:mensagensParaEncaminhar', mensagens)
-    },
-    marcarMensagensParaEncaminhar (mensagem) {
-      this.$emit('update:mensagensParaEncaminhar', [])
-      this.$emit('update:ativarMultiEncaminhamento', !this.ativarMultiEncaminhamento)
-      // this.verificarEncaminharMensagem(mensagem)
-    },
     getAckIcon (ack) {
       // Retorna o ícone apropriado para cada ACK
       const icons = this.ackIcons || this.localAckIcons
@@ -741,8 +694,24 @@ export default {
       this.$emit('update:replyingMessage', mensagem)
       this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
     },
-    encaminharMensagem (mensagem) {
-      this.$emit('mensagem-chat:encaminhar-mensagem', mensagem)
+    showMessageOptions (messageId) {
+      this.hoveredMessageId = messageId
+    },
+    hideMessageOptions (messageId) {
+      // Só esconder se for a mesma mensagem que está sendo hovered
+      // e se o menu não estiver aberto
+      const menuRef = this.$refs[`menu-${messageId}`]
+      const isMenuOpen = menuRef && menuRef[0] && menuRef[0].showing
+
+      if (this.hoveredMessageId === messageId && !isMenuOpen) {
+        this.hoveredMessageId = null
+      }
+    },
+    onMenuClose (messageId) {
+      // Esconder o botão quando o menu fechar
+      if (this.hoveredMessageId === messageId) {
+        this.hoveredMessageId = null
+      }
     },
     deletarMensagem (mensagem) {
       if (this.isDesactivatDelete(mensagem)) {
@@ -950,29 +919,119 @@ export default {
         const sectionKey = `section_${mensagem.id}_${sectionIndex}`
         this.$set(this.buttonStates, sectionKey, { loading: false })
       }
+    },
+    setupScrollListener () {
+      // Configurar listener para detectar quando o usuário está no final da conversa
+      this.$nextTick(() => {
+        // Tentar múltiplos seletores para encontrar o container de scroll
+        const scrollContainers = [
+          '.q-scrollarea__container',
+          '.scroll-y .q-scrollarea__container',
+          '[ref="scrollContainer"] .q-scrollarea__container',
+          '.chat-container .q-scrollarea__container'
+        ]
+
+        let scrollContainer = null
+        for (const selector of scrollContainers) {
+          scrollContainer = document.querySelector(selector)
+          if (scrollContainer) break
+        }
+
+        if (scrollContainer) {
+          // Remover listener anterior se existir
+          scrollContainer.removeEventListener('scroll', this.checkScrollPosition)
+
+          // Adicionar novo listener
+          scrollContainer.addEventListener('scroll', this.checkScrollPosition, { passive: true })
+
+          // Verificar posição inicial após um delay maior
+          setTimeout(() => {
+            this.checkScrollPosition()
+          }, 1000)
+        }
+      })
+    },
+    checkScrollPosition () {
+      // Verificar se o usuário está no final da conversa
+      const scrollContainer = document.querySelector('.q-scrollarea__container') ||
+                             document.querySelector('.scroll-y .q-scrollarea__container')
+
+      if (!scrollContainer) {
+        return
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+      const threshold = 50 // Reduzir threshold para 50px de tolerância
+
+      // Usuário está no final se a distância até o final for menor que o threshold
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+      const isAtBottom = distanceFromBottom <= threshold
+
+      if (isAtBottom && !this.isAtBottom) {
+        this.isAtBottom = true
+        // Marcar mensagens como lidas quando chegar ao final
+        this.markUnreadMessagesAsReadOnScroll()
+      } else if (!isAtBottom && this.isAtBottom) {
+        this.isAtBottom = false
+      }
+    },
+    markUnreadMessagesAsReadOnScroll () {
+      // Só marcar como lidas se há mensagens não lidas
+      if (this.ticketFocado?.unreadMessages > 0) {
+        // Debounce reduzido para 500ms para ser mais responsivo
+        if (this.scrollCheckTimeout) {
+          clearTimeout(this.scrollCheckTimeout)
+        }
+
+        this.scrollCheckTimeout = setTimeout(() => {
+          this.markUnreadMessagesAsRead()
+        }, 500) // Reduzir tempo para 500ms
+      }
     }
   },
   watch: {
     ticketFocado: {
-      handler (newTicket) {
-        if (newTicket && newTicket.id) {
-          // Marcar mensagens como lidas apenas uma vez quando o ticket muda
+      handler (newTicket, oldTicket) {
+        // Não marcar mensagens como lidas automaticamente quando ticket muda
+        // Deixar que o usuário role até o final para marcar como lidas
+        if (newTicket && newTicket.id !== oldTicket?.id) {
+          this.isAtBottom = false
+          // Reconfigurar listener quando ticket muda
           this.$nextTick(() => {
-            this.markUnreadMessagesAsRead()
+            this.setupScrollListener()
           })
         }
       },
-      immediate: true
+      immediate: false
+    },
+    // Watch para mensagens para reconfigurar listener quando novas mensagens chegarem
+    mensagens: {
+      handler () {
+        // Aguardar renderização das novas mensagens e verificar posição
+        this.$nextTick(() => {
+          setTimeout(() => {
+            this.checkScrollPosition()
+          }, 300)
+        })
+      },
+      deep: true
     }
   },
   mounted () {
     this.scrollToBottom()
-    // Marca mensagens como lidas ao montar o componente
-    this.$nextTick(() => {
-      this.markUnreadMessagesAsRead()
-    })
+    // Não marcar mensagens como lidas automaticamente ao montar
+    // Deixar que o usuário role até o final
+    this.setupScrollListener()
   },
   destroyed () {
+    // Limpar listeners e timeouts
+    const scrollContainer = document.querySelector('.q-scrollarea__container')
+    if (scrollContainer) {
+      scrollContainer.removeEventListener('scroll', this.checkScrollPosition)
+    }
+    if (this.scrollCheckTimeout) {
+      clearTimeout(this.scrollCheckTimeout)
+    }
   }
 }
 </script>
@@ -1369,6 +1428,95 @@ export default {
   100% {
     opacity: 0.9;
     transform: scale(1);
+  }
+}
+
+/* Estilo para esconder botão de opções por padrão */
+.mensagem-hover-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Mostrar botão quando a mensagem tem a classe hover ativa */
+.mensagem-hover-active .mensagem-hover-btn {
+  opacity: 1;
+}
+
+/* Garantir que o botão apareça quando o menu está aberto */
+.mensagem-hover-btn.q-btn--menu-open {
+  opacity: 1;
+}
+
+/* Garantir que o botão de opções apareça por cima de mídias e áudios */
+.mostar-btn-opcoes-chat {
+  z-index: 1000 !important;
+  position: absolute !important;
+}
+
+/* Z-index específico para aparecer por cima de elementos de mídia */
+.mensagem-hover-btn {
+  z-index: 1000 !important;
+}
+
+/* Garantir que o botão de opções apareça por cima de mídias e áudios */
+.mostar-btn-opcoes-chat {
+  z-index: 999999 !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Z-index específico para aparecer por cima de elementos de mídia */
+.mensagem-hover-btn {
+  z-index: 999999 !important;
+}
+
+/* Específico para mensagens com mídia */
+.q-chat-message .mostar-btn-opcoes-chat {
+  z-index: 999999 !important;
+}
+
+/* Garantir que funcione com áudio players e outros componentes */
+.q-message-container .mensagem-hover-btn {
+  z-index: 999999 !important;
+  position: absolute !important;
+}
+
+/* Forçar posicionamento correto em qualquer contexto */
+.absolute-top-right.mensagem-hover-btn {
+  z-index: 999999 !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Específico para elementos com mídia para garantir que o botão sempre apareça */
+.q-chat-message:has(audio),
+.q-chat-message:has(video),
+.q-chat-message:has(img),
+.q-chat-message:has(iframe) {
+  .mensagem-hover-btn {
+    z-index: 999999 !important;
+    position: absolute !important;
+  }
+}
+
+/* Forçar posicionamento correto em qualquer contexto */
+.absolute-top-right.mensagem-hover-btn {
+  z-index: 999999 !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Específico para elementos com mídia para garantir que o botão sempre apareça */
+.q-chat-message:has(audio),
+.q-chat-message:has(video),
+.q-chat-message:has(img),
+.q-chat-message:has(iframe) {
+  .mensagem-hover-btn {
+    z-index: 999999 !important;
+    position: absolute !important;
   }
 }
 </style>
