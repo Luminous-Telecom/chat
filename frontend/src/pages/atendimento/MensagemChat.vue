@@ -20,10 +20,8 @@
           id="lastMessageRef"
           style="float: left; background: black; clear: both;"
         />
-        <div
-          :id="`chat-message-${mensagem.id}`"
-        />
         <q-chat-message
+          :id="`chat-message-${mensagem.id}`"
           :stamp="dataInWords(mensagem.createdAt)"
           :sent="mensagem.fromMe"
           class="text-weight-medium"
@@ -755,32 +753,68 @@ export default {
     focarMensagem (mensagem) {
       const id = `chat-message-${mensagem.id}`
       this.identificarMensagem = id
-      this.$nextTick(() => {
+
+      // Tentar múltiplas vezes com diferentes delays para garantir que funcione
+      const tentarScroll = (tentativa = 0) => {
         const elem = document.getElementById(id)
-        if (elem) {
-          // Scroll suave com melhor posicionamento
+
+        if (elem && tentativa < 5) {
+          // Método 1: scrollIntoView
           elem.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
             inline: 'nearest'
           })
 
-          // Adicionar uma pequena vibração visual
+          // Método 2: Forçar scroll no container pai
+          setTimeout(() => {
+            const containers = [
+              elem.closest('.q-scrollarea__container'),
+              elem.closest('.chat-container'),
+              document.querySelector('.q-scrollarea__container'),
+              document.querySelector('.chat-container .q-scrollarea__container')
+            ]
+
+            for (const container of containers) {
+              if (container && container.scrollTo) {
+                const elementTop = elem.offsetTop
+                const containerHeight = container.clientHeight
+                const scrollPosition = Math.max(0, elementTop - (containerHeight / 2))
+
+                container.scrollTo({
+                  top: scrollPosition,
+                  behavior: 'smooth'
+                })
+                break
+              }
+            }
+          }, 50)
+
+          // Vibração visual
           setTimeout(() => {
             elem.style.transform = 'scale(1.02)'
+            elem.style.transition = 'transform 0.2s ease'
             setTimeout(() => {
               elem.style.transform = 'scale(1)'
             }, 200)
-          }, 500)
+          }, 300)
+        } else if (tentativa < 5) {
+          // Tentar novamente após um delay
+          setTimeout(() => tentarScroll(tentativa + 1), 100)
         } else {
-          // Se a mensagem não estiver visível, mostrar notificação
+          // Última tentativa: notificar que não encontrou
           this.$q.notify({
-            type: 'info',
-            message: 'Mensagem citada não encontrada nesta conversa',
+            type: 'warning',
+            message: 'Mensagem citada não encontrada',
             position: 'bottom-right',
-            timeout: 3000
+            timeout: 2000
           })
         }
+      }
+
+      // Começar as tentativas
+      this.$nextTick(() => {
+        tentarScroll(0)
       })
 
       // Limpar o destaque após 4 segundos
@@ -1550,7 +1584,7 @@ export default {
     left: -8px;
     right: -8px;
     bottom: -8px;
-    background: linear-gradient(45deg, rgba(25, 118, 210, 0.15), rgba(63, 81, 181, 0.15));
+    background: linear-gradient(45deg, rgba(63, 81, 181, 0.15), rgb(0, 128, 255));
     border-radius: 12px;
     pointer-events: none;
     z-index: -1;
@@ -1558,8 +1592,6 @@ export default {
   }
 
   .q-message-text {
-    border: 2px solid rgba(25, 118, 210, 0.5) !important;
-    box-shadow: 0 4px 20px rgba(25, 118, 210, 0.2) !important;
     transform: scale(1.02);
     transition: all 0.3s ease;
   }
@@ -1568,12 +1600,6 @@ export default {
 /* Modo escuro para mensagem focada */
 .body--dark .pulseIdentications {
   &::before {
-    background: linear-gradient(45deg, rgba(144, 202, 249, 0.15), rgba(121, 134, 203, 0.15));
-  }
-
-  .q-message-text {
-    border-color: rgba(144, 202, 249, 0.5) !important;
-    box-shadow: 0 4px 20px rgba(144, 202, 249, 0.2) !important;
   }
 }
 
