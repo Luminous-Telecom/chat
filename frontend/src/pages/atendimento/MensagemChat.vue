@@ -757,11 +757,36 @@ export default {
       this.identificarMensagem = id
       this.$nextTick(() => {
         const elem = document.getElementById(id)
-        elem.scrollIntoView()
+        if (elem) {
+          // Scroll suave com melhor posicionamento
+          elem.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          })
+
+          // Adicionar uma pequena vibração visual
+          setTimeout(() => {
+            elem.style.transform = 'scale(1.02)'
+            setTimeout(() => {
+              elem.style.transform = 'scale(1)'
+            }, 200)
+          }, 500)
+        } else {
+          // Se a mensagem não estiver visível, mostrar notificação
+          this.$q.notify({
+            type: 'info',
+            message: 'Mensagem citada não encontrada nesta conversa',
+            position: 'bottom-right',
+            timeout: 3000
+          })
+        }
       })
+
+      // Limpar o destaque após 4 segundos
       setTimeout(() => {
         this.identificarMensagem = null
-      }, 5000)
+      }, 4000)
     },
     async markUnreadMessagesAsRead () {
       if (!this.ticketFocado || !this.ticketFocado.id) return
@@ -1460,15 +1485,8 @@ export default {
 
 /* Garantir que o botão de opções apareça por cima de mídias e áudios */
 .mostar-btn-opcoes-chat {
-  z-index: 999999 !important;
+  z-index: 1000 !important;
   position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-}
-
-/* Z-index específico para aparecer por cima de elementos de mídia */
-.mensagem-hover-btn {
-  z-index: 999999 !important;
 }
 
 /* Específico para mensagens com mídia */
@@ -1517,6 +1535,79 @@ export default {
   .mensagem-hover-btn {
     z-index: 999999 !important;
     position: absolute !important;
+  }
+}
+
+/* Estilo para destacar mensagem focada/citada */
+.pulseIdentications {
+  animation: pulseHighlight 2s ease-in-out;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    background: linear-gradient(45deg, rgba(25, 118, 210, 0.15), rgba(63, 81, 181, 0.15));
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: -1;
+    animation: pulseGlow 2s ease-in-out;
+  }
+
+  .q-message-text {
+    border: 2px solid rgba(25, 118, 210, 0.5) !important;
+    box-shadow: 0 4px 20px rgba(25, 118, 210, 0.2) !important;
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+  }
+}
+
+/* Modo escuro para mensagem focada */
+.body--dark .pulseIdentications {
+  &::before {
+    background: linear-gradient(45deg, rgba(144, 202, 249, 0.15), rgba(121, 134, 203, 0.15));
+  }
+
+  .q-message-text {
+    border-color: rgba(144, 202, 249, 0.5) !important;
+    box-shadow: 0 4px 20px rgba(144, 202, 249, 0.2) !important;
+  }
+}
+
+/* Animações para destaque da mensagem */
+@keyframes pulseHighlight {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.03);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  75% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
   }
 }
 </style>

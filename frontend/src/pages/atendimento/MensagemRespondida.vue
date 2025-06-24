@@ -8,7 +8,7 @@
     <q-chat-message
       :key="mensagem.id"
       :sent="mensagem.fromMe"
-      class="text-weight-medium fit q-ma-none"
+      class="text-weight-medium fit q-ma-none cursor-pointer"
       id="chat-message-resp"
       style="min-width: 100px; max-width: 350px"
       :class="{
@@ -16,6 +16,7 @@
         'q-message-text--group': isGroupLabel(mensagem),
         'q-message-text--media': ['image', 'video', 'audio'].includes(mensagem.mediaType)
       }"
+      @click="focarElemento(mensagem)"
     >
       <!-- @click="focarElemento(mensagem)" -->
 
@@ -459,6 +460,19 @@ export default {
 
 // Estilos específicos para mensagens de resposta
 #chat-message-resp {
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    .q-message-text {
+      background: rgba(25, 118, 210, 0.08) !important;
+      border-left-color: rgba(25, 118, 210, 0.8) !important;
+    }
+  }
+
   .q-message-text {
     background: rgba(0, 0, 0, 0.05) !important;
     border-radius: 8px !important;
@@ -468,6 +482,7 @@ export default {
     max-width: 100% !important;
     margin: 0 !important;
     box-shadow: none !important;
+    transition: all 0.2s ease;
 
     &::before {
       display: none !important;
@@ -494,6 +509,15 @@ export default {
 
 // Modo escuro para mensagens de resposta
 .body--dark #chat-message-resp {
+  &:hover {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+
+    .q-message-text {
+      background: rgba(144, 202, 249, 0.15) !important;
+      border-left-color: rgba(144, 202, 249, 0.8) !important;
+    }
+  }
+
   .q-message-text {
     background: rgba(255, 255, 255, 0.1) !important;
   }
