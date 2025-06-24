@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/valid-v-for -->
 <template>
   <div class="q-pa-md">
 
@@ -6,28 +7,23 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <template v-for="(mensagem, index) in mensagens">
+      <div v-for="(mensagem, index) in mensagens" :key="`msg-wrapper-${mensagem.id}-${index}`">
         <hr
           v-if="isLineDate"
-          :key="`hr-${mensagem.id}-${index}`"
           class="hr-text q-mt-lg q-mb-md"
           :data-content="formatarData(mensagem.createdAt)"
           v-show="index === 0 || formatarData(mensagem.createdAt) !== formatarData(mensagens[index - 1].createdAt)"
-        >
-        <template v-if="mensagens.length && index === mensagens.length - 1">
-          <div
-            :key="`ref-${mensagem.id}-${mensagem.createdAt}`"
-            ref="lastMessageRef"
-            id="lastMessageRef"
-            style="float: left; background: black; clear: both;"
-          />
-        </template>
+        />
         <div
-          :key="`chat-message-container-${mensagem.id}`"
+          v-if="mensagens.length && index === mensagens.length - 1"
+          ref="lastMessageRef"
+          id="lastMessageRef"
+          style="float: left; background: black; clear: both;"
+        />
+        <div
           :id="`chat-message-${mensagem.id}`"
         />
         <q-chat-message
-          :key="`chat-message-${mensagem.id}`"
           :stamp="dataInWords(mensagem.createdAt)"
           :sent="mensagem.fromMe"
           class="text-weight-medium"
@@ -405,7 +401,7 @@
             </template>
           </div>
         </q-chat-message>
-      </template>
+      </div>
     </transition-group>
     <!-- Modal para visualizar PDF em tela cheia -->
     <q-dialog v-model="showPdfModal" persistent>
@@ -1453,6 +1449,17 @@ export default {
 
 /* Garantir que o botão de opções apareça por cima de mídias e áudios */
 .mostar-btn-opcoes-chat {
+  z-index: 1000 !important;
+  position: absolute !important;
+}
+
+/* Z-index específico para aparecer por cima de elementos de mídia */
+.mensagem-hover-btn {
+  z-index: 1000 !important;
+}
+
+/* Garantir que o botão de opções apareça por cima de mídias e áudios */
+.mostar-btn-opcoes-chat {
   z-index: 999999 !important;
   position: absolute !important;
   top: 8px !important;
@@ -1473,6 +1480,25 @@ export default {
 .q-message-container .mensagem-hover-btn {
   z-index: 999999 !important;
   position: absolute !important;
+}
+
+/* Forçar posicionamento correto em qualquer contexto */
+.absolute-top-right.mensagem-hover-btn {
+  z-index: 999999 !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Específico para elementos com mídia para garantir que o botão sempre apareça */
+.q-chat-message:has(audio),
+.q-chat-message:has(video),
+.q-chat-message:has(img),
+.q-chat-message:has(iframe) {
+  .mensagem-hover-btn {
+    z-index: 999999 !important;
+    position: absolute !important;
+  }
 }
 
 /* Forçar posicionamento correto em qualquer contexto */
