@@ -427,7 +427,15 @@ export default {
     'ticketFocado.status': {
       handler (newStatus, oldStatus) {
         if (newStatus === 'pending') {
-        } else {
+        } else if (newStatus === 'open' && oldStatus !== 'open') {
+          // Quando o ticket for aberto (mudança de status para 'open'), focar o input
+          this.$nextTick(() => {
+            setTimeout(() => {
+              if (this.$refs.inputEnvioMensagem) {
+                this.$refs.inputEnvioMensagem.focus()
+              }
+            }, 300)
+          })
         }
       },
       immediate: true
@@ -436,6 +444,14 @@ export default {
     ticketFocado: {
       handler (newTicket, oldTicket) {
         if (newTicket.id !== oldTicket?.id) {
+          // Quando um novo ticket é selecionado, focar o input automaticamente
+          this.$nextTick(() => {
+            setTimeout(() => {
+              if (this.$refs.inputEnvioMensagem && newTicket.status === 'open') {
+                this.$refs.inputEnvioMensagem.focus()
+              }
+            }, 300)
+          })
         }
       },
       deep: true
@@ -941,6 +957,15 @@ export default {
     if (![null, undefined].includes(LocalStorage.getItem('sign'))) {
       this.handleSign(LocalStorage.getItem('sign'))
     }
+
+    // Autofocus inicial - se já há um ticket aberto quando o componente é montado
+    this.$nextTick(() => {
+      setTimeout(() => {
+        if (this.ticketFocado?.id && this.ticketFocado.status === 'open' && this.$refs.inputEnvioMensagem) {
+          this.$refs.inputEnvioMensagem.focus()
+        }
+      }, 500)
+    })
   },
   beforeDestroy () {
     const self = this
