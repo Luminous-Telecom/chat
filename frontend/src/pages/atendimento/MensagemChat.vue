@@ -1450,4 +1450,47 @@ export default {
 .mensagem-hover-btn.q-btn--menu-open {
   opacity: 1;
 }
+
+/* Garantir que o botão de opções apareça por cima de mídias e áudios */
+.mostar-btn-opcoes-chat {
+  z-index: 999999 !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Z-index específico para aparecer por cima de elementos de mídia */
+.mensagem-hover-btn {
+  z-index: 999999 !important;
+}
+
+/* Específico para mensagens com mídia */
+.q-chat-message .mostar-btn-opcoes-chat {
+  z-index: 999999 !important;
+}
+
+/* Garantir que funcione com áudio players e outros componentes */
+.q-message-container .mensagem-hover-btn {
+  z-index: 999999 !important;
+  position: absolute !important;
+}
+
+/* Forçar posicionamento correto em qualquer contexto */
+.absolute-top-right.mensagem-hover-btn {
+  z-index: 999999 !important;
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+}
+
+/* Específico para elementos com mídia para garantir que o botão sempre apareça */
+.q-chat-message:has(audio),
+.q-chat-message:has(video),
+.q-chat-message:has(img),
+.q-chat-message:has(iframe) {
+  .mensagem-hover-btn {
+    z-index: 999999 !important;
+    position: absolute !important;
+  }
+}
 </style>
