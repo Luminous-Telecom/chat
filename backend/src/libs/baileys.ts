@@ -17,29 +17,49 @@ import Whatsapp from "../models/Whatsapp";
 let socketIO: any;
 let setupAdditionalHandlers: any;
 
+// Cache para evitar múltiplas importações
+const moduleCache = new Map<string, any>();
+
 // Lazy load modules to avoid circular dependencies
 const getSocketIO = async () => {
   if (!socketIO) {
-    const socketModule = await import("./socket");
-    socketIO = socketModule.getIO();
+    if (moduleCache.has('socket')) {
+      socketIO = moduleCache.get('socket');
+    } else {
+      const socketModule = await import("./socket");
+      socketIO = socketModule.getIO();
+      moduleCache.set('socket', socketIO);
+    }
   }
   return socketIO;
 };
 
 const getSetupAdditionalHandlers = async () => {
   if (!setupAdditionalHandlers) {
-    const module = await import("../services/WbotServices/StartWhatsAppSession");
-    setupAdditionalHandlers = module.setupAdditionalHandlers;
+    if (moduleCache.has('handlers')) {
+      setupAdditionalHandlers = moduleCache.get('handlers');
+    } else {
+      const module = await import("../services/WbotServices/StartWhatsAppSession");
+      setupAdditionalHandlers = module.setupAdditionalHandlers;
+      moduleCache.set('handlers', setupAdditionalHandlers);
+    }
   }
   return setupAdditionalHandlers;
 };
 
+// Cache para versão do Baileys
+let baileysVersion: string | null = null;
+
 const getBaileysVersion = async () => {
+  if (baileysVersion) return baileysVersion;
+  
   try {
     const packageJson = require("@whiskeysockets/baileys/package.json");
-    return packageJson.version;
+    baileysVersion = packageJson.version;
+    return baileysVersion;
   } catch (err) {
-    return "unknown";
+    baileysVersion = "unknown";
+    return baileysVersion;
   }
 };
 
@@ -52,11 +72,16 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 // Track sessions being initialized to prevent duplicates
 const initializingSession = new Set<number>();
 
-// Sistema de throttling otimizado para resposta mais rápida
+// Sistema de fila otimizado com throttling inteligente
 const messageQueue = new Map<number, proto.IWebMessageInfo[]>();
 const processingLock = new Set<number>();
-const MAX_QUEUE_SIZE = 100; // Aumentado para permitir mais mensagens em fila
-const PROCESSING_DELAY = 10; // Reduzido drasticamente de 50ms para 10ms
+const lastProcessTime = new Map<number, number>();
+
+// Configurações otimizadas
+const MAX_QUEUE_SIZE = 200; // Aumentado para suportar mais mensagens
+const PROCESSING_DELAY = 5; // Reduzido para processamento mais rápido
+const BATCH_SIZE = 15; // Aumentado para processar mais mensagens por vez
+const IDLE_TIMEOUT = 300000; // 5 minutos para limpeza de filas inativas
 
 const processMessageQueue = async (whatsappId: number): Promise<void> => {
   if (processingLock.has(whatsappId)) {
@@ -69,39 +94,57 @@ const processMessageQueue = async (whatsappId: number): Promise<void> => {
   }
 
   processingLock.add(whatsappId);
+  lastProcessTime.set(whatsappId, Date.now());
 
   try {
-    // Processar mensagens em lotes maiores para melhor performance
-    const batchSize = 10; // Aumentado de 5 para 10 mensagens por lote
-    const batch = queue.splice(0, batchSize);
+    // Processar em lotes maiores para melhor throughput
+    const batch = queue.splice(0, BATCH_SIZE);
 
-    // Processar mensagens em paralelo dentro do lote para máxima velocidade
-    const processingPromises = batch.map(async (msg) => {
+    // Filtrar grupos antes do processamento pesado
+    const filteredBatch = batch.filter(msg => {
+      const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
+      return !isGroup; // Só processa se não for grupo
+    });
+
+    if (filteredBatch.length === 0) {
+      // Se só tinha mensagens de grupo, processar próximo lote imediatamente
+      if (queue.length > 0) {
+        setImmediate(() => processMessageQueue(whatsappId));
+      }
+      return;
+    }
+
+    // Cache do handler para evitar imports repetitivos
+    const handleBaileysMessage = moduleCache.get('baileysHandler') || 
+      (await import("../services/BaileysServices/HandleBaileysMessage")).default;
+    
+    if (!moduleCache.has('baileysHandler')) {
+      moduleCache.set('baileysHandler', handleBaileysMessage);
+    }
+
+    const session = getBaileysSession(whatsappId);
+    if (!session) {
+      baseLogger.warn(`[processMessageQueue] Session ${whatsappId} not found`);
+      return;
+    }
+
+    // Processar mensagens em paralelo com controle de erro individual
+    const processingPromises = filteredBatch.map(async (msg, index) => {
       try {
-        // Sempre ignorar mensagens de grupos
-        const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
-        
-        if (isGroup) {
-          return; // Ignora totalmente mensagens de grupos
-        }
-
-        const { default: HandleBaileysMessage } = await import("../services/BaileysServices/HandleBaileysMessage");
-        const session = getBaileysSession(whatsappId);
-        
-        if (session) {
-          await HandleBaileysMessage(msg, session);
-        }
+        await handleBaileysMessage(msg, session);
       } catch (msgErr) {
-        baseLogger.error(`[processMessageQueue] Error processing message: ${msgErr}`);
+        baseLogger.error(`[processMessageQueue] Error processing message ${index}: ${msgErr}`);
       }
     });
 
-    // Aguardar todas as mensagens do lote serem processadas
-    await Promise.all(processingPromises);
+    // Aguardar todas as mensagens do lote
+    await Promise.allSettled(processingPromises);
     
-    // Delay mínimo apenas entre lotes, não entre mensagens individuais
+    // Processamento contínuo otimizado
     if (queue.length > 0) {
-      await new Promise(resolve => setTimeout(resolve, PROCESSING_DELAY));
+      // Delay adaptativo baseado no tamanho da fila
+      const adaptiveDelay = queue.length > 50 ? 1 : PROCESSING_DELAY;
+      await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
       setImmediate(() => processMessageQueue(whatsappId));
     }
   } catch (err) {
@@ -112,25 +155,45 @@ const processMessageQueue = async (whatsappId: number): Promise<void> => {
 };
 
 const addToMessageQueue = (whatsappId: number, msg: proto.IWebMessageInfo): void => {
+  // Filtro rápido de grupos no ponto de entrada
+  const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
+  if (isGroup) {
+    return; // Não adiciona grupos à fila
+  }
+
   if (!messageQueue.has(whatsappId)) {
     messageQueue.set(whatsappId, []);
   }
 
   const queue = messageQueue.get(whatsappId)!;
   
-  // Limitar tamanho da fila
+  // Gestão inteligente da fila
   if (queue.length >= MAX_QUEUE_SIZE) {
-    baseLogger.warn(`[addToMessageQueue] Queue full for session ${whatsappId}, dropping oldest message`);
-    queue.shift(); // Remove a mensagem mais antiga
+    // Remove mensagens mais antigas, mas preserva as mais recentes
+    const toRemove = Math.floor(queue.length * 0.2); // Remove 20% das mais antigas
+    queue.splice(0, toRemove);
+    baseLogger.warn(`[addToMessageQueue] Queue optimized for session ${whatsappId}, removed ${toRemove} old messages`);
   }
 
   queue.push(msg);
   
-  // Iniciar processamento se não estiver em execução
+  // Iniciar processamento otimizado
   setImmediate(() => processMessageQueue(whatsappId));
 };
 
-// Enhanced session removal with better cleanup
+// Limpeza periódica de filas inativas
+setInterval(() => {
+  const now = Date.now();
+  for (const [whatsappId, lastTime] of lastProcessTime.entries()) {
+    if (now - lastTime > IDLE_TIMEOUT) {
+      messageQueue.delete(whatsappId);
+      lastProcessTime.delete(whatsappId);
+      baseLogger.debug(`[cleanup] Removed idle queue for session ${whatsappId}`);
+    }
+  }
+}, IDLE_TIMEOUT);
+
+// Enhanced session removal with optimized cleanup
 export const removeBaileysSession = async (
   whatsappId: number
 ): Promise<void> => {
@@ -140,48 +203,59 @@ export const removeBaileysSession = async (
     try {
       baseLogger.info(`Cleaning up session for WhatsApp ID: ${whatsappId}`);
 
-      // Remove from initializing set if present
+      // Limpeza otimizada
       initializingSession.delete(whatsappId);
+      messageQueue.delete(whatsappId);
+      processingLock.delete(whatsappId);
+      lastProcessTime.delete(whatsappId);
 
-      // Remove all event listeners to prevent memory leaks
+      // Remove event listeners essenciais (otimizado)
+      const criticalEvents = [
+        "connection.update",
+        "creds.update", 
+        "messages.upsert",
+        "messages.update"
+      ];
+
       try {
-        session.ev.removeAllListeners("connection.update");
-        session.ev.removeAllListeners("creds.update");
-        session.ev.removeAllListeners("messages.upsert");
-        session.ev.removeAllListeners("messages.update");
-        session.ev.removeAllListeners("message-receipt.update");
-        session.ev.removeAllListeners("presence.update");
-        session.ev.removeAllListeners("contacts.update");
-        session.ev.removeAllListeners("chats.update");
-        session.ev.removeAllListeners("groups.update");
-        session.ev.removeAllListeners("group-participants.update");
-        session.ev.removeAllListeners("blocklist.set");
-        session.ev.removeAllListeners("blocklist.update");
-        session.ev.removeAllListeners("call");
+        criticalEvents.forEach(event => {
+          session.ev.removeAllListeners(event);
+        });
 
-        try {
-          session.ev.removeAllListeners("labels.edit" as any);
-          session.ev.removeAllListeners("labels.association" as any);
-        } catch (labelErr) {
-          // Ignore if these events don't exist
-        }
+        // Remove outros listeners em lote
+        const otherEvents = [
+          "message-receipt.update", "presence.update", "contacts.update",
+          "chats.update", "groups.update", "group-participants.update",
+          "blocklist.set", "blocklist.update", "call"
+        ];
+
+        otherEvents.forEach(event => {
+          try {
+            session.ev.removeAllListeners(event);
+          } catch (e) {
+            // Ignorar se evento não existir
+          }
+        });
       } catch (eventErr) {
         baseLogger.warn(`Error removing event listeners: ${eventErr}`);
       }
 
-      // Close connection gracefully
+      // Logout otimizado
       try {
         const wsState = (session as any)?.ws?.readyState;
-        if (wsState === 1) {
-          // WebSocket.OPEN
-          await session.logout();
-          baseLogger.info(`Successfully logged out session ${whatsappId}`);
+        if (wsState === 1) { // WebSocket.OPEN
+          // Timeout rápido para logout
+          const logoutPromise = session.logout();
+          const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+          
+          await Promise.race([logoutPromise, timeoutPromise]);
+          baseLogger.info(`Session ${whatsappId} logout completed`);
         }
       } catch (err) {
         baseLogger.warn(`Error during logout: ${err}`);
       }
 
-      // Remove from sessions array
+      // Remove da lista de sessões
       sessions.splice(sessionIndex, 1);
       baseLogger.info(`Session ${whatsappId} removed from active sessions`);
 
@@ -191,70 +265,72 @@ export const removeBaileysSession = async (
   }
 };
 
-// Simple session getter otimizado
+// Session getter otimizado com cache
+const sessionStatusCache = new Map<number, { status: string; timestamp: number }>();
+const CACHE_TTL = 5000; // 5 segundos de cache
+
 export const getBaileysSession = (
   whatsappId: number
 ): BaileysClient | undefined => {
   const session = sessions.find(s => s.id === whatsappId);
   if (!session) return undefined;
 
+  // Verificação de status com cache
+  const now = Date.now();
+  const cached = sessionStatusCache.get(whatsappId);
+  
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    if (cached.status === "unusable") return undefined;
+    return session;
+  }
+
   const connectionState = (session as any)?.connection;
   
-  // OTIMIZADO: Sessão é usável se estiver open, connecting ou até mesmo undefined durante reconexão
-  const isUsable = connectionState === "open" || 
-                   connectionState === "connecting" ||
-                   connectionState === undefined; // Durante transições
+  // Estados utilizáveis otimizados
+  const usableStates = ["open", "connecting"];
+  const isUsable = usableStates.includes(connectionState);
+
+  // Cache do resultado
+  sessionStatusCache.set(whatsappId, {
+    status: isUsable ? "usable" : "unusable",
+    timestamp: now
+  });
 
   if (!isUsable && connectionState === "close") {
-    // Log apenas quando realmente fechada
-    baseLogger.warn(
-      `Session ${whatsappId} is closed - connection: ${connectionState}`
-    );
+    baseLogger.warn(`Session ${whatsappId} is closed - connection: ${connectionState}`);
     return undefined;
   }
 
   return session;
 };
 
-// Main function to initialize Baileys
+// Main function to initialize Baileys with optimizations
 export async function initBaileys(
   whatsapp: Whatsapp,
   phoneNumber?: string
 ): Promise<BaileysClient> {
   try {
-    // Prevent multiple simultaneous initializations for the same session
+    // Prevent multiple simultaneous initializations
     if (initializingSession.has(whatsapp.id)) {
-      baseLogger.info(
-        `Session ${whatsapp.name} is already being initialized, skipping`
-      );
+      baseLogger.info(`Session ${whatsapp.name} already initializing, skipping`);
       throw new Error("Session already being initialized");
     }
 
     initializingSession.add(whatsapp.id);
 
-    baseLogger.info(
-      `Initializing WhatsApp session for ${whatsapp.name} (ID: ${whatsapp.id})`
-    );
+    baseLogger.info(`Initializing WhatsApp session for ${whatsapp.name} (ID: ${whatsapp.id})`);
 
-    // Se estiver tentando conectar por número, limpar completamente a sessão primeiro
+    // Phone number mode optimization
     if (phoneNumber) {
-      baseLogger.info("Phone number mode detected - clearing session completely");
+      baseLogger.info("Phone number mode - clearing session");
 
-      // Remove existing session if any
       const existingSession = sessions.find(s => s.id === whatsapp.id);
       if (existingSession) {
-        baseLogger.info("Removing existing session before starting phone number mode");
         await removeBaileysSession(whatsapp.id);
       }
 
-      // Clear session directory
-      const sessionDir = join(
-        __dirname,
-        "..",
-        "..",
-        "session",
-        `session-${whatsapp.id}`
-      );
+      // Clear session directory with error handling
+      const sessionDir = join(__dirname, "..", "..", "session", `session-${whatsapp.id}`);
       try {
         await rm(sessionDir, { recursive: true, force: true });
         baseLogger.info(`Session directory cleared for ${whatsapp.name}`);
@@ -262,23 +338,20 @@ export async function initBaileys(
         baseLogger.warn(`Error clearing session directory: ${err}`);
       }
 
-      // Update status in database
       await whatsapp.update({
         status: "CONNECTING",
         qrcode: "",
         retries: 0
       });
 
-      // Small delay to ensure everything is cleaned
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Reduced delay for faster startup
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    // Check if we've exceeded max reconnection attempts
+    // Check retry limits
     const currentRetries = whatsapp.retries || 0;
     if (currentRetries >= MAX_RECONNECT_ATTEMPTS) {
-      baseLogger.error(
-        `Maximum reconnection attempts (${MAX_RECONNECT_ATTEMPTS}) reached for ${whatsapp.name}`
-      );
+      baseLogger.error(`Max reconnection attempts reached for ${whatsapp.name}`);
       await whatsapp.update({
         status: "DISCONNECTED",
         qrcode: "",
@@ -287,55 +360,49 @@ export async function initBaileys(
       throw new Error("Maximum reconnection attempts reached");
     }
 
-    // Check if there's already an active session
+    // Cleanup existing session if any
     const existingSession = sessions.find(s => s.id === whatsapp.id);
     if (existingSession) {
-      baseLogger.info(
-        `Session ${whatsapp.name} already exists, cleaning up first`
-      );
+      baseLogger.info(`Cleaning up existing session for ${whatsapp.name}`);
       await removeBaileysSession(whatsapp.id);
-      // Pequeno delay após limpeza para estabilidade
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 200)); // Reduced delay
     }
 
-    const sessionDir = join(
-      __dirname,
-      "..",
-      "..",
-      "session",
-      `session-${whatsapp.id}`
-    );
+    // Initialize auth state
+    const sessionDir = join(__dirname, "..", "..", "session", `session-${whatsapp.id}`);
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-    baseLogger.info("Created new auth state for session");
 
+    // Optimized socket configuration
     const wbot = makeWASocket({
       auth: state,
       printQRInTerminal: false,
       browser: Browsers.macOS("Chrome"),
-      connectTimeoutMs: phoneNumber ? 45000 : 15000, // Otimizado para conexão mais rápida
-      defaultQueryTimeoutMs: 15000, // Reduzido para 15s para respostas mais rápidas
+      connectTimeoutMs: phoneNumber ? 45000 : 12000, // Reduced for faster connection
+      defaultQueryTimeoutMs: 10000, // Reduced for faster responses
       emitOwnEvents: false,
       generateHighQualityLinkPreview: false,
       markOnlineOnConnect: false,
-      retryRequestDelayMs: phoneNumber ? 3000 : 1000, // Reconexões muito mais rápidas
+      retryRequestDelayMs: phoneNumber ? 2000 : 500, // Much faster retries
       syncFullHistory: false,
       shouldSyncHistoryMessage: () => false,
-      keepAliveIntervalMs: 5000, // Mais frequente para manter conexão ativa
-      qrTimeout: phoneNumber ? 0 : 25000, // Reduzido para QR mais rápido
-      getMessage: async (key) => {
-        // Otimizado: retornar undefined rapidamente para não buscar mensagens antigas
-        return undefined;
-      },
+      keepAliveIntervalMs: 10000, // Balanced keep-alive
+      qrTimeout: phoneNumber ? 0 : 20000, // Faster QR timeout
+      getMessage: async () => undefined, // Always return undefined quickly
       shouldIgnoreJid: (jid) => {
-        return !!(jid && typeof jid === 'string' && (jid.includes('@broadcast') || jid.includes('@newsletter')));
+        // Optimized JID filtering
+        if (!jid || typeof jid !== 'string') return false;
+        return jid.includes('@broadcast') || 
+               jid.includes('@newsletter') || 
+               jid.endsWith('@g.us'); // Also ignore groups at socket level
       },
       linkPreviewImageThumbnailWidth: 0,
       fireInitQueries: true,
       transactionOpts: {
-        maxCommitRetries: phoneNumber ? 5 : 2, // Reduzido ainda mais
-        delayBetweenTriesMs: phoneNumber ? 2000 : 1000 // Delays muito menores
+        maxCommitRetries: phoneNumber ? 3 : 1, // Reduced retries
+        delayBetweenTriesMs: phoneNumber ? 1000 : 500 // Faster delays
       },
       patchMessageBeforeSending: message => {
+        // Optimized message patching
         const requiresPatch = !!(
           message.buttonsMessage ||
           message.templateMessage ||
@@ -356,46 +423,49 @@ export async function initBaileys(
         }
         return message;
       },
-      logger: pino({ level: "error" })
+      logger: pino({ level: "silent" }) // Completely silent for performance
     }) as BaileysClient;
 
     // Add necessary properties
     (wbot as any).id = whatsapp.id;
     (wbot as any).connection = "connecting";
 
-    // Set up credentials handler
+    // Optimized credentials handler with debouncing
+    let credsSaveTimeout: NodeJS.Timeout;
     wbot.ev.on("creds.update", async () => {
-      try {
-        await saveCreds();
-        baseLogger.info(`Credentials updated for session ${whatsapp.id}`);
-        await whatsapp.update({ retries: 0 });
-      } catch (err) {
-        baseLogger.error(`Error saving credentials: ${err}`);
-      }
+      clearTimeout(credsSaveTimeout);
+      credsSaveTimeout = setTimeout(async () => {
+        try {
+          await saveCreds();
+          baseLogger.info(`Credentials updated for session ${whatsapp.id}`);
+          await whatsapp.update({ retries: 0 });
+        } catch (err) {
+          baseLogger.error(`Error saving credentials: ${err}`);
+        }
+      }, 1000); // Debounce saves
     });
 
-    // Connection update handler - simplified to use native reconnection
+    // Optimized connection update handler
     wbot.ev.on("connection.update", async update => {
       const { connection, lastDisconnect, qr } = update;
 
       // Update connection state
       (wbot as any).connection = connection;
+      
+      // Invalidate cache on connection change
+      sessionStatusCache.delete(whatsapp.id);
 
-      // Ignore QR codes if using phone number
       if (phoneNumber && qr) {
-        baseLogger.debug("QR code received during phone number mode - ignoring");
-        return;
+        return; // Ignore QR in phone mode
       }
 
       if (qr) {
-        baseLogger.info(`QR Code received for ${whatsapp.name}`);
         await whatsapp.update({
           status: "qrcode",
           qrcode: qr,
           retries: 0
         });
         
-        // Emit event to frontend with new QR code
         const io = await getSocketIO();
         io.emit(`${whatsapp.tenantId}:whatsappSession`, {
           action: "update",
@@ -408,12 +478,10 @@ export async function initBaileys(
             tenantId: whatsapp.tenantId
           }
         });
-        baseLogger.info(`QR Code generated for ${whatsapp.name} - notified frontend`);
         return;
       }
 
       if (connection === "connecting") {
-        baseLogger.info(`Session ${whatsapp.name} is connecting...`);
         await whatsapp.update({
           status: "CONNECTING",
           qrcode: ""
@@ -422,16 +490,11 @@ export async function initBaileys(
 
       if (connection === "close") {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const errorMessage = lastDisconnect?.error?.message || "Unknown error";
-
-        baseLogger.info(
-          `Connection closed for ${whatsapp.name} (status code: ${statusCode}, error: ${errorMessage})`
-        );
-
+        
         // Clean up session first
         await removeBaileysSession(whatsapp.id);
 
-        // Define when NOT to reconnect (fatal errors)
+        // Optimized fatal error check
         const fatalErrors = [
           DisconnectReason.loggedOut,
           DisconnectReason.forbidden,
@@ -439,27 +502,15 @@ export async function initBaileys(
           DisconnectReason.multideviceMismatch
         ];
 
-        const shouldReconnect = 
-          !fatalErrors.includes(statusCode) && 
-          currentRetries < MAX_RECONNECT_ATTEMPTS;
+        const shouldReconnect = !fatalErrors.includes(statusCode) && 
+                               currentRetries < MAX_RECONNECT_ATTEMPTS;
 
         if (!shouldReconnect) {
           if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
-            baseLogger.info(
-              `Session ${whatsapp.name} logged out - clearing session and requiring new QR`
-            );
-
-            // Clear the session directory to force new QR generation
-            const sessionDir = join(
-              __dirname,
-              "..",
-              "..",
-              "session",
-              `session-${whatsapp.id}`
-            );
+            // Clear session directory for fresh start
+            const sessionDir = join(__dirname, "..", "..", "session", `session-${whatsapp.id}`);
             try {
               await rm(sessionDir, { recursive: true, force: true });
-              baseLogger.info(`Cleared session directory for ${whatsapp.name}`);
             } catch (err) {
               baseLogger.warn(`Could not clear session directory: ${err}`);
             }
@@ -473,9 +524,9 @@ export async function initBaileys(
           return;
         }
 
-        // Simple reconnection with delay
+        // Optimized reconnection with exponential backoff
         const newRetries = currentRetries + 1;
-        const retryDelay = Math.min(5000 * newRetries, 30000); // Max 30 seconds
+        const retryDelay = Math.min(2000 * Math.pow(2, newRetries - 1), 30000); // Exponential backoff
 
         await whatsapp.update({
           status: "DISCONNECTED",
@@ -483,23 +534,12 @@ export async function initBaileys(
           retries: newRetries
         });
 
-        baseLogger.info(
-          `Scheduling reconnection attempt ${newRetries}/${MAX_RECONNECT_ATTEMPTS} in ${retryDelay}ms`
-        );
-
         setTimeout(async () => {
           try {
-            // Double-check we're not already initializing
             if (initializingSession.has(whatsapp.id)) {
-              baseLogger.info(
-                `Session ${whatsapp.name} already initializing, skipping`
-              );
-              return;
+              return; // Already initializing
             }
 
-            baseLogger.info(`Reconnection attempt ${newRetries} for ${whatsapp.name}`);
-
-            // Refresh whatsapp data before reconnecting
             await whatsapp.reload();
             const newSession = await initBaileys(whatsapp, phoneNumber);
             sessions.push(newSession);
@@ -507,7 +547,6 @@ export async function initBaileys(
             baseLogger.error(`Reconnection attempt ${newRetries} failed: ${err}`);
 
             if (newRetries >= MAX_RECONNECT_ATTEMPTS) {
-              baseLogger.error(`All reconnection attempts exhausted for ${whatsapp.name}`);
               await whatsapp.update({
                 status: "DISCONNECTED",
                 qrcode: "",
@@ -519,14 +558,13 @@ export async function initBaileys(
       }
 
       if (connection === "open") {
-        baseLogger.info(`Session ${whatsapp.name} connected successfully!`);
         await whatsapp.update({
           status: "CONNECTED",
           qrcode: "",
           retries: 0
         });
 
-        // Setup message handlers after successful connection
+        // Setup handlers after successful connection
         try {
           const setupHandlers = await getSetupAdditionalHandlers();
           setupHandlers(wbot, whatsapp);
@@ -535,7 +573,7 @@ export async function initBaileys(
           baseLogger.error(`Error setting up message handlers: ${err}`);
         }
 
-        // Emit event to frontend when successfully connected
+        // Emit connection event
         const io = await getSocketIO();
         io.emit(`${whatsapp.tenantId}:whatsappSession`, {
           action: "update",
@@ -551,98 +589,57 @@ export async function initBaileys(
       }
     });
 
-    // Add session to active sessions list
+    // Add session to active sessions
     sessions.push(wbot);
-    baseLogger.info(`WhatsApp session initialized for ${whatsapp.name}`);
-
-    // Remove from initializing set after successful initialization
     initializingSession.delete(whatsapp.id);
 
-    // Implement pairing code flow if phoneNumber is present
+    // Optimized pairing code flow
     if (phoneNumber) {
-      baseLogger.info(`Starting authentication via number: ${phoneNumber}`);
-
-      // Wait for connection to be ready before attempting pairing
       const waitForConnection = async () => {
-        let attempts = 0;
-        const maxAttempts = 3;
+        return new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error("Connection timeout"));
+          }, 30000);
 
-        while (attempts < maxAttempts) {
-          try {
-            baseLogger.debug(`Attempt ${attempts + 1} to wait for connection for pairing...`);
-
-            await new Promise<void>((resolve, reject) => {
-              const timeout = setTimeout(() => {
-                reject(new Error("Timeout waiting for connection"));
-              }, 30000);
-
-              const checkConnection = () => {
-                if ((wbot as any).connection === "open" && (wbot as any).ws) {
-                  clearTimeout(timeout);
-                  resolve();
-                } else if ((wbot as any).connection === "close") {
-                  clearTimeout(timeout);
-                  reject(new Error("Connection closed before pairing"));
-                } else {
-                  setTimeout(checkConnection, 1000);
-                }
-              };
-
-              checkConnection();
-            });
-
-            baseLogger.debug(`Connection ready for pairing on attempt ${attempts + 1}`);
-            return;
-          } catch (err: any) {
-            attempts++;
-            baseLogger.warn(`Failed attempt ${attempts} to wait for connection: ${err.message}`);
-
-            if (attempts < maxAttempts) {
-              baseLogger.info("Waiting before next attempt...");
-              await new Promise(resolve => setTimeout(resolve, 5000));
+          const checkConnection = () => {
+            const state = (wbot as any).connection;
+            if (state === "open" && (wbot as any).ws) {
+              clearTimeout(timeout);
+              resolve();
+            } else if (state === "close") {
+              clearTimeout(timeout);
+              reject(new Error("Connection closed"));
+            } else {
+              setTimeout(checkConnection, 500); // Check every 500ms
             }
-          }
-        }
+          };
 
-        throw new Error(`Failed all ${maxAttempts} attempts to establish connection`);
+          checkConnection();
+        });
       };
 
       try {
         await waitForConnection();
-        baseLogger.debug("Connection established successfully for pairing");
-
-        // Small delay to ensure stability
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced delay
 
         if (typeof wbot.requestPairingCode === "function") {
           try {
-            baseLogger.debug(`Starting requestPairingCode for ${whatsapp.name}`);
             const pairingCode = await wbot.requestPairingCode(phoneNumber);
+            baseLogger.info(`Pairing code generated for ${whatsapp.name}: ${pairingCode}`);
 
-            baseLogger.info(`Pairing code generated successfully for ${whatsapp.name}: ${pairingCode}`);
-
-            // Emit pairing code to frontend via websocket
             const io = await getSocketIO();
             io.emit(`${whatsapp.tenantId}:pairingCode`, {
               whatsappId: whatsapp.id,
               pairingCode
             });
-
-            baseLogger.debug("Pairing code sent to frontend via WebSocket");
           } catch (err: any) {
-            baseLogger.error(`Error generating pairing code for ${whatsapp.name}: ${err.message}`);
+            baseLogger.error(`Error generating pairing code: ${err.message}`);
           }
         } else {
-          baseLogger.error(
-            "requestPairingCode not available in this Baileys version.",
-            {
-              baileysVersion: await getBaileysVersion(),
-              whatsappName: whatsapp.name
-            }
-          );
+          baseLogger.error("requestPairingCode not available");
         }
       } catch (err: any) {
-        baseLogger.error(`Error waiting for connection for pairing: ${err.message}`);
+        baseLogger.error(`Error in pairing flow: ${err.message}`);
         throw err;
       }
     }
@@ -651,7 +648,7 @@ export async function initBaileys(
   } catch (err) {
     baseLogger.error(`Error initializing Baileys for ${whatsapp.name}: ${err}`);
 
-    // Clean up on error
+    // Cleanup on error
     await removeBaileysSession(whatsapp.id);
     initializingSession.delete(whatsapp.id);
 
@@ -664,7 +661,7 @@ export async function initBaileys(
   }
 }
 
-// Function to force session restart
+// Optimized session restart
 export const restartBaileysSession = async (
   whatsappId: number
 ): Promise<BaileysClient | null> => {
@@ -677,25 +674,18 @@ export const restartBaileysSession = async (
 
     baseLogger.info(`Force restarting session for ${whatsapp.name}`);
 
-    // Clean up existing session
+    // Optimized cleanup
     await removeBaileysSession(whatsappId);
 
-    // Clear session directory to force fresh start
-    const sessionDir = join(
-      __dirname,
-      "..",
-      "..",
-      "session",
-      `session-${whatsappId}`
-    );
+    // Clear session directory
+    const sessionDir = join(__dirname, "..", "..", "session", `session-${whatsappId}`);
     try {
       await rm(sessionDir, { recursive: true, force: true });
-      baseLogger.info("Cleared session directory for fresh start");
     } catch (err) {
       baseLogger.warn(`Could not clear session directory: ${err}`);
     }
 
-    // Reset database status
+    // Reset status
     await whatsapp.update({
       status: "DISCONNECTED",
       qrcode: "",
@@ -713,7 +703,7 @@ export const restartBaileysSession = async (
   }
 };
 
-// Utility functions
+// Utility functions optimized
 export const getAllSessions = (): BaileysClient[] => {
   return sessions.filter(session => {
     const connectionState = (session as any)?.connection;

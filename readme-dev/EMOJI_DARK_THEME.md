@@ -7,11 +7,13 @@ Este documento descreve a implementação do tema escuro para os emoji pickers e
 ## 🔧 Tipos de Emoji Picker
 
 ### 1. emoji-picker-element
+
 - **Componente**: `<emoji-picker>`
 - **Wrapper**: `EmojiPickerWrapper.vue`
 - **Uso**: Modais, formulários, chat flow builder
 
 ### 2. emoji-mart-vue
+
 - **Componente**: `<Picker>`
 - **Configuração**: Via prop `:theme`
 - **Uso**: Input de mensagem principal, ações de etapa
@@ -59,6 +61,7 @@ O emoji-mart-vue é configurado diretamente via prop:
 Para uma interface mais limpa, os filtros de categoria no topo dos emoji pickers foram removidos:
 
 #### emoji-picker-element
+
 ```scss
 // Ocultar filtros de categoria
 emoji-picker .category-tabs,
@@ -75,6 +78,7 @@ emoji-picker [data-v-376cda0e]
 ```
 
 #### emoji-mart-vue
+
 ```scss
 // Ocultar filtros de categoria
 .emoji-mart .emoji-mart-category-tabs,
@@ -97,6 +101,7 @@ emoji-picker [data-v-376cda0e]
 Além dos filtros, os títulos das categorias (como "Smileys & People", "Animals & Nature", etc.) também foram removidos:
 
 #### Implementação JavaScript
+
 ```javascript
 // Ocultar títulos das categorias
 const categoryLabels = picker.querySelectorAll('.category-label, .emoji-mart-category-label, [data-v-376cda0e]')
@@ -112,6 +117,7 @@ categoryLabelSpans.forEach(span => {
 ```
 
 #### Implementação CSS
+
 ```scss
 // Ocultar títulos das categorias
 .emoji-mart .emoji-mart-category-label,
@@ -127,6 +133,7 @@ emoji-picker [data-v-376cda0e]
 ### emoji-picker-element
 
 #### Tema Claro (Padrão)
+
 ```scss
 --background: #ffffff
 --border-color: #e2e8f0
@@ -136,6 +143,7 @@ emoji-picker [data-v-376cda0e]
 ```
 
 #### Tema Escuro
+
 ```scss
 --background: #2d3748
 --border-color: #4a5568
@@ -147,6 +155,7 @@ emoji-picker [data-v-376cda0e]
 ### emoji-mart-vue
 
 #### Tema Claro (Padrão)
+
 ```scss
 .emoji-mart {
   background: #ffffff;
@@ -156,6 +165,7 @@ emoji-picker [data-v-376cda0e]
 ```
 
 #### Tema Escuro
+
 ```scss
 .body--dark .emoji-mart {
   background: #2d3748;
@@ -167,6 +177,7 @@ emoji-picker [data-v-376cda0e]
 ## 📁 Componentes Atualizados
 
 ### Usando emoji-picker-element (EmojiPickerWrapper)
+
 - ✅ `ModalMensagemRapida.vue`
 - ✅ `ModalEtapaAutoResposta.vue`
 - ✅ `ModalCampanha.vue`
@@ -176,6 +187,7 @@ emoji-picker [data-v-376cda0e]
 - ✅ `Index.vue` (Horário de Atendimento)
 
 ### Usando emoji-mart-vue (configuração direta)
+
 - ✅ `InputMensagem.vue` - Usa `:theme="$q.dark.isActive ? 'dark' : 'light'"`
 - ✅ `ModalAcaoEtapa.vue` - Usa `:theme="$q.dark.isActive ? 'dark' : 'light'"`
 
@@ -271,6 +283,7 @@ Foi criado um componente de teste (`EmojiPickerTest.vue`) para verificar se ambo
 ## 🎨 Características Visuais
 
 ### Tema Claro
+
 - Fundo branco (#ffffff)
 - Bordas suaves (#e2e8f0)
 - Texto escuro (#2d3748)
@@ -278,6 +291,7 @@ Foi criado um componente de teste (`EmojiPickerTest.vue`) para verificar se ambo
 - Indicador azul (#1976d2)
 
 ### Tema Escuro
+
 - Fundo cinza escuro (#2d3748)
 - Bordas médias (#4a5568)
 - Texto claro (#e2e8f0)
@@ -287,6 +301,7 @@ Foi criado um componente de teste (`EmojiPickerTest.vue`) para verificar se ambo
 ## 🔄 Detecção Automática
 
 ### emoji-picker-element
+
 ```javascript
 updateTheme() {
   this.isDarkMode = this.$q.dark.isActive
@@ -306,6 +321,7 @@ updateTheme() {
 ```
 
 ### emoji-mart-vue
+
 ```vue
 <Picker :theme="$q.dark.isActive ? 'dark' : 'light'" />
 ```
@@ -315,11 +331,13 @@ updateTheme() {
 ### Adicionar Novos Componentes
 
 **Para emoji-picker-element (Recomendado):**
+
 ```javascript
 import EmojiPickerWrapper from 'src/components/EmojiPickerWrapper.vue'
 ```
 
 **Para emoji-mart-vue:**
+
 ```javascript
 import { Picker } from 'emoji-mart-vue'
 import 'emoji-mart-vue/css/emoji-mart.css'
@@ -328,11 +346,13 @@ import 'emoji-mart-vue/css/emoji-mart.css'
 ### Personalizar Estilos
 
 **emoji-picker-element:**
+
 ```
 frontend/src/components/EmojiPickerWrapper.vue
 ```
 
 **emoji-mart-vue:**
+
 ```
 frontend/src/css/app.sass
 ```
@@ -348,6 +368,7 @@ frontend/src/css/app.sass
 ### Debug
 
 O componente emoji-picker-element inclui logs de debug:
+
 ```
 EmojiPickerWrapper - Tema atual: CLARO
 EmojiPickerWrapper - Mudança de tema: ESCURO
@@ -356,12 +377,14 @@ EmojiPickerWrapper - Mudança de tema: ESCURO
 ## 🎯 Benefícios
 
 ### Para Usuários
+
 - ✅ Experiência visual consistente
 - ✅ Tema escuro confortável para os olhos
 - ✅ Transições suaves entre temas
 - ✅ Interface moderna e profissional
 
 ### Para Desenvolvedores
+
 - ✅ API consistente
 - ✅ Fácil manutenção
 - ✅ Configuração automática
@@ -372,25 +395,29 @@ EmojiPickerWrapper - Mudança de tema: ESCURO
 ## 📝 Notas Técnicas
 
 ### Dependências
+
 - `emoji-picker-element`: Para o wrapper
 - `emoji-mart-vue`: Para componentes específicos
 - `quasar`: Para detecção de tema
 - `vue`: Framework base
 
 ### Compatibilidade
+
 - ✅ Chrome/Chromium
 - ✅ Firefox
 - ✅ Safari
 - ✅ Edge
 
 ### Performance
+
 - Estilos aplicados via CSS custom properties
 - Detecção de tema via classe CSS
 - **MutationObserver para mudanças dinâmicas**
 - **JavaScript para aplicação forçada de estilos**
 
 ### Arquivos Modificados
+
 - `frontend/src/components/EmojiPickerWrapper.vue` - Wrapper principal
 - `frontend/src/css/app.sass` - Estilos globais para ambos os tipos
 - `frontend/src/components/EmojiPickerTest.vue` - Componente de teste
-- Vários componentes que usam emoji pickers 
+- Vários componentes que usam emoji pickers
