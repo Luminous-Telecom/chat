@@ -12,6 +12,7 @@ import { getIO } from "../../libs/socket";
 import AppError from "../../errors/AppError";
 import HandleMsgAck from "./helpers/HandleMsgAck";
 import Message from "../../models/Message";
+import Setting from "../../models/Setting";
 
 export const StartWhatsAppSession = async (
   whatsapp: Whatsapp,
@@ -67,7 +68,21 @@ export const setupAdditionalHandlers = (
         return;
       }
 
+      // Verificar configuração de ignorar grupos uma vez para todas as mensagens
+      const ignoreGroupSetting = await Setting.findOne({
+        where: { key: "ignoreGroupMsg", tenantId: whatsapp.tenantId },
+      });
+      const ignoreGroups = ignoreGroupSetting?.value === "enabled";
+
       for (const msg of messages) {
+        // Verificar se é mensagem de grupo ANTES de qualquer processamento ou log
+        const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
+        
+        // Se deve ignorar grupos E é mensagem de grupo, pula completamente
+        if (ignoreGroups && isGroup) {
+          continue; // Não processa, não loga, ignora totalmente
+        }
+
         await HandleBaileysMessage(msg, wbot);
       }
     } catch (err) {
@@ -82,8 +97,22 @@ export const setupAdditionalHandlers = (
         return;
       }
 
+      // Verificar configuração de ignorar grupos uma vez
+      const ignoreGroupSetting = await Setting.findOne({
+        where: { key: "ignoreGroupMsg", tenantId: whatsapp.tenantId },
+      });
+      const ignoreGroups = ignoreGroupSetting?.value === "enabled";
+
       for (const update of messageUpdate) {
         if (update.key && typeof update.update === "object") {
+          // Verificar se é update de mensagem de grupo ANTES de qualquer processamento
+          const isGroup = update.key?.remoteJid?.endsWith("@g.us");
+          
+          // Se deve ignorar grupos E é update de mensagem de grupo, pula completamente
+          if (ignoreGroups && isGroup) {
+            continue; // Não processa ACKs de grupos
+          }
+
           const messageId = update.key.id;
           const updateData = update.update;
 
@@ -93,6 +122,7 @@ export const setupAdditionalHandlers = (
           // Processa ACK direto se presente
           if (updateData.ack !== undefined) {
             newAck = updateData.ack;
+          // eslint-disable-next-line brace-style
           }
           // Processa status e converte para ACK
           else if (updateData.status !== undefined) {

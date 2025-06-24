@@ -28,7 +28,7 @@ const HandleMessage = async (
       const { tenantId } = whatsapp;
       const chat = await msg.getChat();
 
-      // IGNORAR MENSAGENS DE GRUPO
+      // IGNORAR MENSAGENS DE GRUPO - sair cedo sem processamento nem logs
       const Settingdb = await Setting.findOne({
         where: { key: "ignoreGroupMsg", tenantId },
       });
@@ -37,6 +37,8 @@ const HandleMessage = async (
         Settingdb?.value === "enabled" &&
         (chat.isGroup || msg.from === "status@broadcast")
       ) {
+        // Ignorar totalmente mensagens de grupos - não processa nem loga
+        resolve();
         return;
       }
 
@@ -45,6 +47,7 @@ const HandleMessage = async (
         msg.from &&
         (msg.from.includes("@newsletter") || msg.from.includes("newsletter"))
       ) {
+        resolve();
         return;
       }
       // IGNORAR MENSAGENS DE GRUPO

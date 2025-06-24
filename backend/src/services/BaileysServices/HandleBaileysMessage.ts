@@ -177,12 +177,13 @@ const HandleBaileysMessage = async (
           return;
         }
 
-        // Verificar configuração de grupos
+        // Verificar configuração de grupos - sair cedo sem logs se deve ignorar
         const Settingdb = await Setting.findOne({
           where: { key: "ignoreGroupMsg", tenantId },
         });
 
         if (Settingdb?.value === "enabled" && isGroup) {
+          // Ignorar totalmente mensagens de grupos - não processa nem loga
           resolve();
           return;
         }
