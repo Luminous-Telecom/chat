@@ -42,8 +42,11 @@
             'q-message-text--document': mensagem.mediaType === 'application',
             'q-message-text--contact': mensagem.mediaType === 'vcard',
             'q-message-text--forwarded': mensagem.isForwarded,
-            'q-message-text--edited': mensagem.isEdited
+            'q-message-text--edited': mensagem.isEdited,
+            'mensagem-hover-active': hoveredMessageId === mensagem.id
           }"
+          @mouseenter="showMessageOptions(mensagem.id)"
+          @mouseleave="hideMessageOptions(mensagem.id)"
         >
           <!-- :bg-color="mensagem.fromMe ? 'grey-2' : 'secondary' " -->
           <div
@@ -118,7 +121,8 @@
             </div>
             <q-btn
               v-if=" !mensagem.isDeleted && isShowOptions "
-              class="absolute-top-right mostar-btn-opcoes-chat"
+              class="absolute-top-right mostar-btn-opcoes-chat mensagem-hover-btn"
+              :class="{ 'q-btn--menu-open': $refs[`menu-${mensagem.id}`] && $refs[`menu-${mensagem.id}`][0]?.showing }"
               dense
               flat
               ripple
@@ -126,10 +130,12 @@
               icon="mdi-chevron-down"
             >
               <q-menu
+                :ref="`menu-${mensagem.id}`"
                 square
                 auto-close
                 anchor="bottom left"
                 self="top left"
+                @hide="onMenuClose(mensagem.id)"
               >
                 <q-list style="min-width: 100px">
                   <q-item
@@ -493,7 +499,8 @@ export default {
       currentPdfName: '',
       buttonStates: {}, // Para gerenciar estado dos botões
       isAtBottom: false,
-      scrollCheckTimeout: null
+      scrollCheckTimeout: null,
+      hoveredMessageId: null // Para controlar qual mensagem está com hover
     }
   },
   computed: {
@@ -690,6 +697,25 @@ export default {
     citarMensagem (mensagem) {
       this.$emit('update:replyingMessage', mensagem)
       this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
+    },
+    showMessageOptions (messageId) {
+      this.hoveredMessageId = messageId
+    },
+    hideMessageOptions (messageId) {
+      // Só esconder se for a mesma mensagem que está sendo hovered
+      // e se o menu não estiver aberto
+      const menuRef = this.$refs[`menu-${messageId}`]
+      const isMenuOpen = menuRef && menuRef[0] && menuRef[0].showing
+
+      if (this.hoveredMessageId === messageId && !isMenuOpen) {
+        this.hoveredMessageId = null
+      }
+    },
+    onMenuClose (messageId) {
+      // Esconder o botão quando o menu fechar
+      if (this.hoveredMessageId === messageId) {
+        this.hoveredMessageId = null
+      }
     },
     deletarMensagem (mensagem) {
       if (this.isDesactivatDelete(mensagem)) {
@@ -1407,5 +1433,21 @@ export default {
     opacity: 0.9;
     transform: scale(1);
   }
+}
+
+/* Estilo para esconder botão de opções por padrão */
+.mensagem-hover-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Mostrar botão quando a mensagem tem a classe hover ativa */
+.mensagem-hover-active .mensagem-hover-btn {
+  opacity: 1;
+}
+
+/* Garantir que o botão apareça quando o menu está aberto */
+.mensagem-hover-btn.q-btn--menu-open {
+  opacity: 1;
 }
 </style>
