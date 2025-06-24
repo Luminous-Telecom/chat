@@ -8,6 +8,7 @@ import DeleteMessageSystem from "../helpers/DeleteMessageSystem";
 
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
 import Message from "../models/Message";
+import MarkMessageAsReadService from "../services/MessageServices/MarkMessageAsReadService";
 // import CreateMessageOffilineService from "../services/MessageServices/CreateMessageOfflineService";
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
 
@@ -312,43 +313,20 @@ export const markAsRead = async (
       read: message.read,
     });
 
-    // Marcar mensagem como lida
-    await message.update({ read: true });
-    logger.info("[markAsRead] Mensagem marcada como lida");
-
-    // Atualizar contador de mensagens não lidas no ticket
-    const unreadCount = await Message.count({
-      where: {
-        ticketId: message.ticketId,
-        read: false,
-        fromMe: false,
-      },
+    // Usar o serviço centralizado para marcar como lida
+    await MarkMessageAsReadService({
+      message,
+      ticket: message.ticket,
+      ack: 3, // Manual sempre é considerado como "lida" (ACK 3)
+      source: "manual"
     });
 
-    logger.info(
-      `[markAsRead] Novo contador de mensagens não lidas: ${unreadCount}`
-    );
+    logger.info("[markAsRead] Mensagem marcada como lida via serviço centralizado");
 
-    await message.ticket.update({ unreadMessages: unreadCount });
-    logger.info("[markAsRead] Ticket atualizado com novo contador");
-
-    // Notificar frontend
-    const io = getIO();
-    io.to(tenantId.toString()).emit(`${tenantId}:ticketList`, {
-      type: "chat:update",
-      payload: {
-        ticketId: message.ticketId,
-        messageId: message.id,
-        read: true,
-        ticket: {
-          id: message.ticket.id,
-          unreadMessages: unreadCount,
-        },
-      },
+    return res.status(200).json({ 
+      message: "Message marked as read",
+      unreadMessages: message.ticket.unreadMessages
     });
-    logger.info("[markAsRead] Evento emitido para o frontend");
-
-    return res.status(200).json({ message: "Message marked as read" });
   } catch (err) {
     logger.error("[markAsRead] Erro ao marcar mensagem como lida:", err);
     logger.error("[markAsRead] Stack do erro:", err.stack);

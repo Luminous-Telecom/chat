@@ -18,6 +18,7 @@ import Campaign from "../../../models/Campaign";
 import ApiMessage from "../../../models/ApiMessage";
 import socketEmit from "../../../helpers/socketEmit";
 import Queue from "../../../libs/Queue";
+import MarkMessageAsReadService from "../../MessageServices/MarkMessageAsReadService";
 
 type MessageAck = number;
 
@@ -221,21 +222,45 @@ export const HandleMsgAck = async (
   });
 
   try {
-    // Buscar mensagens com estratégia otimizada
-    const messages = await Message.findAll({
+    // Primeiro tentar buscar mensagens enviadas por nós (comportamento original)
+    let messages = await Message.findAll({
       where: {
         [Op.or]: [
           { messageId: messageId },
           { messageId: messageId?.toString() },
           { id: messageId }
         ],
-        fromMe: true, // Apenas mensagens enviadas por nós podem ter ACK
-        isDeleted: false, // Não processar mensagens deletadas
+        fromMe: true, // Mensagens enviadas por nós
+        isDeleted: false,
       },
       order: [["createdAt", "DESC"]],
-      limit: 3, // Limitar para evitar consultas muito grandes
+      limit: 3,
       transaction: messageTransaction,
     });
+
+    // 🔥 NOVA LÓGICA: Se não encontrou mensagens enviadas E o ACK >= 3, 
+    // buscar mensagens recebidas (para marcar como lidas quando lemos no WhatsApp)
+    if (messages.length === 0 && ack >= 3) {
+      messages = await Message.findAll({
+        where: {
+          [Op.or]: [
+            { messageId: messageId },
+            { messageId: messageId?.toString() },
+            { id: messageId }
+          ],
+          fromMe: false, // Mensagens recebidas
+          ack: { [Op.lt]: 3 }, // Que ainda não foram marcadas como lidas
+          isDeleted: false,
+        },
+        order: [["createdAt", "DESC"]],
+        limit: 3,
+        transaction: messageTransaction,
+      });
+      
+      if (messages.length > 0) {
+        logger.info(`[HandleMsgAck] 📱 LEITURA NO WHATSAPP: Encontradas ${messages.length} mensagens recebidas para marcar como lidas (ACK ${ack})`);
+      }
+    }
 
     if (messages.length === 0) {
       // Log apenas para ACKs importantes ou modo debug
@@ -304,14 +329,24 @@ export const HandleMsgAck = async (
       return;
     }
 
-    // Não permitir que um ACK menor sobrescreva um ACK maior
-    // Exceção: ACK 5 pode sobrescrever ACK 3 para áudios (3=visualizado, 5=ouvido)
-    const canUpdateAck = ack > messageToUpdate.ack || 
-                        (ack === 5 && messageToUpdate.ack === 3 && messageToUpdate.mediaType === 'audio');
+    // Lógica de validação de ACK diferente para mensagens enviadas vs recebidas
+    let canUpdateAck = false;
+    
+    if (messageToUpdate.fromMe) {
+      // Mensagens ENVIADAS: ACK não pode regredir, exceto ACK 5 para áudios
+      canUpdateAck = ack > messageToUpdate.ack || 
+                    (ack === 5 && messageToUpdate.ack === 3 && messageToUpdate.mediaType === 'audio');
+    } else {
+      // Mensagens RECEBIDAS: ACK 3 sempre pode ser aplicado (lida por nós no WhatsApp)
+      // ACK 5 para áudios também é permitido
+      canUpdateAck = (ack === 3 && messageToUpdate.ack < 3) ||
+                    (ack === 5 && messageToUpdate.mediaType === 'audio') ||
+                    (ack > messageToUpdate.ack);
+    }
     
     if (!canUpdateAck) {
       if (process.env.DEBUG_ACK === 'true') {
-        logger.debug(`[HandleMsgAck] ACK ${ack} ignorado - mensagem ${messageToUpdate.id} já tem ACK ${messageToUpdate.ack}`);
+        logger.debug(`[HandleMsgAck] ACK ${ack} ignorado - mensagem ${messageToUpdate.id} (fromMe: ${messageToUpdate.fromMe}) já tem ACK ${messageToUpdate.ack}`);
       }
       await messageTransaction.rollback();
       return;
@@ -334,24 +369,52 @@ export const HandleMsgAck = async (
 
     const newStatus = getMessageStatus(ack);
     
-    // Log apenas para ACKs importantes ou modo debug
+    // Log diferenciado para mensagens enviadas vs recebidas
     if (ack === 5) {
-      logger.info(`[HandleMsgAck] 🔊 ÁUDIO OUVIDO: Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
+      logger.info(`[HandleMsgAck] 🔊 ÁUDIO OUVIDO: Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}, fromMe: ${messageToUpdate.fromMe}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
     } else if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
-      logger.info(`[HandleMsgAck] Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
+      const messageType = messageToUpdate.fromMe ? "ENVIADA" : "RECEBIDA";
+      const ackMeaning = messageToUpdate.fromMe ? "lida pelo destinatário" : "lida por nós no WhatsApp";
+      logger.info(`[HandleMsgAck] ${messageType}: Atualizando mensagem ${messageToUpdate.id} de ACK ${messageToUpdate.ack} para ${ack} (${ackMeaning})`);
     }
     
-    // Atualiza a mensagem com lock
-    await messageToUpdate.update(
-      {
-        ack,
-        status: newStatus,
-      },
-      { transaction: messageTransaction }
-    );
+    // Preparar dados para atualização da mensagem
+    const messageUpdateData: any = {
+      ack,
+      status: newStatus,
+    };
 
-    // Emitir evento no canal correto
+    // 🔥 NOVA FUNCIONALIDADE: Marcar como visualizada quando lida no WhatsApp
+    const wasNotRead = messageToUpdate.ack < 3;
+    const isNowRead = ack >= 3;
+    
+    // Atualiza a mensagem primeiro
+    await messageToUpdate.update(messageUpdateData, { transaction: messageTransaction });
+
+    // Se a mensagem agora foi lida no WhatsApp, marcar como visualizada no sistema
+    if (wasNotRead && isNowRead && !messageToUpdate.fromMe) {
+      try {
+        await MarkMessageAsReadService({
+          message: messageToUpdate,
+          ticket,
+          ack,
+          transaction: messageTransaction,
+          source: "whatsapp_ack"
+        });
+      } catch (markReadError) {
+        logger.error(`[HandleMsgAck] Error marking message as read via service: ${markReadError}`);
+        // Continua o processamento mesmo se falhar a marcação como lida
+      }
+    }
+
+    // Recarregar ticket para obter dados atualizados após possíveis mudanças
+    await ticket.reload({ transaction: messageTransaction });
+
+    // Emitir eventos no canal correto
     const io = getIO();
+    const isAutoMarkedAsRead = wasNotRead && isNowRead && !messageToUpdate.fromMe;
+    
+    // Evento principal de ACK
     const socketPayload = {
       type: "chat:ack",
       payload: {
@@ -359,25 +422,51 @@ export const HandleMsgAck = async (
         messageId: messageToUpdate.messageId,
         ack,
         status: newStatus,
-        read: ack >= 3,
+        read: isAutoMarkedAsRead ? true : (ack >= 3),
         played: ack === 5, // ADICIONADO: indicar se áudio foi ouvido
         fromMe: messageToUpdate.fromMe,
         mediaType: messageToUpdate.mediaType, // ADICIONADO: incluir mediaType no payload
+        wasMarkedAsRead: isAutoMarkedAsRead, // 🔥 NOVO: indicar se foi marcada como lida automaticamente
+        automatic: isAutoMarkedAsRead, // 🔥 NOVO: mesma info com nome mais claro
+        timestamp: new Date().toISOString(),
         ticket: {
           id: ticket.id,
           status: ticket.status,
-          unreadMessages: ticket.unreadMessages,
-          answered: ticket.answered,
+          unreadMessages: ticket.unreadMessages, // Dados atualizados após reload
+          answered: ticket.answered, // Dados atualizados após reload
         },
       },
     };
     
-    // Log apenas para ACKs importantes ou modo debug
-    if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
-      logger.info(`[HandleMsgAck] Emitindo evento socket para ${messageToUpdate.mediaType} com ACK ${ack}`);
+    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, socketPayload);
+    
+    // 🔥 EVENTO ADICIONAL: Se foi marcada como lida automaticamente, emitir evento específico
+    if (isAutoMarkedAsRead) {
+      io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:messageAutoRead`, {
+        type: "message:auto-read",
+        payload: {
+          messageId: messageToUpdate.id,
+          ticketId: ticket.id,
+          contactId: ticket.contactId,
+          contactName: ticket.contact?.name || "Contato",
+          ack,
+          source: "whatsapp_business",
+          timestamp: new Date().toISOString(),
+          ticket: {
+            id: ticket.id,
+            unreadMessages: ticket.unreadMessages,
+            answered: ticket.answered,
+          },
+        },
+      });
+      
+      logger.info(`[HandleMsgAck] 📱 AUTO-READ: Emitido evento messageAutoRead para mensagem ${messageToUpdate.id}`);
     }
     
-    io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, socketPayload);
+    // Log apenas para ACKs importantes ou modo debug
+    if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
+      logger.info(`[HandleMsgAck] 📡 EVENTOS EMITIDOS: ticketList${isAutoMarkedAsRead ? ' + messageAutoRead' : ''} para ${messageToUpdate.mediaType} com ACK ${ack}`);
+    }
 
     // Se temos mensagens duplicadas, marca como deletadas
     if (duplicateMessages.length > 0) {

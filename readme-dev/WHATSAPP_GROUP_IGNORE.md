@@ -1,7 +1,9 @@
 # Ignorar Mensagens de Grupos - Sempre Ativo
 
 ## Descrição
+
 O sistema está configurado para SEMPRE ignorar totalmente mensagens de grupos do WhatsApp, incluindo:
+
 - Não processar as mensagens
 - Não gerar logs
 - Não criar tickets
@@ -38,6 +40,7 @@ O sistema está configurado para SEMPRE ignorar totalmente mensagens de grupos d
 ### Identificação de Grupos
 
 Mensagens de grupos são identificadas pelo padrão:
+
 ```javascript
 const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
 ```
@@ -74,4 +77,4 @@ for (const msg of messages) {
 - **Não há interface**: Não existe mais botão para habilitar/desabilitar
 - **Mudanças futuras**: Para habilitar grupos, seria necessário modificar o código
 - **Status também ignorados**: Mensagens de status (@broadcast) também são sempre ignoradas
-- **Performance otimizada**: Filtragem acontece antes de qualquer processamento pesado 
+- **Performance otimizada**: Filtragem acontece antes de qualquer processamento pesado
