@@ -60,17 +60,14 @@
 
                         <!-- Áudio -->
                         <template v-if="mensagem.mediaType === 'audio'">
-                          <div>
-                            <audio
-                              controls
-                              controlsList="nodownload noplaybackrate volume novolume"
-                            >
-                              <source
-                                :src="mensagem.mediaUrl"
-                                type="audio/ogg"
-                              />
-                            </audio>
-                          </div>
+                          <WhatsAppAudioPlayer
+                            :audioUrl="mensagem.mediaUrl"
+                            :isPTT="isAudioPTT(mensagem)"
+                            :isSent="mensagem.fromMe"
+                            :audioName="getAudioFileName(mensagem)"
+                            :showSpeedControl="true"
+                            :ackStatus="mensagem.ack || 0"
+                          />
                         </template>
 
                         <!-- Contato vCard -->
@@ -263,10 +260,14 @@ import { ListarMensagensContato } from 'src/service/tickets'
 import mixinCommon from 'src/pages/atendimento/mixinCommon'
 import { isSameDay, parseISO } from 'date-fns'
 import { Base64 } from 'js-base64'
+import WhatsAppAudioPlayer from 'src/components/WhatsAppAudioPlayer.vue'
 
 export default {
   name: 'ModalTimeline',
   mixins: [mixinCommon],
+  components: {
+    WhatsAppAudioPlayer
+  },
   props: {
     modalTimeline: {
       type: Boolean,
@@ -337,6 +338,72 @@ export default {
       }
 
       window.open(url, '_blank')
+    },
+    isAudioPTT (mensagem) {
+      // Verificar se é uma mensagem de voz (PTT - Push to Talk)
+      // Primeiro verificar nos dados salvos
+      if (mensagem.dataPayload) {
+        try {
+          const payload = typeof mensagem.dataPayload === 'string'
+            ? JSON.parse(mensagem.dataPayload)
+            : mensagem.dataPayload
+          if (typeof payload.isPtt === 'boolean') {
+            return payload.isPtt
+          }
+        } catch (e) {
+          // Se falhar ao parsear, continuar com verificação manual
+        }
+      }
+
+      // Fallback para verificação manual
+      return mensagem.body?.includes('ptt') ||
+             mensagem.mediaUrl?.includes('ptt') ||
+             (mensagem.mediaName && mensagem.mediaName.includes('ptt'))
+    },
+    getAudioFileName (mensagem) {
+      // Sempre usar mediaUrl como fonte primária para garantir consistência
+      const url = mensagem.mediaUrl || ''
+      const filename = url.split('/').pop() || ''
+
+      if (filename) {
+        // Se o filename começa com audio_ e é um timestamp, formatar melhor
+        if (filename.startsWith('audio_') && filename.match(/^audio_\d+\.mp3$/)) {
+          const timestamp = filename.match(/audio_(\d+)\.mp3$/)?.[1]
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp))
+            return `Áudio ${date.toLocaleString('pt-BR')}`
+          }
+        }
+        return filename
+      }
+
+      // Fallback para mediaName se mediaUrl não estiver disponível
+      if (mensagem.mediaName) {
+        // Se o nome começa com audio_ e é um timestamp, formatar melhor
+        if (mensagem.mediaName.startsWith('audio_') && mensagem.mediaName.match(/^audio_\d+\.mp3$/)) {
+          const timestamp = mensagem.mediaName.match(/audio_(\d+)\.mp3$/)?.[1]
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp))
+            return `Áudio ${date.toLocaleString('pt-BR')}`
+          }
+        }
+        return mensagem.mediaName
+      }
+
+      // Fallback para body se nem mediaUrl nem mediaName estiverem disponíveis
+      if (mensagem.body) {
+        // Se o body começa com audio_ e é um timestamp, formatar melhor
+        if (mensagem.body.startsWith('audio_') && mensagem.body.match(/^audio_\d+\.mp3$/)) {
+          const timestamp = mensagem.body.match(/audio_(\d+)\.mp3$/)?.[1]
+          if (timestamp) {
+            const date = new Date(parseInt(timestamp))
+            return `Áudio ${date.toLocaleString('pt-BR')}`
+          }
+        }
+        return mensagem.body
+      }
+
+      return this.isAudioPTT(mensagem) ? 'Mensagem de voz' : 'Arquivo de áudio'
     }
   },
   watch: {
