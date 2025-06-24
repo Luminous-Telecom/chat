@@ -14,9 +14,6 @@ const SetTicketMessagesAsRead = async (
   force = false
 ): Promise<void> => {
   try {
-    logger.info(
-      `[SetTicketMessagesAsRead] Starting process for ticket ${ticket.id}, tenantId: ${ticket.tenantId}, force: ${force}`
-    );
 
     // Verificar se há mensagens não lidas
     const unreadCount = await Message.count({
@@ -27,14 +24,7 @@ const SetTicketMessagesAsRead = async (
       },
     });
 
-    logger.info(
-      `[SetTicketMessagesAsRead] Found ${unreadCount} unread messages for ticket ${ticket.id}`
-    );
-
     if (unreadCount === 0 && !force) {
-      logger.info(
-        `[SetTicketMessagesAsRead] No unread messages and force=false, skipping ticket ${ticket.id}`
-      );
       return;
     }
 
@@ -52,10 +42,6 @@ const SetTicketMessagesAsRead = async (
       limit: 20, // Aumentar limite
     });
 
-    logger.info(
-      `[SetTicketMessagesAsRead] Processing ${unreadMessages.length} messages with valid messageId for ticket ${ticket.id}`
-    );
-
     // Atualizar mensagens no banco primeiro
     const [updatedCount] = await Message.update(
       { read: true },
@@ -68,39 +54,18 @@ const SetTicketMessagesAsRead = async (
       }
     );
 
-    logger.info(
-      `[SetTicketMessagesAsRead] Updated ${updatedCount} messages in database for ticket ${ticket.id}`
-    );
-
     // Atualizar contador do ticket
     await ticket.update({ unreadMessages: 0 });
-    logger.info(
-      `[SetTicketMessagesAsRead] Updated ticket unreadMessages counter to 0 for ticket ${ticket.id}`
-    );
 
-    // Processar por canal
-    logger.info(
-      `[SetTicketMessagesAsRead] Processing channel ${ticket.channel} for ticket ${ticket.id}`
-    );
     if (ticket.channel === "whatsapp") {
       await handleWhatsAppReadReceipt(ticket, unreadMessages);
     } else if (ticket.channel === "messenger") {
       await handleMessengerReadReceipt(ticket);
     } else {
-      logger.info(
-        `[SetTicketMessagesAsRead] Channel ${ticket.channel} does not require read receipt processing for ticket ${ticket.id}`
-      );
     }
 
-    // Notificar frontend
-    logger.info(
-      `[SetTicketMessagesAsRead] Notifying frontend for ticket ${ticket.id}`
-    );
     await notifyFrontend(ticket);
 
-    logger.info(
-      `[SetTicketMessagesAsRead] Successfully completed for ticket ${ticket.id}`
-    );
   } catch (err: any) {
     logger.error(
       `[SetTicketMessagesAsRead] Error for ticket ${ticket.id}: ${
@@ -162,9 +127,7 @@ const handleWhatsAppReadReceipt = async (
     );
 
     if (success) {
-      logger.info(
-        `[SetTicketMessagesAsRead] Successfully marked messages as read for ${chatId}`
-      );
+
     } else {
       logger.warn(
         `[SetTicketMessagesAsRead] All strategies failed for ${chatId}`
@@ -223,9 +186,6 @@ const tryReadMessageStrategies = async (
     await wbot.sendPresenceUpdate("composing", chatId);
     await new Promise(resolve => setTimeout(resolve, 200));
     await wbot.sendPresenceUpdate("paused", chatId);
-    logger.info(
-      `[SetTicketMessagesAsRead] Presence strategy completed for ${chatId}`
-    );
     return true;
   } catch (err) {
     logger.warn(`[SetTicketMessagesAsRead] Presence strategy failed: ${err}`);
@@ -242,9 +202,7 @@ const tryReadMessageStrategies = async (
           fromMe: false,
         },
       ]);
-      logger.info(
-        `[SetTicketMessagesAsRead] Individual strategy completed for ${chatId}`
-      );
+
       return true;
     }
   } catch (err) {
@@ -259,9 +217,7 @@ const handleMessengerReadReceipt = async (ticket: Ticket): Promise<void> => {
     const messengerBot = getMessengerBot(ticket.whatsappId);
     if (messengerBot && ticket.contact.messengerId) {
       await messengerBot.markSeen(ticket.contact.messengerId);
-      logger.info(
-        `[SetTicketMessagesAsRead] Messenger messages marked as seen for ticket ${ticket.id}`
-      );
+
     }
   } catch (err: any) {
     logger.warn(
@@ -275,9 +231,7 @@ const attemptReconnection = async (
   reason: string
 ): Promise<void> => {
   try {
-    logger.info(
-      `[SetTicketMessagesAsRead] Attempting reconnection for WhatsApp ${whatsappId}`
-    );
+
     await StartWhatsAppSessionVerify(whatsappId, reason);
     // Aguardar reconexão
     await new Promise(resolve => setTimeout(resolve, 3000));
@@ -288,33 +242,17 @@ const attemptReconnection = async (
 
 const notifyFrontend = async (ticket: Ticket): Promise<void> => {
   try {
-    logger.info(
-      `[SetTicketMessagesAsRead] Starting frontend notification for ticket ${ticket.id}, tenantId: ${ticket.tenantId}`
-    );
 
     const ticketReload = await ShowTicketService({
       id: ticket.id,
       tenantId: ticket.tenantId,
     });
-
-    logger.info(
-      `[SetTicketMessagesAsRead] Ticket reloaded successfully for notification, ticket ${ticket.id}`
-    );
-
-    // Emitir múltiplos eventos para garantir atualização
-    logger.info(
-      `[SetTicketMessagesAsRead] Emitting ticket:update event for ticket ${ticket.id}`
-    );
     socketEmit({
       tenantId: ticket.tenantId,
       type: "ticket:update",
       payload: ticketReload,
     });
 
-    // Emitir evento chat:messagesRead no canal ticketList
-    logger.info(
-      `[SetTicketMessagesAsRead] Emitting chat:messagesRead event for ticket ${ticket.id}`
-    );
     const io = getIO();
     io.to(ticket.tenantId.toString()).emit(`${ticket.tenantId}:ticketList`, {
       type: "chat:messagesRead",
@@ -324,9 +262,6 @@ const notifyFrontend = async (ticket: Ticket): Promise<void> => {
       },
     });
 
-    logger.info(
-      `[SetTicketMessagesAsRead] Frontend notification completed successfully for ticket ${ticket.id}`
-    );
   } catch (err: any) {
     logger.error(
       `[SetTicketMessagesAsRead] Frontend notification error for ticket ${
