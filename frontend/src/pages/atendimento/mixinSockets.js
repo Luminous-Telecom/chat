@@ -355,6 +355,93 @@ export default {
         socket.on(`${usuario.tenantId}:contactList`, function (data) {
           self.$store.commit('UPDATE_CONTACT', data.payload)
         })
+
+        // 🔥 NOVO: Listener para eventos de leitura automática
+        socket.on(`${usuario.tenantId}:messageRead`, function (data) {
+          console.log('[Frontend] 📖 Evento messageRead recebido:', data)
+
+          if (data.type === 'message:read' && data.payload) {
+            const { messageId, ticketId, ack, source, ticket } = data.payload
+
+            // Atualizar status da mensagem como lida
+            self.$store.commit('UPDATE_MESSAGE_STATUS', {
+              id: messageId,
+              messageId,
+              ticketId,
+              read: true,
+              ack: ack || 3,
+              ticket
+            })
+
+            // Atualizar contador de mensagens não lidas do ticket
+            if (ticket && ticket.unreadMessages !== undefined) {
+              self.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+                type: self.status || 'open',
+                ticket: {
+                  id: ticketId,
+                  unreadMessages: ticket.unreadMessages,
+                  answered: ticket.answered
+                }
+              })
+
+              // 🔥 NOVO: Atualizar notifications para sincronizar menu lateral e título da guia
+              self.atualizarNotificacoesGlobais()
+            }
+
+            // Log para debug
+            console.log(`[Frontend] ✅ Mensagem ${messageId} marcada como lida automaticamente (${source})`)
+          }
+        })
+
+        // 🔥 NOVO: Listener para eventos específicos de auto-read
+        socket.on(`${usuario.tenantId}:messageAutoRead`, function (data) {
+          console.log('[Frontend] 🤖 Evento messageAutoRead recebido:', data)
+
+          if (data.type === 'message:autoRead' && data.payload) {
+            const { messageId, ticketId, ack, ticket } = data.payload
+
+            // Destacar visualmente que foi uma leitura automática
+            // Pode ser usado para mostrar uma indicação visual diferente
+            self.$store.commit('UPDATE_MESSAGE_STATUS', {
+              id: messageId,
+              messageId,
+              ticketId,
+              read: true,
+              ack: ack || 3,
+              automatic: true, // Flag para indicar leitura automática
+              ticket
+            })
+
+            // Atualizar contador de mensagens não lidas do ticket
+            if (ticket && ticket.unreadMessages !== undefined) {
+              self.$store.commit('UPDATE_TICKET_UNREAD_MESSAGES', {
+                type: self.status || 'open',
+                ticket: {
+                  id: ticketId,
+                  unreadMessages: ticket.unreadMessages,
+                  answered: ticket.answered
+                }
+              })
+
+              // 🔥 NOVO: Atualizar notifications para sincronizar menu lateral e título da guia
+              self.atualizarNotificacoesGlobais()
+            }
+
+            // Mostrar notificação sutil (opcional)
+            if (self.$q && self.$q.notify) {
+              self.$q.notify({
+                type: 'positive',
+                message: '📱 Sincronizado com WhatsApp',
+                caption: 'Mensagem marcada como lida automaticamente',
+                position: 'bottom-right',
+                timeout: 3000,
+                actions: [
+                  { icon: 'close', color: 'white', round: true, handler: () => {} }
+                ]
+              })
+            }
+          }
+        })
       })
     },
     socketDisconnect () {
@@ -459,6 +546,45 @@ export default {
     // Marcar que a primeira carga foi concluída
     markFirstLoadComplete () {
       this.isFirstLoad = false
+    },
+
+    // 🔥 NOVO: Método para atualizar notificações globais (menu lateral e título da guia)
+    async atualizarNotificacoesGlobais () {
+      try {
+        // Atualizar notifications (tickets em andamento com mensagens não lidas)
+        const paramsOpen = {
+          searchParam: '',
+          pageNumber: 1,
+          status: ['open'],
+          showAll: false,
+          count: null,
+          queuesIds: [],
+          withUnreadMessages: true,
+          isNotAssignedUser: false,
+          includeNotQueueDefined: true
+        }
+
+        const { data: dataOpen } = await ConsultarTickets(paramsOpen)
+        this.$store.commit('UPDATE_NOTIFICATIONS', dataOpen)
+
+        // Atualizar título da guia
+        if (this.$root && this.$root.atualizarTituloGuia) {
+          this.$root.atualizarTituloGuia()
+        } else {
+          // Fallback: atualizar título diretamente
+          const notifications = this.$store.getters.notifications
+          const notifications_p = this.$store.getters.notifications_p
+
+          // Importar dinamicamente a função de atualização do título
+          import('src/helpers/helpersNotifications').then(mod => {
+            mod.atualizarTituloGuia(notifications, notifications_p)
+          })
+        }
+
+        console.log('[Frontend] 🔄 Notificações globais atualizadas após leitura automática')
+      } catch (err) {
+        console.error('[Frontend] ❌ Erro ao atualizar notificações globais:', err)
+      }
     }
   }
 }
