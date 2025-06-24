@@ -45,14 +45,23 @@
           {{ mensagem.contact && mensagem.contact.name }}
         </div>
         <template v-if="mensagem.mediaType === 'audio'">
-          <WhatsAppAudioPlayer
-            :audioUrl="mensagem.mediaUrl"
-            :isPTT="isAudioPTT(mensagem)"
-            :isSent="mensagem.fromMe"
-            :audioName="getAudioFileName(mensagem)"
-            :showSpeedControl="true"
-            :ackStatus="mensagem.ack || 0"
-          />
+          <div style="position: relative; cursor: pointer;" title="Clique para navegar até a mensagem original">
+            <WhatsAppAudioPlayer
+              :audioUrl="mensagem.mediaUrl"
+              :isPTT="isAudioPTT(mensagem)"
+              :isSent="mensagem.fromMe"
+              :audioName="getAudioFileName(mensagem)"
+              :showSpeedControl="true"
+              :ackStatus="mensagem.ack || 0"
+              style="pointer-events: none;"
+            />
+            <!-- Overlay clicável transparente para interceptar cliques -->
+            <div
+              @click.stop.prevent="focarElemento(mensagem)"
+              style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer;"
+              title="Clique para navegar até a mensagem original"
+            ></div>
+          </div>
         </template>
         <template v-if="mensagem.mediaType === 'vcard'">
           <q-btn
@@ -63,6 +72,8 @@
             class="q-px-sm text-center"
             download="vCard"
             :href="`data:text/x-vcard;charset=utf-8;base64,${returnCardContato(mensagem.body)}`"
+            @click.stop.prevent="focarElemento(mensagem)"
+            title="Clique para navegar até a mensagem original"
           >
             Download Contato
           </q-btn>
@@ -70,12 +81,13 @@
         <template v-if="mensagem.mediaType === 'image'">
           <!-- @click="buscarImageCors(mensagem.mediaUrl)" -->
           <q-img
-            @click="urlMedia=mensagem.mediaUrl; abrirModalImagem=true"
+            @click.stop.prevent="focarElemento(mensagem)"
             :src="mensagem.mediaUrl"
             spinner-color="primary"
             height="60px"
             width="100px"
             style="cursor: pointer; max-width: 100px; object-fit: cover; border-radius: 8px;"
+            title="Clique para navegar até a mensagem original"
           />
           <VueEasyLightbox
             moveDisabled
@@ -86,19 +98,28 @@
           />
         </template>
         <template v-if="mensagem.mediaType === 'video'">
-          <video
-            :src="mensagem.mediaUrl"
-            controls
-            style="objectFit: cover;
-                  width: 130px;
-                  height: 60px;
-                  borderTopLeftRadius: 8px;
-                  borderTopRightRadius: 8px;
-                  borderBottomLeftRadius: 8px;
-                  borderBottomRightRadius: 8px;
-                "
-            >
-          </video>
+          <div style="position: relative; cursor: pointer;" title="Clique para navegar até a mensagem original">
+            <video
+              :src="mensagem.mediaUrl"
+              controls
+              style="objectFit: cover;
+                    width: 130px;
+                    height: 60px;
+                    borderTopLeftRadius: 8px;
+                    borderTopRightRadius: 8px;
+                    borderBottomLeftRadius: 8px;
+                    borderBottomRightRadius: 8px;
+                    pointer-events: none;
+                  "
+              >
+            </video>
+            <!-- Overlay clicável transparente para interceptar cliques -->
+            <div
+              @click.stop.prevent="focarElemento(mensagem)"
+              style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; cursor: pointer;"
+              title="Clique para navegar até a mensagem original"
+            ></div>
+          </div>
         </template>
         <template v-if="mensagem.mediaType === 'application'">
           <div class="text-center ">
@@ -112,6 +133,8 @@
               download
               :target="isPDF(mensagem.mediaUrl) ? '_blank' : ''"
               :href="mensagem.mediaUrl"
+              @click.stop.prevent="focarElemento(mensagem)"
+              title="Clique para navegar até a mensagem original"
             >
               <q-tooltip
                 v-if="mensagem.mediaUrl"
@@ -172,7 +195,8 @@
               :label="button.body || button.buttonText?.displayText || 'Botão'"
               :loading="buttonStates[`button_${mensagem.id}_${btnIndex}`]?.loading"
               :disabled="buttonStates[`button_${mensagem.id}_${btnIndex}`]?.disabled"
-              @click="handleButtonClick(mensagem, button, btnIndex)"
+              @click.stop.prevent="focarElemento(mensagem)"
+              title="Clique para navegar até a mensagem original"
             />
           </div>
         </template>
@@ -180,7 +204,7 @@
         <!-- Lista Interativa -->
         <template v-if="mensagem.dataPayload && mensagem.dataPayload.title">
           <div class="row q-gutter-sm justify-start q-mt-sm">
-            <q-card class="list-message-card" flat>
+            <q-card class="list-message-card" flat @click.stop.prevent="focarElemento(mensagem)" style="cursor: pointer;" title="Clique para navegar até a mensagem original">
               <q-card-section class="q-pa-sm">
                 <div class="text-subtitle2 text-weight-medium">{{ mensagem.dataPayload.title }}</div>
                 <div v-if="mensagem.dataPayload.description" class="text-caption q-mt-xs">
@@ -199,7 +223,8 @@
                   :label="section.title || 'Opção'"
                   :loading="buttonStates[`section_${mensagem.id}_${sectionIndex}`]?.loading"
                   :disabled="buttonStates[`section_${mensagem.id}_${sectionIndex}`]?.disabled"
-                  @click="handleListButtonClick(mensagem, section, sectionIndex)"
+                  @click.stop.prevent="focarElemento(mensagem)"
+                  title="Clique para navegar até a mensagem original"
                 />
               </q-card-section>
             </q-card>
@@ -215,6 +240,9 @@
               text-color="white"
               icon="mdi-check-circle"
               class="q-px-sm"
+              @click.stop.prevent="focarElemento(mensagem)"
+              style="cursor: pointer;"
+              title="Clique para navegar até a mensagem original"
             >
               Resposta: {{ mensagem.dataPayload.buttonText }}
             </q-chip>
@@ -462,10 +490,28 @@ export default {
 #chat-message-resp {
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
+
+  /* Indicador visual de que é clicável */
+  &::after {
+    content: '↗';
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 10px;
+    color: rgba(25, 118, 210, 0.6);
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
 
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    &::after {
+      opacity: 1;
+    }
 
     .q-message-text {
       background: rgba(25, 118, 210, 0.08) !important;
@@ -505,10 +551,35 @@ export default {
     opacity: 0.6;
     font-style: italic;
   }
+
+  /* Todos os elementos de mídia dentro da mensagem citada são clicáveis */
+  video, audio, img, .q-img, .q-btn, .q-card, .q-chip {
+    cursor: pointer !important;
+  }
+
+  /* Overlay para elementos de mídia */
+  .media-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    cursor: pointer;
+    border-radius: inherit;
+
+    &:hover {
+      background: rgba(25, 118, 210, 0.1);
+    }
+  }
 }
 
 // Modo escuro para mensagens de resposta
 .body--dark #chat-message-resp {
+  &::after {
+    color: rgba(144, 202, 249, 0.8);
+  }
+
   &:hover {
     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 
@@ -536,6 +607,10 @@ export default {
     background: rgba(255, 255, 255, 0.05) !important;
     color: var(--text-color-secondary) !important;
     opacity: 0.6;
+  }
+
+  .media-overlay:hover {
+    background: rgba(144, 202, 249, 0.15);
   }
 }
 </style>
