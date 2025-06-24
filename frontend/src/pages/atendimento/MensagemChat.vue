@@ -147,9 +147,9 @@
                   <q-item
                     :disable="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')"
                     clickable
-                    @click=" citarMensagem(mensagem) "
+                    @click="citarMensagem(mensagem)"
                   >
-                    <q-item-section>Responder</q-item-section>
+                                        <q-item-section>Responder</q-item-section>
                     <q-tooltip v-if="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')">
                       Disponível apenas para WhatsApp e Telegram
                     </q-tooltip>

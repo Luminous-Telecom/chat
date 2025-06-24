@@ -150,7 +150,7 @@
             </q-item-label>
             <q-item-label
               lines="4"
-              v-html="farmatarMensagemWhatsapp(replyingMessage.body)"
+              v-html="formatarMensagemWhatsapp(replyingMessage.body)"
             >
             </q-item-label>
           </q-item-section>
@@ -425,6 +425,9 @@ export default {
   watch: {
     mensagensTicket () {
       this.replyingMessage = null
+    },
+    replyingMessage (newVal, oldVal) {
+      // Watcher para replyingMessage - pode ser usado para futuras funcionalidades
     }
   },
   methods: {
