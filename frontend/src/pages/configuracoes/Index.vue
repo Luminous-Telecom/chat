@@ -137,29 +137,6 @@
         v-ripple
       >
         <q-item-section>
-          <q-item-label>Ignorar Mensagens de Grupo</q-item-label>
-          <q-item-label caption>Habilitando esta opção o sistema não abrirá ticket para grupos</q-item-label>
-        </q-item-section>
-        <q-item-section avatar>
-          <q-toggle
-            v-model="ignoreGroupMsg"
-            false-value="disabled"
-            true-value="enabled"
-            checked-icon="check"
-            keep-color
-            :color="ignoreGroupMsg === 'enabled' ? 'green' : 'negative'"
-            size="md"
-            unchecked-icon="clear"
-            @input="atualizarConfiguracao('ignoreGroupMsg')"
-          />
-        </q-item-section>
-      </q-item>
-
-      <q-item
-        tag="label"
-        v-ripple
-      >
-        <q-item-section>
           <q-item-label>Recusar chamadas no Whatsapp</q-item-label>
           <q-item-label caption>Quando ativo, as ligações de aúdio e vídeo serão recusadas, automaticamente.</q-item-label>
         </q-item-section>
@@ -218,7 +195,6 @@ export default {
       DirectTicketsToWallets: null,
       botTicketActive: null,
       defaultQueueId: null,
-      ignoreGroupMsg: null,
       rejectCalls: null,
       callRejectMessage: ''
     }

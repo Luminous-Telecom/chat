@@ -1,25 +1,14 @@
-# Ignorar Mensagens de Grupos Completamente
+# Ignorar Mensagens de Grupos - Sempre Ativo
 
 ## Descrição
-Esta funcionalidade permite ignorar totalmente mensagens de grupos do WhatsApp, incluindo:
+O sistema está configurado para SEMPRE ignorar totalmente mensagens de grupos do WhatsApp, incluindo:
 - Não processar as mensagens
 - Não gerar logs
 - Não criar tickets
 - Não armazenar no banco de dados
 - Não processar ACKs (confirmações de leitura/entrega)
 
-## Configuração
-
-### Backend
-A configuração é controlada pela setting `ignoreGroupMsg` no banco de dados:
-- **Chave**: `ignoreGroupMsg`
-- **Valor**: `enabled` (para ignorar) ou `disabled` (para processar normalmente)
-
-### Frontend
-A configuração pode ser alterada em:
-- **Página**: Configurações
-- **Seção**: "Ignorar Mensagens de Grupo"
-- **Descrição**: "Habilitando esta opção o sistema não abrirá ticket para grupos"
+**Esta funcionalidade está HARDCODED e não pode ser desabilitada.**
 
 ## Implementação Técnica
 
@@ -41,9 +30,10 @@ A configuração pode ser alterada em:
 ### Benefícios da Implementação
 
 - **Performance**: Mensagens de grupos são filtradas no ponto mais inicial, evitando processamento desnecessário
-- **Logs Limpos**: Não gera logs para mensagens de grupos quando a opção está habilitada
+- **Logs Limpos**: Não gera logs para mensagens de grupos
 - **Economia de Recursos**: Não consome recursos do banco de dados ou memória
 - **Zero Impacto**: Mensagens são completamente ignoradas, como se nunca tivessem chegado
+- **Sempre Ativo**: Não há possibilidade de habilitar mensagens de grupos acidentalmente
 
 ### Identificação de Grupos
 
@@ -52,32 +42,36 @@ Mensagens de grupos são identificadas pelo padrão:
 const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
 ```
 
+Status broadcasts (`@broadcast`) também são sempre ignorados.
+
 ### Fluxo de Execução
 
 1. Mensagem chega via WebSocket
-2. Verifica se `ignoreGroupMsg` está habilitado
-3. Se habilitado e for mensagem de grupo: **IGNORA COMPLETAMENTE**
-4. Se não for grupo ou configuração desabilitada: processa normalmente
+2. Verifica se é mensagem de grupo (`@g.us`) ou status (`@broadcast`)
+3. Se for grupo ou status: **IGNORA COMPLETAMENTE**
+4. Se não for grupo: processa normalmente
 
-## Uso
+## Código Exemplo
 
-Para habilitar via SQL:
-```sql
-UPDATE "Settings" 
-SET value = 'enabled' 
-WHERE key = 'ignoreGroupMsg' AND "tenantId" = YOUR_TENANT_ID;
+```javascript
+// Exemplo da filtragem em StartWhatsAppSession.ts
+for (const msg of messages) {
+  // Sempre ignorar mensagens de grupos
+  const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
+  
+  // Se é mensagem de grupo, pula completamente
+  if (isGroup) {
+    continue; // Não processa, não loga, ignora totalmente
+  }
+
+  await HandleBaileysMessage(msg, wbot);
+}
 ```
 
-Para desabilitar via SQL:
-```sql
-UPDATE "Settings" 
-SET value = 'disabled' 
-WHERE key = 'ignoreGroupMsg' AND "tenantId" = YOUR_TENANT_ID;
-```
+## Observações Importantes
 
-## Observações
-
-- A configuração é por tenant (empresa)
-- Mudanças na configuração têm efeito imediato
-- Não afeta mensagens já processadas
-- Status de grupos (`@broadcast`) também são ignorados quando habilitado 
+- **Não há configuração**: A funcionalidade está sempre ativa
+- **Não há interface**: Não existe mais botão para habilitar/desabilitar
+- **Mudanças futuras**: Para habilitar grupos, seria necessário modificar o código
+- **Status também ignorados**: Mensagens de status (@broadcast) também são sempre ignoradas
+- **Performance otimizada**: Filtragem acontece antes de qualquer processamento pesado 

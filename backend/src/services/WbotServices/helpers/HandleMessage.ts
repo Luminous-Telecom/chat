@@ -11,7 +11,6 @@ import verifyBusinessHours from "./VerifyBusinessHours";
 import VerifyStepsChatFlowTicket from "../../ChatFlowServices/VerifyStepsChatFlowTicket";
 import Queue from "../../../libs/Queue";
 // import isMessageExistsService from "../../MessageServices/isMessageExistsService";
-import Setting from "../../../models/Setting";
 
 const HandleMessage = async (
   msg: WbotMessage,
@@ -28,15 +27,8 @@ const HandleMessage = async (
       const { tenantId } = whatsapp;
       const chat = await msg.getChat();
 
-      // IGNORAR MENSAGENS DE GRUPO - sair cedo sem processamento nem logs
-      const Settingdb = await Setting.findOne({
-        where: { key: "ignoreGroupMsg", tenantId },
-      });
-
-      if (
-        Settingdb?.value === "enabled" &&
-        (chat.isGroup || msg.from === "status@broadcast")
-      ) {
+      // SEMPRE IGNORAR MENSAGENS DE GRUPO E STATUS
+      if (chat.isGroup || msg.from === "status@broadcast") {
         // Ignorar totalmente mensagens de grupos - não processa nem loga
         resolve();
         return;

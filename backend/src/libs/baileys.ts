@@ -78,26 +78,11 @@ const processMessageQueue = async (whatsappId: number): Promise<void> => {
     // Processar mensagens em paralelo dentro do lote para máxima velocidade
     const processingPromises = batch.map(async (msg) => {
       try {
-        // Verificar se é mensagem de grupo ANTES de importar handlers (otimização)
+        // Sempre ignorar mensagens de grupos
         const isGroup = msg.key?.remoteJid?.endsWith("@g.us");
         
         if (isGroup) {
-          // Importar Setting apenas quando necessário
-          const { default: Setting } = await import("../models/Setting");
-          const { default: Whatsapp } = await import("../models/Whatsapp");
-          
-          // Buscar whatsapp para obter tenantId
-          const whatsapp = await Whatsapp.findByPk(whatsappId);
-          if (whatsapp) {
-            const ignoreGroupSetting = await Setting.findOne({
-              where: { key: "ignoreGroupMsg", tenantId: whatsapp.tenantId },
-            });
-            
-            // Se deve ignorar grupos, pula completamente sem logs
-            if (ignoreGroupSetting?.value === "enabled") {
-              return; // Ignora totalmente
-            }
-          }
+          return; // Ignora totalmente mensagens de grupos
         }
 
         const { default: HandleBaileysMessage } = await import("../services/BaileysServices/HandleBaileysMessage");

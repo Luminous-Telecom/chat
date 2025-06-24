@@ -9,7 +9,6 @@ import VerifyMessage from "../WbotServices/helpers/VerifyMessage";
 import verifyBusinessHours from "../WbotServices/helpers/VerifyBusinessHours";
 import VerifyStepsChatFlowTicket from "../ChatFlowServices/VerifyStepsChatFlowTicket";
 import Queue from "../../libs/Queue";
-import Setting from "../../models/Setting";
 import { StartWhatsAppSessionVerify } from "../WbotServices/StartWhatsAppSessionVerify";
 import { getBaileysSession } from "../../libs/baileys";
 import socketEmit from "../../helpers/socketEmit";
@@ -177,13 +176,8 @@ const HandleBaileysMessage = async (
           return;
         }
 
-        // Verificar configuração de grupos - sair cedo sem logs se deve ignorar
-        const Settingdb = await Setting.findOne({
-          where: { key: "ignoreGroupMsg", tenantId },
-        });
-
-        if (Settingdb?.value === "enabled" && isGroup) {
-          // Ignorar totalmente mensagens de grupos - não processa nem loga
+        // Sempre ignorar mensagens de grupos - não processa nem loga
+        if (isGroup) {
           resolve();
           return;
         }
