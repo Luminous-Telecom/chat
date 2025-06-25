@@ -136,7 +136,6 @@ export default {
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
-  border-color: #1976d2;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -208,7 +207,6 @@ export default {
 body.body--dark {
   .search-input-container {
     background: rgba(30, 42, 58, 0.8);
-    border-color: #1976d2;
 
     &:hover {
       background: rgba(30, 42, 58, 0.9);
