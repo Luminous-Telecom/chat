@@ -475,7 +475,7 @@ Frontend recebe eventos
 
 **Título da Guia**
 - Contador total de notificações
-- Formatação: `(X) Lumis Suite` 
+- Formatação: `(X) Lumi Suite` 
 - Atualização via `atualizarTituloGuia()`
 
 **Chat (MensagemChat.vue)**
