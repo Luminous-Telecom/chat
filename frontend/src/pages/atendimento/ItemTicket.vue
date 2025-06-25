@@ -9,9 +9,20 @@
         'ticket-item--not-answered': ticket.answered == false && ticket.isGroup == false && ticket.status == 'open',
         'ticket-item--pending': ticket.status === 'pending',
         'ticket-item--open': ticket.status === 'open',
-        'ticket-item--closed': ticket.status === 'closed'
+        'ticket-item--closed': ticket.status === 'closed',
+        'ticket-item--loading': recarregando
       }"
     >
+      <!-- Tooltip para ticket ativo indicando que pode recarregar -->
+      <q-tooltip
+        v-if="ticket.id === $store.getters['ticketFocado'].id"
+        content-class="bg-blue-9 text-white"
+        anchor="center left"
+        self="center right"
+        :offset="[10, 0]"
+      >
+        🔄 Clique novamente para recarregar a conversa
+      </q-tooltip>
       <!-- Status Border -->
       <div class="ticket-status-border" :class="`ticket-status-border--${ticket.status}`"></div>
 
@@ -97,7 +108,8 @@ export default {
   mixins: [mixinAtualizarStatusTicket],
   data () {
     return {
-      recalcularHora: 1
+      recalcularHora: 1,
+      recarregando: false // Estado para controlar loading do recarregamento
     }
   },
   computed: {
@@ -136,7 +148,7 @@ export default {
       }
       return formatDistance(data, new Date(), { locale: pt })
     },
-    abrirChatContato (ticket) {
+    async abrirChatContato (ticket) {
       // Permitir visualizar ticket sempre, removendo a restrição para tickets pendentes
       // O botão "Atender" continuará disponível para iniciar o atendimento quando necessário
 
@@ -148,13 +160,51 @@ export default {
       const isAlreadyFocused = (ticket.id === this.$store.getters.ticketFocado.id && this.$route.name === 'chat')
 
       if (isAlreadyFocused) {
-        // Se o ticket já está focado, emitir evento para focar o input
-        this.$root.$emit('ticket:refocus-input')
+        // 🔄 NOVO: Se o ticket já está focado, recarregar o chat
+        await this.recarregarChat(ticket)
         return
       }
 
       this.$store.commit('SET_HAS_MORE', true)
       this.$store.dispatch('AbrirChatMensagens', ticket)
+    },
+
+    async recarregarChat (ticket) {
+      // Evitar múltiplos recarregamentos simultâneos
+      if (this.recarregando) return
+
+      try {
+        this.recarregando = true
+
+        // 🔄 Recarregar silenciosamente sem notificações
+        await this.$store.dispatch('RecarregarChatMensagens', ticket)
+
+        // Focar o input após recarregar
+        setTimeout(() => {
+          this.$root.$emit('ticket:refocus-input')
+        }, 300)
+      } catch (error) {
+        console.error('[recarregarChat] Erro ao recarregar chat:', error)
+
+        // Mostrar erro para o usuário
+        this.$q.notify({
+          type: 'negative',
+          message: '❌ Erro ao recarregar conversa',
+          caption: 'Tente novamente',
+          position: 'bottom-right',
+          timeout: 3000,
+          actions: [
+            {
+              icon: 'close',
+              color: 'white',
+              round: true,
+              handler: () => {}
+            }
+          ]
+        })
+      } finally {
+        this.recarregando = false
+      }
     }
   },
   watch: {
@@ -206,10 +256,30 @@ export default {
     &--active {
     background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
     border: 2px solid #1976d2;
+    position: relative;
 
     .ticket-status-border {
       background: linear-gradient(135deg, #1976d2, #7b1fa2);
     }
+
+    // Indicar que é clicável para recarregar
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
+
+      &::after {
+        content: "🔄";
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 12px;
+        opacity: 0.8;
+        animation: rotate-refresh 1s infinite linear;
+      }
+    }
+
+    // Pulsação sutil para indicar que é interativo
+    animation: active-pulse 3s infinite;
   }
 
   &--not-answered {
@@ -232,6 +302,39 @@ export default {
 
     .ticket-status-border--closed {
       background: linear-gradient(135deg, #4caf50, #66bb6a);
+    }
+  }
+
+  &--loading {
+    position: relative;
+    opacity: 0.8;
+    pointer-events: none;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #1976d2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 10;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      z-index: 9;
     }
   }
 }
@@ -487,6 +590,35 @@ export default {
   50% {
     transform: scale(1.1);
     opacity: 0.8;
+  }
+}
+
+@keyframes rotate-refresh {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes active-pulse {
+  0%, 100% {
+    border-color: #1976d2;
+    box-shadow: 0 2px 12px rgba(25, 118, 210, 0.15);
+  }
+  50% {
+    border-color: #42a5f5;
+    box-shadow: 0 2px 12px rgba(66, 165, 245, 0.2);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 

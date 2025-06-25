@@ -654,6 +654,36 @@ const atendimentoTicket = {
     },
     removeProcessingMessage ({ commit }, messageId) {
       commit('REMOVE_PROCESSING_MESSAGE', messageId)
+    },
+    // 🔄 NOVO: Action específica para recarregar chat
+    async RecarregarChatMensagens ({ commit, dispatch }, data) {
+      try {
+        // Sempre limpar primeiro
+        await commit('RESET_MESSAGE')
+
+        // Recarregar dados do ticket
+        const ticket = await ConsultarDadosTicket(data)
+        const ticketData = JSON.parse(JSON.stringify(ticket.data))
+
+        // Garantir estruturas essenciais
+        if (!ticketData.contact) ticketData.contact = {}
+        if (!ticketData.contact.tags) ticketData.contact.tags = []
+        if (!ticketData.contact.wallets) ticketData.contact.wallets = []
+        if (!ticketData.contact.extraInfo) ticketData.contact.extraInfo = []
+        if (!ticketData.scheduledMessages) ticketData.scheduledMessages = []
+
+        // Atualizar ticket focado
+        commit('TICKET_FOCADO', ticketData)
+
+        // Recarregar mensagens
+        const params = { ticketId: data.ticketId || data.id, pageNumber: 1 }
+        await dispatch('LocalizarMensagensTicket', params)
+
+        return ticketData
+      } catch (error) {
+        console.error('Erro ao recarregar chat:', error)
+        throw error
+      }
     }
   }
 }
