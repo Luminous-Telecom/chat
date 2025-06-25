@@ -70,6 +70,25 @@ const VerifyMediaMessage = async (
   ticket: Ticket,
   contact: Contact
 ): Promise<Message | void> => {
+  // Timeout geral para todo o processo de verificação de mídia
+  const processTimeout = 120000; // 2 minutos
+  
+  return Promise.race([
+    processVerifyMediaMessage(msg, ticket, contact),
+    new Promise<void>((_, reject) =>
+      setTimeout(() => {
+        processingMessages.delete(msg.id.id);
+        reject(new Error(`VerifyMediaMessage timeout after ${processTimeout}ms for message ${msg.id.id}`));
+      }, processTimeout)
+    )
+  ]);
+};
+
+const processVerifyMediaMessage = async (
+  msg: WbotMessage,
+  ticket: Ticket,
+  contact: Contact
+): Promise<Message | void> => {
   try {
     // FILTRO FINAL PARA REAÇÕES: Verificar se é uma reação antes de processar
     const ignoredTypes = [
@@ -166,40 +185,73 @@ const VerifyMediaMessage = async (
 
     while (retryCount < maxRetries && !media) {
       try {
-        // Tentar diferentes métodos de download
+        logger.info(`[VerifyMediaMessage] Download attempt ${retryCount + 1}/${maxRetries} for message ${msg.id.id} (type: ${msg.type})`);
+        
+        // Tentar diferentes métodos de download com timeout específico para cada tipo
         let downloadResult: any = null;
+        const timeoutMs = msg.type === 'stickerMessage' ? 15000 : 30000; // Timeout menor para stickers
+        
         if (retryCount === 0) {
-          downloadResult = await (msg as any).downloadMedia();
-        } else if (retryCount === 1) {
-          // Tentar com opções específicas
-          downloadResult = await (msg as any).downloadMedia({
-            highQuality: false,
-          });
-        } else {
-          // Última tentativa com timeout maior
+          // Primeira tentativa normal
           downloadResult = await Promise.race([
             (msg as any).downloadMedia(),
             new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("Download timeout")), 30000))
+              setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms`)), timeoutMs)
+            )
+          ]);
+        } else if (retryCount === 1) {
+          // Segunda tentativa com opções específicas
+          downloadResult = await Promise.race([
+            (msg as any).downloadMedia({ highQuality: false }),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms (attempt 2)`)), timeoutMs)
+            )
+          ]);
+        } else {
+          // Última tentativa com timeout ainda menor
+          const finalTimeout = Math.max(10000, timeoutMs / 2);
+          downloadResult = await Promise.race([
+            (msg as any).downloadMedia(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error(`Download timeout after ${finalTimeout}ms (final attempt)`)), finalTimeout)
+            )
           ]);
         }
+
+        logger.info(`[VerifyMediaMessage] Download completed for ${msg.id.id}, processing result...`);
 
         // Verificar se o resultado é um Buffer (Baileys) ou objeto MediaData (WhatsApp Web.js)
         if (downloadResult) {
           if (Buffer.isBuffer(downloadResult)) {
-            const detectedMimetype =
-              msg.message?.imageMessage?.mimetype ||
-              msg.message?.videoMessage?.mimetype ||
-              msg.message?.audioMessage?.mimetype ||
-              msg.message?.documentMessage?.mimetype ||
-              "application/octet-stream";
+            // Detectar mimetype baseado no tipo de mensagem
+            let detectedMimetype = "application/octet-stream";
+            
+            if (msg.type === 'stickerMessage' && msg.message?.stickerMessage) {
+              detectedMimetype = msg.message.stickerMessage.mimetype || "image/webp";
+            } else {
+              detectedMimetype =
+                msg.message?.imageMessage?.mimetype ||
+                msg.message?.videoMessage?.mimetype ||
+                msg.message?.audioMessage?.mimetype ||
+                msg.message?.documentMessage?.mimetype ||
+                msg.message?.stickerMessage?.mimetype ||
+                "application/octet-stream";
+            }
 
             const fileExtension = getFileExtension(detectedMimetype);
-            const baseFilename =
-              msg.message?.imageMessage?.caption ||
-              msg.message?.videoMessage?.caption ||
-              msg.message?.documentMessage?.fileName ||
-              `media_${Date.now()}`;
+            let baseFilename = '';
+            
+            // Tratamento específico para diferentes tipos de mídia
+            if (msg.type === 'stickerMessage') {
+              baseFilename = `sticker_${Date.now()}`;
+            } else {
+              baseFilename =
+                msg.message?.imageMessage?.caption ||
+                msg.message?.videoMessage?.caption ||
+                msg.message?.documentMessage?.fileName ||
+                msg.body ||
+                `media_${Date.now()}`;
+            }
 
             // Garantir que o filename tenha a extensão correta
             const finalFilename = baseFilename.includes(".")
@@ -211,45 +263,59 @@ const VerifyMediaMessage = async (
               mimetype: detectedMimetype,
               filename: finalFilename,
             } as MediaData;
+
+            logger.info(`[VerifyMediaMessage] Successfully processed download for ${msg.id.id}, filename: ${finalFilename}`);
             break;
-          } else if (downloadResult.data) {
+          } else if (downloadResult && downloadResult.data) {
             media = downloadResult as MediaData;
+            logger.info(`[VerifyMediaMessage] Successfully processed object download for ${msg.id.id}`);
             break;
           } else {
             logger.warn(
-              `Media downloaded but invalid format for message ID: ${
+              `[VerifyMediaMessage] Media downloaded but invalid format for message ID: ${
                 msg.id.id
               } on attempt ${retryCount + 1}`
             );
             logger.warn(
-              `Download result type: ${typeof downloadResult}, keys: ${Object.keys(
+              `[VerifyMediaMessage] Download result type: ${typeof downloadResult}, keys: ${Object.keys(
                 downloadResult || {}
               )}`
             );
+            // Continue para a próxima tentativa
+            retryCount++;
           }
+        } else {
+          logger.warn(`[VerifyMediaMessage] Download returned null for ${msg.id.id}, attempt ${retryCount + 1}`);
+          retryCount++;
         }
       } catch (err) {
         lastError = err;
         retryCount++;
         logger.warn(
-          `Attempt ${retryCount} failed for message ID: ${msg.id.id}. Error: ${err.message}`
+          `[VerifyMediaMessage] Attempt ${retryCount} failed for message ID: ${msg.id.id}. Error: ${err.message}`
         );
 
-        if (retryCount === maxRetries) {
+        if (retryCount >= maxRetries) {
           logger.error(
-            `ERR_WAPP_DOWNLOAD_MEDIA:: Failed after ${maxRetries} attempts for message ID: ${
+            `[VerifyMediaMessage] ERR_WAPP_DOWNLOAD_MEDIA:: Failed after ${maxRetries} attempts for message ID: ${
               msg.id.id
-            }. Last error: ${lastError?.message || "Unknown error"}`
+            } (type: ${msg.type}). Last error: ${lastError?.message || "Unknown error"}`
           );
+          
+          // Para stickers, criar mensagem indicativa
+          const fallbackBody = msg.type === 'stickerMessage' 
+            ? "📄 Figurinha" 
+            : msg.body || "Mídia não disponível";
+          
           // Criar mensagem mesmo sem mídia para evitar reprocessamento
           const messageData = {
             messageId: msg.id.id,
             ticketId: ticket.id,
             contactId: msg.fromMe ? undefined : contact.id,
-            body: msg.body || "Mídia não disponível",
+            body: fallbackBody,
             fromMe: msg.fromMe,
             read: msg.fromMe,
-            mediaType: msg.type,
+            mediaType: msg.type === 'stickerMessage' ? 'image' : getMediaType(undefined),
             quotedMsgId: quotedMsg?.id,
             timestamp: msg.timestamp,
             status: msg.fromMe ? "sended" : "received",
@@ -259,12 +325,14 @@ const VerifyMediaMessage = async (
             messageData,
             tenantId: ticket.tenantId,
           });
+          
           processingMessages.delete(msg.id.id);
           return message;
         }
 
         // Esperar um pouco antes de tentar novamente, com tempo crescente
-        const waitTime = 1000 * Math.pow(2, retryCount); // Exponential backoff
+        const waitTime = 1000 * Math.pow(2, retryCount - 1); // Exponential backoff
+        logger.info(`[VerifyMediaMessage] Waiting ${waitTime}ms before retry ${retryCount + 1} for message ${msg.id.id}`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }

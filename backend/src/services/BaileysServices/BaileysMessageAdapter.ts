@@ -58,47 +58,59 @@ export class BaileysMessageAdapter {
           msg.message.imageMessage ||
           msg.message.videoMessage ||
           msg.message.audioMessage ||
-          msg.message.documentMessage;
+          msg.message.documentMessage ||
+          msg.message.stickerMessage;
 
         if (!content || typeof content !== "object" || !("url" in content)) {
-          // console.log('[BaileysMessageAdapter] No valid media content found. Message type:', messageType);
-          // console.log('[BaileysMessageAdapter] Available message keys:', Object.keys(msg.message || {}));
+          console.log(`[BaileysMessageAdapter] No valid media content found. Message type: ${messageType}`);
+          console.log(`[BaileysMessageAdapter] Available message keys:`, Object.keys(msg.message || {}));
+          console.log(`[BaileysMessageAdapter] Content object:`, content);
           return null;
         }
 
-        // Tentar download com retry
+        // Tentar download com retry e timeout específico para tipo de mídia
         let retryCount = 0;
         const maxRetries = 2;
+        const timeoutMs = messageType === 'stickerMessage' ? 10000 : 20000; // Timeout menor para stickers
+
+        console.log(`[BaileysMessageAdapter] Starting download for ${messageType} with ${timeoutMs}ms timeout`);
 
         while (retryCount <= maxRetries) {
           try {
-            // console.log(`[BaileysMessageAdapter] Attempting to download media (attempt ${retryCount + 1}/${maxRetries + 1}) for message type:`, messageType);
+            console.log(`[BaileysMessageAdapter] Attempting to download media (attempt ${retryCount + 1}/${maxRetries + 1}) for message type: ${messageType}`);
 
-            // Use the imported downloadMediaMessage function
-            const buffer = await downloadMediaMessage(msg, "buffer", {});
+            // Use timeout wrapper para evitar travamentos
+            const buffer = await Promise.race([
+              downloadMediaMessage(msg, "buffer", {}),
+              new Promise<Buffer | null>((_, reject) =>
+                setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms`)), timeoutMs)
+              )
+            ]);
 
             if (buffer && buffer.length > 0) {
-              // console.log('[BaileysMessageAdapter] Successfully downloaded media, buffer size:', buffer.length);
+              console.log(`[BaileysMessageAdapter] Successfully downloaded ${messageType}, buffer size: ${buffer.length}`);
               return buffer as Buffer;
             }
-            // console.log('[BaileysMessageAdapter] Download returned null/empty buffer');
+            
+            console.log(`[BaileysMessageAdapter] Download returned null/empty buffer for ${messageType}`);
             if (retryCount === maxRetries) {
               return null;
             }
           } catch (error) {
             console.error(
-              `[BaileysMessageAdapter] Error downloading media (attempt ${
+              `[BaileysMessageAdapter] Error downloading ${messageType} (attempt ${
                 retryCount + 1
               }):`,
               error.message || "Unknown error"
             );
 
             if (retryCount === maxRetries) {
-              console.error("[BaileysMessageAdapter] Final error details:", {
+              console.error(`[BaileysMessageAdapter] Final error details for ${messageType}:`, {
                 messageType,
                 hasUrl: !!content.url,
                 contentKeys: Object.keys(content),
                 errorMessage: error.message,
+                stickerUrl: messageType === 'stickerMessage' ? content.url : 'N/A'
               });
               return null;
             }
@@ -106,11 +118,10 @@ export class BaileysMessageAdapter {
 
           retryCount++;
           if (retryCount <= maxRetries) {
-            // Aguardar antes da próxima tentativa
-            const currentRetryCount = retryCount;
-            await new Promise(resolve =>
-              setTimeout(resolve, 1000 * currentRetryCount)
-            );
+            // Aguardar antes da próxima tentativa (tempo menor para stickers)
+            const waitTime = messageType === 'stickerMessage' ? 500 : 1000 * retryCount;
+            console.log(`[BaileysMessageAdapter] Waiting ${waitTime}ms before retry ${retryCount + 1} for ${messageType}`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
           }
         }
 
