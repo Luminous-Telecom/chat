@@ -228,13 +228,14 @@
                 :src=" mensagem.mediaUrl "
                 controls
                 class="q-mt-md"
-                style="object-fit: cover;
+                style="object-fit: contain;
                   width: 330px;
                   height: 150px;
                   border-top-left-radius: 8px;
                   border-top-right-radius: 8px;
                   border-bottom-left-radius: 8px;
                   border-bottom-right-radius: 8px;
+                  background: #f5f5f5;
                 "
               >
               </video>

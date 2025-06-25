@@ -57,13 +57,14 @@
             </div>
           </div>
           <video v-if="cMediaUrl && $attrs.element.data.type.indexOf('video') != -1" :src="cMediaUrl" controls
-            class="q-mt-md" style="objectFit: cover;
+            class="q-mt-md" style="objectFit: contain;
                   width: 330px;
                   height: 150px;
                   borderTopLeftRadius: 8px;
                   borderTopRightRadius: 8px;
                   borderBottomLeftRadius: 8px;
-                  borderBottomRightRadius: 8px;" type="video/mp4">
+                  borderBottomRightRadius: 8px;
+                  background: #f5f5f5;" type="video/mp4">
           </video>
           <audio v-if="cMediaUrl && $attrs.element.data.type.indexOf('audio') != -1" class="q-mt-md full-width"
             controls>

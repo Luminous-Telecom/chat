@@ -103,7 +103,7 @@
                             :src="mensagem.mediaUrl"
                             controls
                             class="q-mt-md"
-                            style="object-fit: cover; width: 330px; height: 150px; border-radius: 8px;"
+                            style="object-fit: contain; width: 330px; height: 150px; border-radius: 8px; background: #f5f5f5;"
                           >
                           </video>
                         </template>

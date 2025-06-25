@@ -102,7 +102,7 @@
             <video
               :src="mensagem.mediaUrl"
               controls
-              style="objectFit: cover;
+              style="objectFit: contain;
                     width: 130px;
                     height: 60px;
                     borderTopLeftRadius: 8px;
@@ -110,6 +110,7 @@
                     borderBottomLeftRadius: 8px;
                     borderBottomRightRadius: 8px;
                     pointer-events: none;
+                    background: #f5f5f5;
                   "
               >
             </video>
