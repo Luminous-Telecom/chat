@@ -242,16 +242,13 @@ export default {
   }
 
     &--active {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    border: 2px solid #1976d2;
+    background: rgb(255, 6, 6);
     position: relative;
 
     .ticket-status-border {
       background: linear-gradient(135deg, #1976d2, #7b1fa2);
     }
 
-    // Pulsação sutil para indicar que é interativo
-    animation: active-pulse 3s infinite;
   }
 
   &--not-answered {
@@ -478,7 +475,7 @@ export default {
 // Dark mode styles
 .body--dark {
   .ticket-item {
-    background: var(--dark-secondary);
+    background: rgba(144, 202, 249, 0);
     border-color: var(--dark-border);
     color: var(--dark-text-primary);
 
@@ -487,8 +484,7 @@ export default {
     }
 
         &--active {
-      background: rgba(144, 202, 249, 0.1);
-      border: 2px solid #90caf9;
+      background: rgba(144, 202, 249, 0.199);
     }
 
     &--pending {
@@ -561,17 +557,6 @@ export default {
   50% {
     transform: scale(1.1);
     opacity: 0.8;
-  }
-}
-
-@keyframes active-pulse {
-  0%, 100% {
-    border-color: #1976d2;
-    box-shadow: 0 2px 12px rgba(25, 118, 210, 0.15);
-  }
-  50% {
-    border-color: #42a5f5;
-    box-shadow: 0 2px 12px rgba(66, 165, 245, 0.2);
   }
 }
 
