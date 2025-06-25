@@ -21,8 +21,9 @@
         />
         <!-- Avatar e nome do usuário fora do balão -->
         <div
-          v-if="mensagem.fromMe && getUserDisplayName(mensagem)"
+          v-if="mensagem._mostrarHeaderUsuario"
           class="user-header-external"
+          :class="{ 'user-header-with-spacing': index > 0 }"
         >
           <span class="user-name-external">{{ getUserDisplayName(mensagem) }}</span>
           <div class="user-avatar-external">
@@ -58,7 +59,8 @@
             'q-message-text--contact': mensagem.mediaType === 'vcard',
             'q-message-text--forwarded': mensagem.isForwarded,
             'q-message-text--edited': mensagem.isEdited,
-            'mensagem-hover-active': hoveredMessageId === mensagem.id
+            'mensagem-hover-active': hoveredMessageId === mensagem.id,
+            'mensagem-agrupada': !mensagem._mostrarHeaderUsuario && mensagem.fromMe
           }"
           @mouseenter="showMessageOptions(mensagem.id)"
           @mouseleave="hideMessageOptions(mensagem.id)"
@@ -557,9 +559,10 @@ export default {
 
       if (!this.isLineDate) {
         // Se não deve mostrar linha de data, apenas adicionar flag false
-        return this.mensagens.map(mensagem => ({
+        return this.mensagens.map((mensagem, index) => ({
           ...mensagem,
-          _mostrarLinha: false
+          _mostrarLinha: false,
+          _mostrarHeaderUsuario: this.shouldShowUserHeader(mensagem, index)
         }))
       }
 
@@ -570,7 +573,8 @@ export default {
         return {
           ...mensagem,
           _dataFormatada: dataFormatada,
-          _mostrarLinha: index === 0 || dataFormatada !== dataAnterior
+          _mostrarLinha: index === 0 || dataFormatada !== dataAnterior,
+          _mostrarHeaderUsuario: this.shouldShowUserHeader(mensagem, index)
         }
       })
     }
@@ -1151,6 +1155,50 @@ export default {
           this.markUnreadMessagesAsRead()
         }, 500) // Reduzir tempo para 500ms
       }
+    },
+    shouldShowUserHeader (mensagem, index) {
+      // Só mostrar header para mensagens enviadas por mim
+      if (!mensagem.fromMe) {
+        return false
+      }
+
+      // Se não tem nome do usuário para mostrar, não mostrar header
+      if (!this.getUserDisplayName(mensagem)) {
+        return false
+      }
+
+      // Se é a primeira mensagem, mostrar header
+      if (index === 0) {
+        return true
+      }
+
+      const mensagemAnterior = this.mensagens[index - 1]
+
+      // Se a mensagem anterior não foi enviada por mim, mostrar header
+      if (!mensagemAnterior.fromMe) {
+        return true
+      }
+
+      // Se a mensagem anterior foi enviada por outro usuário, mostrar header
+      const usuarioAtual = this.getUserDisplayName(mensagem)
+      const usuarioAnterior = this.getUserDisplayName(mensagemAnterior)
+
+      if (usuarioAtual !== usuarioAnterior) {
+        return true
+      }
+
+      // Verificar se há uma quebra de tempo significativa (mais de 5 minutos)
+      const tempoAtual = new Date(mensagem.createdAt)
+      const tempoAnterior = new Date(mensagemAnterior.createdAt)
+      const diferencaMinutos = (tempoAtual - tempoAnterior) / (1000 * 60)
+
+      // Se passou mais de 5 minutos, mostrar header novamente
+      if (diferencaMinutos > 5) {
+        return true
+      }
+
+      // Caso contrário, não mostrar (mensagens consecutivas do mesmo usuário)
+      return false
     }
   },
   watch: {
@@ -1572,6 +1620,27 @@ export default {
   justify-content: flex-end;
   padding-right: 8px;
   flex-direction: row;
+}
+
+/* Espaçamento extra entre grupos de mensagens */
+.user-header-with-spacing {
+  margin-top: 16px;
+}
+
+/* Espaçamento reduzido para mensagens agrupadas */
+.mensagem-agrupada {
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+}
+
+/* Ajustar espaçamento padrão das mensagens enviadas */
+.q-chat-message--sent {
+  margin-bottom: 8px;
+}
+
+/* Para mensagens agrupadas, reduzir ainda mais o espaçamento */
+.mensagem-agrupada.q-chat-message--sent {
+  margin-bottom: 2px;
 }
 
 .user-avatar-external {
