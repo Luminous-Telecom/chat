@@ -6,6 +6,7 @@ import { logger } from "../../utils/logger";
 import AppError from "../../errors/AppError";
 import sequelize from "../../database";
 import type Contact from "../../models/Contact";
+import User from "../../models/User";
 import socketEmit from "../../helpers/socketEmit";
 // import { StartWhatsAppSessionVerify } from "./StartWhatsAppSessionVerify";
 
@@ -22,7 +23,8 @@ export const SendWhatsAppMessage = async (
   ticket: Ticket,
   body: string,
   quotedMsg?: Message,
-  media?: proto.IMessage
+  media?: proto.IMessage,
+  userId?: number | string
 ): Promise<Message> => {
   const t = await sequelize.transaction();
   try {
@@ -30,6 +32,22 @@ export const SendWhatsAppMessage = async (
     const number = `${contact.number}@${
       ticket.isGroup ? "g.us" : "s.whatsapp.net"
     }`;
+
+    // Adicionar assinatura do usuário ao corpo da mensagem se userId estiver disponível
+    let messageBody = body;
+    if (userId) {
+      try {
+        const user = await User.findByPk(userId, {
+          attributes: ["id", "name", "email"]
+        });
+        if (user && user.name) {
+          messageBody = `*${user.name}*:\n${body}`;
+        }
+      } catch (error) {
+        logger.warn(`[SendWhatsAppMessage] Could not fetch user ${userId}: ${error}`);
+        // Continue without signature if user not found
+      }
+    }
 
     // Sempre criar uma nova mensagem (sem proteção anti-spam)
     const messageToUpdate = await Message.create(
@@ -72,7 +90,7 @@ export const SendWhatsAppMessage = async (
     const sentMessage = await wbot.sendMessage(
       number,
       {
-        text: body,
+        text: messageBody, // Usar messageBody que pode conter a assinatura
       },
       messageOptions
     );

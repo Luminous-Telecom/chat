@@ -87,7 +87,9 @@ const SendMessageSystemProxy = async ({
           contact,
           ticket,
           messageData.body,
-          quotedMessage || undefined
+          quotedMessage || undefined,
+          undefined, // media parameter
+          userId // userId parameter para adicionar assinatura
         );
         break;
     }

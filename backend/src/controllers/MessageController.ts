@@ -391,7 +391,9 @@ export const buttonResponse = async (
       contact,
       ticket,
       buttonText,
-      originalMessage
+      originalMessage,
+      undefined, // media parameter
+      req.user?.id // userId parameter para adicionar assinatura
     );
 
     logger.info(`[buttonResponse] Mensagem enviada via Baileys:`, {

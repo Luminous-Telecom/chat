@@ -44,6 +44,11 @@ const ListMessagesService = async ({
         as: "quotedMsg",
         include: ["contact"],
       },
+      {
+        model: require("../../models/User").default,
+        as: "user",
+        attributes: ["id", "name", "email"]
+      }
     ],
     offset,
     order: [["createdAt", "DESC"]],
@@ -60,6 +65,11 @@ const ListMessagesService = async ({
           as: "quotedMsg",
           include: ["contact"],
         },
+        {
+          model: require("../../models/User").default,
+          as: "user",
+          attributes: ["id", "name", "email"]
+        }
       ],
       order: [["createdAt", "DESC"]],
     });

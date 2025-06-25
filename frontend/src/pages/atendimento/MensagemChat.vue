@@ -102,6 +102,13 @@
             >
               {{ isGroupLabel(mensagem) }}
             </div>
+            <!-- Nome do usuário para mensagens enviadas -->
+            <div
+              v-if="mensagem.fromMe && mensagem.user?.name"
+              class="q-mb-sm text-caption text-primary text-weight-bold"
+            >
+              {{ mensagem.user.name }}
+            </div>
             <div
               v-if="mensagem.quotedMsg"
               :class="{ 'textContentItem': !mensagem.isDeleted, 'textContentItemDeleted': mensagem.isDeleted }"

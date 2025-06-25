@@ -423,7 +423,9 @@ const processTextMessage = async (
           contact,
           ticket,
           partMessageData.body,
-          quotedMsg
+          quotedMsg,
+          undefined, // media parameter
+          userId // userId parameter para adicionar assinatura
         );
       } else {
         // Se for mensagem agendada, criar sem enviar

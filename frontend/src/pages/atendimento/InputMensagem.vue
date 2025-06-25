@@ -716,11 +716,9 @@ export default {
           throw new Error(error)
         }
       }
-      let mensagem = this.textChat.trim()
+      const mensagem = this.textChat.trim()
       const username = localStorage.getItem('username')
-      if (username) {
-        mensagem = `*${username}*:\n ${mensagem}`
-      }
+      const userId = localStorage.getItem('userId')
       const message = {
         read: 1,
         fromMe: true,
@@ -729,7 +727,9 @@ export default {
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
         quotedMsgId: this.replyingMessage?.id || null,
-        id: uid()
+        id: uid(),
+        userId: userId ? parseInt(userId) : null,
+        user: username ? { name: username } : null
       }
       if (this.isScheduleDate) {
         message.scheduleDate = this.scheduleDate
@@ -770,11 +770,9 @@ export default {
     },
     async handlSendLinkVideo () {
       const link = `https://meet.jit.si/${uid()}/${uid()}`
-      let mensagem = link
+      const mensagem = link
       const username = localStorage.getItem('username')
-      if (username) {
-        mensagem = `*${username}*:\n ${mensagem}`
-      }
+      const userId = localStorage.getItem('userId')
       const message = {
         read: 1,
         fromMe: true,
@@ -783,7 +781,9 @@ export default {
         scheduleDate: this.isScheduleDate ? this.scheduleDate : null,
         quotedMsg: this.replyingMessage,
         quotedMsgId: this.replyingMessage?.id || null,
-        id: uid()
+        id: uid(),
+        userId: userId ? parseInt(userId) : null,
+        user: username ? { name: username } : null
       }
 
       this.loading = true

@@ -68,7 +68,9 @@ const SendOffLineMessagesWbot = async (
             message.contact,
             message.ticket,
             message.body,
-            message.quotedMsg
+            message.quotedMsg,
+            undefined, // media parameter
+            message.userId // userId parameter para adicionar assinatura
           );
         }
         await MessagesOffLine.destroy({ where: { id: message.id } });
