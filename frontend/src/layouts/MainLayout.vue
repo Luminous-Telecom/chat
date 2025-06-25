@@ -490,7 +490,10 @@ export default {
           totalPending = values.reduce((sum, count) => {
             return sum + (parseInt(count) || 0)
           }, 0)
-          return { ...menu, badge: totalPending > 0 ? totalPending : 0, badgeColor: 'red' }
+
+          // Sempre mostrar badge: azul para 0, vermelho para > 0
+          const badgeColor = totalPending > 0 ? 'red' : 'blue'
+          return { ...menu, badge: totalPending, badgeColor }
         }
         // Badge para atendimentos em andamento
         if (menu.routeName === 'atendimento' && menu.query?.status === 'open') {
