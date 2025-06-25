@@ -42,7 +42,7 @@ export default {
           // Mudar para "meus atendimentos" após atender o ticket
           this.$root.$emit('trocar-para-meus-atendimentos')
 
-          // Pequeno delay para garantir que o backend processou a atualização
+          // Delay para garantir que o backend processou a atualização e o filtro seja aplicado
           setTimeout(() => {
             this.$store.dispatch('AbrirChatMensagens', ticketAtualizado)
 
@@ -50,7 +50,7 @@ export default {
             this.$nextTick(() => {
               this.$forceUpdate()
             })
-          }, 500)
+          }, 800)
         })
         .catch(err => {
           this.loading = false

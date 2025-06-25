@@ -1747,26 +1747,36 @@ export default {
       this.modalTimeline = true
     },
     trocarParaMeusAtendimentos () {
-      // Mudar para status 'open' (tickets em atendimento)
+      // Forçar mudança para status 'open' e filtro 'meus'
       this.pesquisaTickets.status = ['open']
+      this.pesquisaTickets.showAll = false
+      this.pesquisaTickets.isNotAssignedUser = false
+      this.pesquisaTickets.queuesIds = []
+      this.pesquisaTickets.onlyUserTickets = true
+      this.pesquisaTickets.withUnreadMessages = false
 
-      // Aplicar filtro "meus atendimentos"
-      this.setFilterMode('meus')
+      // Salvar filtros no localStorage para persistir
+      localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets))
 
-      // Atualizar a rota para refletir a mudança
-      this.$router.push({
-        name: this.$route.name,
-        params: this.$route.params,
-        query: { ...this.$route.query, status: 'open' }
-      }).catch(err => {
-        // Ignorar erro de navegação duplicada
-        if (err.name !== 'NavigationDuplicated') {
-          console.error('Erro de navegação:', err)
-        }
+      // Usar $nextTick para garantir que a mudança seja aplicada
+      this.$nextTick(() => {
+        // Atualizar a rota para refletir a mudança
+        this.$router.push({
+          name: this.$route.name,
+          params: this.$route.params,
+          query: { ...this.$route.query, status: 'open' }
+        }).catch(err => {
+          // Ignorar erro de navegação duplicada
+          if (err.name !== 'NavigationDuplicated') {
+            console.error('Erro de navegação:', err)
+          }
+        })
+
+        // Buscar tickets com os novos filtros após pequeno delay
+        setTimeout(() => {
+          this.BuscarTicketFiltro()
+        }, 100)
       })
-
-      // Buscar tickets com os novos filtros
-      this.BuscarTicketFiltro()
     },
     async entrarNaConversa () {
       if (!this.ticketFocado?.id) {
