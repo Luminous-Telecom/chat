@@ -5,17 +5,12 @@
       @click="abrirChatContato(ticket)"
       :class="{
         'ticket-item': true,
-        'ticket-item--active': ticket.id === $store.getters['ticketFocado'].id,
-        'ticket-item--not-answered': ticket.answered == false && ticket.isGroup == false && ticket.status == 'open',
         'ticket-item--pending': ticket.status === 'pending',
         'ticket-item--open': ticket.status === 'open',
         'ticket-item--closed': ticket.status === 'closed',
         'ticket-item--loading': recarregando
       }"
         >
-      <!-- Status Border -->
-      <div class="ticket-status-border" :class="`ticket-status-border--${ticket.status}`"></div>
-
       <!-- Main Content -->
       <div class="ticket-content">
         <!-- Header -->
@@ -245,37 +240,12 @@ export default {
     background: rgba(25, 118, 210, 0.05);
   }
 
-    &--active {
-    background: rgb(255, 6, 6);
-    position: relative;
-
-    .ticket-status-border {
-      background: linear-gradient(135deg, #1976d2, #7b1fa2);
-    }
-
-  }
-
-  &--not-answered {
-    .ticket-status-border--open {
-      background: linear-gradient(135deg, #ff6f00, #ff8f00);
-      animation: pulse-warning 2s infinite;
-    }
-  }
-
   &--pending {
     background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%);
-
-    .ticket-status-border--pending {
-      background: linear-gradient(135deg, #f57c00, #e91e63);
-    }
   }
 
   &--closed {
     opacity: 0.8;
-
-    .ticket-status-border--closed {
-      background: linear-gradient(135deg, #4caf50, #66bb6a);
-    }
   }
 
   &--loading {
@@ -309,27 +279,6 @@ export default {
       border-radius: 8px;
       z-index: 9;
     }
-  }
-}
-
-.ticket-status-border {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: 8px 0 0 8px;
-
-  &--open {
-    background: linear-gradient(135deg, #1976d2, #1e88e5);
-  }
-
-  &--pending {
-    background: linear-gradient(135deg, #f57c00, #ff9800);
-  }
-
-  &--closed {
-    background: linear-gradient(135deg, #4caf50, #66bb6a);
   }
 }
 
@@ -487,12 +436,8 @@ export default {
       background: rgba(144, 202, 249, 0.199);
     }
 
-        &--active {
-      background: rgba(144, 202, 249, 0.199);
-    }
-
     &--pending {
-      background: rgba(255, 152, 0, 0.1);
+      background: rgba(255, 153, 0, 0);
     }
 
     .ticket-contact-name {
@@ -532,15 +477,6 @@ export default {
 }
 
 // Animations
-@keyframes pulse-warning {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
 @keyframes badge-bounce {
   0% {
     transform: scale(0);
