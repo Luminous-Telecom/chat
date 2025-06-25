@@ -64,6 +64,7 @@ export const SendWhatsAppMessage = async (
         ack: 0,
         messageId: null,
         tenantId: ticket.tenantId,
+        userId: userId || null, // Adicionar o userId à mensagem
       },
       { transaction: t }
     );

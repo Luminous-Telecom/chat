@@ -47,7 +47,7 @@ const ListMessagesService = async ({
       {
         model: require("../../models/User").default,
         as: "user",
-        attributes: ["id", "name", "email"]
+        attributes: ["id", "name", "email", "profilePicUrl"]
       }
     ],
     offset,
@@ -68,7 +68,7 @@ const ListMessagesService = async ({
         {
           model: require("../../models/User").default,
           as: "user",
-          attributes: ["id", "name", "email"]
+          attributes: ["id", "name", "email", "profilePicUrl"]
         }
       ],
       order: [["createdAt", "DESC"]],

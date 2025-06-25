@@ -148,7 +148,7 @@ export const update = async (
         {
           model: User,
           as: "user",
-          attributes: ["id", "name", "email"]
+          attributes: ["id", "name", "email", "profilePicUrl"]
         }
       ]
     });
@@ -174,7 +174,7 @@ export const update = async (
       message: await message.reload({ 
         include: [
           { model: Ticket, as: "ticket", include: ["contact"] },
-          { model: User, as: "user", attributes: ["id", "name", "email"] }
+          { model: User, as: "user", attributes: ["id", "name", "email", "profilePicUrl"] }
         ] 
       }),
       ticket: message.ticket
@@ -211,7 +211,7 @@ export const cancel = async (
         {
           model: User,
           as: "user",
-          attributes: ["id", "name", "email"]
+          attributes: ["id", "name", "email", "profilePicUrl"]
         }
       ]
     });
@@ -231,7 +231,7 @@ export const cancel = async (
       message: await message.reload({ 
         include: [
           { model: Ticket, as: "ticket", include: ["contact"] },
-          { model: User, as: "user", attributes: ["id", "name", "email"] }
+          { model: User, as: "user", attributes: ["id", "name", "email", "profilePicUrl"] }
         ] 
       }),
       ticket: message.ticket

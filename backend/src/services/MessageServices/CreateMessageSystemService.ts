@@ -502,7 +502,7 @@ const finalizeMessage = async (
         {
           model: require("../../models/User").default,
           as: "user",
-          attributes: ["id", "name", "email"]
+          attributes: ["id", "name", "email", "profilePicUrl"]
         }
       ],
     });
