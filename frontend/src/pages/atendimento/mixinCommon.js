@@ -1,4 +1,4 @@
-import { format, parseISO, parseJSON } from 'date-fns'
+import { format, parseJSON } from 'date-fns'
 import pt from 'date-fns/locale/pt-BR'
 import { processEmojis } from 'src/utils/emojiUtils'
 
@@ -79,42 +79,19 @@ export default {
       if (!data) return ''
 
       try {
-        // Tentar múltiplos métodos de parsing
-        let parsedDate
-
-        // Primeiro, tentar parseJSON
-        try {
-          parsedDate = parseJSON(data)
-          if (!isNaN(parsedDate.getTime())) {
-            return format(parsedDate, formato, { locale: pt })
-          }
-        } catch (e) {
-          // Continue para próxima tentativa
-        }
-
-        // Se falhar, tentar parseISO
-        try {
-          parsedDate = parseISO(data)
-          if (!isNaN(parsedDate.getTime())) {
-            return format(parsedDate, formato, { locale: pt })
-          }
-        } catch (e) {
-          // Continue para próxima tentativa
-        }
-
-        // Se falhar, tentar new Date
-        try {
-          parsedDate = new Date(data)
-          if (!isNaN(parsedDate.getTime())) {
-            return format(parsedDate, formato, { locale: pt })
-          }
-        } catch (e) {
-          console.error('[formatarData] Erro ao fazer parse da data:', data, e)
-        }
-
-        return ''
+        // Otimização: parseJSON é o mais eficiente para dados do backend
+        const parsedDate = parseJSON(data)
+        return format(parsedDate, formato, { locale: pt })
       } catch (error) {
-        console.error('[formatarData] Erro geral ao formatar data:', data, error)
+        // Fallback apenas se parseJSON falhar
+        try {
+          const fallbackDate = new Date(data)
+          if (!isNaN(fallbackDate.getTime())) {
+            return format(fallbackDate, formato, { locale: pt })
+          }
+        } catch (e) {
+          console.warn('[formatarData] Erro ao formatar data:', data)
+        }
         return ''
       }
     }

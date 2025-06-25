@@ -7,12 +7,11 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <div v-for="(mensagem, index) in mensagens" :key="`msg-wrapper-${mensagem.id}-${index}`">
+      <div v-for="(mensagem, index) in mensagensComDatas" :key="`msg-wrapper-${mensagem.id}-${index}`">
         <hr
-          v-if="isLineDate"
+          v-if="mensagem._mostrarLinha"
           class="hr-text q-mt-lg q-mb-md"
-          :data-content="formatarData(mensagem.createdAt)"
-          v-show="index === 0 || formatarData(mensagem.createdAt) !== formatarData(mensagens[index - 1]?.createdAt)"
+          :data-content="mensagem._dataFormatada"
         />
         <div
           v-if="mensagens.length && index === mensagens.length - 1"
@@ -518,6 +517,29 @@ export default {
     ackIcons () {
       // Fallback para o estado local se o Vuex não estiver disponível
       return this.$store.state.chat?.ackIcons || this.localAckIcons
+    },
+    // Otimização: Cache das datas formatadas para evitar recálculos
+    mensagensComDatas () {
+      if (!this.mensagens?.length) return []
+
+      if (!this.isLineDate) {
+        // Se não deve mostrar linha de data, apenas adicionar flag false
+        return this.mensagens.map(mensagem => ({
+          ...mensagem,
+          _mostrarLinha: false
+        }))
+      }
+
+      return this.mensagens.map((mensagem, index) => {
+        const dataFormatada = this.formatarData(mensagem.createdAt)
+        const dataAnterior = index > 0 ? this.formatarData(this.mensagens[index - 1].createdAt) : null
+
+        return {
+          ...mensagem,
+          _dataFormatada: dataFormatada,
+          _mostrarLinha: index === 0 || dataFormatada !== dataAnterior
+        }
+      })
     }
   },
   components: {
@@ -1631,50 +1653,44 @@ export default {
   }
 }
 
-/* Estilos da linha horizontal com data */
+/* Linha horizontal com data - Otimizada */
 .hr-text {
-  line-height: 1em;
   position: relative;
-  outline: 0;
   border: 0;
-  color: black;
   text-align: center;
   height: 1.5em;
-  opacity: 0.8;
   margin: 16px 0;
 
-  &:before {
+  /* Linha horizontal */
+  &::before {
     content: "";
-    background: linear-gradient(to right, transparent, #818078, transparent);
     position: absolute;
-    left: 0;
     top: 50%;
-    width: 100%;
+    left: 0;
+    right: 0;
     height: 1px;
+    background: linear-gradient(90deg, transparent, #818078, transparent);
   }
 
-  &:after {
+  /* Badge da data */
+  &::after {
     content: attr(data-content);
-    position: relative;
     display: inline-block;
-    color: black;
-    font-size: 14px;
-    font-weight: 600;
     padding: 4px 12px;
-    line-height: 1.5em;
-    background-color: #f5f5f5;
-    border-radius: 15px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--q-color-grey-1, #f5f5f5);
+    color: var(--q-color-grey-8, #424242);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    position: relative;
+    z-index: 1;
   }
 }
 
-/* Dark mode para linha horizontal */
-body.body--dark .hr-text {
-  color: white;
-
-  &:after {
-    background-color: #2d2d2d;
-    color: white;
-  }
+/* Dark mode otimizado */
+.body--dark .hr-text::after {
+  background: var(--q-color-grey-9, #2d2d2d);
+  color: var(--q-color-grey-3, #e0e0e0);
 }
 </style>
