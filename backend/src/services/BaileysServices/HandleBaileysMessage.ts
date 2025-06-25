@@ -200,8 +200,13 @@ const HandleBaileysMessage = async (
           tenantId
         );
 
-        // Criar/buscar ticket
-        const unreadMessages = msg.key.fromMe ? 0 : 1;
+        // Verificar se é uma reação ANTES de criar/buscar ticket
+        const msgType = Object.keys(msg.message || {})[0];
+        const isReaction = msgType === 'reactionMessage' || 
+                          (msg.message && Object.keys(msg.message).includes('reactionMessage'));
+
+        // Se for reação, não incrementar unreadMessages
+        const unreadMessages = msg.key.fromMe || isReaction ? 0 : 1;
         const contact = await VerifyContact(msgContact, tenantId);
 
         const ticket = await FindOrCreateTicketService({
@@ -224,8 +229,8 @@ const HandleBaileysMessage = async (
 
         if (!message) {
           // Verificar se foi uma reação ignorada propositalmente
-          const messageType = Object.keys(msg.message || {})[0];
-          const isIgnoredReaction = messageType === 'reactionMessage' || 
+          const msgTypeCheck = Object.keys(msg.message || {})[0];
+          const isIgnoredReaction = msgTypeCheck === 'reactionMessage' || 
                                     (msg.message && Object.keys(msg.message).includes('reactionMessage'));
           
           if (!isIgnoredReaction) {
