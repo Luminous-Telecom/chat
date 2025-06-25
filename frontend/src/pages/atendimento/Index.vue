@@ -1077,12 +1077,12 @@ export default {
         this.pesquisaTickets.queuesIds = []
         this.pesquisaTickets.onlyUserTickets = true // Aplicar filtro "meus atendimentos" por padrão
       } else if (statusToSet.includes('closed')) {
-        // Para tickets fechados: mostrar todos
-        this.pesquisaTickets.showAll = true
+        // Para tickets fechados: mostrar meus atendimentos
+        this.pesquisaTickets.showAll = false
         this.pesquisaTickets.isNotAssignedUser = false
         this.pesquisaTickets.withUnreadMessages = false
         this.pesquisaTickets.queuesIds = []
-        this.pesquisaTickets.onlyUserTickets = false // Não filtrar por usuário para fechados
+        this.pesquisaTickets.onlyUserTickets = true // Filtrar por usuário para fechados
       }
     },
 
@@ -2014,12 +2014,12 @@ export default {
               this.pesquisaTickets.queuesIds = []
               this.pesquisaTickets.onlyUserTickets = true // Aplicar filtro "meus atendimentos" por padrão
             } else if (statusToSet.includes('closed')) {
-              // Para tickets fechados: mostrar todos
-              this.pesquisaTickets.showAll = true
+              // Para tickets fechados: mostrar meus atendimentos
+              this.pesquisaTickets.showAll = false
               this.pesquisaTickets.isNotAssignedUser = false
               this.pesquisaTickets.withUnreadMessages = false
               this.pesquisaTickets.queuesIds = []
-              this.pesquisaTickets.onlyUserTickets = false // Não filtrar por usuário para fechados
+              this.pesquisaTickets.onlyUserTickets = true // Filtrar por usuário para fechados
             }
 
             // Buscar com os novos filtros
