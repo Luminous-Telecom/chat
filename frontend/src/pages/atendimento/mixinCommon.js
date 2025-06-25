@@ -77,14 +77,44 @@ export default {
     },
     formatarData (data, formato = 'dd/MM/yyyy') {
       if (!data) return ''
+
       try {
-        const parsedDate = parseISO(data)
-        if (isNaN(parsedDate.getTime())) {
-          return ''
+        // Tentar múltiplos métodos de parsing
+        let parsedDate
+
+        // Primeiro, tentar parseJSON
+        try {
+          parsedDate = parseJSON(data)
+          if (!isNaN(parsedDate.getTime())) {
+            return format(parsedDate, formato, { locale: pt })
+          }
+        } catch (e) {
+          // Continue para próxima tentativa
         }
-        return format(parsedDate, formato, { locale: pt })
+
+        // Se falhar, tentar parseISO
+        try {
+          parsedDate = parseISO(data)
+          if (!isNaN(parsedDate.getTime())) {
+            return format(parsedDate, formato, { locale: pt })
+          }
+        } catch (e) {
+          // Continue para próxima tentativa
+        }
+
+        // Se falhar, tentar new Date
+        try {
+          parsedDate = new Date(data)
+          if (!isNaN(parsedDate.getTime())) {
+            return format(parsedDate, formato, { locale: pt })
+          }
+        } catch (e) {
+          console.error('[formatarData] Erro ao fazer parse da data:', data, e)
+        }
+
+        return ''
       } catch (error) {
-        // Erro ao formatar data
+        console.error('[formatarData] Erro geral ao formatar data:', data, error)
         return ''
       }
     }

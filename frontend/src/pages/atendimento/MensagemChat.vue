@@ -12,7 +12,7 @@
           v-if="isLineDate"
           class="hr-text q-mt-lg q-mb-md"
           :data-content="formatarData(mensagem.createdAt)"
-          v-show="index === 0 || formatarData(mensagem.createdAt) !== formatarData(mensagens[index - 1].createdAt)"
+          v-show="index === 0 || formatarData(mensagem.createdAt) !== formatarData(mensagens[index - 1]?.createdAt)"
         />
         <div
           v-if="mensagens.length && index === mensagens.length - 1"
@@ -1628,6 +1628,53 @@ export default {
   100% {
     opacity: 0;
     transform: scale(1);
+  }
+}
+
+/* Estilos da linha horizontal com data */
+.hr-text {
+  line-height: 1em;
+  position: relative;
+  outline: 0;
+  border: 0;
+  color: black;
+  text-align: center;
+  height: 1.5em;
+  opacity: 0.8;
+  margin: 16px 0;
+
+  &:before {
+    content: "";
+    background: linear-gradient(to right, transparent, #818078, transparent);
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+  }
+
+  &:after {
+    content: attr(data-content);
+    position: relative;
+    display: inline-block;
+    color: black;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 12px;
+    line-height: 1.5em;
+    background-color: #f5f5f5;
+    border-radius: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Dark mode para linha horizontal */
+body.body--dark .hr-text {
+  color: white;
+
+  &:after {
+    background-color: #2d2d2d;
+    color: white;
   }
 }
 </style>
