@@ -238,9 +238,7 @@ export default {
   border: 1px solid rgba(0, 0, 0, 0.1);
 
   &:hover {
-    transform: translateY(-2px);
-    border-color: #1976d2;
-    box-shadow: 0 2px 12px rgba(25, 118, 210, 0.15);
+    background: rgba(25, 118, 210, 0.05);
   }
 
     &--active {
@@ -250,12 +248,6 @@ export default {
 
     .ticket-status-border {
       background: linear-gradient(135deg, #1976d2, #7b1fa2);
-    }
-
-    // Indicar que é clicável para recarregar
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
     }
 
     // Pulsação sutil para indicar que é interativo
@@ -491,8 +483,7 @@ export default {
     color: var(--dark-text-primary);
 
     &:hover {
-      background: var(--dark-tertiary);
-      border-color: var(--dark-accent);
+      background: rgba(144, 202, 249, 0.199);
     }
 
         &--active {
