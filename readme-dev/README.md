@@ -12,7 +12,7 @@ Você pode usar um dos seguintes comandos para corrigir automaticamente os erros
 
 ```bash
 # Corrigir todos os arquivos
-npm run lint -- --fix
+
 
 # Ou especificamente para o arquivo Index.vue
 npx eslint frontend/src/pages/atendimento/Index.vue --fix
