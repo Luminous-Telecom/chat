@@ -36,6 +36,10 @@ class User extends Model<User> {
   @Column
   email: string;
 
+  @AllowNull
+  @Column(DataType.TEXT)
+  profilePicUrl: string;
+
   @Column
   status: string;
 
