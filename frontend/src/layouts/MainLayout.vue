@@ -455,7 +455,8 @@ export default {
       ],
       menuDataAdmin: objMenuAdmin,
       ticketsList: [],
-      queueTicketCounts: {}
+      queueTicketCounts: {},
+      consultarTicketsTimeout: null // Para debounce da consulta
     }
   },
   computed: {
@@ -507,14 +508,14 @@ export default {
             }
 
             if (Array.isArray(this.notifications.ticketsUnread)) {
-              totalUnread = this.notifications.ticketsUnread.length
+              // Somar o total de mensagens não lidas de todos os tickets
+              totalUnread = this.notifications.ticketsUnread.reduce((sum, ticket) => {
+                return sum + (ticket.unreadMessages || 0)
+              }, 0)
             } else if (Array.isArray(this.notifications.tickets)) {
-              // Fallback: contar mensagens não lidas dos tickets
+              // Fallback: somar mensagens não lidas dos tickets
               totalUnread = this.notifications.tickets.reduce((sum, ticket) => {
-                if (ticket.unreadMessages > 0) {
-                  return sum + 1
-                }
-                return sum
+                return sum + (ticket.unreadMessages || 0)
               }, 0)
             }
           }
@@ -624,14 +625,33 @@ export default {
           data.type === 'chat:messagesRead' ||
           data.type === 'chat:create'
         ) {
-          await this.consultarTickets()
+          // Para mensagens novas, fazer notificação antes de atualizar contadores
+          if (data.type === 'chat:create' && data.payload && !data.payload.fromMe) {
+            // Tocar som de notificação para mensagens recebidas de outros contatos
+            this.$nextTick(() => {
+              this.$q.notify({
+                message: 'Nova mensagem recebida',
+                color: 'info',
+                position: 'bottom-right',
+                timeout: 1000
+              })
+            })
+            // Tocar áudio
+            this.$nextTick(() => {
+              import('src/helpers/helpersNotifications').then(mod => {
+                mod.tocarSomNotificacao()
+              })
+            })
+          }
+
+          await this.consultarTicketsComDebounce()
           await this.buscarContadoresTicketsPorFila()
         }
       })
 
       // Listener específico para atualizações de mensagens lidas
       socket.on(`${usuario.tenantId}:chat:messagesRead`, async data => {
-        await this.consultarTickets()
+        await this.consultarTicketsComDebounce()
       })
     },
     atualizarUsuario () {
@@ -722,6 +742,21 @@ export default {
       } catch (err) {
         this.$notificarErro('Erro ao consultar tickets pendentes', err)
       }
+    },
+    // Método com debounce para evitar múltiplas chamadas seguidas
+    async consultarTicketsComDebounce () {
+      // Cancelar timeout anterior se existir
+      if (this.consultarTicketsTimeout) {
+        clearTimeout(this.consultarTicketsTimeout)
+      }
+
+      // Criar novo timeout com debounce de 100ms
+      return new Promise(resolve => {
+        this.consultarTicketsTimeout = setTimeout(async () => {
+          await this.consultarTickets()
+          resolve()
+        }, 100)
+      })
     },
     abrirChatContato (ticket) {
       // caso esteja em um tamanho mobile, fechar a drawer dos contatos
@@ -832,27 +867,7 @@ export default {
     // Request notification permission on first user interaction
     this.requestNotificationPermissionOnInteraction()
 
-    // Listener global para novas mensagens (chat:create)
-    socket.on(`${this.usuario.tenantId}:ticketList`, data => {
-      if (data.type === 'chat:create') {
-        if (data.payload.fromMe) return
-        // Tocar som de notificação para mensagens recebidas de outros contatos
-        this.$nextTick(() => {
-          this.$q.notify({
-            message: 'Nova mensagem recebida',
-            color: 'info',
-            position: 'bottom-right',
-            timeout: 1000
-          })
-        })
-        // Tocar áudio
-        this.$nextTick(() => {
-          import('src/helpers/helpersNotifications').then(mod => {
-            mod.tocarSomNotificacao()
-          })
-        })
-      }
-    })
+    // Listeners de socket já configurados em conectarSocket()
 
     // Atualizar título da guia inicialmente
     this.atualizarTituloGuia()
@@ -868,8 +883,7 @@ export default {
     notifications: {
       handler (newNotifications) {
         this.atualizarTituloGuia()
-        // Forçar reatividade do computed cMenuData
-        this.$forceUpdate()
+        // Removido $forceUpdate() que causava dupla execução
       },
       deep: true
     },
@@ -925,6 +939,10 @@ export default {
     socket.disconnect()
     // Parar monitoramento de erros
     errorNotificationService.stopMonitoring()
+    // Limpar timeout de debounce
+    if (this.consultarTicketsTimeout) {
+      clearTimeout(this.consultarTicketsTimeout)
+    }
   }
 }
 </script>

@@ -380,22 +380,15 @@ const VerifyMediaMessage = async (
       tenantId: ticket.tenantId,
     });
 
-    // Calcular contador de mensagens não lidas
-    const currentUnread = await Message.count({
-      where: { ticketId: ticket.id, read: false, fromMe: false },
-    });
-
-    // Incrementar contador se mensagem não for própria
-    const newUnreadCount = msg.fromMe ? currentUnread : currentUnread + 1;
-
     // Criar mensagem descritiva para o preview
     const displayMessage = createMediaPreviewMessage(msg.body, filename, media.mimetype);
 
+    // CORREÇÃO: Não recalcular unreadMessages aqui pois já foi definido corretamente 
+    // pelo FindOrCreateTicketService baseado no chat.unreadCount
     await ticket.update({
       lastMessage: displayMessage,
       lastMessageAt: new Date().getTime(),
       answered: msg.fromMe || false,
-      unreadMessages: newUnreadCount,
     });
 
     // CORREÇÃO: Recarregar ticket atualizado para garantir dados corretos

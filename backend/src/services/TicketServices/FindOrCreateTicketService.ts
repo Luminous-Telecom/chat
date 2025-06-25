@@ -98,12 +98,16 @@ const FindOrCreateTicketService = async ({
   });
 
   if (ticket) {
-    unreadMessages =
-      ["telegram", "waba", "instagram", "messenger"].includes(channel) &&
-      unreadMessages > 0
-        ? (unreadMessages += ticket.unreadMessages)
-        : unreadMessages;
-    await ticket.update({ unreadMessages });
+    // Correção: Para WhatsApp, usar o valor direto do chat.unreadCount
+    // Para outros canais, incrementar corretamente sem duplicar
+    let finalUnreadCount = unreadMessages;
+    
+    if (["telegram", "waba", "instagram", "messenger"].includes(channel) && unreadMessages > 0) {
+      // Para estes canais, incrementar apenas +1 por mensagem nova (não somar o total)
+      finalUnreadCount = ticket.unreadMessages + 1;
+    }
+    
+    await ticket.update({ unreadMessages: finalUnreadCount });
     socketEmit({
       tenantId,
       type: "ticket:update",
