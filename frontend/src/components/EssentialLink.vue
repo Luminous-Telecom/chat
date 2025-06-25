@@ -19,7 +19,7 @@
       <q-icon :name="color === 'negative' ? 'mdi-cellphone-nfc-off' : icon" />
       <q-badge
         v-if="badge && badge > 0"
-        color="red"
+        :color="badgeColor || 'red'"
         text-color="white"
         floating
       >
@@ -71,6 +71,11 @@ export default {
     badge: {
       type: Number,
       default: 0
+    },
+
+    badgeColor: {
+      type: String,
+      default: 'red'
     }
   },
   computed: {

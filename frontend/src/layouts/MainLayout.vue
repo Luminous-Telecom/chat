@@ -490,21 +490,43 @@ export default {
           totalPending = values.reduce((sum, count) => {
             return sum + (parseInt(count) || 0)
           }, 0)
-          return { ...menu, badge: totalPending > 0 ? totalPending : 0 }
+          return { ...menu, badge: totalPending > 0 ? totalPending : 0, badgeColor: 'orange' }
         }
-        // Badge para atendimentos em andamento com mensagens não lidas
+        // Badge para atendimentos em andamento
         if (menu.routeName === 'atendimento' && menu.query?.status === 'open') {
-          // notifications.tickets = tickets em andamento
+          let totalOpen = 0
           let totalUnread = 0
-          if (this.notifications && Array.isArray(this.notifications.tickets)) {
-            totalUnread = this.notifications.tickets.reduce((sum, ticket) => {
-              if (ticket.status === 'open' && ticket.unreadMessages > 0) {
-                return sum + 1
-              }
-              return sum
-            }, 0)
+
+          if (this.notifications) {
+            // Usar os dados combinados
+            if (Array.isArray(this.notifications.tickets)) {
+              totalOpen = this.notifications.tickets.length
+            }
+
+            if (Array.isArray(this.notifications.ticketsUnread)) {
+              totalUnread = this.notifications.ticketsUnread.length
+            } else if (Array.isArray(this.notifications.tickets)) {
+              // Fallback: contar mensagens não lidas dos tickets
+              totalUnread = this.notifications.tickets.reduce((sum, ticket) => {
+                if (ticket.unreadMessages > 0) {
+                  return sum + 1
+                }
+                return sum
+              }, 0)
+            }
           }
-          return { ...menu, badge: totalUnread > 0 ? totalUnread : 0 }
+
+          // Determinar cor e contagem do badge
+          let badgeColor = 'blue'
+          let badgeCount = totalOpen
+
+          // Se há mensagens não lidas, mostrar badge vermelho com contagem de não lidas
+          if (totalUnread > 0) {
+            badgeColor = 'red'
+            badgeCount = totalUnread
+          }
+
+          return { ...menu, badge: badgeCount > 0 ? badgeCount : 0, badgeColor }
         }
         return menu
       })
@@ -596,11 +618,17 @@ export default {
         if (
           data.type === 'ticket:update' ||
           data.type === 'notification:new' ||
-          data.type === 'chat:messagesRead'
+          data.type === 'chat:messagesRead' ||
+          data.type === 'chat:create'
         ) {
           await this.consultarTickets()
           await this.buscarContadoresTicketsPorFila()
         }
+      })
+
+      // Listener específico para atualizações de mensagens lidas
+      socket.on(`${usuario.tenantId}:chat:messagesRead`, async data => {
+        await this.consultarTickets()
       })
     },
     atualizarUsuario () {
@@ -629,43 +657,67 @@ export default {
       }
     },
     async consultarTickets () {
-      const params = {
-        searchParam: '',
-        pageNumber: 1,
-        status: ['open'],
-        showAll: false,
-        count: null,
-        queuesIds: [],
-        withUnreadMessages: true,
-        isNotAssignedUser: false,
-        includeNotQueueDefined: true
-      }
       try {
-        const { data } = await ConsultarTickets(params)
-        this.countTickets = data.count // count total de tickets no status
-        this.$store.commit('UPDATE_NOTIFICATIONS', data)
+        // Buscar todos os tickets em andamento (sem filtro de mensagens não lidas)
+        const paramsAllOpen = {
+          searchParam: '',
+          pageNumber: 1,
+          status: ['open'],
+          showAll: false,
+          count: null,
+          queuesIds: [],
+          withUnreadMessages: false,
+          isNotAssignedUser: false,
+          includeNotQueueDefined: true
+        }
+
+        const { data: dataAllOpen } = await ConsultarTickets(paramsAllOpen)
+
+        // Buscar apenas tickets com mensagens não lidas
+        const paramsUnread = {
+          searchParam: '',
+          pageNumber: 1,
+          status: ['open'],
+          showAll: false,
+          count: null,
+          queuesIds: [],
+          withUnreadMessages: true,
+          isNotAssignedUser: false,
+          includeNotQueueDefined: true
+        }
+
+        const { data: dataUnread } = await ConsultarTickets(paramsUnread)
+
+        // Combinar os dados para o badge
+        const badgeData = {
+          tickets: dataAllOpen.tickets || [],
+          ticketsUnread: dataUnread.tickets || [],
+          count: dataAllOpen.count || 0
+        }
+
+        this.$store.commit('UPDATE_NOTIFICATIONS', badgeData)
       } catch (err) {
-        this.$notificarErro('Algum problema', err)
-        // Erro no processo
+        this.$notificarErro('Erro ao consultar tickets', err)
       }
-      const params2 = {
-        searchParam: '',
-        pageNumber: 1,
-        status: ['pending'],
-        showAll: false,
-        count: null,
-        queuesIds: [],
-        withUnreadMessages: false,
-        isNotAssignedUser: false,
-        includeNotQueueDefined: true
-      }
+
+      // Buscar tickets pendentes
       try {
+        const params2 = {
+          searchParam: '',
+          pageNumber: 1,
+          status: ['pending'],
+          showAll: false,
+          count: null,
+          queuesIds: [],
+          withUnreadMessages: false,
+          isNotAssignedUser: false,
+          includeNotQueueDefined: true
+        }
+
         const { data } = await ConsultarTickets(params2)
-        this.countTickets = data.count // count total de tickets no status
         this.$store.commit('UPDATE_NOTIFICATIONS_P', data)
       } catch (err) {
-        this.$notificarErro('Algum problema', err)
-        // Erro no processo
+        this.$notificarErro('Erro ao consultar tickets pendentes', err)
       }
     },
     abrirChatContato (ticket) {
@@ -811,8 +863,10 @@ export default {
   watch: {
     // Watcher para monitorar mudanças nas notificações e atualizar o título da guia
     notifications: {
-      handler () {
+      handler (newNotifications) {
         this.atualizarTituloGuia()
+        // Forçar reatividade do computed cMenuData
+        this.$forceUpdate()
       },
       deep: true
     },

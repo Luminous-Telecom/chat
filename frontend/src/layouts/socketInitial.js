@@ -48,29 +48,49 @@ export default {
           // Tocar som de notificação usando o serviço centralizado
           tocarSomNotificacao()
 
-          // Atualiza notificações de mensagem
-          const params = {
-            searchParam: '',
-            pageNumber: 1,
-            status: ['open'],
-            showAll: false,
-            count: null,
-            queuesIds: [],
-            withUnreadMessages: true,
-            isNotAssignedUser: false,
-            includeNotQueueDefined: true
-            // date: new Date(),
-          }
+          // Atualiza notificações de mensagem - busca todos os tickets em andamento
           try {
-            const { data } = await ConsultarTickets(params)
-            this.countTickets = data.count // count total de tickets no status
-            // this.ticketsList = data.tickets
-            this.$store.commit('UPDATE_NOTIFICATIONS', data)
-            // this.$store.commit('SET_HAS_MORE', data.hasMore)
-            // console.log(this.notifications)
+            // Buscar todos os tickets em andamento
+            const paramsAll = {
+              searchParam: '',
+              pageNumber: 1,
+              status: ['open'],
+              showAll: false,
+              count: null,
+              queuesIds: [],
+              withUnreadMessages: false,
+              isNotAssignedUser: false,
+              includeNotQueueDefined: true
+            }
+
+            const { data: dataAll } = await ConsultarTickets(paramsAll)
+
+            // Buscar tickets com mensagens não lidas
+            const paramsUnread = {
+              searchParam: '',
+              pageNumber: 1,
+              status: ['open'],
+              showAll: false,
+              count: null,
+              queuesIds: [],
+              withUnreadMessages: true,
+              isNotAssignedUser: false,
+              includeNotQueueDefined: true
+            }
+
+            const { data: dataUnread } = await ConsultarTickets(paramsUnread)
+
+            // Combinar dados
+            const badgeData = {
+              tickets: dataAll.tickets || [],
+              ticketsUnread: dataUnread.tickets || [],
+              count: dataAll.count || 0
+            }
+
+            this.countTickets = badgeData.count
+            this.$store.commit('UPDATE_NOTIFICATIONS', badgeData)
           } catch (err) {
             this.$notificarErro('Algum problema', err)
-            // Erro no socket
           }
         }
       })
