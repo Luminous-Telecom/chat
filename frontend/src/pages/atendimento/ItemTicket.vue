@@ -12,17 +12,7 @@
         'ticket-item--closed': ticket.status === 'closed',
         'ticket-item--loading': recarregando
       }"
-    >
-      <!-- Tooltip para ticket ativo indicando que pode recarregar -->
-      <q-tooltip
-        v-if="ticket.id === $store.getters['ticketFocado'].id"
-        content-class="bg-blue-9 text-white"
-        anchor="center left"
-        self="center right"
-        :offset="[10, 0]"
-      >
-        🔄 Clique novamente para recarregar a conversa
-      </q-tooltip>
+        >
       <!-- Status Border -->
       <div class="ticket-status-border" :class="`ticket-status-border--${ticket.status}`"></div>
 
@@ -266,16 +256,6 @@ export default {
     &:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 16px rgba(25, 118, 210, 0.25);
-
-      &::after {
-        content: "🔄";
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        font-size: 12px;
-        opacity: 0.8;
-        animation: rotate-refresh 1s infinite linear;
-      }
     }
 
     // Pulsação sutil para indicar que é interativo
@@ -590,15 +570,6 @@ export default {
   50% {
     transform: scale(1.1);
     opacity: 0.8;
-  }
-}
-
-@keyframes rotate-refresh {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
   }
 }
 
