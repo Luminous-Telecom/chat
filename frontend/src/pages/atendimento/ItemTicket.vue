@@ -236,6 +236,10 @@ export default {
   flex-direction: column;
   gap: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   &:hover {
     background: rgba(25, 118, 210, 0.05);

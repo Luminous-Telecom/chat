@@ -116,6 +116,10 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .search-input-container {
@@ -133,6 +137,10 @@ export default {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
   border-color: #1976d2;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   &:hover {
     background: rgba(255, 255, 255, 0.18);
@@ -151,6 +159,10 @@ export default {
   margin-right: 12px;
   flex-shrink: 0;
   transition: color 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .modern-search-input {
@@ -162,6 +174,10 @@ export default {
   font-size: 14px;
   font-weight: 400;
   min-width: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   &::placeholder {
     color: #5a6c7d;
@@ -177,6 +193,10 @@ export default {
   color: rgba(255, 255, 255, 0.7);
   margin-left: 8px;
   flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   &:hover {
     color: rgba(255, 255, 255, 0.9);
