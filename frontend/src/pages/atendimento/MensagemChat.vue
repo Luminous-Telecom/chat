@@ -19,57 +19,40 @@
           id="lastMessageRef"
           style="float: left; background: black; clear: both;"
         />
-        <!-- Avatar e nome do usuário fora do balão -->
+        <!-- Mensagens enviadas com avatar e nome -->
         <div
-          v-if="mensagem._mostrarHeaderUsuario"
-          class="user-header-external"
+          v-if="mensagem.fromMe && mensagem._mostrarHeaderUsuario"
+          class="user-message-container"
           :class="{ 'user-header-with-spacing': index > 0 }"
         >
-          <span class="user-name-external">{{ getUserDisplayName(mensagem) }}</span>
-          <div class="user-avatar-external">
-            <img
-              v-if="getUserProfilePic(mensagem)"
-              :src="getUserProfilePic(mensagem)"
-              class="user-avatar-image"
-              @error="showAvatarFallback"
-              @load="hideAvatarFallback"
-            />
-            <div
-              class="user-avatar-fallback-external"
-              :class="{ 'avatar-fallback-hidden': getUserProfilePic(mensagem) }"
+          <div class="user-info-column">
+            <span class="user-name-external">{{ getUserDisplayName(mensagem) }}</span>
+            <q-chat-message
+              :id="`chat-message-${mensagem.id}`"
+              :stamp="dataInWords(mensagem.createdAt)"
+              :sent="mensagem.fromMe"
+              class="text-weight-medium"
+              :class="{
+                'pulseIdentications': identificarMensagem == `chat-message-${mensagem.id}`,
+                'q-message-text--scheduled': mensagem.scheduleDate,
+                'q-message-text--deleted': mensagem.isDeleted,
+                'q-message-text--quoted': mensagem.quotedMsg,
+                'q-message-text--group': isGroupLabel(mensagem),
+                'q-message-text--media': ['image', 'video', 'audio'].includes(mensagem.mediaType),
+                'q-message-text--audio': mensagem.mediaType === 'audio',
+                'q-message-text--document': mensagem.mediaType === 'application',
+                'q-message-text--contact': mensagem.mediaType === 'vcard',
+                'q-message-text--forwarded': mensagem.isForwarded,
+                'q-message-text--edited': mensagem.isEdited,
+                'mensagem-hover-active': hoveredMessageId === mensagem.id
+              }"
+              @mouseenter="showMessageOptions(mensagem.id)"
+              @mouseleave="hideMessageOptions(mensagem.id)"
             >
-              <q-icon name="mdi-account-outline" size="22px" color="white" />
-            </div>
-          </div>
-        </div>
-        <q-chat-message
-          :id="`chat-message-${mensagem.id}`"
-          :stamp="dataInWords(mensagem.createdAt)"
-          :sent="mensagem.fromMe"
-          class="text-weight-medium"
-          :class="{
-            'pulseIdentications': identificarMensagem == `chat-message-${mensagem.id}`,
-            'q-message-text--scheduled': mensagem.scheduleDate,
-            'q-message-text--deleted': mensagem.isDeleted,
-            'q-message-text--quoted': mensagem.quotedMsg,
-            'q-message-text--group': isGroupLabel(mensagem),
-            'q-message-text--media': ['image', 'video', 'audio'].includes(mensagem.mediaType),
-            'q-message-text--audio': mensagem.mediaType === 'audio',
-            'q-message-text--document': mensagem.mediaType === 'application',
-            'q-message-text--contact': mensagem.mediaType === 'vcard',
-            'q-message-text--forwarded': mensagem.isForwarded,
-            'q-message-text--edited': mensagem.isEdited,
-            'mensagem-hover-active': hoveredMessageId === mensagem.id,
-            'mensagem-agrupada': !mensagem._mostrarHeaderUsuario && mensagem.fromMe
-          }"
-          @mouseenter="showMessageOptions(mensagem.id)"
-          @mouseleave="hideMessageOptions(mensagem.id)"
-        >
-          <!-- :bg-color="mensagem.fromMe ? 'grey-2' : 'secondary' " -->
-          <div
-            style="min-width: 100px; max-width: 350px;"
-            :style="mensagem.isDeleted ? 'color: var(--text-color-secondary) !important; opacity: 0.6;' : ''"
-          >
+              <div
+                style="min-width: 100px; max-width: 350px;"
+                :style="mensagem.isDeleted ? 'color: var(--text-color-secondary) !important; opacity: 0.6;' : ''"
+              >
             <q-icon
               class="q-ma-xs"
               name="mdi-calendar"
@@ -420,9 +403,395 @@
                   Resposta: {{ mensagem.dataPayload.buttonText }}
                 </q-chip>
               </div>
+                        </template>
+          </div>
+        </q-chat-message>
+          </div>
+          <div class="user-avatar-external">
+            <img
+              v-if="getUserProfilePic(mensagem)"
+              :src="getUserProfilePic(mensagem)"
+              class="user-avatar-image"
+              @error="showAvatarFallback"
+              @load="hideAvatarFallback"
+            />
+            <div
+              class="user-avatar-fallback-external"
+              :class="{ 'avatar-fallback-hidden': getUserProfilePic(mensagem) }"
+            >
+              <q-icon name="mdi-account-outline" size="22px" color="white" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Todas as outras mensagens (recebidas e enviadas agrupadas) -->
+        <div
+          v-else
+          class="message-wrapper"
+          :class="{ 'sent-message-wrapper': mensagem.fromMe }"
+        >
+          <q-chat-message
+            :id="`chat-message-${mensagem.id}`"
+            :stamp="dataInWords(mensagem.createdAt)"
+            :sent="mensagem.fromMe"
+            class="text-weight-medium"
+            :class="{
+              'pulseIdentications': identificarMensagem == `chat-message-${mensagem.id}`,
+              'q-message-text--scheduled': mensagem.scheduleDate,
+              'q-message-text--deleted': mensagem.isDeleted,
+              'q-message-text--quoted': mensagem.quotedMsg,
+              'q-message-text--group': isGroupLabel(mensagem),
+              'q-message-text--media': ['image', 'video', 'audio'].includes(mensagem.mediaType),
+              'q-message-text--audio': mensagem.mediaType === 'audio',
+              'q-message-text--document': mensagem.mediaType === 'application',
+              'q-message-text--contact': mensagem.mediaType === 'vcard',
+              'q-message-text--forwarded': mensagem.isForwarded,
+              'q-message-text--edited': mensagem.isEdited,
+              'mensagem-hover-active': hoveredMessageId === mensagem.id,
+              'mensagem-agrupada': !mensagem._mostrarHeaderUsuario && mensagem.fromMe
+            }"
+            @mouseenter="showMessageOptions(mensagem.id)"
+            @mouseleave="hideMessageOptions(mensagem.id)"
+          >
+          <div
+            style="min-width: 100px; max-width: 350px;"
+            :style="mensagem.isDeleted ? 'color: var(--text-color-secondary) !important; opacity: 0.6;' : ''"
+          >
+            <q-icon
+              class="q-ma-xs"
+              name="mdi-calendar"
+              size="18px"
+              :class="{
+                  'text-primary': mensagem.scheduleDate && mensagem.status === 'pending',
+                  'text-positive': !['pending', 'canceled'].includes(mensagem.status)
+                }"
+              v-if="mensagem.scheduleDate"
+            >
+              <q-tooltip content-class="bg-secondary text-grey-8">
+                <div class="row col">
+                  Mensagem agendada
+                </div>
+                <div
+                  class="row col"
+                  v-if="mensagem.isDeleted"
+                >
+                  <q-chip
+                    color="red-3"
+                    icon="mdi-trash-can-outline"
+                  >
+                    Envio cancelado: {{ formatarData(mensagem.updatedAt, 'dd/MM/yyyy') }}
+                  </q-chip>
+                </div>
+                <div class="row col">
+                  <q-chip
+                    color="blue-1"
+                    icon="mdi-calendar-import"
+                  >
+                    Criado em: {{ formatarData(mensagem.createdAt, 'dd/MM/yyyy HH:mm') }}
+                  </q-chip>
+                </div>
+                <div class="row col">
+                  <q-chip
+                    color="blue-1"
+                    icon="mdi-calendar-start"
+                  >
+                    Programado para: {{ formatarData(mensagem.scheduleDate, 'dd/MM/yyyy HH:mm') }}
+                  </q-chip>
+                </div>
+              </q-tooltip>
+            </q-icon>
+            <div
+              v-if="mensagem.isDeleted"
+              class="text-italic"
+            >
+              Mensagem apagada em {{ formatarData(mensagem.updatedAt, 'dd/MM/yyyy') }}.
+            </div>
+            <div
+              v-if="isGroupLabel(mensagem)"
+              class="q-mb-sm"
+              style="display: flex; color: var(--primary-color); font-weight: 500;"
+            >
+              {{ isGroupLabel(mensagem) }}
+            </div>
+            <div
+              v-if="mensagem.quotedMsg"
+              :class="{ 'textContentItem': !mensagem.isDeleted, 'textContentItemDeleted': mensagem.isDeleted }"
+            >
+              <MensagemRespondida
+                class="row justify-center"
+                @mensagem-respondida:focar-mensagem="focarMensagem"
+                :mensagem="mensagem.quotedMsg"
+              />
+            </div>
+            <q-btn
+              v-if=" !mensagem.isDeleted && isShowOptions "
+              class="absolute-top-right mostar-btn-opcoes-chat mensagem-hover-btn"
+              :class="{ 'q-btn--menu-open': $refs[`menu-${mensagem.id}`] && $refs[`menu-${mensagem.id}`][0]?.showing }"
+              dense
+              flat
+              ripple
+              round
+              icon="mdi-chevron-down"
+            >
+              <q-menu
+                :ref="`menu-${mensagem.id}`"
+                square
+                auto-close
+                anchor="bottom left"
+                self="top left"
+                @hide="onMenuClose(mensagem.id)"
+              >
+                <q-list style="min-width: 100px">
+                  <q-item
+                    :disable="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')"
+                    clickable
+                    @click="citarMensagem(mensagem)"
+                  >
+                                        <q-item-section>Responder</q-item-section>
+                    <q-tooltip v-if="!['whatsapp', 'telegram'].includes(ticketFocado?.channel || '')">
+                      Disponível apenas para WhatsApp e Telegram
+                    </q-tooltip>
+                  </q-item>
+                  <q-separator />
+                  <q-item
+                    @click=" deletarMensagem(mensagem) "
+                    clickable
+                    v-if=" mensagem.fromMe "
+                    :disable="isDesactivatDelete(mensagem) || ticketFocado?.channel === 'messenger'"
+                  >
+                    <q-item-section>
+                      <q-item-label>Deletar</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
+            <!-- Ícones de ACK para mensagens enviadas -->
+            <div v-if="mensagem.fromMe" class="absolute-bottom-right q-pr-xs q-pb-xs ack-icons-container">
+              <!-- Para ACK 5 (áudio ouvido), mostrar ícone de lido + ícone de ouvido -->
+              <template v-if="mensagem.ack === 5 && mensagem.mediaType === 'audio'">
+                <!-- Ícone de lido (check duplo) -->
+                <q-icon
+                  name="mdi-check-all"
+                  size="1.2em"
+                  color="blue-12"
+                  class="ack-read-icon"
+                />
+                <!-- Ícone de ouvido (fone) -->
+                <q-icon
+                  name="mdi-headphones"
+                  size="1.0em"
+                  color="blue-12"
+                  class="ack-played-icon"
+                />
+              </template>
+              <!-- Para outros ACKs, comportamento normal -->
+              <q-icon
+                v-else
+                :name="getAckIcon(mensagem.ack)"
+                size="1.2em"
+                :color="getAckColor(mensagem.ack)"
+              />
+            </div>
+            <template v-if=" mensagem.mediaType === 'audio' ">
+              <WhatsAppAudioPlayer
+                :audioUrl="mensagem.mediaUrl"
+                :isPTT="isAudioPTT(mensagem)"
+                :isSent="mensagem.fromMe"
+                :audioName="getAudioFileName(mensagem)"
+                :showSpeedControl="true"
+                :ackStatus="mensagem.ack || 0"
+              />
+            </template>
+            <template v-if=" mensagem.mediaType === 'vcard' ">
+              <q-btn
+                type="a"
+                :color=" $q.dark.isActive ? '' : 'black' "
+                outline
+                dense
+                class="q-px-sm text-center btn-rounded "
+                download="vCard"
+                :href=" `data:text/x-vcard;charset=utf-8;base64,${returnCardContato(mensagem.body)}` "
+              >
+                Download Contato
+              </q-btn>
+            </template>
+            <template v-if=" mensagem.mediaType === 'image' ">
+              <div v-viewer>
+                <img
+                  :src="mensagem.mediaUrl"
+                  class="img-preview-chat"
+                  style="cursor: pointer; max-width: 280px; max-height: 200px; border-radius: 14px;"
+                  alt="imagem do chat"
+                />
+              </div>
+            </template>
+            <template v-if=" mensagem.mediaType === 'video' ">
+              <video
+                :src=" mensagem.mediaUrl "
+                controls
+                class="q-mt-md"
+                style="object-fit: contain;
+                  width: 330px;
+                  height: 150px;
+                  border-top-left-radius: 8px;
+                  border-top-right-radius: 8px;
+                  border-bottom-left-radius: 8px;
+                  border-bottom-right-radius: 8px;
+                  background: #f5f5f5;
+                "
+              >
+              </video>
+            </template>
+            <template v-if=" !['audio', 'vcard', 'image', 'video'].includes(mensagem.mediaType) && mensagem.mediaUrl ">
+              <div class="text-center full-width no-scroll">
+                <div
+                  v-if=" isPDF(mensagem.mediaUrl) "
+                  class="pdf-preview-container"
+                  title="Clique para abrir PDF em nova guia"
+                >
+                  <!-- Preview moderno do PDF -->
+                  <div class="pdf-preview-card">
+                    <div class="pdf-preview-header">
+                      <q-icon name="mdi-file-pdf-box" size="24px" color="red-6" />
+                      <div class="pdf-preview-title-section">
+                        <span class="pdf-preview-title">PDF</span>
+                        <span class="pdf-preview-filename">{{ mensagem.mediaName || mensagem.body || 'Documento' }}</span>
+                      </div>
+                    </div>
+                    <div class="pdf-preview-content">
+                      <div class="pdf-preview-iframe-container">
+                        <iframe
+                          :src="mensagem.mediaUrl"
+                          class="pdf-preview-iframe"
+                          frameborder="0"
+                          title="Preview do PDF"
+                        >
+                          <p>Seu navegador não suporta visualização de PDF. <a :href="mensagem.mediaUrl" target="_blank">Clique aqui para baixar</a></p>
+                        </iframe>
+                      </div>
+                    </div>
+                    <div class="pdf-preview-actions">
+                      <q-btn
+                        color="primary"
+                        label="Visualizar"
+                        @click.stop.prevent="abrirPDFNovaGuia(mensagem.mediaUrl)"
+                        class="pdf-action-btn"
+                      />
+                      <q-btn
+                        color="primary"
+                        label="Abrir em nova guia"
+                        @click.stop.prevent="abrirPDFNovaGuia(mensagem.mediaUrl, true)"
+                        class="pdf-action-btn"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <q-btn
+                  type="a"
+                  :color=" $q.dark.isActive ? '' : 'grey-3' "
+                  no-wrap
+                  no-caps
+                  stack
+                  dense
+                  class="q-mt-sm text-center text-black btn-rounded  text-grey-9 ellipsis"
+                  download
+                  :target=" isPDF(mensagem.mediaUrl) ? '_blank' : '' "
+                  :href=" mensagem.mediaUrl "
+                >
+                  <q-tooltip
+                    v-if=" mensagem.mediaUrl "
+                    content-class="text-bold"
+                  >
+                    Baixar: {{ mensagem.mediaName }}
+                    {{ mensagem.body }}
+                  </q-tooltip>
+                  <div class="row items-center q-ma-xs ">
+                    <div
+                      class="ellipsis col-grow q-pr-sm"
+                      style="max-width: 290px"
+                    >
+                      {{ formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName) }}
+                    </div>
+                    <q-icon name="mdi-download" />
+                  </div>
+                </q-btn>
+              </div>
+            </template>
+            <div
+              v-linkified
+              v-if=" !['vcard', 'application', 'audio'].includes(mensagem.mediaType) "
+              :class=" { 'q-mt-sm': mensagem.mediaType !== 'chat' } "
+              class="q-message-container row items-end no-wrap"
+            >
+              <div v-html="formatarMensagemWhatsapp(mensagem.body)"></div>
+            </div>
+
+            <!-- Botões Interativos -->
+            <template v-if="mensagem.dataPayload && mensagem.dataPayload.buttons">
+              <div class="row q-gutter-sm justify-start q-mt-sm">
+                <q-btn
+                  v-for="(button, btnIndex) in mensagem.dataPayload.buttons"
+                  :key="btnIndex"
+                  dense
+                  outline
+                  no-caps
+                  color="primary"
+                  class="q-px-sm"
+                  :label="button.body || button.buttonText?.displayText || 'Botão'"
+                  :loading="buttonStates[`button_${mensagem.id}_${btnIndex}`]?.loading"
+                  :disabled="buttonStates[`button_${mensagem.id}_${btnIndex}`]?.disabled"
+                  @click="handleButtonClick(mensagem, button, btnIndex)"
+                />
+              </div>
+            </template>
+
+            <!-- Lista Interativa -->
+            <template v-if="mensagem.dataPayload && mensagem.dataPayload.title">
+              <div class="row q-gutter-sm justify-start q-mt-sm">
+                <q-card class="list-message-card" flat>
+                  <q-card-section class="q-pa-sm">
+                    <div class="text-subtitle2 text-weight-medium">{{ mensagem.dataPayload.title }}</div>
+                    <div v-if="mensagem.dataPayload.description" class="text-caption q-mt-xs">
+                      {{ mensagem.dataPayload.description }}
+                    </div>
+                  </q-card-section>
+                  <q-card-section class="q-pa-sm q-pt-none" v-if="mensagem.dataPayload.buttons">
+                    <q-btn
+                      v-for="(section, sectionIndex) in mensagem.dataPayload.buttons"
+                      :key="sectionIndex"
+                      dense
+                      outline
+                      no-caps
+                      color="primary"
+                      class="q-px-sm q-mb-xs full-width"
+                      :label="section.title || 'Opção'"
+                      :loading="buttonStates[`section_${mensagem.id}_${sectionIndex}`]?.loading"
+                      :disabled="buttonStates[`section_${mensagem.id}_${sectionIndex}`]?.disabled"
+                      @click="handleListButtonClick(mensagem, section, sectionIndex)"
+                    />
+                  </q-card-section>
+                </q-card>
+              </div>
+            </template>
+
+            <!-- Indicador de Resposta de Botão -->
+            <template v-if="mensagem.dataPayload && mensagem.dataPayload.isButtonResponse">
+              <div class="row q-gutter-sm justify-start q-mt-xs">
+                <q-chip
+                  dense
+                  color="positive"
+                  text-color="white"
+                  icon="mdi-check-circle"
+                  class="q-px-sm"
+                >
+                  Resposta: {{ mensagem.dataPayload.buttonText }}
+                </q-chip>
+              </div>
             </template>
           </div>
         </q-chat-message>
+        </div>
       </div>
     </transition-group>
     <!-- Modal para visualizar PDF em tela cheia -->
@@ -1167,7 +1536,7 @@ export default {
         return false
       }
 
-      // Se é a primeira mensagem, mostrar header
+      // Para mensagens enviadas, sempre mostrar header para primeira mensagem
       if (index === 0) {
         return true
       }
@@ -1187,13 +1556,13 @@ export default {
         return true
       }
 
-      // Verificar se há uma quebra de tempo significativa (mais de 5 minutos)
+      // Para mensagens enviadas, mostrar header com quebra de tempo menor (2 minutos)
       const tempoAtual = new Date(mensagem.createdAt)
       const tempoAnterior = new Date(mensagemAnterior.createdAt)
       const diferencaMinutos = (tempoAtual - tempoAnterior) / (1000 * 60)
 
-      // Se passou mais de 5 minutos, mostrar header novamente
-      if (diferencaMinutos > 5) {
+      // Se passou mais de 2 minutos, mostrar header novamente
+      if (diferencaMinutos > 2) {
         return true
       }
 
@@ -1611,11 +1980,47 @@ export default {
 
 /* Player de áudio agora integrado com design do WhatsApp */
 
-/* Layout externo para avatar e nome do usuário */
+/* Container integrado para avatar, nome e mensagem */
+.user-message-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  justify-content: flex-end;
+  padding-right: 8px;
+  flex-direction: row;
+
+  .user-info-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex: 1;
+
+    .q-chat-message {
+      margin: 0;
+      width: 100%;
+      max-width: none;
+
+      /* Garantir que a mensagem tenha o mesmo alinhamento das agrupadas */
+      .q-message-text {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .user-avatar-external {
+    flex-shrink: 0;
+    order: 2; /* Avatar após a mensagem */
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Layout externo para avatar e nome do usuário (compatibilidade) */
 .user-header-external {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 8px;
   justify-content: flex-end;
   padding-right: 8px;
@@ -1638,7 +2043,22 @@ export default {
   margin-bottom: 8px;
 }
 
-/* Para mensagens agrupadas, reduzir ainda mais o espaçamento */
+/* Wrapper para todas as mensagens */
+.message-wrapper {
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Wrapper específico para mensagens enviadas - alinhamento com avatar */
+.sent-message-wrapper {
+  padding-right: 56px; /* Espaço do avatar (36px) + gap (12px) + padding (8px) */
+
+  .q-chat-message {
+    margin: 0;
+  }
+}
+
+/* Para mensagens agrupadas, reduzir espaçamento */
 .mensagem-agrupada.q-chat-message--sent {
   margin-bottom: 2px;
 }
@@ -1698,14 +2118,19 @@ export default {
   display: none !important;
 }
 
+/* user-info-column está definido dentro de .user-message-container */
+
 .user-name-external {
   font-size: 14px;
   font-weight: 500;
   color: var(--q-color-grey-8, #424242);
   text-transform: capitalize;
+  margin-bottom: 4px;
+  text-align: right;
+  width: 100%;
 }
 
-/* Dark mode para header externo do usuário */
+/* Dark mode para container de mensagem e header do usuário */
 .body--dark .user-name-external {
   color: var(--q-color-grey-3, #e0e0e0);
 }
@@ -1725,6 +2150,13 @@ export default {
 
 .body--dark .user-avatar-fallback-external::before {
   background: linear-gradient(45deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(255,255,255,0.2) 100%);
+}
+
+/* Dark mode para container integrado */
+.body--dark .user-message-container {
+  .user-name-external {
+    color: var(--q-color-grey-3, #e0e0e0);
+  }
 }
 
 /* Estilos para os ícones de ACK */
