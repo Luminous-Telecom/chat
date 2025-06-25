@@ -4,7 +4,7 @@ import { orderBy } from 'lodash'
 import { parseISO } from 'date-fns'
 
 const orderMessages = (messages) => {
-  const newMessages = orderBy(messages, (obj) => parseISO(obj.timestamp || obj.createdAt), ['asc'])
+  const newMessages = orderBy(messages, (obj) => parseISO(obj.timestamp || obj.createdAt), ['desc'])
   return [...newMessages]
 }
 

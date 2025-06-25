@@ -232,7 +232,7 @@ export default {
   computed: {
     mensagensOrdenadas () {
       return [...this.mensagensAgendadas].sort((a, b) => {
-        return new Date(a.scheduleDate) - new Date(b.scheduleDate)
+        return new Date(b.scheduleDate) - new Date(a.scheduleDate)
       })
     },
 
