@@ -16,6 +16,18 @@ export class BaileysMessageAdapter {
     msg: proto.IWebMessageInfo,
     wbot?: BaileysClient
   ): BaileysMessageWithDownload {
+    // VERIFICAÇÃO PRECOCE PARA REAÇÕES: Verificar logo no início se é uma reação
+    if (msg.message) {
+      const messageKeys = Object.keys(msg.message);
+      const isReaction = messageKeys.includes('reactionMessage') || 
+                         messageKeys.some(key => key.toLowerCase().includes('reaction'));
+      
+      if (isReaction) {
+        console.log(`[BaileysMessageAdapter] DEBUG - Reaction message blocked at conversion:`, messageKeys);
+        throw new Error('REACTION_MESSAGE_IGNORED');
+      }
+    }
+
     // Get message type from the message object - filtering out non-media context info
     const messageType = this.getCorrectMessageType(msg);
 
@@ -316,8 +328,22 @@ export class BaileysMessageAdapter {
       "senderKeyDistributionMessage", 
       "reactionMessage",
       "pollCreationMessage",
-      "pollUpdateMessage"
+      "pollUpdateMessage",
+      "ephemeralMessage",
+      "protocolMessage",
+      "fastRatchetKeySenderKeyDistributionMessage"
     ];
+
+    // VERIFICAÇÃO ESPECIAL PARA REAÇÕES: Se qualquer key contém "reaction", ignorar
+    const hasReaction = messageKeys.some(key => 
+      key.toLowerCase().includes('reaction') || 
+      key === 'reactionMessage'
+    );
+    
+    if (hasReaction) {
+      console.log(`[BaileysMessageAdapter] DEBUG - Reaction message detected and ignored:`, messageKeys);
+      return "reactionMessage"; // Retornar tipo que será ignorado
+    }
 
     // Tipos de mídia válidos
     const mediaTypes = [

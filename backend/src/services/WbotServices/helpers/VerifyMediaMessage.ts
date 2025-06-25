@@ -71,6 +71,21 @@ const VerifyMediaMessage = async (
   contact: Contact
 ): Promise<Message | void> => {
   try {
+    // FILTRO FINAL PARA REAÇÕES: Verificar se é uma reação antes de processar
+    const ignoredTypes = [
+      'reactionMessage',
+      'messageContextInfo',
+      'senderKeyDistributionMessage',
+      'pollCreationMessage',
+      'pollUpdateMessage',
+      'reaction'
+    ];
+    
+    if (ignoredTypes.includes(msg.type)) {
+      logger.debug(`[VerifyMediaMessage] Ignored message type: ${msg.type} for ticket ${ticket.id}`);
+      return;
+    }
+
     // Log detalhado para debug de mensagens de imagem
     logger.info(
       `[VerifyMediaMessage] DEBUG - Processing message ${msg.id.id} for ticket ${ticket.id}`

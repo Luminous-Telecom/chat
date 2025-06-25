@@ -223,11 +223,18 @@ const HandleBaileysMessage = async (
         const message = await processMessage(msg, ticket, contact, wbot);
 
         if (!message) {
-          const messageKey = `failed-message-${ticket.id}`;
-          if (shouldLogWarning(messageKey)) {
-            logger.warn(
-              `[HandleBaileysMessage] Failed to create message for ticket ${ticket.id}`
-            );
+          // Verificar se foi uma reação ignorada propositalmente
+          const messageType = Object.keys(msg.message || {})[0];
+          const isIgnoredReaction = messageType === 'reactionMessage' || 
+                                    (msg.message && Object.keys(msg.message).includes('reactionMessage'));
+          
+          if (!isIgnoredReaction) {
+            const messageKey = `failed-message-${ticket.id}`;
+            if (shouldLogWarning(messageKey)) {
+              logger.warn(
+                `[HandleBaileysMessage] Failed to create message for ticket ${ticket.id}`
+              );
+            }
           }
           resolve();
           return;
@@ -423,7 +430,18 @@ const processMessage = async (
   wbot: BaileysClient
 ) => {
   try {
-    const adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
+    // Tentar converter a mensagem - se for reação, uma exceção será lançada
+    let adaptedMessage;
+    try {
+      adaptedMessage = BaileysMessageAdapter.convertMessage(msg, wbot);
+    } catch (err) {
+      if (err.message === 'REACTION_MESSAGE_IGNORED') {
+        logger.debug(`[HandleBaileysMessage] Reaction message ignored for ticket ${ticket.id}`);
+        return null;
+      }
+      throw err; // Re-lançar outras exceções
+    }
+    
     const messageType = Object.keys(msg.message || {})[0];
 
     let message;
