@@ -335,7 +335,7 @@
 </template>
 
 <script>
-import { LocalStorage, uid } from 'quasar'
+import { uid } from 'quasar'
 import mixinCommon from './mixinCommon'
 import { EnviarMensagemTexto } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
