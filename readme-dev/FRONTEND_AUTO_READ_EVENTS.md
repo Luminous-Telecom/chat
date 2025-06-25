@@ -7,9 +7,11 @@ Documentação dos novos eventos WebSocket que o frontend deve escutar para sinc
 ## 🎯 Eventos WebSocket Disponíveis
 
 ### 1. `${tenantId}:messageRead`
+
 **Descrição**: Evento específico quando uma mensagem é marcada como lida (manual ou automática)
 
 **Payload**:
+
 ```javascript
 {
   type: "message:read",
@@ -32,9 +34,11 @@ Documentação dos novos eventos WebSocket que o frontend deve escutar para sinc
 ```
 
 ### 2. `${tenantId}:messageAutoRead`
+
 **Descrição**: Evento específico quando uma mensagem é lida automaticamente no WhatsApp Business
 
 **Payload**:
+
 ```javascript
 {
   type: "message:auto-read",
@@ -56,9 +60,11 @@ Documentação dos novos eventos WebSocket que o frontend deve escutar para sinc
 ```
 
 ### 3. `${tenantId}:ticketList` (Atualizado)
+
 **Descrição**: Evento geral de ACK com informações sobre leitura automática
 
 **Payload**:
+
 ```javascript
 {
   type: "chat:ack",
@@ -328,17 +334,20 @@ const actions = {
 ## 🎨 UX/UI Recomendações
 
 ### Indicadores Visuais
+
 1. **Ícone de sincronização** 📱 próximo a mensagens lidas automaticamente
 2. **Animação sutil** quando mensagem é marcada como lida
 3. **Toast discreto** informando sobre sincronização automática
 4. **Badge atualizado** em tempo real com contador correto
 
 ### Feedback ao Usuário
+
 1. **Notificação**: "✅ Mensagem sincronizada com WhatsApp"
 2. **Tooltip**: "Lida automaticamente no WhatsApp Business"
 3. **Log de atividades**: Histórico de sincronizações automáticas
 
 ### Estados da Interface
+
 - 🔵 **Mensagem não lida** - Badge azul/contador
 - ✅ **Lida manualmente** - Checkmark verde
 - 📱 **Lida automaticamente** - Ícone WhatsApp + checkmark
@@ -347,6 +356,7 @@ const actions = {
 ## 🚀 Exemplos Práticos
 
 ### 1. Lista de Tickets
+
 ```vue
 <template>
   <q-item 
@@ -379,6 +389,7 @@ const actions = {
 ```
 
 ### 2. Chat de Mensagens
+
 ```vue
 <template>
   <div class="message-item" :data-message-id="message.id">
@@ -404,6 +415,7 @@ const actions = {
 ## 📊 Debugging e Monitoramento
 
 ### Console Logs
+
 ```javascript
 // Adicionar logs para debugging
 console.group('🔄 WhatsApp Sync Event');
@@ -416,6 +428,7 @@ console.groupEnd();
 ```
 
 ### Painel de Debug (Desenvolvimento)
+
 ```vue
 <template>
   <q-expansion-item label="🔍 Debug - Auto Read Events" v-if="$q.dev">
@@ -436,6 +449,7 @@ console.groupEnd();
 ## 🔄 Sincronização Completa da Interface
 
 ### ✅ Sistema Implementado
+
 O sistema agora sincroniza automaticamente **TODOS** os componentes da interface:
 
 1. **Lista de tickets** - Badge de mensagens não lidas removido instantaneamente
@@ -445,6 +459,7 @@ O sistema agora sincroniza automaticamente **TODOS** os componentes da interface
 5. **Notificações** - Toast informativo sobre sincronização
 
 ### 🎯 Fluxo de Sincronização Completo
+
 ```
 WhatsApp Business (leitura) 
     ↓
@@ -464,21 +479,25 @@ Frontend recebe eventos
 ### 📱 Componentes Sincronizados
 
 **Lista de Tickets (ItemTicket.vue)**
+
 - Badge `unreadMessages` zerado dinamicamente
 - Animação suave de remoção do badge
 - Status visual atualizado
 
 **Menu Lateral (MainLayout.vue)**  
+
 - Contador de tickets com mensagens não lidas
 - Badge numérico atualizado em tempo real
 - Recálculo automático das notifications
 
 **Título da Guia**
+
 - Contador total de notificações
-- Formatação: `(X) Lumi Suite` 
+- Formatação: `(X) Lumi Suite`
 - Atualização via `atualizarTituloGuia()`
 
 **Chat (MensagemChat.vue)**
+
 - Ícones de ACK atualizados
 - Status `read: true` nas mensagens
 - Indicador visual de leitura automática
@@ -486,6 +505,7 @@ Frontend recebe eventos
 ### 🛠️ Implementação Técnica
 
 **Método de Sincronização Global**:
+
 ```javascript
 async atualizarNotificacoesGlobais() {
   // Re-consultar tickets com mensagens não lidas
@@ -500,11 +520,13 @@ async atualizarNotificacoesGlobais() {
 ```
 
 **Listeners Atualizados**:
+
 - `messageRead` → Sincroniza lista + menu + título
 - `messageAutoRead` → Sincroniza tudo + mostra toast
 - `ticketList` → Mantém funcionalidade existente
 
 ### 📊 Logs e Debug
+
 ```
 [Frontend] 📖 Evento messageRead recebido
 [Frontend] ✅ Mensagem marcada como lida automaticamente
@@ -512,9 +534,10 @@ async atualizarNotificacoesGlobais() {
 ```
 
 ### 🎨 Feedback Visual
+
 - **Toast discreto**: "📱 Sincronizado com WhatsApp"
 - **Badge animado** que desaparece suavemente
 - **Ícones de status** atualizados instantaneamente  
 - **Título da guia** com contagem precisa
 
-Agora o frontend tem **sincronização completa e em tempo real** com a leitura automática de mensagens! 🚀 
+Agora o frontend tem **sincronização completa e em tempo real** com a leitura automática de mensagens! 🚀
