@@ -19,6 +19,28 @@
           id="lastMessageRef"
           style="float: left; background: black; clear: both;"
         />
+        <!-- Avatar e nome do usuário fora do balão -->
+        <div
+          v-if="mensagem.fromMe && getUserDisplayName(mensagem)"
+          class="user-header-external"
+        >
+          <span class="user-name-external">{{ getUserDisplayName(mensagem) }}</span>
+          <div class="user-avatar-external">
+            <img
+              v-if="getUserProfilePic(mensagem)"
+              :src="getUserProfilePic(mensagem)"
+              class="user-avatar-image"
+              @error="showAvatarFallback"
+              @load="hideAvatarFallback"
+            />
+            <div
+              class="user-avatar-fallback-external"
+              :class="{ 'avatar-fallback-hidden': getUserProfilePic(mensagem) }"
+            >
+              <q-icon name="mdi-account-outline" size="22px" color="white" />
+            </div>
+          </div>
+        </div>
         <q-chat-message
           :id="`chat-message-${mensagem.id}`"
           :stamp="dataInWords(mensagem.createdAt)"
@@ -101,13 +123,6 @@
               style="display: flex; color: var(--primary-color); font-weight: 500;"
             >
               {{ isGroupLabel(mensagem) }}
-            </div>
-            <!-- Nome do usuário para mensagens enviadas -->
-            <div
-              v-if="mensagem.fromMe && mensagem.user?.name"
-              class="q-mb-sm text-caption text-primary text-weight-bold"
-            >
-              {{ mensagem.user.name }}
             </div>
             <div
               v-if="mensagem.quotedMsg"
@@ -508,6 +523,16 @@ export default {
     ...mapGetters({
       isMessageProcessing: 'atendimentoTicket/isMessageProcessing'
     }),
+    // Obter usuário do localStorage
+    usuario () {
+      try {
+        const usuarioStr = localStorage.getItem('usuario')
+        return usuarioStr ? JSON.parse(usuarioStr) : null
+      } catch (error) {
+        console.error('Erro ao obter usuário do localStorage:', error)
+        return null
+      }
+    },
     messagesByTicket () {
       return this.$store.state.atendimentoTicket.messagesByTicket || {}
     },
@@ -585,6 +610,56 @@ export default {
         return this.ticketFocado.isGroup ? mensagem.contact.name : ''
       } catch (error) {
         return ''
+      }
+    },
+    getInitials (name) {
+      if (!name) return ''
+      return name
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join('')
+    },
+    getUserDisplayName (mensagem) {
+      // Se a mensagem tem usuário específico, usar esse
+      if (mensagem.user?.name) {
+        return mensagem.user.name
+      }
+
+      // Se não tem usuário específico mas é enviada por mim, usar o usuário logado
+      if (mensagem.fromMe && this.usuario) {
+        // O objeto usuario do localStorage tem 'username' ao invés de 'name'
+        return this.usuario.username || this.usuario.name
+      }
+
+      return null
+    },
+    getUserProfilePic (mensagem) {
+      // Se a mensagem tem usuário específico com foto, usar essa
+      if (mensagem.user?.profilePicUrl) {
+        return mensagem.user.profilePicUrl
+      }
+
+      // Se não tem usuário específico mas é enviada por mim, usar a foto do usuário logado
+      if (mensagem.fromMe && this.usuario?.profilePicUrl) {
+        return this.usuario.profilePicUrl
+      }
+
+      return null
+    },
+    showAvatarFallback (event) {
+      // Quando a imagem falha ao carregar, esconder ela e mostrar o fallback
+      event.target.style.display = 'none'
+      const fallback = event.target.nextElementSibling
+      if (fallback) {
+        fallback.classList.remove('avatar-fallback-hidden')
+      }
+    },
+    hideAvatarFallback (event) {
+      // Quando a imagem carrega com sucesso, esconder o fallback
+      const fallback = event.target.nextElementSibling
+      if (fallback) {
+        fallback.classList.add('avatar-fallback-hidden')
       }
     },
     // cUrlMediaCors () {
@@ -1487,6 +1562,101 @@ export default {
 }
 
 /* Player de áudio agora integrado com design do WhatsApp */
+
+/* Layout externo para avatar e nome do usuário */
+.user-header-external {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  justify-content: flex-end;
+  padding-right: 8px;
+  flex-direction: row;
+}
+
+.user-avatar-external {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user-avatar-external:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.user-avatar-fallback-external {
+  background: linear-gradient(135deg, #9e9e9e 0%, #757575 50%, #9e9e9e 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.user-avatar-fallback-external::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.avatar-fallback-hidden {
+  display: none !important;
+}
+
+.user-name-external {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--q-color-grey-8, #424242);
+  text-transform: capitalize;
+}
+
+/* Dark mode para header externo do usuário */
+.body--dark .user-name-external {
+  color: var(--q-color-grey-3, #e0e0e0);
+}
+
+.body--dark .user-avatar-external {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.body--dark .user-avatar-external:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.body--dark .user-avatar-fallback-external {
+  background: linear-gradient(135deg, #616161 0%, #424242 50%, #616161 100%);
+}
+
+.body--dark .user-avatar-fallback-external::before {
+  background: linear-gradient(45deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(255,255,255,0.2) 100%);
+}
 
 /* Estilos para os ícones de ACK */
 .ack-icons-container {
