@@ -178,17 +178,7 @@
               >
                 <q-tooltip content-class="text-bold">Enviar link para videoconferência</q-tooltip>
               </q-btn>
-              <q-toggle
-                keep-color
-                v-model="sign"
-                dense
-                @input="handleSign"
-                class="q-ml-md"
-                :color="sign ? 'positive' : 'black'"
-                type="toggle"
-              >
-                <q-tooltip>{{ sign ? 'Desativar' : 'Ativar' }} Assinatura</q-tooltip>
-              </q-toggle>
+
             </template>
             <template v-slot:append>
               <q-btn
@@ -396,7 +386,6 @@ export default {
       visualizarMensagensRapidas: false,
       arquivos: [],
       textChat: '',
-      sign: false,
       scheduleDate: null,
       showEmojiPicker1: false,
       showEmojiPicker2: false,
@@ -729,7 +718,7 @@ export default {
       }
       let mensagem = this.textChat.trim()
       const username = localStorage.getItem('username')
-      if (username && this.sign) {
+      if (username) {
         mensagem = `*${username}*:\n ${mensagem}`
       }
       const message = {
@@ -783,7 +772,7 @@ export default {
       const link = `https://meet.jit.si/${uid()}/${uid()}`
       let mensagem = link
       const username = localStorage.getItem('username')
-      if (username && this.sign) {
+      if (username) {
         mensagem = `*${username}*:\n ${mensagem}`
       }
       const message = {
@@ -846,10 +835,7 @@ export default {
         }]
       })
     },
-    handleSign (state) {
-      this.sign = state
-      LocalStorage.set('sign', this.sign)
-    },
+
     // Método para limpar cache de permissão do microfone (útil para logout)
     clearMicrophonePermissionCache () {
       localStorage.removeItem('microphonePermissionChecked')
@@ -965,10 +951,6 @@ export default {
 
     // Adicionar event listener para fechar modal de emojis quando clicar fora
     document.addEventListener('click', this.handleClickOutsideEmojiPicker)
-
-    if (![null, undefined].includes(LocalStorage.getItem('sign'))) {
-      this.handleSign(LocalStorage.getItem('sign'))
-    }
 
     // Autofocus inicial - se já há um ticket aberto quando o componente é montado
     this.$nextTick(() => {
