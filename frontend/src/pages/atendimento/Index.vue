@@ -1820,11 +1820,14 @@ export default {
           // Usar a nova API que adiciona como participante
           await EntrarNaConversa(this.ticketFocado.id)
 
+          // Notificação removida conforme solicitado
+          /*
           this.$q.notify({
             type: 'positive',
             message: `Você entrou na conversa com ${this.ticketFocado.contact.name}! Agora você e o atendente original podem participar da conversa.`,
             position: 'bottom-right'
           })
+          */
 
           // Buscar participantes atualizados
           const { data: participants } = await ListarParticipantes(this.ticketFocado.id)
