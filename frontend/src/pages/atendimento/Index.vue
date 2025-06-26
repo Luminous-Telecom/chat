@@ -786,7 +786,6 @@ import { ListarFilas } from 'src/service/filas'
 const usuario = JSON.parse(localStorage.getItem('usuario'))
 import StatusWhatsapp from 'src/components/StatusWhatsapp'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
-import { format } from 'date-fns'
 import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { ListarMensagensRapidas } from 'src/service/mensagensRapidas'
@@ -1119,11 +1118,12 @@ export default {
           supported: 'Notification' in window,
           permission: Notification.permission
         })
-        return
       }
 
+      // Notificação removida conforme solicitado
+      /*
       const options = {
-        body: `${message.body} - ${format(new Date(), 'HH:mm')}`,
+        body: `${message.body} - ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
         icon: contact.profilePicUrl,
         tag: ticket.id,
         renotify: true
@@ -1145,6 +1145,7 @@ export default {
         this.$router.push({ name: 'atendimento' })
         // history.push(`/tickets/${ticket.id}`);
       }
+      */
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()

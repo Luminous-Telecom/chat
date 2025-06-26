@@ -559,6 +559,8 @@ export default {
           })
           await this.$store.commit('SET_HAS_MORE', true)
           await this.$store.dispatch('AbrirChatMensagens', ticket)
+          // Notificação removida conforme solicitado
+          /*
           this.$q.notify({
             message: `Atendimento Iniciado || ${ticket.contact.name} - Ticket: ${ticket.id}`,
             type: 'positive',
@@ -570,6 +572,7 @@ export default {
               color: 'white'
             }]
           })
+          */
           this.$router.push({ name: 'chat', params: { ticketId: ticket.id } })
         } catch (error) {
           if (error.status === 409) {

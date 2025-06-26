@@ -354,7 +354,6 @@ import cSystemVersion from '../components/cSystemVersion.vue'
 import { ListarWhatsapps } from 'src/service/sessoesWhatsapp'
 import EssentialLink from 'components/EssentialLink.vue'
 import socketInitial from './socketInitial'
-import { format } from 'date-fns'
 const username = localStorage.getItem('username')
 import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { mapGetters } from 'vuex'
@@ -566,10 +565,11 @@ export default {
       this.$store.commit('LOAD_WHATSAPPS', data)
     },
     handlerNotifications (data) {
+      // Notificação removida conforme solicitado
+      /*
       const { message, contact, ticket } = data
-
       const options = {
-        body: `${message.body} - ${format(new Date(), 'HH:mm')}`,
+        body: `${message.body} - ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
         icon: contact.profilePicUrl,
         tag: ticket.id,
         renotify: true
@@ -586,6 +586,7 @@ export default {
         this.$store.dispatch('AbrirChatMensagens', ticket)
         this.$router.push({ name: 'atendimento' })
       }
+      */
 
       // Tocar som de notificação usando o serviço centralizado
       tocarSomNotificacao()
@@ -627,6 +628,8 @@ export default {
         ) {
           // Para mensagens novas, fazer notificação antes de atualizar contadores
           if (data.type === 'chat:create' && data.payload && !data.payload.fromMe) {
+            // Notificação removida conforme solicitado
+            /*
             // Tocar som de notificação para mensagens recebidas de outros contatos
             this.$nextTick(() => {
               this.$q.notify({
@@ -636,6 +639,7 @@ export default {
                 timeout: 1000
               })
             })
+            */
             // Tocar áudio
             this.$nextTick(() => {
               import('src/helpers/helpersNotifications').then(mod => {

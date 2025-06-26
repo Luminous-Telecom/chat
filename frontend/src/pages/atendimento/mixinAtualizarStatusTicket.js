@@ -8,6 +8,8 @@ export default {
       AtualizarStatusTicket(ticket.id, 'open', userId)
         .then(res => {
           this.loading = false
+          // Notificação removida conforme solicitado
+          /*
           this.$q.notify({
             message: `Atendimento Iniciado || ${ticket.name} - Ticket: ${ticket.id}`,
             type: 'positive',
@@ -19,6 +21,7 @@ export default {
               color: 'white'
             }]
           })
+          */
 
           // Atualizar o ticket com o novo status antes de abrir o chat
           const ticketAtualizado = {
@@ -66,11 +69,6 @@ export default {
         pending: 'Retornar à fila?',
         closed: 'Encerrar o atendimento?'
       }
-      const toast = {
-        open: 'Atenidmento iniciado!',
-        pending: 'Retornado à fila!',
-        closed: 'Atendimento encerrado!'
-      }
 
       this.$q.dialog({
         title: title[status],
@@ -91,6 +89,13 @@ export default {
         AtualizarStatusTicket(ticketId, status, userId)
           .then(res => {
             this.loading = false
+            // Notificação removida conforme solicitado
+            /*
+            const toast = {
+              open: 'Atenidmento iniciado!',
+              pending: 'Retornado à fila!',
+              closed: 'Atendimento encerrado!'
+            }
             this.$q.notify({
               message: `${toast[status]} || ${contatoName} (Ticket ${ticketId})`,
               type: 'positive',
@@ -101,6 +106,7 @@ export default {
                 color: 'white'
               }]
             })
+            */
             this.$store.commit('TICKET_FOCADO', {})
             if (status !== 'open') this.$router.push({ name: 'chat-empty' })
           })

@@ -166,6 +166,8 @@ export default {
           // Faz verificação para se certificar que notificação pertence a fila do usuário
           var pass_noti = false
           verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
+          // Notificação removida conforme solicitado
+          /*
           // Exibe Notificação
           if (pass_noti) {
             // eslint-disable-next-line no-unused-vars
@@ -174,6 +176,7 @@ export default {
               tag: 'simple-push-demo-notification'
             })
           }
+          */
         }
       })
     }

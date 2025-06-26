@@ -341,6 +341,8 @@ export default {
             // Faz verificação para se certificar que notificação pertence a fila do usuário
             var pass_noti = false
             verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
+            // Notificação removida conforme solicitado
+            /*
             // Exibe Notificação
             if (pass_noti) {
               // eslint-disable-next-line no-new
@@ -349,6 +351,7 @@ export default {
                 tag: 'simple-push-demo-notification'
               })
             }
+            */
           }
         })
 
@@ -427,6 +430,8 @@ export default {
               self.atualizarNotificacoesGlobais()
             }
 
+            // Notificação removida conforme solicitado
+            /*
             // Mostrar notificação sutil (opcional)
             if (self.$q && self.$q.notify) {
               self.$q.notify({
@@ -440,6 +445,7 @@ export default {
                 ]
               })
             }
+            */
           }
         })
       })
