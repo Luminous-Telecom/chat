@@ -468,7 +468,6 @@ export default {
             // Verificar se o foco foi aplicado corretamente
             const textarea = this.$refs.inputEnvioMensagem.$el?.querySelector('textarea')
             if (textarea && document.activeElement === textarea) {
-              console.log('[InputMensagem] Input focado com sucesso na tentativa', attempt + 1)
               return
             }
 
@@ -476,7 +475,6 @@ export default {
             if (textarea) {
               textarea.focus()
               if (document.activeElement === textarea) {
-                console.log('[InputMensagem] Textarea focado diretamente na tentativa', attempt + 1)
                 return
               }
             }
