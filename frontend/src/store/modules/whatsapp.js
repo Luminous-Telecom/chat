@@ -18,16 +18,20 @@ const whatsapp = {
       state.whatsApps = [...newWhats]
     },
     UPDATE_SESSION (state, payload) {
+      console.log('🔄 UPDATE_SESSION mutation called with:', payload)
       const whatsApp = payload
       const whatsAppIndex = state.whatsApps.findIndex(s => s.id === whatsApp.id)
 
       if (whatsAppIndex !== -1) {
+        console.log('📝 Updating existing WhatsApp in store:', whatsAppIndex)
         state.whatsApps[whatsAppIndex].status = whatsApp.status
         state.whatsApps[whatsAppIndex].updatedAt = whatsApp.updatedAt
         state.whatsApps[whatsAppIndex].qrcode = whatsApp.qrcode
         state.whatsApps[whatsAppIndex].retries = whatsApp.retries
+        console.log('✅ WhatsApp updated in store:', state.whatsApps[whatsAppIndex])
         return state.whatsApps
       } else {
+        console.log('❌ WhatsApp not found in store for ID:', whatsApp.id)
         return state.whatsApps
       }
     },

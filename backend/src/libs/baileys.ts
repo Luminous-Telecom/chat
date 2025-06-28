@@ -460,14 +460,19 @@ export async function initBaileys(
       }
 
       if (qr) {
+        console.log('🎯 QR Code received from Baileys for session:', whatsapp.id)
+        console.log('📱 QR Code value length:', qr.length)
+        
         await whatsapp.update({
           status: "qrcode",
           qrcode: qr,
           retries: 0
         });
         
+        console.log('💾 QR Code saved to database')
+        
         const io = await getSocketIO();
-        io.emit(`${whatsapp.tenantId}:whatsappSession`, {
+        const sessionData = {
           action: "update",
           session: {
             id: whatsapp.id,
@@ -477,7 +482,12 @@ export async function initBaileys(
             isDefault: whatsapp.isDefault,
             tenantId: whatsapp.tenantId
           }
-        });
+        };
+        
+        console.log('📡 Emitting socket event:', sessionData)
+        io.emit(`${whatsapp.tenantId}:whatsappSession`, sessionData);
+        
+        console.log('✅ QR Code event emitted successfully')
         return;
       }
 

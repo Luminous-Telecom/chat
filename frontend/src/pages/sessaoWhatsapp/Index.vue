@@ -281,8 +281,10 @@ export default {
       return format(parseISO(data), formato, { locale: pt })
     },
     handleOpenQrModal (channel) {
+      console.log('🎯 handleOpenQrModal called with channel:', channel)
       this.whatsappSelecionado = channel
       this.abrirModalQR = true
+      console.log('✅ Modal should be open now, abrirModalQR:', this.abrirModalQR)
     },
     handleOpenModalWhatsapp (whatsapp) {
       this.whatsappSelecionado = whatsapp
@@ -399,6 +401,7 @@ export default {
       }
     },
     async handleRequestNewQrCode (channel, origem) {
+      console.log('🔄 handleRequestNewQrCode called with:', { channel, origem })
       if (channel.type === 'telegram' && !channel.tokenTelegram) {
         this.$notificarErro('Necessário informar o token para Telegram')
         return
@@ -407,39 +410,51 @@ export default {
       this.loading = true
       try {
         if (channel.status !== 'DISCONNECTED') {
+          console.log('🗑️ Deleting existing session...')
           await DeleteWhatsappSession(channel.id)
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
 
         const qrCodeData = { id: channel.id, isQrcode: true, forceNewSession: true }
+        console.log('📡 Requesting new QR code with data:', qrCodeData)
         await RequestNewQrCode(qrCodeData)
 
         // O QR code será recebido via WebSocket e automaticamente atualizado no store
         // Aguardar um tempo para o QR code ser gerado
+        console.log('⏳ Waiting for QR code generation...')
         await new Promise(resolve => setTimeout(resolve, 3000))
 
         // Buscar o canal atualizado do store (que foi atualizado via WebSocket)
         const updatedChannelFromStore = this.$store.state.whatsapp.whatsApps.find(w => w.id === channel.id)
+        console.log('🔍 Updated channel from store:', updatedChannelFromStore)
 
         if (updatedChannelFromStore && updatedChannelFromStore.qrcode) {
+          console.log('✅ QR code found in store, opening modal')
           // Se o modal já está aberto, apenas atualizar o canal selecionado
           if (this.abrirModalQR) {
+            console.log('📱 Modal already open, updating channel')
             this.whatsappSelecionado = updatedChannelFromStore
           } else {
+            console.log('🚀 Opening modal with updated channel')
             this.handleOpenQrModal(updatedChannelFromStore)
           }
         } else {
+          console.log('⏳ QR code not found yet, waiting more...')
           // Aguardar mais um pouco e tentar novamente
           await new Promise(resolve => setTimeout(resolve, 2000))
           const finalChannel = this.$store.state.whatsapp.whatsApps.find(w => w.id === channel.id)
+          console.log('🔍 Final channel check:', finalChannel)
           // Se o modal já está aberto, apenas atualizar o canal selecionado
           if (this.abrirModalQR) {
+            console.log('📱 Modal already open, updating with final channel')
             this.whatsappSelecionado = finalChannel || channel
           } else {
+            console.log('🚀 Opening modal with final channel')
             this.handleOpenQrModal(finalChannel || channel)
           }
         }
       } catch (error) {
+        console.error('❌ Error in handleRequestNewQrCode:', error)
         this.$q.notify({
           type: 'negative',
           message: 'Erro ao gerar novo QR code. Tente novamente em alguns segundos.',

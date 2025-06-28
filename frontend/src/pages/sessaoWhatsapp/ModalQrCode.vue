@@ -184,7 +184,9 @@ export default {
   watch: {
     channel: {
       handler (v) {
+        console.log('👀 Channel watcher triggered:', v)
         if (this.channel.status === 'CONNECTED') {
+          console.log('✅ Channel connected, closing modal')
           this.fecharModalQrModal()
         }
       },
@@ -192,7 +194,9 @@ export default {
     },
     'channel.status': {
       handler (newStatus) {
+        console.log('📊 Channel status changed to:', newStatus)
         if (newStatus === 'CONNECTED') {
+          console.log('✅ Channel connected, closing modal')
           this.fecharModalQrModal()
         }
       },
@@ -212,6 +216,8 @@ export default {
   },
   computed: {
     cQrcode () {
+      console.log('🔍 cQrcode computed called, channel:', this.channel)
+      console.log('📱 QR Code value:', this.channel.qrcode)
       return this.channel.qrcode
     }
   },
@@ -233,11 +239,15 @@ export default {
     }
   },
   mounted () {
+    console.log('🚀 ModalQrCode mounted, channel:', this.channel)
     // Listener direto para atualizações de sessão via socket
     this.$root.$on('UPDATE_SESSION', (session) => {
+      console.log('📡 UPDATE_SESSION event received:', session)
       if (session.id === this.channel.id) {
+        console.log('✅ Session matches current channel, updating...')
         // Só fecha o modal se a sessão estiver conectada, não para qrcode
         if (session.status === 'CONNECTED') {
+          console.log('🔗 Session connected, closing modal')
           this.fecharModalQrModal()
         }
         // Para status 'qrcode', apenas atualiza os dados sem fechar o modal
@@ -247,7 +257,9 @@ export default {
 
     // Listener adicional para readySession
     this.$root.$on('READY_SESSION', (session) => {
+      console.log('🎉 READY_SESSION event received:', session)
       if (session.id === this.channel.id) {
+        console.log('✅ Ready session matches current channel, closing modal')
         this.fecharModalQrModal()
       }
     })
@@ -258,7 +270,9 @@ export default {
       const socket = window.socket || this.$root.$socket || window.$nuxt?.$socket
       if (socket) {
         socket.on(`${usuario.tenantId}:pairingCode`, ({ whatsappId, pairingCode }) => {
+          console.log('🔐 Pairing code received:', { whatsappId, pairingCode })
           if (this.channel && this.channel.id === whatsappId) {
+            console.log('✅ Pairing code matches current channel')
             this.pairingCode = pairingCode
           }
         })

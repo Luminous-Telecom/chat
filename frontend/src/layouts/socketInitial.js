@@ -102,12 +102,15 @@ export default {
       })
 
       socket.on(`${usuario.tenantId}:whatsappSession`, data => {
+        console.log('🔍 Socket received whatsappSession:', data)
         if (data.action === 'update') {
+          console.log('📱 Updating session in store:', data.session)
           this.$store.commit('UPDATE_SESSION', data.session)
           this.$root.$emit('UPDATE_SESSION', data.session)
         }
 
         if (data.action === 'readySession') {
+          console.log('✅ Ready session received:', data.session)
           this.$root.$emit('READY_SESSION', data.session)
           this.$q.notify({
             position: 'bottom-right',

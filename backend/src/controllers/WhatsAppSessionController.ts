@@ -45,17 +45,27 @@ export const update = async (
   req: UserRequest,
   res: Response
 ): Promise<Response> => {
+  console.log('🔄 PUT /whatsappsession/:whatsappId called')
+  console.log('📋 Request body:', req.body)
+  console.log('🔑 Request params:', req.params)
+  
   const { whatsappId } = req.params;
   const { tenantId } = req.user;
+
+  console.log('🔍 Looking for WhatsApp with ID:', whatsappId, 'and tenantId:', tenantId)
 
   const whatsapp = await Whatsapp.findOne({
     where: { id: whatsappId, tenantId },
   });
 
   if (!whatsapp) {
+    console.log('❌ WhatsApp not found')
     throw new AppError("No WhatsApp instance found with this ID.");
   }
 
+  console.log('✅ WhatsApp found:', whatsapp.name)
+  console.log('🚀 Starting WhatsApp session...')
+  
   StartWhatsAppSession(whatsapp, Number(tenantId));
   return res.status(200).json({ message: "Starting session." });
 };
