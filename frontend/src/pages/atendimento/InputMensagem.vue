@@ -416,15 +416,13 @@ export default {
     'ticketFocado.status': {
       handler (newStatus, oldStatus) {
         if (newStatus === 'pending') {
+          // Se o ticket ficar pending, remover foco
+          if (this.$refs.inputEnvioMensagem) {
+            this.$refs.inputEnvioMensagem.blur()
+          }
         } else if (newStatus === 'open' && oldStatus !== 'open') {
           // Quando o ticket for aberto (mudança de status para 'open'), focar o input
-          this.$nextTick(() => {
-            setTimeout(() => {
-              if (this.$refs.inputEnvioMensagem) {
-                this.$refs.inputEnvioMensagem.focus()
-              }
-            }, 300)
-          })
+          this.focusInputWithRetry()
         }
       },
       immediate: true
@@ -435,18 +433,57 @@ export default {
         if (newTicket.id !== oldTicket?.id) {
           // Quando um novo ticket é selecionado, focar o input automaticamente
           this.$nextTick(() => {
-            setTimeout(() => {
-              if (this.$refs.inputEnvioMensagem && newTicket.status === 'open') {
-                this.$refs.inputEnvioMensagem.focus()
-              }
-            }, 300)
+            if (newTicket.status === 'open') {
+              this.focusInputWithRetry()
+            }
           })
         }
       },
       deep: true
+    },
+    // Observar mudanças na mensagem de resposta
+    replyingMessage: {
+      handler (newMessage, oldMessage) {
+        if (newMessage && newMessage !== oldMessage) {
+          // Quando uma mensagem é selecionada para resposta, focar o input
+          this.$nextTick(() => {
+            this.focusInputWithRetry()
+          })
+        }
+      }
     }
   },
   methods: {
+    // Método para focar o input com retry para garantir que funcione
+    focusInputWithRetry (maxAttempts = 5) {
+      const attemptFocus = (attempt = 0) => {
+        if (attempt >= maxAttempts) {
+          console.warn('[InputMensagem] Não foi possível focar o input após', maxAttempts, 'tentativas')
+          return
+        }
+
+        if (this.$refs.inputEnvioMensagem) {
+          try {
+            this.$refs.inputEnvioMensagem.focus()
+
+            // Verificar se o foco foi aplicado corretamente
+            const textarea = this.$refs.inputEnvioMensagem.$el?.querySelector('textarea')
+            if (textarea && document.activeElement === textarea) {
+              console.log('[InputMensagem] Input focado com sucesso na tentativa', attempt + 1)
+              return
+            }
+          } catch (error) {
+            console.warn('[InputMensagem] Erro ao focar input na tentativa', attempt + 1, error)
+          }
+        }
+
+        // Tentar novamente após um delay
+        setTimeout(() => attemptFocus(attempt + 1), 100 * (attempt + 1))
+      }
+
+      // Iniciar as tentativas
+      attemptFocus(0)
+    },
     openFilePreview (event) {
       const data = event.clipboardData.files[0]
       const urlImg = window.URL.createObjectURL(data)
@@ -462,7 +499,9 @@ export default {
           title: `Enviar imagem para ${this.ticketFocado?.contact?.name}`,
           src: this.openFilePreview(e)
         }
-        this.$refs.inputEnvioMensagem.focus()
+        this.$nextTick(() => {
+          this.focusInputWithRetry()
+        })
       }
     },
     // Método para fechar o modal de emojis quando clicar fora
@@ -512,9 +551,9 @@ export default {
     },
     mensagemRapidaSelecionada (mensagem) {
       this.textChat = mensagem
-      setTimeout(() => {
-        this.$refs.inputEnvioMensagem.focus()
-      }, 300)
+      this.$nextTick(() => {
+        this.focusInputWithRetry()
+      })
     },
     onEmojiSelectMart (emoji, event) {
       try {
@@ -764,9 +803,11 @@ export default {
       }
       this.isRecordingAudio = false
       this.loading = false
+
+      // Focar o input após enviar mensagem com retry
       setTimeout(() => {
-        this.$refs.inputEnvioMensagem.focus()
-      }, 300)
+        this.focusInputWithRetry()
+      }, 200)
     },
     async handlSendLinkVideo () {
       const link = `https://meet.jit.si/${uid()}/${uid()}`
@@ -841,6 +882,11 @@ export default {
       localStorage.removeItem('microphonePermissionChecked')
       localStorage.removeItem('microphonePermissionGranted')
       this.hasMicrophonePermission = false
+    },
+
+    // Método para fazer scroll para o final da conversa
+    scrollToBottom () {
+      this.$root.$emit('scrollToBottomMessageChat')
     }
   },
   async mounted () {
@@ -933,16 +979,18 @@ export default {
     }
 
     // Restaurar o código original do mounted
-    this.$root.$on('mensagem-chat:focar-input-mensagem', () => this.$refs.inputEnvioMensagem.focus())
+    this.$root.$on('mensagem-chat:focar-input-mensagem', () => {
+      this.$nextTick(() => {
+        this.focusInputWithRetry()
+      })
+    })
 
     // Escutar evento de refoco quando o mesmo ticket for clicado novamente
     this.$root.$on('ticket:refocus-input', () => {
       this.$nextTick(() => {
-        setTimeout(() => {
-          if (this.$refs.inputEnvioMensagem && this.ticketFocado?.status === 'open') {
-            this.$refs.inputEnvioMensagem.focus()
-          }
-        }, 100)
+        if (this.ticketFocado?.status === 'open') {
+          this.focusInputWithRetry()
+        }
       })
     })
 
@@ -954,11 +1002,9 @@ export default {
 
     // Autofocus inicial - se já há um ticket aberto quando o componente é montado
     this.$nextTick(() => {
-      setTimeout(() => {
-        if (this.ticketFocado?.id && this.ticketFocado.status === 'open' && this.$refs.inputEnvioMensagem) {
-          this.$refs.inputEnvioMensagem.focus()
-        }
-      }, 500)
+      if (this.ticketFocado?.id && this.ticketFocado.status === 'open') {
+        this.focusInputWithRetry()
+      }
     })
   },
   beforeDestroy () {
