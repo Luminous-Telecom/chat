@@ -31,7 +31,7 @@ export default {
     }
 
     // Definir título padrão da aplicação
-    document.title = 'Lumi Suite'
+    document.title = 'LUMI SUITE'
 
     //   document.onclick = function () {
     //     this.idleSecondsCounter = 0

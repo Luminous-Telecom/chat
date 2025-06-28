@@ -96,8 +96,8 @@ export const atualizarTituloGuia = (notifications, notifications_p) => {
   const totalNotificacoes = totalUnreadConversations + totalPending
 
   if (totalNotificacoes > 0) {
-    document.title = `(${totalNotificacoes}) Lumi Suite`
+    document.title = `(${totalNotificacoes}) LUMI SUITE`
   } else {
-    document.title = 'Lumi Suite'
+    document.title = 'LUMI SUITE'
   }
 }

@@ -14,10 +14,9 @@
         >
           <q-card-section class="text-primary text-center">
             <q-img
-              src="/lumi-suite-logo.png"
+              src="/Lumi Suite Logo cor azul claro.png"
               spinner-color="white"
-              style="height: 120px; max-width: 300px"
-              class="q-mb-lg q-px-md"
+              class="q-mb-lg"
             />
             <q-separator spaced />
           </q-card-section>
