@@ -587,13 +587,6 @@ div.q-card, .q-table, .q-table__container
     color: rgba(0, 0, 0, 0.5)
     font-style: italic
 
-
-
-// Regra original para modo escuro
-.body--dark .q-message-text--sent:last-child:before
-  border-bottom: 8px solid var(--q-message-sent-bg, #1a202c) !important
-
-
 :root
   --q-message-sent-bg: #dcf8c6
   --q-message-received-bg: #fff
@@ -925,3 +918,64 @@ emoji-picker
     .modal-actions
       background: $dark-secondary !important
       border-top-color: $dark-border !important
+
+
+
+// Ajuste para posicionar as setas na parte superior dos balões
+
+// Seta para mensagem enviada (lado direito) - posição superior
+.q-message-text--sent:last-child:before,
+.messageRight:last-child:before
+  top: 0 !important  // Mudança: de bottom para top
+  right: -10px !important
+  border-left: 10px solid var(--q-message-sent-bg, #dcf8c6) !important
+  border-bottom: 10px solid transparent !important  // Adicionado para manter o formato
+
+// Seta para mensagem recebida (lado esquerdo) - posição superior
+.q-message-text--received:last-child:before,
+.messageLeft:last-child:before
+  content: '' !important
+  position: absolute !important
+  top: 0 !important  // Mudança: de bottom para top
+  left: -8px !important
+  width: 0 !important
+  height: 0 !important
+  border-right: 8px solid var(--q-message-received-bg, #d4ddea) !important
+  border-top: 8px solid transparent !important  // Mudança: de border-bottom para border-top
+  border-bottom: 8px solid transparent !important  // Adicionado para manter o formato
+  z-index: 1 !important
+
+
+// Ajustes específicos para modo escuro - mensagem recebida
+.body--dark .q-message-text--received:last-child:before,
+.body--dark .messageLeft:last-child:before
+  border-right-color: var(--dark-tertiary) !important
+
+// Garantir que os balões tenham position relative para as setas absolutas
+.q-message-text--sent,
+.q-message-text--received,
+.messageLeft,
+.messageRight
+  position: relative !important
+
+// Ajuste específico para o border-radius - remover arredondamento na parte superior onde fica a seta
+.q-message-text--sent:last-child,
+.messageRight:last-child
+  border-top-right-radius: 0 !important  // Remove arredondamento superior direito
+
+.q-message-text--received:last-child,
+.messageLeft:last-child
+  border-top-left-radius: 0 !important   // Remove arredondamento superior esquerdo
+
+// Manter os outros cantos arredondados
+.q-message-text--sent,
+.messageRight
+  border-top-left-radius: 10px !important
+  border-bottom-left-radius: 10px !important
+  border-bottom-right-radius: 10px !important
+
+.q-message-text--received,
+.messageLeft
+  border-top-right-radius: 10px !important
+  border-bottom-left-radius: 10px !important
+  border-bottom-right-radius: 10px !important
