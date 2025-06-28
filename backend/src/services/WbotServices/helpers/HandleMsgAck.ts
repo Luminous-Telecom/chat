@@ -5,7 +5,7 @@
 
 // import { WbotMessage } from '../../../types/baileys';
 // import { MessageAck } from "whatsapp-web.js";
-import { WAMessage } from "@whiskeysockets/baileys";
+import { WAMessage } from "baileys";
 import { Op, Sequelize, Transaction } from "sequelize";
 import Message from "../../../models/Message";
 import Ticket from "../../../models/Ticket";

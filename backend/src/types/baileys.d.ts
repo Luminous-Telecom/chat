@@ -8,6 +8,7 @@ import {
 
 // Mapeamento de tipos do Baileys para whatsapp-web.js
 export interface BaileysMessage extends proto.IWebMessageInfo {
+  status: number;
   key: proto.IMessageKey;
   message: proto.IMessage | undefined;
   // Adicionar propriedades compatíveis com whatsapp-web.js

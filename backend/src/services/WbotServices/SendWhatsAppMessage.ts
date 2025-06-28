@@ -1,4 +1,4 @@
-import type { proto } from "@whiskeysockets/baileys";
+import type { proto } from "baileys";
 import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import GetTicketWbot from "../../helpers/GetTicketWbot";

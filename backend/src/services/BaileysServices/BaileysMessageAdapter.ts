@@ -1,4 +1,4 @@
-import { proto, downloadMediaMessage } from "@whiskeysockets/baileys";
+import { proto, downloadMediaMessage } from "baileys";
 import {
   BaileysMessage,
   BaileysContact,
@@ -48,14 +48,14 @@ export class BaileysMessageAdapter {
         _serialized: msg.key.id || "",
       },
       timestamp: Number(msg.messageTimestamp) || 0,
+      status: 1,
       downloadMedia: async () => {
         if (!wbot || !msg.message) {
           // console.log('[BaileysMessageAdapter] No wbot or message available for download');
           return null;
         }
 
-        const content =
-          msg.message.imageMessage ||
+        const content = msg.message.imageMessage ||
           msg.message.videoMessage ||
           msg.message.audioMessage ||
           msg.message.documentMessage ||
@@ -82,8 +82,9 @@ export class BaileysMessageAdapter {
             // Use timeout wrapper para evitar travamentos
             const buffer = await Promise.race([
               downloadMediaMessage(msg, "buffer", {}),
-              new Promise<Buffer | null>((_, reject) =>
-                setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms`)), timeoutMs))
+              new Promise<Buffer | null>((_, reject) => {
+                setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms`)), timeoutMs);
+              })
             ]);
 
             if (buffer && buffer.length > 0) {
@@ -120,7 +121,9 @@ export class BaileysMessageAdapter {
             // Aguardar antes da próxima tentativa (tempo menor para stickers)
             const waitTime = messageType === 'stickerMessage' ? 500 : 1000 * retryCount;
             console.log(`[BaileysMessageAdapter] Waiting ${waitTime}ms before retry ${retryCount + 1} for ${messageType}`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise<void>(resolve => {
+              setTimeout(() => resolve(), waitTime);
+            });
           }
         }
 

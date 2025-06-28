@@ -1,4 +1,4 @@
-import { WASocket, proto } from "@whiskeysockets/baileys";
+import { WASocket, proto } from "baileys";
 import { BaileysClient } from "../../types/baileys";
 import { logger } from "../../utils/logger";
 import FindOrCreateTicketService from "../TicketServices/FindOrCreateTicketService";

@@ -1,4 +1,3 @@
-import { proto } from "@whiskeysockets/baileys";
 import { BaileysMessage } from "../types/baileys";
 import Ticket from "../models/Ticket";
 import GetTicketWbot from "./GetTicketWbot";
@@ -32,8 +31,8 @@ export const GetWbotMessage = async (
     const messages = Array.from(messageStore.values()) as BaileysMessage[];
     const sortedMessages = messages
       .sort((a, b) => {
-        const timestampA = Number(a.messageTimestamp) || 0;
-        const timestampB = Number(b.messageTimestamp) || 0;
+        const timestampA = Number(a.timestamp) || 0;
+        const timestampB = Number(b.timestamp) || 0;
         return timestampB - timestampA;
       })
       .slice(0, totalMessages);

@@ -1,4 +1,4 @@
-import { WASocket, proto } from "@whiskeysockets/baileys";
+import { WASocket, proto } from "baileys";
 import AppError from "../../errors/AppError";
 import GetTicketWbot from "../../helpers/GetTicketWbot";
 import Message from "../../models/Message";
@@ -64,7 +64,7 @@ const SendBaileysMessage = async ({
       logger.error(`Error criar log mensagem ${error}`);
     }
 
-    return sendMessage as proto.WebMessageInfo;
+    return sendMessage as unknown as proto.WebMessageInfo;
   } catch (err) {
     logger.error(`SendBaileysMessage | Error: ${err}`);
     throw new AppError("ERR_SENDING_WAPP_MSG");

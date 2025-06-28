@@ -81,8 +81,13 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const { tenantId } = req.user;
-  const { contactId, status, userId, channel, channelId }: TicketData =
-    req.body;
+  const {
+    contactId,
+    status,
+    userId,
+    channel,
+    channelId
+  }: TicketData = req.body;
 
   const ticket = await CreateTicketService({
     contactId,
@@ -115,7 +120,6 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
     ShowTicketService({ id: ticketId, tenantId }),
     Message.findAll({
       where: {
-        contactId: { [Op.eq]: null }, // Será atualizado após obter o ticket
         scheduleDate: { [Op.not]: null },
         status: "pending",
       },
@@ -216,7 +220,7 @@ export const remove = async (
     .to(`${tenantId}:notification`)
     .emit(`${tenantId}:ticket`, {
       action: "delete",
-      ticketId: +ticketId,
+      ticketId: parseInt(ticketId, 10),
     });
 
   return res.status(200).json({ message: "ticket deleted" });
@@ -282,16 +286,16 @@ export const joinConversation = async (
     logger.info(`[joinConversation] Ticket encontrado - Owner: ${ticket.userId}, Current User: ${userId}`);
 
     // Verificar se o usuário já é o dono do ticket
-    if (ticket.userId === +userId) {
+    if (ticket.userId === parseInt(userId, 10)) {
       logger.warn(`[joinConversation] Usuário já é o dono do ticket - TicketId: ${ticketId}, UserId: ${userId}`);
       return res.status(400).json({ error: "User is already the ticket owner" });
     }
 
     // Verificar se o usuário já é participante
     const isParticipant = await participantService.isUserParticipant(
-      parseInt(ticketId),
-      +userId,
-      +tenantId
+      parseInt(ticketId, 10),
+      parseInt(userId, 10),
+      parseInt(String(tenantId), 10)
     );
 
     logger.info(`[joinConversation] Verificação de participante - IsParticipant: ${isParticipant}`);
@@ -304,25 +308,25 @@ export const joinConversation = async (
     // Adicionar como participante
     logger.info(`[joinConversation] Adicionando participante - TicketId: ${ticketId}, UserId: ${userId}`);
     const participant = await participantService.addParticipant({
-      ticketId: parseInt(ticketId),
-      userId: +userId,
-      tenantId: +tenantId,
+      ticketId: parseInt(ticketId, 10),
+      userId: parseInt(userId, 10),
+      tenantId: parseInt(String(tenantId), 10),
     });
 
     logger.info(`[joinConversation] Participante adicionado com sucesso - ParticipantId: ${participant.id}`);
 
     // Log da ação
     await CreateLogTicketService({
-      userId: +userId,
-      ticketId: parseInt(ticketId),
+      userId: parseInt(userId, 10),
+      ticketId: parseInt(ticketId, 10),
       type: "access",
     });
 
     // Emitir socket para notificar outros usuários
     const io = getIO();
     const participants = await participantService.getTicketParticipants(
-      parseInt(ticketId),
-      +tenantId
+      parseInt(ticketId, 10),
+      parseInt(String(tenantId), 10)
     );
 
     io.to(`${tenantId}:${ticket.status}`)
@@ -331,7 +335,7 @@ export const joinConversation = async (
         action: "participant_joined",
         ticket: {
           ...ticket.toJSON(),
-          participants: participants.map(p => p.toJSON ? p.toJSON() : p),
+          participants: participants.map((p) => (p.toJSON ? p.toJSON() : p)),
         },
         participant: participant.toJSON ? participant.toJSON() : participant,
       });
@@ -364,29 +368,29 @@ export const leaveConversation = async (
     }
 
     // Não permitir que o dono saia da conversa
-    if (ticket.userId === +userId) {
+    if (ticket.userId === parseInt(userId, 10)) {
       return res.status(400).json({ error: "Ticket owner cannot leave conversation" });
     }
 
     // Remover da conversa
     await participantService.removeParticipant({
-      ticketId: parseInt(ticketId),
-      userId: +userId,
-      tenantId: +tenantId,
+      ticketId: parseInt(ticketId, 10),
+      userId: parseInt(userId, 10),
+      tenantId: parseInt(String(tenantId), 10),
     });
 
     // Log da ação
     await CreateLogTicketService({
-      userId: +userId,
-      ticketId: parseInt(ticketId),
+      userId: parseInt(userId, 10),
+      ticketId: parseInt(ticketId, 10),
       type: "access",
     });
 
     // Emitir socket para notificar outros usuários
     const io = getIO();
     const participants = await participantService.getTicketParticipants(
-      parseInt(ticketId),
-      +tenantId
+      parseInt(ticketId, 10),
+      parseInt(String(tenantId), 10)
     );
 
     io.to(`${tenantId}:${ticket.status}`)
@@ -395,7 +399,7 @@ export const leaveConversation = async (
         action: "participant_left",
         ticket: {
           ...ticket.toJSON(),
-          participants: participants.map(p => p.toJSON ? p.toJSON() : p),
+          participants: participants.map((p) => (p.toJSON ? p.toJSON() : p)),
         },
         userId,
       });
@@ -420,8 +424,8 @@ export const getParticipants = async (
     const participantService = new TicketParticipantService();
 
     const participants = await participantService.getTicketParticipants(
-      parseInt(ticketId),
-      +tenantId
+      parseInt(ticketId, 10),
+      parseInt(String(tenantId), 10)
     );
 
     return res.status(200).json(participants);
