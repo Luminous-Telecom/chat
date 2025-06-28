@@ -120,6 +120,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
     ShowTicketService({ id: ticketId, tenantId }),
     Message.findAll({
       where: {
+        ticketId: parseInt(ticketId, 10), // Buscar apenas mensagens do ticket específico
         scheduleDate: { [Op.not]: null },
         status: "pending",
       },
@@ -133,19 +134,8 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
     })
   ]);
 
-  // Atualizar o contactId na consulta de mensagens agendadas
-  if (ticket && scheduledMessages.length > 0) {
-    scheduledMessages.forEach(msg => {
-      msg.setDataValue('contactId', ticket.contactId);
-    });
-  }
-
-  // Filtrar apenas mensagens agendadas do contato atual
-  const filteredScheduledMessages = scheduledMessages.filter(
-    msg => msg.getDataValue('contactId') === ticket?.contactId
-  );
-
-  ticket.setDataValue("scheduledMessages", filteredScheduledMessages);
+  // Definir mensagens agendadas diretamente no ticket
+  ticket.setDataValue("scheduledMessages", scheduledMessages);
 
   // Executar log em paralelo para não bloquear a resposta
   CreateLogTicketService({
