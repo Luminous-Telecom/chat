@@ -1168,7 +1168,16 @@ export default {
     },
     citarMensagem (mensagem) {
       this.$emit('update:replyingMessage', mensagem)
-      this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
+
+      // Emitir evento para focar o input com delay para garantir que a mensagem seja definida primeiro
+      this.$nextTick(() => {
+        this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
+
+        // Backup: tentar focar novamente após um delay maior para casos onde o primeiro não funcionar
+        setTimeout(() => {
+          this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
+        }, 200)
+      })
     },
     showMessageOptions (messageId) {
       this.hoveredMessageId = messageId

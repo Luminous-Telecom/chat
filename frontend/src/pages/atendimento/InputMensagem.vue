@@ -446,16 +446,15 @@ export default {
       handler (newMessage, oldMessage) {
         if (newMessage && newMessage !== oldMessage) {
           // Quando uma mensagem é selecionada para resposta, focar o input
-          this.$nextTick(() => {
-            this.focusInputWithRetry()
-          })
+          this.focusOnReply()
         }
-      }
+      },
+      immediate: false
     }
   },
   methods: {
     // Método para focar o input com retry para garantir que funcione
-    focusInputWithRetry (maxAttempts = 5) {
+    focusInputWithRetry (maxAttempts = 8) {
       const attemptFocus = (attempt = 0) => {
         if (attempt >= maxAttempts) {
           console.warn('[InputMensagem] Não foi possível focar o input após', maxAttempts, 'tentativas')
@@ -472,13 +471,23 @@ export default {
               console.log('[InputMensagem] Input focado com sucesso na tentativa', attempt + 1)
               return
             }
+
+            // Tentar focar diretamente no textarea se o componente não funcionar
+            if (textarea) {
+              textarea.focus()
+              if (document.activeElement === textarea) {
+                console.log('[InputMensagem] Textarea focado diretamente na tentativa', attempt + 1)
+                return
+              }
+            }
           } catch (error) {
             console.warn('[InputMensagem] Erro ao focar input na tentativa', attempt + 1, error)
           }
         }
 
-        // Tentar novamente após um delay
-        setTimeout(() => attemptFocus(attempt + 1), 100 * (attempt + 1))
+        // Tentar novamente após um delay progressivo
+        const delay = Math.min(100 * (attempt + 1), 500) // Máximo de 500ms de delay
+        setTimeout(() => attemptFocus(attempt + 1), delay)
       }
 
       // Iniciar as tentativas
@@ -887,6 +896,25 @@ export default {
     // Método para fazer scroll para o final da conversa
     scrollToBottom () {
       this.$root.$emit('scrollToBottomMessageChat')
+    },
+
+    // Método específico para focar o input quando uma mensagem é selecionada para resposta
+    focusOnReply () {
+      // Garantir que o componente esteja pronto
+      this.$nextTick(() => {
+        // Primeira tentativa imediata
+        this.focusInputWithRetry()
+
+        // Segunda tentativa após um delay curto
+        setTimeout(() => {
+          this.focusInputWithRetry()
+        }, 100)
+
+        // Terceira tentativa após um delay maior para casos mais difíceis
+        setTimeout(() => {
+          this.focusInputWithRetry()
+        }, 300)
+      })
     }
   },
   async mounted () {
@@ -979,10 +1007,8 @@ export default {
     }
 
     // Restaurar o código original do mounted
-    this.$root.$on('mensagem-chat:focar-input-mensagem', () => {
-      this.$nextTick(() => {
-        this.focusInputWithRetry()
-      })
+    this.$root.$on('mensagem-chat:focar-input-mensagem', (mensagem) => {
+      this.focusOnReply()
     })
 
     // Escutar evento de refoco quando o mesmo ticket for clicado novamente
