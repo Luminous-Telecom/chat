@@ -78,7 +78,7 @@ const SendMessagesSystemWbot = async (
     const typeGroup = ticket?.isGroup ? "g" : "c";
     const chatId = `${contactNumber}@${typeGroup}.us`;
 
-    if (message.quotedMsg) {
+    if (message.quotedMsg && message.quotedMsg.messageId) {
       const inCache: WbotMessage | undefined = await GetWbotMessage(
         ticket,
         message.quotedMsg.messageId,

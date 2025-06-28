@@ -85,7 +85,7 @@ const CreateMessageOffilineService = async ({
             mediaType: media.mimetype.substr(0, media.mimetype.indexOf("/")),
           };
 
-          const msgCreated = await MessageOffLine.create(message);
+          const msgCreated = await MessageOffLine.create(message as any);
 
           const messageCreated = await MessageOffLine.findByPk(msgCreated.id, {
             include: [
@@ -137,7 +137,7 @@ const CreateMessageOffilineService = async ({
       const msgCreated = await MessageOffLine.create({
         ...messageData,
         mediaType: "chat",
-      });
+      } as any);
 
       const messageCreated = await MessageOffLine.findByPk(msgCreated.id, {
         include: [

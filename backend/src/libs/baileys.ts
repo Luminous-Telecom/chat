@@ -138,7 +138,7 @@ const processMessageQueue = async (whatsappId: number): Promise<void> => {
     });
 
     // Aguardar todas as mensagens do lote
-    await Promise.allSettled(processingPromises);
+    await Promise.all(processingPromises);
     
     // Processamento contínuo otimizado
     if (queue.length > 0) {
@@ -219,7 +219,7 @@ export const removeBaileysSession = async (
 
       try {
         criticalEvents.forEach(event => {
-          session.ev.removeAllListeners(event);
+          (session.ev as any).removeAllListeners(event);
         });
 
         // Remove outros listeners em lote
@@ -231,7 +231,7 @@ export const removeBaileysSession = async (
 
         otherEvents.forEach(event => {
           try {
-            session.ev.removeAllListeners(event);
+            (session.ev as any).removeAllListeners(event);
           } catch (e) {
             // Ignorar se evento não existir
           }

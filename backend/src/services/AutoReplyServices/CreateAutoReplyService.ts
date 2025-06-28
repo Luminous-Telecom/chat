@@ -18,8 +18,8 @@ const CreateAutoReplyService = async ({
     name,
     action,
     userId,
-    tenantId,
-  });
+    tenantId: typeof tenantId === 'string' ? parseInt(tenantId, 10) : tenantId,
+  } as any);
 
   return autoReply;
 };

@@ -1,16 +1,15 @@
 import { QueryInterface } from "sequelize";
 
 module.exports = {
-  up: (queryInterface: QueryInterface) => {
-    return Promise.all([
-      queryInterface.addConstraint("Contacts", ["number", "tenantId"], {
-        type: "unique",
-        name: "unique_constraint_contact_number_tenant",
-      }),
-    ]);
+  up: async (queryInterface: QueryInterface) => {
+    await queryInterface.addConstraint("Contacts", {
+      fields: ["number", "tenantId"],
+      type: "unique",
+      name: "unique_constraint_contact_number_tenant",
+    });
   },
 
-  down: (queryInterface: QueryInterface) => {
+  down: async (queryInterface: QueryInterface) => {
     return Promise.all([
       queryInterface.removeConstraint(
         "Contacts",

@@ -9,7 +9,8 @@ module.exports = {
 
   down: (queryInterface: QueryInterface) => {
     return Promise.all([
-      queryInterface.addConstraint("Contacts", ["number"], {
+      queryInterface.addConstraint("Contacts", {
+        fields: ["number"],
         type: "unique",
         name: "Contacts_number_key",
       }),

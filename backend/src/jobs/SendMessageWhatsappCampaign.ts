@@ -91,7 +91,7 @@ export default {
           [mediaType]: mediaBuffer,
           caption: data.message,
           fileName: data.mediaName,
-          mimetype: mimetype,
+          mimetype,
         };
 
         message = await wbot.sendMessage(`${data.number}@c.us`, mediaMessage);
@@ -138,9 +138,7 @@ export default {
             messageRandom: data.messageRandom, // Atualizar para a mensagem atual
             body: data.message,
             mediaName: data.mediaName || null,
-            mediaPath: data.mediaName ? data.campaignContact.mediaPath : null,
             timestamp: message.timestamp,
-            jobId: data.options?.jobId || data.jobId,
             ack: newAck, // Manter o ACK mais alto
           }, { transaction });
 
@@ -197,7 +195,6 @@ export default {
       if (campaignContact) {
         await campaignContact.update({
           body: `ERROR: ${error.message}`,
-          jobId: data.options?.jobId || data.jobId,
         });
       }
       

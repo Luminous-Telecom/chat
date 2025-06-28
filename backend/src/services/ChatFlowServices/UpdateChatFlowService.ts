@@ -26,7 +26,9 @@ const UpdateChatFlowService = async ({
   chatFlowId,
   tenantId,
 }: Request): Promise<ChatFlow> => {
-  const { name, flow, userId, isActive, celularTeste } = chatFlowData;
+  const {
+ name, flow, userId, isActive, celularTeste 
+} = chatFlowData;
 
   const cahtFlow = await ChatFlow.findOne({
     where: { id: chatFlowId, tenantId },

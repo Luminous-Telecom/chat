@@ -229,7 +229,7 @@ const CreateMessageSystemService = async ({
     if (msg.quotedMsg?.id) {
       const quotedMessage = await Message.findByPk(msg.quotedMsg.id);
       if (quotedMessage) {
-        quotedMsgMessageId = quotedMessage.messageId;
+        quotedMsgMessageId = quotedMessage.messageId || undefined;
       }
     }
 
@@ -242,7 +242,7 @@ const CreateMessageSystemService = async ({
       mediaType: "chat",
       mediaUrl: undefined,
       timestamp: new Date().getTime(),
-      quotedMsgId: msg.quotedMsgId || msg.quotedMsg?.id,
+      quotedMsgId: msg.quotedMsgId || msg.quotedMsg?.id || undefined,
       userId,
       scheduleDate,
       sendType,
@@ -322,7 +322,7 @@ const processMediaMessages = async (
           originalName: media.originalname,
           body: media.filename, // Usar apenas o filename sem prefixo
           mediaUrl: `sent/${media.filename}`, // Manter sent/ apenas na URL interna
-          userId,
+          userId: typeof userId === 'string' ? parseInt(userId, 10) : userId,
         };
 
         // Enviar mensagem e obter a mensagem criada
@@ -345,7 +345,7 @@ const processMediaMessages = async (
             status: "pending",
             messageId: null,
             ack: 0,
-          });
+          } as any);
         }
 
         // Extrair o ID da mensagem
@@ -361,9 +361,8 @@ const processMediaMessages = async (
         if (userId) {
           await UserMessagesLog.create({
             messageId,
-            userId,
-            tenantId,
-          });
+            userId: Number(userId),
+          } as any);
         }
       } catch (err) {
         logger.error(
@@ -435,8 +434,8 @@ const processTextMessage = async (
           messageId: null,
           ack: 0,
           mediaType: "chat",
-          userId,
-        });
+          userId: typeof userId === 'string' ? parseInt(userId, 10) : userId,
+        } as any);
       }
 
       // Extrair o ID da mensagem
@@ -452,9 +451,9 @@ const processTextMessage = async (
       if (userId) {
         await UserMessagesLog.create({
           messageId,
-          userId,
+          userId: typeof userId === 'string' ? parseInt(userId, 10) : userId,
           tenantId,
-        });
+        } as any);
       }
 
       // Pequena pausa entre mensagens para evitar spam

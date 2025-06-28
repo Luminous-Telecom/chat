@@ -170,7 +170,7 @@ const SendWhatsAppMedia = async (
     });
 
     // Criar a mensagem no banco
-    const dbMessage = await Message.create(messageData);
+    const dbMessage = await Message.create(messageData as any);
     logger.info(
       `[SendWhatsAppMedia] Mensagem criada no banco com ID: ${dbMessage.id} como ${mediaType}`
     );
@@ -272,7 +272,7 @@ const SendWhatsAppMedia = async (
         messageId: dbMessage.id,
         userId: ticket.userId,
         ticketId: ticket.id,
-      });
+      } as any);
       logger.info(
         `[SendWhatsAppMedia] Log de usuário criado para mensagem ${dbMessage.id}`
       );

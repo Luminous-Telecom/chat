@@ -46,10 +46,10 @@ const CreateChatFlowService = async ({
   const chatFlow = await ChatFlow.create({
     flow,
     userId,
-    tenantId,
+    tenantId: Number(tenantId),
     name,
     isActive,
-  });
+  } as any);
 
   return chatFlow;
 };

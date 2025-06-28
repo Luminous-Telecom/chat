@@ -36,7 +36,7 @@ const UpdateContactWalletsService = async ({
     });
   });
 
-  await ContactWallet.bulkCreate(contactWallets);
+  await ContactWallet.bulkCreate(contactWallets as any);
 
   const contact = await Contact.findOne({
     where: { id: contactId, tenantId },

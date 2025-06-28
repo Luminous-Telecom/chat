@@ -42,10 +42,14 @@ const AdminUpdateUserService = async ({
     password: Yup.string(),
   });
 
-  const { email, password, profile, name } = userData;
+  const {
+ email, password, profile, name 
+} = userData;
 
   try {
-    await schema.validate({ email, password, profile, name });
+    await schema.validate({
+ email, password, profile, name 
+});
   } catch (err: any) {
     throw new AppError(err?.message);
   }
@@ -58,7 +62,13 @@ const AdminUpdateUserService = async ({
   });
 
   await user.reload({
-    attributes: ["id", "name", "email", "profile", "tenantId"],
+    attributes: [
+      "id",
+      "name",
+      "email",
+      "profile",
+      "tenantId",
+    ],
   });
 
   const serializedUser = {

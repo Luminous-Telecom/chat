@@ -370,8 +370,8 @@ const processMessageContact = async (
     defaults: {
       name: msg.pushName || contactNumber,
       isWAContact: true,
-      profilePicUrl: null,
-    },
+      profilePicUrl: "",
+    } as any,
   });
 
   // Atualizar nome se necessário e se não for grupo
@@ -417,8 +417,8 @@ const processMessageContact = async (
         defaults: {
           name: `Grupo ${groupPhoneNumber}`,
           isWAContact: true,
-          profilePicUrl: null,
-        },
+          profilePicUrl: "",
+        } as any,
       });
 
       groupContact = foundGroupContact;

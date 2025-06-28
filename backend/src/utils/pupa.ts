@@ -1,6 +1,5 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-underscore-dangle */
-/* eslint-disable prettier/prettier */
 
 import { getHours } from "date-fns";
 

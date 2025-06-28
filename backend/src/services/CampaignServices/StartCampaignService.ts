@@ -33,11 +33,11 @@ interface Request {
 //   );
 // };
 
-const cArquivoName = (url: string | null) => {
+const cArquivoName = (url: string | null): string => {
   if (!url) return "";
   const split = url.split("/");
   const name = split[split.length - 1];
-  return name;
+  return typeof name === "string" ? name : String(name);
 };
 
 const mountMessageData = (
@@ -181,11 +181,11 @@ const StartCampaignService = async ({
       contactId: campaignContact.contactId,
       messageRandom: "message1", // Sempre começamos com message1
       ack: 0,
-      body: campaign.message1,
-      mediaName: cArquivoName(campaign.mediaUrl),
-      messageId: null,
-      timestamp: null,
-    });
+      body: campaign.message1 ?? "",
+      mediaName: campaign.mediaUrl ? `${cArquivoName(campaign.mediaUrl)}` : "",
+      messageId: "",
+      timestamp: 0,
+    } as any);
   }
 
   // Recarregar os registros criados com a relação contact

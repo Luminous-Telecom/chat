@@ -1,4 +1,11 @@
-import { QueryTypes, Op, fn, col, literal, WhereOptions } from "sequelize";
+import {
+  QueryTypes,
+  Op,
+  fn,
+  col,
+  literal,
+  WhereOptions,
+} from "sequelize";
 import sequelize from "../../database";
 import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";

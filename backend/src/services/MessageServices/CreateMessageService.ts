@@ -44,7 +44,7 @@ const CreateMessageService = async ({
 
     // Criar ou atualizar a mensagem
     if (!msg) {
-      await Message.create({ ...messageData, tenantId });
+      await Message.create({ ...messageData, tenantId: Number(tenantId) } as any);
     } else {
       await msg.update(messageData);
     }

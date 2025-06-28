@@ -1,4 +1,11 @@
-import { isWithinInterval, parse, addDays, setHours, setMinutes, getDay } from "date-fns";
+import {
+  isWithinInterval,
+  parse,
+  addDays,
+  setHours,
+  setMinutes,
+  getDay,
+} from "date-fns";
 import ShowBusinessHoursAndMessageService from "../services/TenantServices/ShowBusinessHoursAndMessageService";
 
 interface BusinessHoursValidation {
@@ -126,13 +133,13 @@ const getNextBusinessDay = (date: Date, businessHours: any[]): Date => {
       // Agenda para o início do primeiro horário do próximo dia útil
       if (businessDay.type === "O") {
         return setMinutes(setHours(nextDate, 8), 0);
-      } else {
-        const startHour = parse(businessDay.hr1, "HH:mm", nextDate);
-        return setMinutes(
-          setHours(nextDate, startHour.getHours()),
-          startHour.getMinutes()
-        );
       }
+      
+      const startHour = parse(businessDay.hr1, "HH:mm", nextDate);
+      return setMinutes(
+        setHours(nextDate, startHour.getHours()),
+        startHour.getMinutes()
+      );
     }
     
     nextDate = addDays(nextDate, 1);

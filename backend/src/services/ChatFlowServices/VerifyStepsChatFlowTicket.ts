@@ -49,10 +49,10 @@ const isQueueDefine = async (
 ): Promise<void> => {
   // action = 1: enviar para fila: queue
   if (stepCondition.action === 1) {
-    ticket.update({
+    await ticket.update({
       queueId: stepCondition.queueId,
-      chatFlowId: null,
-      stepChatFlow: null,
+      chatFlowId: undefined,
+      stepChatFlow: undefined,
       botRetries: 0,
       lastInteractionBot: new Date(),
     });
@@ -91,8 +91,8 @@ const isUserDefine = async (
     ticket.update({
       userId: stepCondition.userIdDestination,
       // status: "pending",
-      chatFlowId: null,
-      stepChatFlow: null,
+      chatFlowId: undefined,
+      stepChatFlow: undefined,
       botRetries: 0,
       lastInteractionBot: new Date(),
     });
@@ -210,8 +210,8 @@ const isAnswerCloseTicket = async (
 
   if (params) {
     await ticket.update({
-      chatFlowId: null,
-      stepChatFlow: null,
+      chatFlowId: undefined,
+      stepChatFlow: undefined,
       botRetries: 0,
       lastInteractionBot: new Date(),
       unreadMessages: 0,
@@ -266,8 +266,7 @@ const VerifyStepsChatFlowTicket = async (
       const stepCondition = step.conditions.find((conditions: any) => {
         if (conditions.type === "US") return true;
         const newConditions = conditions.condition.map((c: any) =>
-          String(c).toLowerCase().trim()
-        );
+          String(c).toLowerCase().trim());
         const message = String(msg.body).toLowerCase().trim();
         return newConditions.includes(message);
       });
@@ -275,8 +274,7 @@ const VerifyStepsChatFlowTicket = async (
       if (
         !ticket.isCreated &&
         (await isAnswerCloseTicket(flowConfig, ticket, msg.body))
-      )
-        return;
+      ) return;
 
       if (stepCondition && !ticket.isCreated) {
         // await CreateAutoReplyLogsService(stepAutoReplyAtual, ticket, msg.body);
@@ -287,8 +285,7 @@ const VerifyStepsChatFlowTicket = async (
             celularTeste,
             ticket.channel
           )
-        )
-          return;
+        ) return;
 
         // action = 0: enviar para proximo step: nextStepId
         await isNextSteps(ticket, chatFlow, step, stepCondition);
@@ -316,8 +313,7 @@ const VerifyStepsChatFlowTicket = async (
             celularTeste,
             ticket.channel
           )
-        )
-          return;
+        ) return;
 
         // se ticket tiver sido criado, ingnorar na primeria passagem
         if (!ticket.isCreated) {

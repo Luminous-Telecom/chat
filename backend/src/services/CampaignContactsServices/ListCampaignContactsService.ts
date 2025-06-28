@@ -1,6 +1,5 @@
 import CampaignContacts from "../../models/CampaignContacts";
 import Contact from "../../models/Contact";
-import { Sequelize } from "sequelize";
 
 interface Request {
   tenantId: string | number;

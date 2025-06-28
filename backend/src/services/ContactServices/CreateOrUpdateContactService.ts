@@ -63,30 +63,31 @@ const CreateOrUpdateContactService = async ({
 
   if (contact) {
     contact.update({
-      profilePicUrl,
+      name,
+      profilePicUrl: profilePicUrl || '',
       pushname,
       isUser,
       isWAContact,
-      telegramId,
-      instagramPK,
-      messengerId,
-    });
+      telegramId: telegramId ? String(telegramId) : null,
+      instagramPK: instagramPK ? (typeof instagramPK === 'string' ? parseInt(instagramPK) : instagramPK) : null,
+      messengerId: messengerId ? String(messengerId) : null,
+    } as any);
   } else {
     contact = await Contact.create({
       name,
       number,
-      profilePicUrl,
+      profilePicUrl: profilePicUrl || '',
       email,
       isGroup,
       pushname,
       isUser,
       isWAContact,
-      tenantId,
-      extraInfo,
-      telegramId,
-      instagramPK,
-      messengerId,
-    });
+      tenantId: typeof tenantId === 'string' ? parseInt(tenantId) : tenantId,
+      extraInfo: extraInfo as any,
+      telegramId: telegramId ? String(telegramId) : null,
+      instagramPK: instagramPK ? (typeof instagramPK === 'string' ? parseInt(instagramPK) : instagramPK) : null,
+      messengerId: messengerId ? String(messengerId) : null,
+    } as any);
   }
 
   socketEmit({

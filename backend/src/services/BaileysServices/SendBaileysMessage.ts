@@ -55,10 +55,10 @@ const SendBaileysMessage = async ({
     try {
       if (userId) {
         await UserMessagesLog.create({
-          messageId: sendMessage.key.id,
+          messageId: sendMessage.key.id || "",
           userId,
           ticketId: ticket.id,
-        });
+        } as any);
       }
     } catch (error) {
       logger.error(`Error criar log mensagem ${error}`);

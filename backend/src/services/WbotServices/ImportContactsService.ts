@@ -9,6 +9,7 @@ const ImportContactsService = async (
   tenantId: string | number,
   ticket: Ticket
 ): Promise<void> => {
+  const numericTenantId = typeof tenantId === 'string' ? parseInt(tenantId, 10) : tenantId;
   const defaultWhatsapp = await GetDefaultWhatsApp(tenantId);
 
   const wbot = getWbot(defaultWhatsapp.id);
@@ -44,7 +45,7 @@ const ImportContactsService = async (
         }
 
         const numberExists = await Contact.findOne({
-          where: { number: number.replace(/\D/g, ""), tenantId },
+          where: { number: number.replace(/\D/g, ""), tenantId: numericTenantId },
         });
 
         if (numberExists) return null;
@@ -52,8 +53,8 @@ const ImportContactsService = async (
         return Contact.create({
           number: number.replace(/\D/g, ""),
           name,
-          tenantId,
-        });
+          tenantId: numericTenantId,
+        } as any);
       })
     );
   }

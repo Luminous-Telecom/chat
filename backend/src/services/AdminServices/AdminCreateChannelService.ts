@@ -76,12 +76,12 @@ const AdminCreateChannelService = async ({
     name,
     status,
     isDefault,
-    tenantId,
-    tokenTelegram,
-    instagramUser,
-    instagramKey,
-    connectionNumber,
-  });
+    tenantId: Number(tenantId),
+    tokenTelegram: tokenTelegram || "",
+    instagramUser: instagramUser || "",
+    instagramKey: instagramKey || "",
+    connectionNumber: connectionNumber || "",
+  } as any);
 
   return { whatsapp, oldDefaultWhatsapp };
 };

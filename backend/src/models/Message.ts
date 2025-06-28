@@ -27,7 +27,7 @@ class Message extends Model<Message> {
   @Default(null)
   @AllowNull
   @Column
-  messageId: string;
+  messageId: string | null;
 
   @Default(0)
   @Column
@@ -36,12 +36,12 @@ class Message extends Model<Message> {
   @Default(null)
   @AllowNull
   @Column(DataType.ENUM("pending", "sended", "delivered", "received"))
-  status: string;
+  status: string | null;
 
   @Default(null)
   @AllowNull
   @Column(DataType.TEXT)
-  wabaMediaId: string;
+  wabaMediaId: string | null;
 
   @Default(false)
   @Column
@@ -92,8 +92,9 @@ class Message extends Model<Message> {
 
   // @HasOne(() => Message, "messageId")
   @ForeignKey(() => Message)
+  @AllowNull
   @Column
-  quotedMsgId: string;
+  quotedMsgId: string | null;
 
   @BelongsTo(() => Message, "quotedMsgId")
   quotedMsg: Message;
@@ -115,13 +116,13 @@ class Message extends Model<Message> {
   @Default(null)
   @AllowNull
   @Column(DataType.BIGINT)
-  timestamp: number;
+  timestamp: number | null;
 
   @ForeignKey(() => User)
   @Default(null)
   @AllowNull
   @Column
-  userId: number;
+  userId: number | null;
 
   @BelongsTo(() => User)
   user: User;
@@ -129,14 +130,14 @@ class Message extends Model<Message> {
   @Default(null)
   @AllowNull
   @Column(DataType.DATE)
-  scheduleDate: Date;
+  scheduleDate: Date | null;
 
   @Default(null)
   @AllowNull
   @Column(
     DataType.ENUM("campaign", "chat", "external", "schedule", "bot", "sync")
   )
-  sendType: string;
+  sendType: string | null;
 
   @ForeignKey(() => Tenant)
   @Column
@@ -148,12 +149,12 @@ class Message extends Model<Message> {
   @Default(null)
   @AllowNull
   @Column
-  idFront: string;
+  idFront: string | null;
 
   @Default(null)
   @AllowNull
   @Column(DataType.JSONB)
-  dataPayload: any;
+  dataPayload: any | null;
 }
 
 // Message.sequelize?.define("Message", {

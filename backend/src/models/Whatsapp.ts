@@ -47,6 +47,7 @@ class Whatsapp extends Model<Whatsapp> {
   @Column(DataType.TEXT)
   session: string;
 
+  @AllowNull
   @Column(DataType.TEXT)
   qrcode: string;
 
@@ -186,7 +187,9 @@ class Whatsapp extends Model<Whatsapp> {
   @AfterUpdate
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async HookStatus(instance: Whatsapp & any): Promise<void> {
-    const { status, name, qrcode, number, tenantId, id: sessionId } = instance;
+    const {
+ status, name, qrcode, number, tenantId, id: sessionId 
+} = instance;
     const payload: any = {
       name,
       number,
@@ -214,6 +217,7 @@ class Whatsapp extends Model<Whatsapp> {
             payload,
           });
         }
+        return undefined;
       })
     );
   }

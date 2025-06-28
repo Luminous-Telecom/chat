@@ -134,7 +134,7 @@ Sessões Problemáticas: ${problematicSessions.length}
     return report;
   }
 
-  static startPeriodicHealthCheck(intervalMs: number = 300000): void { // 5 minutos
+  static startPeriodicHealthCheck(intervalMs = 300000): void { // 5 minutos
     setInterval(async () => {
       try {
         const report = await this.generateHealthReport();
@@ -144,7 +144,7 @@ Sessões Problemáticas: ${problematicSessions.length}
       }
     }, intervalMs);
 
-    logger.info(`[SessionDiagnostics] Started periodic health check every ${intervalMs/1000} seconds`);
+    logger.info(`[SessionDiagnostics] Started periodic health check every ${intervalMs / 1000} seconds`);
   }
 }
 

@@ -1,5 +1,5 @@
 // import { Op } from "sequelize";
-import { fn, where, col } from "sequelize";
+import { Op } from "sequelize";
 import AutoReply from "../../models/AutoReply";
 import StepsReply from "../../models/StepsReply";
 // import StepsReply from "../../models/StepsReply";
@@ -17,8 +17,9 @@ const VerifyActionStepAutoReplyService = async (
   const actions = await StepsReplyAction.findOne({
     where: {
       stepReplyId: stepAutoReplyId,
-      // words: msg
-      words: where(fn("lower", col("words")), fn("lower", msg)),
+      words: {
+        [Op.iLike]: `%${msg}%`
+      }
     },
     include: [
       {

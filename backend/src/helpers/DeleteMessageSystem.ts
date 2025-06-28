@@ -100,10 +100,12 @@ const DeleteMessageSystem = async (
 
   if (ticket.channel === "telegram") {
     const telegramBot = await getTbot(ticket.whatsappId);
-    await telegramBot.telegram.deleteMessage(
-      ticket.contact.telegramId,
-      +message.messageId
-    );
+    if (message.messageId) {
+      await telegramBot.telegram.deleteMessage(
+        ticket.contact.telegramId,
+        +message.messageId
+      );
+    }
   }
 
   if (ticket.channel === "instagram") {

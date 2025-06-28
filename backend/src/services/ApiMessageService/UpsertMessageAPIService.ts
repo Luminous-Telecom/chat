@@ -43,15 +43,15 @@ const UpsertMessageAPIService = async ({
       messageId,
       body,
       ack,
-      number,
-      mediaName,
-      mediaUrl,
+      number: String(number),
+      mediaName: mediaName || "",
+      mediaUrl: mediaUrl || "",
       timestamp,
       externalKey,
       messageWA,
       apiConfig,
       tenantId,
-    });
+    } as any);
     message = await messageExists.reload();
   } else {
     message = await ApiMessage.create({
@@ -59,15 +59,15 @@ const UpsertMessageAPIService = async ({
       messageId,
       body,
       ack,
-      number,
-      mediaName,
-      mediaUrl,
+      number: String(number),
+      mediaName: mediaName || "",
+      mediaUrl: mediaUrl || "",
       timestamp,
       externalKey,
       messageWA,
       apiConfig,
       tenantId,
-    });
+    } as any);
   }
 
   if (!message) {

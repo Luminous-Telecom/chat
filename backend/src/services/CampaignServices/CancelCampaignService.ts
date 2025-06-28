@@ -32,16 +32,16 @@ const CancelCampaignService = async ({
 
     await CampaignContacts.update(
       {
-        body: null,
-        mediaName: null,
-        timestamp: null,
+        body: undefined,
+        mediaName: undefined,
+        timestamp: undefined,
         ack: 0,
-        messageId: null,
+        messageId: undefined,
       },
       {
         where: {
           campaignId: campaign.id,
-          messageId: null,
+          messageId: undefined,
         },
       }
     );

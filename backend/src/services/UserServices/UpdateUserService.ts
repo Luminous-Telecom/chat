@@ -52,21 +52,32 @@ const UpdateUserService = async ({
     password: Yup.string(),
   });
 
-  const { email, password, profile, name, queues } = userData;
+  const {
+ email, password, profile, name, queues 
+} = userData;
 
   try {
-    await schema.validate({ email, password, profile, name });
+    await schema.validate({
+ email, password, profile, name 
+});
   } catch (err: any) {
     throw new AppError(err?.message);
   }
 
   if (queues) {
-    await UsersQueues.destroy({ where: { userId } });
+    await UsersQueues.destroy({
+      where: {
+        userId,
+      },
+    });
+    
     await Promise.all(
       queues.map(async (queue: any) => {
         const queueId: number = queue?.id || queue;
-        // const { id: queueId } = queue;
-        await UsersQueues.upsert({ queueId, userId });
+        await UsersQueues.create({
+          queueId,
+          userId: Number(userId),
+        } as any);
       })
     );
   }

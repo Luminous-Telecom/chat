@@ -13,9 +13,9 @@ const SetLogoutLinkedPage = async ({
   const io = getIO();
 
   const dataUpdated = {
-    fbPageId: null,
+    fbPageId: undefined,
     fbObject: {},
-    tokenAPI: null,
+    tokenAPI: undefined,
     status: "DISCONNECTED",
   };
 

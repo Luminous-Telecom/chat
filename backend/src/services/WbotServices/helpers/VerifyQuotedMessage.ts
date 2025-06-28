@@ -22,24 +22,26 @@ const VerifyQuotedMessage = async (
 
 
     // Tentar encontrar a mensagem pelo messageId
-    let quotedMsg = await Message.findOne({
-      where: {
-        messageId: quotedId ?? null,
-        tenantId: ticket.tenantId,
-      },
-      include: [
-        {
-          model: Ticket,
-          as: "ticket",
-          where: { tenantId: ticket.tenantId },
-        },
-      ],
-    });
-
-    // Se não encontrar pelo messageId, tentar pelo id
-    if (!quotedMsg && quotedId) {
-
+    let quotedMsg: Message | null = null;
+    
+    if (quotedId) {
       quotedMsg = await Message.findOne({
+        where: {
+          messageId: quotedId,
+          tenantId: ticket.tenantId,
+        },
+        include: [
+          {
+            model: Ticket,
+            as: "ticket",
+            where: { tenantId: ticket.tenantId },
+          },
+        ],
+      });
+
+      // Se não encontrar pelo messageId, tentar pelo id
+      if (!quotedMsg) {
+        quotedMsg = await Message.findOne({
         where: {
           id: quotedId,
           tenantId: ticket.tenantId,
@@ -52,14 +54,13 @@ const VerifyQuotedMessage = async (
           },
         ],
       });
+      }
     }
 
     // Verificar se encontrou a mensagem
     if (!quotedMsg) {
-
       return null;
     }
-
 
     return quotedMsg;
   } catch (error) {

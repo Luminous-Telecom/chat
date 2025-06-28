@@ -14,12 +14,18 @@ const CreateStepsReplyService = async ({
   userId,
   initialStep,
 }: Request): Promise<StepsReply> => {
-  const stepsReply = await StepsReply.create({
+  const createData: any = {
     reply,
     idAutoReply,
-    userId,
     initialStep,
-  });
+  };
+
+  // Only include userId if it has a value
+  if (userId !== undefined) {
+    createData.userId = userId;
+  }
+
+  const stepsReply = await StepsReply.create(createData);
 
   return stepsReply;
 };

@@ -18,8 +18,8 @@ const CreateQueueService = async ({
     queue,
     isActive,
     userId,
-    tenantId,
-  });
+    tenantId: Number(tenantId),
+  } as any);
 
   return queueData;
 };

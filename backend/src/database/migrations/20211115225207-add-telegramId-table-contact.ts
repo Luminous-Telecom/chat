@@ -29,7 +29,8 @@ module.exports = {
         allowNull: false,
         unique: true,
       }),
-      queryInterface.addConstraint("Contacts", ["number", "tenantId"], {
+      queryInterface.addConstraint("Contacts", {
+        fields: ["number", "tenantId"],
         type: "unique",
         name: "unique_constraint_contact_number_tenant",
       }),

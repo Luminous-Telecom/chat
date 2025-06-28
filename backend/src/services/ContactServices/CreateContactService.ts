@@ -45,9 +45,9 @@ const CreateContactService = async ({
       name,
       number,
       email,
-      extraInfo,
-      tenantId,
-    },
+      extraInfo: extraInfo as any,
+      tenantId: typeof tenantId === 'string' ? parseInt(tenantId) : tenantId,
+    } as any,
     {
       include: [
         "extraInfo",
@@ -78,7 +78,7 @@ const CreateContactService = async ({
       });
     });
 
-    await ContactWallet.bulkCreate(contactWallets);
+    await ContactWallet.bulkCreate(contactWallets as any);
   }
 
   await contact.reload({

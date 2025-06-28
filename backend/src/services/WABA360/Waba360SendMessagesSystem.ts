@@ -25,7 +25,7 @@ const buildWabaMessage360 = async (
       ...newMessage,
       type: "document",
       document: {
-        id: message.wabaMediaId,
+        id: message.wabaMediaId || undefined,
         caption: message.body || message.mediaName || "" || "",
       },
     };
@@ -35,7 +35,7 @@ const buildWabaMessage360 = async (
       ...newMessage,
       type: "image",
       image: {
-        id: message.wabaMediaId,
+        id: message.wabaMediaId || undefined,
         caption: message.body || message.mediaName || "",
       },
     };
@@ -45,7 +45,7 @@ const buildWabaMessage360 = async (
       ...newMessage,
       type: "video",
       video: {
-        id: message.wabaMediaId,
+        id: message.wabaMediaId || undefined,
         caption: message.body || message.mediaName || "",
       },
     };
@@ -55,7 +55,7 @@ const buildWabaMessage360 = async (
       ...newMessage,
       type: "audio",
       audio: {
-        id: message.wabaMediaId,
+        id: message.wabaMediaId || undefined,
         caption: message.body || message.mediaName || "",
       },
     };

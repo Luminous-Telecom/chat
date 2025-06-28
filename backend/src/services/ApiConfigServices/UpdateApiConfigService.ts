@@ -43,10 +43,10 @@ const UpdateApiConfigService = async ({
 
   await api.update({
     name,
-    sessionId,
+    sessionId: Number(sessionId),
     urlServiceStatus,
     urlMessageStatus,
-    userId,
+    userId: Number(userId),
     authToken,
     isActive,
   });

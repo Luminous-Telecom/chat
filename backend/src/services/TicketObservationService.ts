@@ -47,13 +47,18 @@ const CreateTicketObservationService = async ({
   }
 
   try {
-    const observation = await TicketObservation.create({
+    const observationData: any = {
       texto,
-      anexo,
       ticketId,
       userId,
       tenantId,
-    });
+    };
+
+    if (anexo) {
+      observationData.anexo = anexo;
+    }
+
+    const observation = await TicketObservation.create(observationData);
 
     logger.info("[CreateTicketObservationService] Observação criada:", {
       observationId: observation.id,

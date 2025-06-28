@@ -45,7 +45,12 @@ const CreateUserService = async ({
   });
 
   try {
-    await schema.validate({ email, password, name, tenantId });
+    await schema.validate({
+      email,
+      password,
+      name,
+      tenantId,
+    });
   } catch (err) {
     throw new AppError(err.message);
   }
@@ -55,8 +60,8 @@ const CreateUserService = async ({
     password,
     name,
     profile,
-    tenantId,
-  });
+    tenantId: Number(tenantId),
+  } as any);
 
   const serializedUser = {
     id: user.id,

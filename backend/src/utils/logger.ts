@@ -28,7 +28,12 @@ const logger = winston.createLogger({
         winston.format.errors({ stack: true }),
         winston.format.colorize(),
         // eslint-disable-next-line no-shadow
-        winston.format.printf(({ level, message, timestamp, stack }) => {
+        winston.format.printf(({
+          level,
+          message,
+          timestamp,
+          stack,
+        }) => {
           if (stack) {
             // print log trace
             return `${level}: ${timestamp} ${message} - ${stack}`;

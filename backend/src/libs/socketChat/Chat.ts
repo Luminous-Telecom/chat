@@ -264,7 +264,7 @@ const onChatMessage = (socket: Socket) => {
 
   const { tenantId } = user;
   const socketDataTenant = `socketData_${tenantId}`;
-  socket.on("chatMessage", function (data) {
+  socket.on("chatMessage", (data) => {
     const dataTenant = shared[socketDataTenant];
     if (dataTenant) {
       const { to } = data;
@@ -315,7 +315,7 @@ const onChatTyping = (socket: Socket) => {
 
       let toUser: any = null;
       let fromUser: any = null;
-      find(dataTenant.usersOnline, function (v) {
+      find(dataTenant.usersOnline, (v) => {
         if (String(v.user.id) === String(to)) {
           toUser = v.user;
         }
@@ -435,7 +435,7 @@ const onDisconnect = (socket: Socket) => {
     UpdateOnlineBubbles(socket);
 
     if (reason === "transport error") {
-      reason = "client terminated";
+      reason = "client terminated" as any;
     }
     // logger.debug(`User disconnected (${reason}): ${user.name} - ${socket.id}`);
   });
@@ -482,7 +482,7 @@ function register(socket: Socket): void {
   events.onDisconnect(socket);
 
   if (socket.handshake.auth.user.id) {
-    socket;
+    // Socket is connected and authenticated
   }
 }
 

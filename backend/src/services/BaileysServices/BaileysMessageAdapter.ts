@@ -83,8 +83,7 @@ export class BaileysMessageAdapter {
             const buffer = await Promise.race([
               downloadMediaMessage(msg, "buffer", {}),
               new Promise<Buffer | null>((_, reject) =>
-                setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms`)), timeoutMs)
-              )
+                setTimeout(() => reject(new Error(`Download timeout after ${timeoutMs}ms`)), timeoutMs))
             ]);
 
             if (buffer && buffer.length > 0) {
@@ -249,7 +248,7 @@ export class BaileysMessageAdapter {
         return content.mimetype || "video/mp4";
       case "documentMessage":
         return content.mimetype || "application/octet-stream";
-      case "audioMessage":
+      case "audioMessage": {
         // Melhor detecção de áudio baseado no mimetype original ou fallback inteligente
         if (content.mimetype) {
           return content.mimetype;
@@ -257,6 +256,7 @@ export class BaileysMessageAdapter {
         // Verificar se é PTT (Push to Talk) ou áudio normal
         const isPtt = content.ptt || false;
         return isPtt ? "audio/ogg; codecs=opus" : "audio/mpeg";
+      }
       case "stickerMessage":
         return "image/webp";
       default:
@@ -272,7 +272,7 @@ export class BaileysMessageAdapter {
         return content.fileName || `video-${Date.now()}.mp4`;
       case "documentMessage":
         return content.fileName || `document-${Date.now()}`;
-      case "audioMessage":
+      case "audioMessage": {
         if (content.fileName) {
           return content.fileName;
         }
@@ -286,14 +286,18 @@ export class BaileysMessageAdapter {
         const mimetype = content.mimetype || "";
         if (mimetype.includes("mpeg") || mimetype.includes("mp3")) {
           return `audio-${timestamp}.mp3`;
-        } else if (mimetype.includes("ogg")) {
+        }
+        if (mimetype.includes("ogg")) {
           return `audio-${timestamp}.ogg`;
-        } else if (mimetype.includes("wav")) {
+        }
+        if (mimetype.includes("wav")) {
           return `audio-${timestamp}.wav`;
-        } else if (mimetype.includes("m4a")) {
+        }
+        if (mimetype.includes("m4a")) {
           return `audio-${timestamp}.m4a`;
         }
         return `audio-${timestamp}.ogg`;
+      }
       case "stickerMessage":
         return `sticker-${Date.now()}.webp`;
       default:
@@ -348,8 +352,7 @@ export class BaileysMessageAdapter {
     // VERIFICAÇÃO ESPECIAL PARA REAÇÕES: Se qualquer key contém "reaction", ignorar
     const hasReaction = messageKeys.some(key => 
       key.toLowerCase().includes('reaction') || 
-      key === 'reactionMessage'
-    );
+      key === 'reactionMessage');
     
     if (hasReaction) {
       console.log(`[BaileysMessageAdapter] DEBUG - Reaction message detected and ignored:`, messageKeys);

@@ -40,15 +40,13 @@ const CheckChatBotFlowWelcome = async (instance: Ticket): Promise<void> => {
   const { celularTeste } = chatFlow;
   const celularContato = contato?.number;
 
-  if (await IsContactTest(celularContato, celularTeste, instance.channel))
-    return;
+  if (await IsContactTest(celularContato, celularTeste, instance.channel)) return;
 
   const lineFlow = chatFlow.flow.lineList.find(
     (line: any) => line.from === "start"
   );
-
   await instance.update({
-    chatFlowId: chatFlow.id,
+    chatFlowId: +chatFlow.id,
     stepChatFlow: lineFlow.to,
     lastInteractionBot: new Date(),
   });

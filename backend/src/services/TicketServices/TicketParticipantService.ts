@@ -42,7 +42,7 @@ class TicketParticipantService {
       tenantId,
       joinedAt: new Date(),
       isActive: true,
-    });
+    } as any);
 
     return participant;
   }
@@ -112,4 +112,4 @@ class TicketParticipantService {
   }
 }
 
-export default TicketParticipantService; 
+export default TicketParticipantService;

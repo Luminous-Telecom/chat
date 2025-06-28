@@ -134,7 +134,7 @@ export const remove = async (
     await channel.update({
       status: "DISCONNECTED",
       session: "",
-      qrcode: null,
+      qrcode: "",
       retries: 0,
     });
     // console.log('Channel status updated successfully');
@@ -146,14 +146,21 @@ export const remove = async (
     await channel.update({
       status: "DISCONNECTED",
       session: "",
-      qrcode: null,
+      qrcode: "",
       retries: 0,
     });
 
     // console.log('Emitting socket event for error case');
-    io.emit(`${channel.tenantId}:whatsappSession`, {
+    io.emit(`${tenantId}:whatsappSession`, {
       action: "update",
-      session: channel,
+      session: {
+        id: channel.id,
+        name: channel.name,
+        status: "CONNECTING",
+        qrcode: "",
+        isDefault: channel.isDefault,
+        tenantId: channel.tenantId,
+      },
     });
 
     // Não lança erro, apenas retorna sucesso pois o objetivo foi alcançado
@@ -206,4 +213,6 @@ export const connectByNumber = async (
   return res.status(200).json({ message: "Iniciando sessão via número." });
 };
 
-export default { store, remove, update, connectByNumber };
+export default {
+ store, remove, update, connectByNumber 
+};

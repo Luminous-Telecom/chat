@@ -36,7 +36,7 @@ const UpdateContactService = async ({
     });
   });
 
-  await ContactTag.bulkCreate(contactTags);
+  await ContactTag.bulkCreate(contactTags as any);
 
   const contact = await Contact.findOne({
     where: { id: contactId, tenantId },

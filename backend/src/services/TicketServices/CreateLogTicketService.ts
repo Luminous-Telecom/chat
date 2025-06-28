@@ -31,12 +31,16 @@ const CreateLogTicketService = async ({
   ticketId,
   queueId,
 }: Request): Promise<void> => {
+  const numericUserId = userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
+  const numericTicketId = typeof ticketId === 'string' ? parseInt(ticketId, 10) : ticketId;
+  const numericQueueId = queueId ? (typeof queueId === 'string' ? parseInt(queueId, 10) : queueId) : 0;
+
   await LogTicket.create({
-    userId,
-    ticketId,
+    userId: numericUserId,
+    ticketId: numericTicketId,
     type,
-    queueId,
-  });
+    queueId: numericQueueId,
+  } as any);
 
   // socketEmit({
   //   tenantId,

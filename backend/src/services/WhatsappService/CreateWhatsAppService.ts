@@ -7,7 +7,7 @@ interface Request {
   name: string;
   status?: string;
   isDefault?: boolean;
-  tenantId: string | number;
+  tenantId: number;
   tokenTelegram?: string;
   instagramUser?: string;
   instagramKey?: string;
@@ -66,20 +66,23 @@ const CreateWhatsAppService = async ({
   }
 
   try {
-    const whatsapp = await Whatsapp.create({
-      name,
-      status,
-      isDefault,
-      tenantId,
-      tokenTelegram,
-      instagramUser,
-      instagramKey,
-      type,
-      wabaBSP,
-      tokenAPI,
-      fbPageId,
-      farewellMessage,
-    });
+    const whatsappData: any = {
+    name,
+    status,
+    isDefault,
+    tenantId,
+    type,
+  };
+
+  if (tokenTelegram !== undefined) whatsappData.tokenTelegram = tokenTelegram;
+  if (instagramUser !== undefined) whatsappData.instagramUser = instagramUser;
+  if (instagramKey !== undefined) whatsappData.instagramKey = instagramKey;
+  if (wabaBSP !== undefined) whatsappData.wabaBSP = wabaBSP;
+  if (tokenAPI !== undefined) whatsappData.tokenAPI = tokenAPI;
+  if (fbPageId !== undefined) whatsappData.fbPageId = fbPageId;
+  if (farewellMessage !== undefined) whatsappData.farewellMessage = farewellMessage;
+
+  const whatsapp = await Whatsapp.create(whatsappData);
     const io = getIO();
     io.emit(`${tenantId}:whatsapp`, {
       action: "update",

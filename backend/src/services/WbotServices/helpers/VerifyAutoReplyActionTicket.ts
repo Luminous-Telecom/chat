@@ -87,8 +87,8 @@ const verifyAutoReplyActionTicket = async (
         if (actionAutoReply.action === 1) {
           ticket.update({
             queueId: actionAutoReply.queueId,
-            autoReplyId: null,
-            stepAutoReplyId: null,
+            autoReplyId: undefined,
+            stepAutoReplyId: undefined,
           });
 
           await CreateLogTicketService({
@@ -103,8 +103,8 @@ const verifyAutoReplyActionTicket = async (
           ticket.update({
             userId: actionAutoReply.userIdDestination,
             // status: "pending",
-            autoReplyId: null,
-            stepAutoReplyId: null,
+            autoReplyId: undefined,
+            stepAutoReplyId: undefined,
           });
           await CreateLogTicketService({
             userId: actionAutoReply.userIdDestination,

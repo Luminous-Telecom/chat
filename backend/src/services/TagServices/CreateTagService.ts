@@ -21,8 +21,8 @@ const CreateTagService = async ({
     color,
     isActive,
     userId,
-    tenantId,
-  });
+    tenantId: Number(tenantId),
+  } as any);
 
   return tagData;
 };

@@ -30,7 +30,7 @@ interface ChannelData {
   type: "waba" | "instagram" | "telegram" | "whatsapp";
   wabaBSP?: string;
   tokenAPI?: string;
-  tenantId: string | number;
+  tenantId: number;
   connectionNumber?: string;
 }
 
@@ -143,7 +143,7 @@ export const storeChannel = async (
   const data: ChannelData = {
     name,
     status: "DISCONNECTED",
-    tenantId,
+    tenantId: Number(tenantId),
     tokenTelegram,
     instagramUser,
     instagramKey,

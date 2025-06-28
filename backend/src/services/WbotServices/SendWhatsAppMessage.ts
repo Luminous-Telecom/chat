@@ -50,24 +50,27 @@ export const SendWhatsAppMessage = async (
     }
 
     // Sempre criar uma nova mensagem (sem proteção anti-spam)
-    const messageToUpdate = await Message.create(
-      {
-        ticketId: ticket.id,
-        body,
-        contactId: contact.id,
-        fromMe: true,
-        read: true,
-        mediaType: media ? "document" : "chat",
-        timestamp: Date.now(),
-        quotedMsgId: quotedMsg?.id || null,
-        status: "pending",
-        ack: 0,
-        messageId: null,
-        tenantId: ticket.tenantId,
-        userId: userId || null, // Adicionar o userId à mensagem
-      },
-      { transaction: t }
-    );
+    const messageData: any = {
+      ticketId: ticket.id,
+      body,
+      contactId: contact.id,
+      fromMe: true,
+      read: true,
+      mediaType: media ? "document" : "chat",
+      timestamp: Date.now(),
+      quotedMsgId: quotedMsg?.id || null,
+      status: "pending",
+      ack: 0,
+      messageId: null,
+      tenantId: ticket.tenantId,
+    };
+
+    // Adicionar userId apenas se existir
+    if (userId) {
+      messageData.userId = Number(userId);
+    }
+
+    const messageToUpdate = await Message.create(messageData, { transaction: t });
 
     // Prepara as opções da mensagem incluindo a citação se houver
     const messageOptions: any = {

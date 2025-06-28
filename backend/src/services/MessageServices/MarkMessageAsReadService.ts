@@ -96,7 +96,7 @@ export const MarkMessageAsReadService = async ({
       },
     });
 
-    logger.info(`[MarkMessageAsReadService] 📡 EVENTO EMITIDO: messageRead e ticketList para frontend (source: ${source}, automatic: ${source === "whatsapp_ack"})`);;
+    logger.info(`[MarkMessageAsReadService] 📡 EVENTO EMITIDO: messageRead e ticketList para frontend (source: ${source}, automatic: ${source === "whatsapp_ack"})`);
 
   } catch (error) {
     logger.error(`[MarkMessageAsReadService] Error marking message ${message.id} as read: ${error}`);
@@ -104,4 +104,4 @@ export const MarkMessageAsReadService = async ({
   }
 };
 
-export default MarkMessageAsReadService; 
+export default MarkMessageAsReadService;

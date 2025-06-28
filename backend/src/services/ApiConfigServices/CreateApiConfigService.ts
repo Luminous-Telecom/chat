@@ -38,14 +38,14 @@ const CreateApiConfigService = async ({
 
   const api = await ApiConfig.create({
     name,
-    sessionId,
+    sessionId: Number(sessionId),
     token,
-    authToken,
-    urlServiceStatus,
-    urlMessageStatus,
-    userId,
-    tenantId,
-  });
+    authToken: authToken || "",
+    urlServiceStatus: urlServiceStatus || "",
+    urlMessageStatus: urlMessageStatus || "",
+    userId: Number(userId),
+    tenantId: Number(tenantId),
+  } as any);
 
   return api;
 };

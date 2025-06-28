@@ -255,7 +255,7 @@ export const StopWhatsAppSession = async (
     if (whatsapp) {
       await whatsapp.update({
         status: "DISCONNECTED",
-        qrcode: null,
+        qrcode: undefined,
         retries: 0,
       });
 

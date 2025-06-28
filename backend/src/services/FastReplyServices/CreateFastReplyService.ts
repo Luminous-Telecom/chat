@@ -18,8 +18,8 @@ const CreateFastReplyService = async ({
     key,
     message,
     userId,
-    tenantId,
-  });
+    tenantId: typeof tenantId === 'string' ? parseInt(tenantId) : tenantId,
+  } as any);
 
   return fastReplyData;
 };

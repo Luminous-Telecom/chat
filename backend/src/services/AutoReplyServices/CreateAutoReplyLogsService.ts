@@ -9,7 +9,7 @@ const CreateAutoReplyLogService = async (
   msg: string
 ): Promise<AutoReplyLogs> => {
   const log = {
-    autoReplyId: stepsReply.idAutoReply,
+    autoReplyId: stepsReply.idAutoReply.toString(),
     autoReplyName: stepsReply.autoReply.name,
     stepsReplyId: stepsReply.id,
     stepsReplyMessage: stepsReply.reply,
@@ -17,7 +17,7 @@ const CreateAutoReplyLogService = async (
     ticketId: ticket.id,
     contactId: ticket.contactId,
   };
-  const autoReplyLog = await AutoReplyLogs.create(log);
+  const autoReplyLog = await AutoReplyLogs.create(log as any);
 
   return autoReplyLog;
 };

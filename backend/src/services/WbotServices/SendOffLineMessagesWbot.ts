@@ -55,10 +55,10 @@ const SendOffLineMessagesWbot = async (
           try {
             if (message.userId) {
               await UserMessagesLog.create({
-                messageId: sendMessage?.key?.id || sendMessage?.id?.id || null,
+                messageId: sendMessage?.key?.id || sendMessage?.id?.id,
                 userId: message.userId,
                 ticketId: message.ticketId,
-              });
+              } as any);
             }
           } catch (error) {
             logger.error(`Error criar log mensagem ${error}`);

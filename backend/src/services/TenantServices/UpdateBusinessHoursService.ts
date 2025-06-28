@@ -29,7 +29,7 @@ const UpdateBusinessHoursService = async ({
   }
 
   await tenantModel.update({
-    businessHours,
+    businessHours: businessHours as any,
   });
 
   await tenantModel.reload({
