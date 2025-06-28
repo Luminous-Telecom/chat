@@ -51,6 +51,7 @@ export const update = async (
   
   const { whatsappId } = req.params;
   const { tenantId } = req.user;
+  const { isQrcode, forceNewSession } = req.body;
 
   console.log('🔍 Looking for WhatsApp with ID:', whatsappId, 'and tenantId:', tenantId)
 
@@ -64,6 +65,33 @@ export const update = async (
   }
 
   console.log('✅ WhatsApp found:', whatsapp.name)
+  
+  // Se for para gerar QR code ou forçar nova sessão, limpa a sessão primeiro
+  if (isQrcode || forceNewSession) {
+    console.log('🧹 Forçando limpeza da sessão para gerar novo QR code...')
+    
+    // Atualiza status para CONNECTING
+    await whatsapp.update({
+      status: "CONNECTING",
+      qrcode: "",
+      retries: 0,
+    });
+
+    // Notifica o frontend sobre a mudança de status
+    const io = getIO();
+    io.emit(`${tenantId}:whatsappSession`, {
+      action: "update",
+      session: {
+        id: whatsapp.id,
+        name: whatsapp.name,
+        status: "CONNECTING",
+        qrcode: "",
+        isDefault: whatsapp.isDefault,
+        tenantId: whatsapp.tenantId,
+      },
+    });
+  }
+  
   console.log('🚀 Starting WhatsApp session...')
   
   StartWhatsAppSession(whatsapp, Number(tenantId));

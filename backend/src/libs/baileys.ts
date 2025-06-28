@@ -320,9 +320,9 @@ export async function initBaileys(
 
     baseLogger.info(`Initializing WhatsApp session for ${whatsapp.name} (ID: ${whatsapp.id})`);
 
-    // Phone number mode optimization
-    if (phoneNumber) {
-      baseLogger.info("Phone number mode - clearing session");
+    // Phone number mode optimization OR when status is CONNECTING (force new QR code)
+    if (phoneNumber || whatsapp.status === "CONNECTING") {
+      baseLogger.info("Phone number mode or CONNECTING status - clearing session");
 
       const existingSession = sessions.find(s => s.id === whatsapp.id);
       if (existingSession) {
