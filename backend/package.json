@@ -1,7 +1,7 @@
 {
-  "name": "backend",
-  "version": "2.0.0",
-  "description": "izing.open.io - sistema de atendimentos multicanal",
+  "name": "lumi-suite-backend",
+  "version": "1.0.0",
+  "description": "lumi-suite.io - sistema de atendimentos multicanal",
   "main": "index.js",
   "scripts": {
     "build": "rm -rf dist && tsc",

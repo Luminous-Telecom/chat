@@ -1,10 +1,10 @@
-# CHAT - Sistema de Atendimento Multicanal com IA
+# 🚀 **LUMI SUITE**
 
-![IZING Logo](frontend/public/izing-logo_5_transparent.png)
+![LUMI SUITE Logo](frontend/public/lumi-suite-logo.png)
 
-## 📋 Sobre o Projeto
+## 📋 **Descrição**
 
-O **IZING** é um sistema completo de atendimento multicanal que integra diferentes plataformas de comunicação com recursos avançados de automação e inteligência artificial. Desenvolvido para empresas que precisam de um atendimento eficiente e centralizado.
+O **LUMI SUITE** é um sistema completo de atendimento multicanal que integra diferentes plataformas de comunicação com recursos avançados de automação e inteligência artificial. Desenvolvido para empresas que precisam de um atendimento eficiente e centralizado.
 
 ## 🚀 Principais Funcionalidades
 
@@ -94,7 +94,7 @@ O **IZING** é um sistema completo de atendimento multicanal que integra diferen
 ## 📦 Estrutura do Projeto
 
 ```
-izing/
+lumi-suite/
 ├── backend/                 # API e serviços backend
 │   ├── src/
 │   │   ├── controllers/     # Controladores da API
@@ -154,7 +154,7 @@ Crie um arquivo `.env` baseado no `.env.example`:
 DB_HOST=localhost
 DB_USER=postgres
 DB_PASS=password
-DB_NAME=izing
+DB_NAME=lumi_suite
 
 # Redis
 REDIS_URI=redis://localhost:6379

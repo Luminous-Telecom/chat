@@ -439,7 +439,7 @@ export default {
 **Data**: 17/06/2025  
 **Versão**: 1.9.0
 
-# 📝 **Documentação de Emojis - IZING Chat**
+# 📝 **Documentação de Emojis - LUMI SUITE Chat**
 
 ## 🐛 **Problema Resolvido: Emojis "undefined" no Input**
 

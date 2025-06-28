@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "izing-backend",
+      name: "lumi-suite-backend",
       script: "dist/server.js",
       exec_mode: "cluster",
       instances: 1,

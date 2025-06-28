@@ -1,8 +1,8 @@
 {
-  "name": "izing",
-  "version": "1.9.0",
+  "name": "lumi-suite",
+  "version": "1.0.0",
   "description": "Bot Multiatendimento, multicanais e multiempresas.",
-  "productName": "IZING",
+  "productName": "LUMI SUITE",
   "author": "Durans <lumardyelson@gmail.com>",
   "private": false,
   "license": "AGPL-3.0-or-later",

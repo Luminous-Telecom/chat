@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'izing-frontend-dev',
+      name: 'lumi-suite-frontend-dev',
       script: 'npm',
       args: 'run dev',
       exec_mode: 'fork',
@@ -16,7 +16,7 @@ module.exports = {
       time: true
     },
     {
-      name: 'izing-frontend-prod',
+      name: 'lumi-suite-frontend-prod',
       script: 'npm',
       args: 'run start',
       exec_mode: 'cluster',

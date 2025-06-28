@@ -7,7 +7,7 @@ import helmet from "helmet";
 import { logger } from "../utils/logger";
 
 export default async function express(app: Application): Promise<void> {
-  const origin = [process.env.FRONTEND_URL || "https://app.izing.io"];
+  const origin = [process.env.FRONTEND_URL || "https://app.lumi-suite.io"];
   app.use(
     cors({
       origin,
