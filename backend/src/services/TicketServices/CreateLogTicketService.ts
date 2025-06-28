@@ -33,7 +33,7 @@ const CreateLogTicketService = async ({
 }: Request): Promise<void> => {
   const numericUserId = userId ? (typeof userId === 'string' ? parseInt(userId, 10) : userId) : null;
   const numericTicketId = typeof ticketId === 'string' ? parseInt(ticketId, 10) : ticketId;
-  const numericQueueId = queueId ? (typeof queueId === 'string' ? parseInt(queueId, 10) : queueId) : 0;
+  const numericQueueId = queueId ? (typeof queueId === 'string' ? parseInt(queueId, 10) : queueId) : null;
 
   await LogTicket.create({
     userId: numericUserId,

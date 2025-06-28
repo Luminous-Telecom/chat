@@ -26,7 +26,7 @@ class Message extends Model<Message> {
 
   @Default(null)
   @AllowNull
-  @Column
+  @Column(DataType.STRING)
   messageId: string | null;
 
   @Default(0)
@@ -93,21 +93,21 @@ class Message extends Model<Message> {
   // @HasOne(() => Message, "messageId")
   @ForeignKey(() => Message)
   @AllowNull
-  @Column
+  @Column(DataType.STRING)
   quotedMsgId: string | null;
 
   @BelongsTo(() => Message, "quotedMsgId")
   quotedMsg: Message;
 
   @ForeignKey(() => Ticket)
-  @Column
+  @Column(DataType.INTEGER)
   ticketId: number;
 
   @BelongsTo(() => Ticket)
   ticket: Ticket;
 
   @ForeignKey(() => Contact)
-  @Column
+  @Column(DataType.INTEGER)
   contactId: number;
 
   @BelongsTo(() => Contact, "contactId")
@@ -121,7 +121,7 @@ class Message extends Model<Message> {
   @ForeignKey(() => User)
   @Default(null)
   @AllowNull
-  @Column
+  @Column(DataType.INTEGER)
   userId: number | null;
 
   @BelongsTo(() => User)
@@ -140,7 +140,7 @@ class Message extends Model<Message> {
   sendType: string | null;
 
   @ForeignKey(() => Tenant)
-  @Column
+  @Column(DataType.INTEGER)
   tenantId: number;
 
   @BelongsTo(() => Tenant)
@@ -148,7 +148,7 @@ class Message extends Model<Message> {
 
   @Default(null)
   @AllowNull
-  @Column
+  @Column(DataType.STRING)
   idFront: string | null;
 
   @Default(null)

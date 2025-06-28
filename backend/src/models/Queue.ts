@@ -9,6 +9,7 @@ import {
   BelongsTo,
   AutoIncrement,
   Default,
+  DataType,
 } from "sequelize-typescript";
 import Tenant from "./Tenant";
 import User from "./User";
@@ -20,11 +21,11 @@ class Queue extends Model<Queue> {
   @Column
   id: number;
 
-  @Column
+  @Column(DataType.STRING)
   queue: string;
 
   @Default(true)
-  @Column
+  @Column(DataType.BOOLEAN)
   isActive: boolean;
 
   @CreatedAt
@@ -34,14 +35,14 @@ class Queue extends Model<Queue> {
   updatedAt: Date;
 
   @ForeignKey(() => User)
-  @Column
+  @Column(DataType.INTEGER)
   userId: number;
 
   @BelongsTo(() => User)
   user: User;
 
   @ForeignKey(() => Tenant)
-  @Column
+  @Column(DataType.INTEGER)
   tenantId: number;
 
   @BelongsTo(() => Tenant)

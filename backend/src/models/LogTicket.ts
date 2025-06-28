@@ -35,7 +35,7 @@ class LogTicket extends Model<LogTicket> {
   updatedAt: Date;
 
   @ForeignKey(() => Ticket)
-  @Column
+  @Column(DataType.INTEGER)
   ticketId: number;
 
   @BelongsTo(() => Ticket)
@@ -44,15 +44,17 @@ class LogTicket extends Model<LogTicket> {
   @ForeignKey(() => User)
   @Default(null)
   @AllowNull
-  @Column
+  @Column(DataType.INTEGER)
   userId: number;
 
   @BelongsTo(() => User)
   user: User;
 
   @ForeignKey(() => Queue)
-  @Column
-  queueId: number;
+  @AllowNull
+  @Default(null)
+  @Column(DataType.INTEGER)
+  queueId: number | null;
 
   @BelongsTo(() => Queue)
   queue: Queue;
