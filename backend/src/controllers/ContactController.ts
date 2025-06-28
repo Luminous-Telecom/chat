@@ -1,7 +1,7 @@
 import * as Yup from "yup";
 import { Request, Response } from "express";
 import { head } from "lodash";
-import XLSX from "xlsx";
+import * as ExcelJS from "exceljs";
 import path from "path";
 import { v4 as uuidV4 } from "uuid";
 import fs from "fs";
@@ -252,17 +252,19 @@ export const exportContacts = async (req: Request, res: Response) => {
   });
 
   // Cria um novo workbook e worksheet
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(contacts);
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Contatos");
 
-  // Adiciona o worksheet ao workbook
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Contatos");
-
-  // Gera o arquivo Excel no formato .xlsx
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "buffer",
-  });
+  // Adiciona os cabeçalhos
+  if (contacts.length > 0) {
+    const headers = Object.keys(contacts[0]);
+    worksheet.addRow(headers);
+    
+    // Adiciona os dados
+    contacts.forEach(contact => {
+      worksheet.addRow(Object.values(contact));
+    });
+  }
 
   // Define o nome do arquivo
   const fileName = `${uuidV4()}_contatos.xlsx`;
@@ -275,14 +277,14 @@ export const exportContacts = async (req: Request, res: Response) => {
   }
 
   // Salva o arquivo no diretório de downloads
-  fs.writeFile(file, excelBuffer, err => {
-    if (err) {
-      console.error("Erro ao salvar arquivo:", err);
-      return res.status(500).send("Erro ao exportar contatos");
-    }
+  try {
+    await workbook.xlsx.writeFile(file);
     const { BACKEND_URL } = process.env;
     const downloadLink = `${BACKEND_URL}:${process.env.PROXY_PORT}/public/downloads/${fileName}`;
 
     res.send({ downloadLink });
-  });
+  } catch (err) {
+    console.error("Erro ao salvar arquivo:", err);
+    return res.status(500).send("Erro ao exportar contatos");
+  }
 };

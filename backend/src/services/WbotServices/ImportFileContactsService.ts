@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 import { head, has } from "lodash";
-import XLSX from "xlsx";
+import * as ExcelJS from "exceljs";
 import Contact from "../../models/Contact";
 import CheckIsValidContact from "./CheckIsValidContact";
 // import CheckContactNumber from "../WbotServices/CheckNumber";
@@ -11,9 +11,20 @@ export async function ImportFileContactsService(
   tags: string[],
   wallets: string[]
 ) {
-  const workbook = XLSX.readFile(file?.path as string);
-  const worksheet = head(Object.values(workbook.Sheets)) as any;
-  const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 0 });
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(file?.path as string);
+  const worksheet = workbook.worksheets[0];
+  const rows: any[] = [];
+  
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // Skip header row
+    const rowData: any = {};
+    row.eachCell((cell, colNumber) => {
+      const header = worksheet.getRow(1).getCell(colNumber).value as string;
+      rowData[header] = cell.value;
+    });
+    rows.push(rowData);
+  });
   const contacts: any = [];
 
   rows.forEach(row => {
