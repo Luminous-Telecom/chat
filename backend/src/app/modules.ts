@@ -33,8 +33,6 @@ export default async function modules(app): Promise<void> {
       statusService: checkConnection,
     });
   });
-  app.use(Sentry.Handlers.requestHandler());
-
   app.use(
     "/public",
     expressInstance.static(path.resolve(__dirname, "..", "..", "public"), {
@@ -49,7 +47,9 @@ export default async function modules(app): Promise<void> {
   );
 
   app.use("/api", routes);
-  app.use(Sentry.Handlers.errorHandler());
+  
+  // Sentry error handler deve ser adicionado após todas as rotas
+  Sentry.setupExpressErrorHandler(app);
 
   // error handle
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
