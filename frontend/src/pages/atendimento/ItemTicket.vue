@@ -8,7 +8,8 @@
         'ticket-item--pending': ticket.status === 'pending',
         'ticket-item--open': ticket.status === 'open',
         'ticket-item--closed': ticket.status === 'closed',
-        'ticket-item--loading': recarregando
+        'ticket-item--loading': recarregando,
+        'ticket-item--selected': isSelected
       }"
         >
       <!-- Main Content -->
@@ -98,7 +99,9 @@ export default {
     }
   },
   computed: {
-    // Computed removido - shouldShowAttendButton não é mais necessário
+    isSelected () {
+      return this.ticket.id === this.$store.getters.ticketFocado?.id
+    }
   },
   props: {
     ticket: {
@@ -246,6 +249,21 @@ export default {
 
   &--closed {
     opacity: 0.8;
+  }
+
+  &--selected {
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.15) 100%);
+    transform: translateY(-1px);
+
+    .ticket-contact-name {
+      color: #1976d2;
+      font-weight: 700;
+    }
+
+    .ticket-last-message {
+      color: #1976d2;
+      font-weight: 500;
+    }
   }
 
   &--loading {
@@ -440,12 +458,22 @@ export default {
       background: rgba(255, 153, 0, 0);
     }
 
-    .ticket-contact-name {
-      color: var(--dark-text-secondary);
+    &--selected {
+      background: linear-gradient(135deg, rgba(144, 202, 249, 0.2) 0%, rgba(144, 202, 249, 0.3) 100%);
+
+      .ticket-contact-name {
+        color: var(--dark-accent);
+        font-weight: 700;
+      }
+
+      .ticket-last-message {
+        color: var(--dark-accent);
+        font-weight: 500;
+      }
     }
 
-    .ticket-last-message {
-      color: var(--dark-text-primary);
+    .ticket-contact-name {
+      color: var(--dark-text-secondary);
     }
 
     .ticket-time {
