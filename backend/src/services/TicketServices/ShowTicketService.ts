@@ -35,18 +35,6 @@ const ShowTicketService = async ({
         association: "whatsapp",
         attributes: ["id", "name"],
       },
-      {
-        model: TicketParticipant,
-        as: "participants",
-        where: { isActive: true },
-        required: false,
-        include: [
-          {
-            model: User,
-            attributes: ["id", "name", "email"],
-          },
-        ],
-      },
     ],
   });
 

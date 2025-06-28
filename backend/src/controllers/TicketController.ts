@@ -110,48 +110,46 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
   const { tenantId } = req.user;
   const userId = req.user.id;
 
-  const ticket = await ShowTicketService({ id: ticketId, tenantId });
-  // const messages = await Message.findAll({
-  //   where: {
-  //     fromMe: true,
-  //     ticketId: ticket.id,
-  //     ack: 0,
-  //     messageId: { [Op.not]: null }
-  //   },
-  //   logging: console.log
-  // });
-  // if (messages) {
-  //   await Promise.all(
-  //     messages.map(async message => {
-  //       console.info(message);
-  //       const msg = await GetWbotMessage(ticket, message.messageId);
-  //       console.log(msg);
-  //     })
-  //   );
-  // }
-  const where = {
-    contactId: ticket.contactId,
-    scheduleDate: { [Op.not]: null },
-    status: "pending",
-  };
-  const scheduledMessages = await Message.findAll({
-    where,
-    include: [
-      {
-        model: User,
-        as: "user",
-        attributes: ["id", "name", "email"]
-      }
-    ]
-    // logging: console.log
-  });
+  // Executar consultas em paralelo para melhorar performance
+  const [ticket, scheduledMessages] = await Promise.all([
+    ShowTicketService({ id: ticketId, tenantId }),
+    Message.findAll({
+      where: {
+        contactId: { [Op.eq]: null }, // Será atualizado após obter o ticket
+        scheduleDate: { [Op.not]: null },
+        status: "pending",
+      },
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "name", "email"]
+        }
+      ]
+    })
+  ]);
 
-  ticket.setDataValue("scheduledMessages", scheduledMessages);
+  // Atualizar o contactId na consulta de mensagens agendadas
+  if (ticket && scheduledMessages.length > 0) {
+    scheduledMessages.forEach(msg => {
+      msg.setDataValue('contactId', ticket.contactId);
+    });
+  }
 
-  await CreateLogTicketService({
+  // Filtrar apenas mensagens agendadas do contato atual
+  const filteredScheduledMessages = scheduledMessages.filter(
+    msg => msg.getDataValue('contactId') === ticket?.contactId
+  );
+
+  ticket.setDataValue("scheduledMessages", filteredScheduledMessages);
+
+  // Executar log em paralelo para não bloquear a resposta
+  CreateLogTicketService({
     userId,
     ticketId,
     type: "access",
+  }).catch(err => {
+    logger.error(`[TicketController.show] Erro ao criar log: ${err}`);
   });
 
   return res.status(200).json(ticket);

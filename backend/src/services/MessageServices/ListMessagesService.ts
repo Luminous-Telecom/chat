@@ -34,29 +34,29 @@ const ListMessagesService = async ({
   const limit = 30;
   const offset = limit * (+pageNumber - 1);
 
-  const { count, rows: messages } = await Message.findAndCountAll({
-    where: { ticketId },
-    limit,
-    include: [
-      "contact",
-      {
-        model: Message,
-        as: "quotedMsg",
-        include: ["contact"],
-      },
-      {
-        model: require("../../models/User").default,
-        as: "user",
-        attributes: ["id", "name", "email", "profilePicUrl"]
-      }
-    ],
-    offset,
-    order: [["createdAt", "DESC"]],
-  });
-
-  let messagesOffLine: MessagesOffLine[] = [];
-  if (+pageNumber === 1) {
-    const { rows } = await MessagesOffLine.findAndCountAll({
+  // Executar consultas em paralelo para melhorar performance
+  const [messagesResult, messagesOffLineResult] = await Promise.all([
+    Message.findAndCountAll({
+      where: { ticketId },
+      limit,
+      include: [
+        "contact",
+        {
+          model: Message,
+          as: "quotedMsg",
+          include: ["contact"],
+        },
+        {
+          model: require("../../models/User").default,
+          as: "user",
+          attributes: ["id", "name", "email", "profilePicUrl"]
+        }
+      ],
+      offset,
+      order: [["createdAt", "DESC"]],
+    }),
+    // Só buscar mensagens offline na primeira página
+    +pageNumber === 1 ? MessagesOffLine.findAndCountAll({
       where: { ticketId },
       include: [
         "contact",
@@ -72,9 +72,11 @@ const ListMessagesService = async ({
         }
       ],
       order: [["createdAt", "DESC"]],
-    });
-    messagesOffLine = rows;
-  }
+    }) : Promise.resolve({ rows: [] })
+  ]);
+
+  const { count, rows: messages } = messagesResult;
+  const { rows: messagesOffLine } = messagesOffLineResult;
 
   const hasMore = count > offset + messages.length;
 
