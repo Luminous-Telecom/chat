@@ -2127,7 +2127,7 @@ export default {
 /* user-info-column está definido dentro de .user-message-container */
 
 .user-name-external {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--q-color-grey-8, #424242);
   text-transform: capitalize;
