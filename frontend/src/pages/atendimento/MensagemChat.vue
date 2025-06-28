@@ -48,6 +48,7 @@
               }"
               @mouseenter="showMessageOptions(mensagem.id)"
               @mouseleave="hideMessageOptions(mensagem.id)"
+              @dblclick="handleDoubleClick(mensagem)"
             >
               <div
                 style="min-width: 100px; max-width: 350px;"
@@ -157,14 +158,6 @@
                   >
                     <q-item-section>
                       <q-item-label>Deletar</q-item-label>
-                      <!-- <q-item-label caption>
-                        Apagará mensagem: {{ isDesactivatDelete(mensagem) ? 'PARA TODOS' : 'PARAM MIN' }}
-                      </q-item-label> -->
-                      <!-- <q-tooltip :delay="500"
-                        content-class="text-black bg-red-3 text-body1">
-                        * Após 5 min do envio, não será possível apagar a mensagem. <br>
-                        ** Não está disponível para Messenger.
-                      </q-tooltip> -->
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -321,17 +314,6 @@
                   </div>
                 </q-btn>
               </div>
-              <!-- <q-btn
-                type="a"
-                color="primary"
-                outline
-                dense
-                class="q-px-sm text-center"
-                target="_blank"
-                :href="`http://docs.google.com/gview?url=${mensagem.mediaUrl}&embedded=true`"
-              >
-                Visualizar
-              </q-btn> -->
             </template>
             <div
               v-linkified
@@ -403,7 +385,7 @@
                   Resposta: {{ mensagem.dataPayload.buttonText }}
                 </q-chip>
               </div>
-                        </template>
+            </template>
           </div>
         </q-chat-message>
           </div>
@@ -452,6 +434,7 @@
             }"
             @mouseenter="showMessageOptions(mensagem.id)"
             @mouseleave="hideMessageOptions(mensagem.id)"
+            @dblclick="handleDoubleClick(mensagem)"
           >
           <div
             style="min-width: 100px; max-width: 350px;"
@@ -1035,9 +1018,6 @@ export default {
         fallback.classList.add('avatar-fallback-hidden')
       }
     },
-    // cUrlMediaCors () {
-    //   return this.urlMedia
-    // },
     returnCardContato (str) {
       // return btoa(str)
       return Base64.encode(str)
@@ -1145,9 +1125,6 @@ export default {
       return null
     },
     isDesactivatDelete (msg) {
-      // if (msg) {
-      //   return (differenceInMinutes(new Date(), new Date(+msg.timestamp)) > 5)
-      // }
       return false
     },
     async buscarImageCors (imageUrl) {
@@ -1202,13 +1179,6 @@ export default {
       if (this.isDesactivatDelete(mensagem)) {
         this.$notificarErro('Não foi possível apagar mensagem com mais de 5min do envio.')
       }
-      // const diffHoursDate = differenceInHours(
-      //   new Date(),
-      //   parseJSON(mensagem.createdAt)
-      // )
-      // if (diffHoursDate > 2) {
-      //   // throw new AppError("No delete message afeter 2h sended");
-      // }
       const data = { ...mensagem }
       this.$q.dialog({
         title: 'Atenção!! Deseja realmente deletar a mensagem? ',
@@ -1577,6 +1547,33 @@ export default {
 
       // Caso contrário, não mostrar (mensagens consecutivas do mesmo usuário)
       return false
+    },
+    handleDoubleClick (mensagem) {
+      // Verificar se a mensagem não está deletada e se o canal suporta resposta
+      if (mensagem.isDeleted) {
+        return
+      }
+
+      if (!['whatsapp', 'telegram'].includes(this.ticketFocado?.channel || '')) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Responder mensagens está disponível apenas para WhatsApp e Telegram',
+          position: 'bottom-right'
+        })
+        return
+      }
+
+      // Adicionar feedback visual
+      const messageElement = document.getElementById(`chat-message-${mensagem.id}`)
+      if (messageElement) {
+        messageElement.classList.add('double-click-feedback')
+        setTimeout(() => {
+          messageElement.classList.remove('double-click-feedback')
+        }, 300)
+      }
+
+      // Responder à mensagem (mesmo comportamento do menu)
+      this.citarMensagem(mensagem)
     }
   },
   watch: {
@@ -2097,7 +2094,7 @@ export default {
 }
 
 .user-avatar-fallback-external {
-  background: linear-gradient(135deg, #9e9e9e 0%, #757575 50%, #9e9e9e 100%);
+  background: linear-gradient(135deg, #9e9e9e 0%, #75757d 50%, #9e9e9e 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -2380,5 +2377,85 @@ export default {
 .body--dark .hr-text::after {
   background: var(--q-color-grey-9, #2d2d2d);
   color: var(--q-color-grey-3, #e0e0e0);
+}
+
+/* Estilos para duplo clique nas mensagens */
+.q-chat-message {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: text; /* Permitir seleção de texto */
+
+  /* Indicador visual de que é clicável */
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Efeito de duplo clique */
+  &:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* Feedback visual para duplo clique */
+  &.double-click-feedback {
+    animation: doubleClickPulse 0.3s ease-out;
+  }
+}
+
+/* Animação para feedback de duplo clique */
+@keyframes doubleClickPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: scale(0.95);
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Dark mode para duplo clique */
+.body--dark .q-chat-message {
+  &:hover {
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+  }
+
+  &.double-click-feedback {
+    animation: doubleClickPulseDark 0.3s ease-out;
+  }
+}
+
+@keyframes doubleClickPulseDark {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    transform: scale(0.95);
+    box-shadow: 0 4px 16px rgba(144, 202, 249, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Desabilitar duplo clique para mensagens deletadas */
+.q-message-text--deleted {
+  cursor: default !important;
+
+  &:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  &:active {
+    transform: none !important;
+  }
 }
 </style>
