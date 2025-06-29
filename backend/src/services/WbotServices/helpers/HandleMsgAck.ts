@@ -258,7 +258,7 @@ export const HandleMsgAck = async (
       });
       
       if (messages.length > 0) {
-        logger.info(`[HandleMsgAck] 📱 LEITURA NO WHATSAPP: Encontradas ${messages.length} mensagens recebidas para marcar como lidas (ACK ${ack})`);
+        
       }
     }
 
@@ -477,7 +477,7 @@ export const HandleMsgAck = async (
         },
       });
       
-      logger.info(`[HandleMsgAck] 📱 AUTO-READ: Emitido evento messageAutoRead para mensagem ${messageToUpdate.id}`);
+      
     }
     
     // Log apenas para ACKs importantes ou modo debug
@@ -504,7 +504,7 @@ export const HandleMsgAck = async (
     
     // Log de sucesso apenas para ACKs importantes ou modo debug
     if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
-      logger.info(`[HandleMsgAck] ✅ ACK ${ack} processado com sucesso para mensagem ${messageToUpdate.id}`);
+  
     }
   } catch (err) {
     await messageTransaction.rollback();

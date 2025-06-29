@@ -437,16 +437,70 @@ export async function initBaileys(
     
     // Add required methods to match BaileysClient interface
     (baileysClient as any).getContactById = async (id: string) => {
-      // Implement getContactById method
+      // Implement aggressive contact name search
+      let contactName = "";
+      let contactPushname = "";
+      const contactNumber = id.replace(/\D/g, "");
+      
+      try {
+        // Método 1: Business Profile
+        try {
+          const businessProfile = await wbot.getBusinessProfile(id);
+          if (businessProfile?.name) {
+            contactName = businessProfile.name;
+            contactPushname = businessProfile.name;
+          }
+        } catch (businessErr) {
+          baseLogger.debug(`[getContactById] No business profile`);
+        }
+        
+        // Método 2: Profile Picture + onWhatsApp
+        if (!contactName) {
+          try {
+            const profilePic = await wbot.profilePictureUrl(id, 'image');
+            if (profilePic) {
+              const contactInfo = await wbot.onWhatsApp(contactNumber);
+              if (contactInfo && contactInfo.length > 0) {
+                const contact = contactInfo[0];
+                contactName = contact.notify || contact.name || "";
+                contactPushname = contact.notify || "";
+              }
+            }
+          } catch (profileErr) {
+            baseLogger.debug(`[getContactById] No profile picture method`);
+          }
+        }
+        
+        // Método 3: Status
+        if (!contactName) {
+          try {
+            const status = await wbot.fetchStatus(id);
+            if (status?.setBy && status.setBy !== contactNumber) {
+              contactName = status.setBy;
+              contactPushname = status.setBy;
+            }
+          } catch (statusErr) {
+            baseLogger.debug(`[getContactById] No status method`);
+          }
+        }
+        
+        if (!contactName) {
+          // No name found, will use number
+        }
+        
+      } catch (error) {
+        baseLogger.warn(`[getContactById] Error: ${error}`);
+      }
+      
       return {
-        id: { user: id, _serialized: id },
-        name: "",
-        pushname: "",
-        number: id,
-        isGroup: false,
+        id: { user: contactNumber, _serialized: id },
+        name: contactName,
+        pushname: contactPushname,
+        number: contactNumber,
+        isGroup: id.endsWith("@g.us"),
         isMe: false,
         isWAContact: true,
-        isMyContact: false,
+        isMyContact: true,
         getProfilePicUrl: async () => ""
       } as any;
     };
@@ -491,16 +545,11 @@ export async function initBaileys(
       }
 
       if (qr) {
-        console.log('🎯 QR Code received from Baileys for session:', whatsapp.id)
-        console.log('📱 QR Code value length:', qr.length)
-        
         await whatsapp.update({
           status: "qrcode",
           qrcode: qr,
           retries: 0
         });
-        
-        console.log('💾 QR Code saved to database')
         
         const io = await getSocketIO();
         const sessionData = {
@@ -515,10 +564,7 @@ export async function initBaileys(
           }
         };
         
-        console.log('📡 Emitting socket event:', sessionData)
         io.emit(`${whatsapp.tenantId}:whatsappSession`, sessionData);
-        
-        console.log('✅ QR Code event emitted successfully')
         return;
       }
 

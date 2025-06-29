@@ -195,10 +195,7 @@ const HandleBaileysMessage = async (
         }
 
         // Processar contato
-        const { msgContact, groupContact } = await processMessageContact(
-          msg,
-          tenantId
-        );
+        const { msgContact, groupContact } = await processMessageContact(msg, tenantId, wbot);
 
         // Verificar se é uma reação ANTES de criar/buscar ticket
         const msgType = Object.keys(msg.message || {})[0];
@@ -331,7 +328,8 @@ const attemptSessionReconnect = async (
 
 const processMessageContact = async (
   msg: proto.IWebMessageInfo,
-  tenantId: number
+  tenantId: number,
+  wbot?: any
 ) => {
   // CORREÇÃO: Lógica melhorada para identificar corretamente o contato
   let contactJid: string;
@@ -355,10 +353,92 @@ const processMessageContact = async (
 
   // Validar se temos um número válido
   if (!contactNumber || contactNumber.length < 10) {
-    logger.warn(
-      `[processMessageContact] Invalid contact number: ${contactNumber}, using fallback`
-    );
     contactNumber = contactJid.split("@")[0] || "unknown";
+  }
+
+  // NOVO: Tentar buscar nome do contato no store do WhatsApp
+  let contactName = contactNumber;
+  let contactPushname = "";
+  
+  if (!msg.key.fromMe && msg.pushName) {
+    // Se a mensagem foi recebida, usar o pushName do remetente
+    contactName = msg.pushName;
+    contactPushname = msg.pushName;
+  } else if (msg.key.fromMe && wbot) {
+    // Se a mensagem foi enviada por mim, buscar nome agressivamente
+    
+    // 1. Verificar no banco primeiro
+    try {
+      const existingContact = await Contact.findOne({
+        where: {
+          number: contactNumber,
+          tenantId,
+        }
+      });
+      
+      if (existingContact && existingContact.name && existingContact.name !== contactNumber) {
+        contactName = existingContact.name;
+        contactPushname = existingContact.pushname || "";
+      }
+    } catch (dbErr) {
+      // Erro silencioso no banco
+    }
+    
+    // 2. Se não achou no banco, buscar no WhatsApp
+    if (contactName === contactNumber) {
+      try {
+        // Método 1: Tentar getBusinessProfile para contas business
+        try {
+          const businessProfile = await (wbot as any).getBusinessProfile(contactJid);
+          
+          if (businessProfile?.name) {
+            contactName = businessProfile.name;
+            contactPushname = businessProfile.name;
+          }
+        } catch (businessErr) {
+          // Erro silencioso
+        }
+        
+        // Método 2: Se não é business, tentar profilePictureUrl para confirmar existência
+        if (contactName === contactNumber) {
+          try {
+            const profilePic = await (wbot as any).profilePictureUrl(contactJid, 'image');
+            
+            if (profilePic) {
+              // Tentar onWhatsApp para mais informações
+              const contactInfo = await (wbot as any).onWhatsApp(contactNumber);
+              if (contactInfo && contactInfo.length > 0) {
+                const contact = contactInfo[0];
+                
+                if (contact.notify || contact.name) {
+                  contactName = contact.notify || contact.name;
+                  contactPushname = contact.notify || "";
+                }
+              }
+            }
+          } catch (profileErr) {
+            // Erro silencioso
+          }
+        }
+        
+        // Método 3: Tentar fetchStatus se ainda não achou
+        if (contactName === contactNumber) {
+          try {
+            const status = await (wbot as any).fetchStatus(contactJid);
+            
+            if (status?.setBy && status.setBy !== contactNumber) {
+              contactName = status.setBy;
+              contactPushname = status.setBy;
+            }
+          } catch (statusErr) {
+            // Erro silencioso
+          }
+        }
+        
+      } catch (searchErr) {
+        // Erro silencioso na busca
+      }
+    }
   }
 
   // Buscar ou criar contato no banco de dados
@@ -368,22 +448,25 @@ const processMessageContact = async (
       tenantId,
     },
     defaults: {
-      name: msg.pushName || contactNumber,
+      name: contactName,
+      pushname: contactPushname,
       isWAContact: true,
       profilePicUrl: "",
     } as any,
   });
 
   // Atualizar nome se necessário e se não for grupo
-  // CORREÇÃO: Só atualizar o nome do contato com pushName se a mensagem NÃO for enviada por mim
-  // Para mensagens fromMe=true, o pushName é do remetente (eu), não do destinatário
+  // CORREÇÃO: Atualizar nome usando a mesma lógica da criação
   if (
-    msg.pushName &&
-    foundContact.name !== msg.pushName &&
-    !isGroup &&
-    !msg.key.fromMe
+    contactName &&
+    foundContact.name !== contactName &&
+    foundContact.name === contactNumber && // Só atualizar se o nome atual for apenas o número
+    !isGroup
   ) {
-    await foundContact.update({ name: msg.pushName });
+    await foundContact.update({ 
+      name: contactName,
+      pushname: contactPushname 
+    });
   }
 
   // Criar objeto de contato compatível
