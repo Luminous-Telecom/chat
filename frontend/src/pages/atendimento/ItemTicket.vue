@@ -33,7 +33,21 @@
 
         <!-- Last Message -->
         <div class="ticket-last-message">
-          {{ ticket.lastMessage }}
+          <div class="message-content">
+            <span class="message-text">{{ ticket.lastMessage }}</span>
+            <!-- Status da mensagem (só mostra se não há mensagens não lidas) -->
+            <div
+              v-if="shouldShowMessageStatus"
+              class="message-status-icon"
+              :class="getMessageStatusClass"
+            >
+              <q-icon
+                :name="getMessageStatusIcon"
+                :color="getMessageStatusColor"
+                size="12px"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Footer Info -->
@@ -101,6 +115,50 @@ export default {
   computed: {
     isSelected () {
       return this.ticket.id === this.$store.getters.ticketFocado?.id
+    },
+
+    // Determina se deve mostrar o status da mensagem
+    shouldShowMessageStatus () {
+      // Só mostrar status se:
+      // 1. A última mensagem foi enviada por nós (fromMe)
+      // 2. Não há mensagens não lidas (ticket.unreadMessages === 0)
+      // 3. Temos informações de status (lastMessageAck existe)
+      return this.ticket.lastMessageFromMe &&
+             (!this.ticket.unreadMessages || this.ticket.unreadMessages === 0) &&
+             this.ticket.lastMessageAck !== undefined
+    },
+
+    // Classe CSS para o status da mensagem
+    getMessageStatusClass () {
+      const ack = this.ticket.lastMessageAck || 0
+      return `status-${ack}`
+    },
+
+    // Ícone baseado no ACK da última mensagem
+    getMessageStatusIcon () {
+      const ack = this.ticket.lastMessageAck || 0
+      const icons = {
+        0: 'mdi-clock-outline', // Pendente
+        1: 'mdi-check', // Enviado
+        2: 'mdi-check-all', // Entregue
+        3: 'mdi-check-all', // Lida/Recebida
+        4: 'mdi-check-all', // Lida/Recebida
+        5: 'mdi-check-all' // Áudio ouvido
+      }
+      return icons[ack] || 'mdi-clock-outline'
+    },
+
+    // Cor baseada no ACK da última mensagem
+    getMessageStatusColor () {
+      const ack = this.ticket.lastMessageAck || 0
+      if (ack >= 3) {
+        return 'blue-12' // Azul para lida/ouvida
+      } else if (ack === 2) {
+        return 'grey-7' // Cinza para entregue
+      } else if (ack === 1) {
+        return 'grey-5' // Cinza claro para enviado
+      }
+      return 'grey-4' // Cinza mais claro para pendente
     }
   },
   props: {
@@ -355,10 +413,31 @@ export default {
   color: #5a6c7d;
   line-height: 1.3;
   margin-bottom: 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+
+  .message-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .message-text {
+      flex: 1;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .message-status-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
 }
 
 .ticket-footer {
@@ -500,7 +579,6 @@ export default {
         color: var(--dark-text-primary);
       }
     }
-
   }
 }
 

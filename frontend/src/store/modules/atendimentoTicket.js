@@ -578,6 +578,31 @@ const atendimentoTicket = {
     },
     REMOVE_PROCESSING_MESSAGE (state, messageId) {
       state.processingMessages.delete(messageId)
+    },
+    // 🔥 NOVO: Atualizar ACK da última mensagem do ticket
+    UPDATE_TICKET_LAST_MESSAGE_ACK (state, payload) {
+      const { ticketId, lastMessageAck, lastMessageFromMe } = payload
+
+      // Atualizar na lista de tickets
+      const ticketIndex = state.tickets.findIndex(t => t.id === ticketId)
+      if (ticketIndex !== -1) {
+        const tickets = [...state.tickets]
+        tickets[ticketIndex] = {
+          ...tickets[ticketIndex],
+          lastMessageAck,
+          lastMessageFromMe
+        }
+        state.tickets = tickets
+      }
+
+      // Atualizar no ticket focado se for o mesmo
+      if (state.ticketFocado.id === ticketId) {
+        state.ticketFocado = {
+          ...state.ticketFocado,
+          lastMessageAck,
+          lastMessageFromMe
+        }
+      }
     }
   },
   actions: {

@@ -269,6 +269,15 @@ export default {
               // Para outros casos, usar debounce
               self.atualizarStatusMensagemComDebounce(statusPayload)
             }
+
+            // 🔥 NOVO: Atualizar ACK da última mensagem no ticket se necessário
+            if (data.payload.ticket && data.payload.fromMe) {
+              self.$store.commit('UPDATE_TICKET_LAST_MESSAGE_ACK', {
+                ticketId: data.payload.ticket.id,
+                lastMessageAck: data.payload.ack,
+                lastMessageFromMe: data.payload.fromMe
+              })
+            }
           }
 
           if (data.type === 'chat:messagesRead') {
