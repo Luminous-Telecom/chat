@@ -415,36 +415,43 @@ export default {
     // Observar mudanças no status do ticket
     'ticketFocado.status': {
       handler (newStatus, oldStatus) {
+        // Adicionar verificações para evitar loops infinitos
+        if (!this.ticketFocado?.id) return
+
         if (newStatus === 'pending') {
           // Se o ticket ficar pending, remover foco
           if (this.$refs.inputEnvioMensagem) {
             this.$refs.inputEnvioMensagem.blur()
           }
-        } else if (newStatus === 'open' && oldStatus !== 'open') {
+        } else if (newStatus === 'open' && oldStatus !== 'open' && oldStatus !== undefined) {
           // Quando o ticket for aberto (mudança de status para 'open'), focar o input
-          this.focusInputWithRetry()
+          // Só focar se oldStatus não for undefined (evitar execução na inicialização)
+          this.$nextTick(() => {
+            this.focusInputWithRetry()
+          })
         }
       },
-      immediate: true
+      immediate: false // Mudado para false para evitar execução na inicialização
     },
-    // Observar mudanças no ticket inteiro
-    ticketFocado: {
-      handler (newTicket, oldTicket) {
-        if (newTicket.id !== oldTicket?.id) {
+    // Observar mudanças no ticket inteiro (apenas ID para evitar deep watching desnecessário)
+    'ticketFocado.id': {
+      handler (newId, oldId) {
+        // Só executar se realmente mudou o ID do ticket
+        if (newId && newId !== oldId && oldId !== undefined) {
           // Quando um novo ticket é selecionado, focar o input automaticamente
           this.$nextTick(() => {
-            if (newTicket.status === 'open') {
+            if (this.ticketFocado?.status === 'open') {
               this.focusInputWithRetry()
             }
           })
         }
       },
-      deep: true
+      immediate: false
     },
     // Observar mudanças na mensagem de resposta
     replyingMessage: {
       handler (newMessage, oldMessage) {
-        if (newMessage && newMessage !== oldMessage) {
+        if (newMessage && newMessage !== oldMessage && newMessage.id !== oldMessage?.id) {
           // Quando uma mensagem é selecionada para resposta, focar o input
           this.focusOnReply()
         }
@@ -454,11 +461,31 @@ export default {
   },
   methods: {
     // Método para focar o input com retry para garantir que funcione
-    focusInputWithRetry (maxAttempts = 8) {
+    focusInputWithRetry (maxAttempts = 5) { // Reduzido de 8 para 5 tentativas
+      // Verificar se já há uma tentativa em andamento para evitar múltiplas execuções
+      if (this._focusAttempting) {
+        return
+      }
+
+      // Verificar se o ticket está em um estado que permite foco
+      if (!this.ticketFocado?.id || this.ticketFocado?.status === 'pending') {
+        return
+      }
+
+      this._focusAttempting = true
+
       const attemptFocus = (attempt = 0) => {
         if (attempt >= maxAttempts) {
           console.warn('[InputMensagem] Não foi possível focar o input após', maxAttempts, 'tentativas')
+          this._focusAttempting = false
           return
+        }
+
+        // Verificar se já está focado antes de tentar
+        const textarea = this.$refs.inputEnvioMensagem?.$el?.querySelector('textarea')
+        if (textarea && document.activeElement === textarea) {
+          this._focusAttempting = false
+          return // Já está focado
         }
 
         if (this.$refs.inputEnvioMensagem) {
@@ -466,8 +493,8 @@ export default {
             this.$refs.inputEnvioMensagem.focus()
 
             // Verificar se o foco foi aplicado corretamente
-            const textarea = this.$refs.inputEnvioMensagem.$el?.querySelector('textarea')
             if (textarea && document.activeElement === textarea) {
+              this._focusAttempting = false
               return
             }
 
@@ -475,6 +502,7 @@ export default {
             if (textarea) {
               textarea.focus()
               if (document.activeElement === textarea) {
+                this._focusAttempting = false
                 return
               }
             }
@@ -483,8 +511,8 @@ export default {
           }
         }
 
-        // Tentar novamente após um delay progressivo
-        const delay = Math.min(100 * (attempt + 1), 500) // Máximo de 500ms de delay
+        // Tentar novamente após um delay progressivo (menor)
+        const delay = Math.min(100 + (attempt * 50), 300) // Máximo de 300ms de delay
         setTimeout(() => attemptFocus(attempt + 1), delay)
       }
 
@@ -900,18 +928,8 @@ export default {
     focusOnReply () {
       // Garantir que o componente esteja pronto
       this.$nextTick(() => {
-        // Primeira tentativa imediata
+        // Uma única tentativa - o método focusInputWithRetry já tem retry interno
         this.focusInputWithRetry()
-
-        // Segunda tentativa após um delay curto
-        setTimeout(() => {
-          this.focusInputWithRetry()
-        }, 100)
-
-        // Terceira tentativa após um delay maior para casos mais difíceis
-        setTimeout(() => {
-          this.focusInputWithRetry()
-        }, 300)
       })
     }
   },
@@ -1037,6 +1055,9 @@ export default {
 
     // Remover event listener para fechar modal de emojis
     document.removeEventListener('click', this.handleClickOutsideEmojiPicker)
+
+    // Limpar flag de tentativa de foco
+    this._focusAttempting = false
   },
   destroyed () {
     this.$root.$off('mensagem-chat:focar-input-mensagem')
