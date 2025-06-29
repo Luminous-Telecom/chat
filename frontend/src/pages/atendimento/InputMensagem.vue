@@ -462,16 +462,21 @@ export default {
   methods: {
     // Método para focar o input com retry para garantir que funcione
     focusInputWithRetry (maxAttempts = 5) { // Reduzido de 8 para 5 tentativas
+      console.log('[InputMensagem] focusInputWithRetry iniciado')
+
       // Verificar se já há uma tentativa em andamento para evitar múltiplas execuções
       if (this._focusAttempting) {
+        console.log('[InputMensagem] Já há tentativa em andamento, ignorando')
         return
       }
 
       // Verificar se o ticket está em um estado que permite foco
       if (!this.ticketFocado?.id || this.ticketFocado?.status === 'pending') {
+        console.log('[InputMensagem] Ticket não permite foco:', { id: this.ticketFocado?.id, status: this.ticketFocado?.status })
         return
       }
 
+      console.log('[InputMensagem] Iniciando tentativas de foco')
       this._focusAttempting = true
 
       const attemptFocus = (attempt = 0) => {
@@ -926,8 +931,10 @@ export default {
 
     // Método específico para focar o input quando uma mensagem é selecionada para resposta
     focusOnReply () {
+      console.log('[InputMensagem] focusOnReply chamado')
       // Garantir que o componente esteja pronto
       this.$nextTick(() => {
+        console.log('[InputMensagem] Chamando focusInputWithRetry')
         // Uma única tentativa - o método focusInputWithRetry já tem retry interno
         this.focusInputWithRetry()
       })
@@ -1024,6 +1031,7 @@ export default {
 
     // Restaurar o código original do mounted
     this.$root.$on('mensagem-chat:focar-input-mensagem', (mensagem) => {
+      console.log('[InputMensagem] Evento recebido para focar input:', mensagem?.id)
       this.focusOnReply()
     })
 

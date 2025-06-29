@@ -1144,16 +1144,13 @@ export default {
       this.loading = false
     },
     citarMensagem (mensagem) {
+      console.log('[MensagemChat] Citando mensagem:', mensagem?.id, 'Canal:', this.ticketFocado?.channel)
       this.$emit('update:replyingMessage', mensagem)
 
       // Emitir evento para focar o input com delay para garantir que a mensagem seja definida primeiro
       this.$nextTick(() => {
+        console.log('[MensagemChat] Emitindo evento para focar input')
         this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
-
-        // Backup: tentar focar novamente após um delay maior para casos onde o primeiro não funcionar
-        setTimeout(() => {
-          this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
-        }, 200)
       })
     },
     showMessageOptions (messageId) {
