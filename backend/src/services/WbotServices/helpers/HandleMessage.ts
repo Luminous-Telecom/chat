@@ -172,6 +172,8 @@ const HandleMessage = async (
           `[HandleMessage] Created/found contact in DB - ID: ${contact.id}, Name: ${contact.name}, Number: ${contact.number}`
         );
 
+        logger.info(`[RECEBIMENTO] Mensagem recebida de contato: ID=${contact.id}, Nome=${contact.name}, Número=${contact.number}`);
+
         const ticket = await FindOrCreateTicketService({
           contact,
           whatsappId: wbot.id!,
@@ -181,6 +183,7 @@ const HandleMessage = async (
           msg,
           channel: "whatsapp",
         });
+        logger.info(`[RECEBIMENTO] Ticket associado: ID=${ticket?.id}, contactId=${ticket?.contactId}, status=${ticket?.status}`);
 
         if (ticket?.isCampaignMessage) {
           resolve();
