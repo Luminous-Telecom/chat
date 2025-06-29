@@ -64,6 +64,8 @@ const VerifyMessage = async (
     await ticket.update({
       lastMessage: msg.body,
       lastMessageAt: new Date().getTime(),
+      lastMessageAck: msg.fromMe ? 1 : 0, // Se enviado por nós, ACK inicial é 1 (enviado)
+      lastMessageFromMe: msg.fromMe,
       answered: msg.fromMe || false,
     });
 

@@ -519,6 +519,8 @@ const finalizeMessage = async (
     await ticket.update({
       lastMessage: cleanLastMessage,
       lastMessageAt: new Date().getTime(),
+      lastMessageAck: messageCreated.fromMe ? 1 : 0, // Se enviado por nós, ACK inicial é 1 (enviado)
+      lastMessageFromMe: messageCreated.fromMe,
       answered: true,
     });
 

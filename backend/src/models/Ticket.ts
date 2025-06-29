@@ -46,6 +46,16 @@ class Ticket extends Model<Ticket> {
   @Column
   lastMessage: string;
 
+  @Default(null)
+  @AllowNull
+  @Column
+  lastMessageAck: number;
+
+  @Default(null)
+  @AllowNull
+  @Column
+  lastMessageFromMe: boolean;
+
   @Column
   channel: string;
 

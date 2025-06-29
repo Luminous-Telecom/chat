@@ -410,6 +410,23 @@ export const HandleMsgAck = async (
     // Recarregar ticket para obter dados atualizados após possíveis mudanças
     await ticket.reload({ transaction: messageTransaction });
 
+    // 🔥 NOVO: Atualizar ACK da última mensagem do ticket se esta for a última mensagem
+    // Buscar a última mensagem do ticket para comparar
+    const lastMessage = await Message.findOne({
+      where: { ticketId: ticket.id },
+      order: [['timestamp', 'DESC'], ['createdAt', 'DESC']],
+      attributes: ['id', 'messageId', 'timestamp'],
+      transaction: messageTransaction
+    });
+
+    // Se esta é a última mensagem do ticket, atualizar o ACK no ticket
+    if (lastMessage && (lastMessage.id === messageToUpdate.id || 
+        lastMessage.messageId === messageToUpdate.messageId)) {
+      await ticket.update({
+        lastMessageAck: ack
+      }, { transaction: messageTransaction });
+    }
+
     // Emitir eventos no canal correto
     const io = getIO();
     const isAutoMarkedAsRead = wasNotRead && isNowRead && !messageToUpdate.fromMe;
