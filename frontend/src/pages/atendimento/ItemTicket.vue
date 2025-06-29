@@ -317,11 +317,6 @@ export default {
       color: #1976d2;
       font-weight: 700;
     }
-
-    .ticket-last-message {
-      color: #1976d2;
-      font-weight: 500;
-    }
   }
 
   &--loading {
@@ -409,8 +404,7 @@ export default {
 }
 
 .ticket-last-message {
-  font-size: 11px;
-  color: #5a6c7d;
+  font-size: 13px;
   line-height: 1.3;
   margin-bottom: 4px;
 
@@ -422,7 +416,6 @@ export default {
     .message-text {
       flex: 1;
       display: -webkit-box;
-      -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -542,16 +535,6 @@ export default {
 
     &--selected {
       background: linear-gradient(135deg, rgba(144, 202, 249, 0.2) 0%, rgba(144, 202, 249, 0.3) 100%);
-
-      .ticket-contact-name {
-        color: var(--dark-accent);
-        font-weight: 700;
-      }
-
-      .ticket-last-message {
-        color: var(--dark-accent);
-        font-weight: 500;
-      }
     }
 
     .ticket-contact-name {
