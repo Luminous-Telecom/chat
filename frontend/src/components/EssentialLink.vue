@@ -18,7 +18,7 @@
     >
       <q-icon :name="color === 'negative' ? 'mdi-cellphone-nfc-off' : icon" />
       <q-badge
-        v-if="badge !== null && badge !== undefined && (badge > 0 || (query && query.status === 'pending'))"
+        v-if="badge !== null && badge !== undefined && (badge > 0 || (badge === 0 && query && (query.status === 'open' || query.status === 'pending')))"
         :color="badgeColor || 'red'"
         text-color="white"
         floating

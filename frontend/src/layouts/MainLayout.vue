@@ -529,7 +529,8 @@ export default {
             badgeCount = totalUnread
           }
 
-          return { ...menu, badge: badgeCount > 0 ? badgeCount : 0, badgeColor }
+          // Sempre mostrar o badge azul, mesmo se badgeCount for 0
+          return { ...menu, badge: badgeCount, badgeColor }
         }
         return menu
       })
