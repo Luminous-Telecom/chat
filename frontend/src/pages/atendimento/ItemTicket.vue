@@ -31,10 +31,9 @@
           </div>
         </div>
 
-        <!-- Last Message -->
+                <!-- Last Message -->
         <div class="ticket-last-message">
           <div class="message-content">
-            <span class="message-text">{{ ticket.lastMessage }}</span>
             <!-- Status da mensagem (só mostra se não há mensagens não lidas) -->
             <div
               v-if="shouldShowMessageStatus"
@@ -44,9 +43,10 @@
               <q-icon
                 :name="getMessageStatusIcon"
                 :color="getMessageStatusColor"
-                size="12px"
+                size="15px"
               />
             </div>
+            <span class="message-text">{{ ticket.lastMessage }}</span>
           </div>
         </div>
 
@@ -417,11 +417,12 @@ export default {
   .message-content {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px; // Espaçamento menor igual WhatsApp Web
 
     .message-text {
       flex: 1;
       display: -webkit-box;
+      -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -432,10 +433,12 @@ export default {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
+      width: 12px;  // Menor para ficar mais sutil igual WhatsApp
+      height: 12px; // Menor para ficar mais sutil igual WhatsApp
+      border-radius: 2px; // Bordas menos arredondadas
+      background: transparent; // Sem background para ficar mais limpo
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-right: 2px; // Pequeno espaço extra antes do texto
     }
   }
 }
