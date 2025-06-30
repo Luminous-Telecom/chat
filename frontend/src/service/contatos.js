@@ -41,13 +41,6 @@ export function ExportarArquivoContato (data) {
   })
 }
 
-export function SyncronizarContatos () {
-  return request({
-    url: '/api/contacts/sync',
-    method: 'post'
-  })
-}
-
 export function EditarContato (contactId, data) {
   return request({
     url: `/api/contacts/${contactId}`,

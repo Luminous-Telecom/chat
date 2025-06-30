@@ -59,15 +59,6 @@
             <q-item
               clickable
               v-close-popup
-              @click="confirmarSincronizarContatos"
-            >
-              <q-item-section>
-                <q-item-label>Importar do Whatsapp</q-item-label>
-              </q-item-section>
-            </q-item>
-            <q-item
-              clickable
-              v-close-popup
               @click="modalImportarContatos = true"
             >
               <q-item-section>
@@ -303,7 +294,7 @@
 <script>
 const userId = +localStorage.getItem('userId')
 import { CriarTicket } from 'src/service/tickets'
-import { ListarContatos, ImportarArquivoContato, DeletarContato, SyncronizarContatos, ExportarArquivoContato } from 'src/service/contatos'
+import { ListarContatos, ImportarArquivoContato, DeletarContato, ExportarArquivoContato } from 'src/service/contatos'
 import ContatoModal from './ContatoModal'
 import { ListarUsuarios } from 'src/service/user'
 import { ListarEtiquetas } from 'src/service/etiquetas'
@@ -664,52 +655,6 @@ export default {
           )
         }
       })
-    },
-    confirmarSincronizarContatos () {
-      this.$q.dialog({
-        title: 'Atenção!! Deseja realmente sincronizar os contatos? ',
-        message: 'Todas os contatos com os quais você já conversou pelo Whatsapp serão criados. Isso pode demorar um pouco...',
-        cancel: {
-          label: 'Não',
-          rounded: true,
-          color: 'primary',
-          push: true
-        },
-        ok: {
-          label: 'Sim',
-          rounded: true,
-          color: 'warning',
-          push: true
-        },
-        persistent: true
-      }).onOk(async () => {
-        this.loading = true
-        await this.sincronizarContatos()
-        this.loading = false
-      })
-    },
-    async sincronizarContatos () {
-      try {
-        this.loading = true
-        await SyncronizarContatos()
-        this.$q.notify({
-          type: 'info',
-          progress: true,
-          position: 'bottom-right',
-          textColor: 'black',
-          message: 'Contatos estão sendo atualizados. Isso pode levar um tempo...',
-          actions: [{
-            icon: 'close',
-            round: true,
-            color: 'white'
-          }]
-        })
-      } catch (error) {
-        console.error(error)
-        this.$notificarErro('Ocorreu um erro ao sincronizar os contatos', error)
-        this.loading = true
-      }
-      this.loading = true
     }
 
   },
