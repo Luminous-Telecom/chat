@@ -537,58 +537,117 @@ export async function initBaileys(
       contacts: getContactStore(whatsapp.id)
     };
 
-    // Função para sincronizar contatos do WhatsApp
+    // Função para sincronizar contatos do WhatsApp (APENAS agenda pessoal)
     (baileysClient as any).syncContacts = async (): Promise<ContactInfo[]> => {
       const contactStore = getContactStore(whatsapp.id);
       const contacts: ContactInfo[] = [];
       
       try {
-        baseLogger.info(`[syncContacts] Iniciando sincronização de contatos para sessão ${whatsapp.id}`);
+        baseLogger.info(`[syncContacts] Iniciando sincronização de agenda pessoal para sessão ${whatsapp.id}`);
         
-        // Método 1: Tentar obter contatos via onWhatsApp com números conhecidos
-        // Este método funciona para números que já interagiram
-        
-        // Método 2: Usar eventos de mensagens recebidas para coletar contatos
-        // Os contatos serão coletados automaticamente quando mensagens chegarem
-        
-        // Método 3: Tentar buscar contatos da agenda do telefone (limitado)
-        try {
-          // Esta funcionalidade é limitada no WhatsApp Web
-          const chats = await wbot.groupFetchAllParticipating();
+        // Método 1: Usar contatos já coletados no store (agenda pessoal)
+        const storedContacts = Array.from(contactStore.values());
+        const personalContacts = storedContacts.filter(contact => {
+          // Excluir grupos
+          if (contact.isGroup) return false;
           
-          for (const [chatId, chatInfo] of Object.entries(chats)) {
-            if (chatId.endsWith('@g.us')) {
-              // Processar participantes de grupos
-              for (const participant of chatInfo.participants || []) {
-                const contactId = participant.id;
-                const number = contactId.split('@')[0];
+          // Excluir contatos que terminam com @g.us (grupos)
+          if (contact.id && contact.id.endsWith('@g.us')) return false;
+          
+          // Validar número de telefone
+          const cleanNumber = contact.number.replace(/\D/g, "");
+          return cleanNumber.length >= 8 && cleanNumber.length <= 15;
+        });
+        
+        contacts.push(...personalContacts);
+        baseLogger.info(`[syncContacts] ${personalContacts.length} contatos da agenda pessoal encontrados no store`);
+        
+        // Método 2: Tentar buscar contatos de chats individuais recentes
+        try {
+          if (typeof wbot.loadChats === 'function') {
+            const chats = await wbot.loadChats(50);
+            
+            // Filtrar apenas chats individuais (não grupos)
+            const individualChats = chats.filter((chat: any) => {
+              return !chat.id.endsWith('@g.us') && !chat.isGroup;
+            });
+            
+            for (const chat of individualChats) {
+              const contactId = chat.id;
+              const number = contactId.split('@')[0];
+              const cleanNumber = number.replace(/\D/g, "");
+              
+              // Validar número e verificar se já não existe
+              if (cleanNumber.length >= 8 && cleanNumber.length <= 15 && !contactStore.has(contactId)) {
+                const contactInfo: ContactInfo = {
+                  id: contactId,
+                  name: chat.name || number,
+                  pushname: chat.name || "",
+                  notify: chat.name || "",
+                  number: cleanNumber,
+                  isGroup: false,
+                  lastSeen: Date.now()
+                };
                 
-                                 if (!contactStore.has(contactId)) {
-                   const contactInfo: ContactInfo = {
-                     id: contactId,
-                     name: participant.notify || number,
-                     pushname: participant.notify || "",
-                     notify: participant.notify || "",
-                     number: number, // CORREÇÃO: Adicionar número aqui também
-                     isGroup: false,
-                     lastSeen: Date.now()
-                   };
-                   
-                   contactStore.set(contactId, contactInfo);
-                   contacts.push(contactInfo);
-                 }
+                contactStore.set(contactId, contactInfo);
+                contacts.push(contactInfo);
               }
             }
+            
+            baseLogger.info(`[syncContacts] ${individualChats.length} chats individuais processados`);
           }
-        } catch (groupErr) {
-          baseLogger.debug(`[syncContacts] Erro ao buscar grupos: ${groupErr}`);
+        } catch (chatErr) {
+          baseLogger.debug(`[syncContacts] Erro ao buscar chats individuais: ${chatErr}`);
         }
         
-        baseLogger.info(`[syncContacts] Sincronização concluída. ${contacts.length} contatos encontrados para sessão ${whatsapp.id}`);
-        return contacts;
+        // Método 3: Tentar buscar contatos via função específica (se disponível)
+        try {
+          if (typeof wbot.getContacts === 'function') {
+            const allContacts = await wbot.getContacts();
+            
+            const validContacts = allContacts.filter((contact: any) => {
+              if (contact.isGroup) return false;
+              if (contact.id && contact.id.endsWith('@g.us')) return false;
+              
+              const number = contact.number || contact.id?.split('@')[0] || '';
+              const cleanNumber = number.replace(/\D/g, "");
+              return cleanNumber.length >= 8 && cleanNumber.length <= 15;
+            });
+            
+            for (const contact of validContacts) {
+              const contactId = contact.id;
+              if (!contactStore.has(contactId)) {
+                const contactInfo: ContactInfo = {
+                  id: contactId,
+                  name: contact.name || contact.id?.split('@')[0] || "",
+                  pushname: contact.pushname || "",
+                  notify: contact.notify || "",
+                  number: contact.number || contact.id?.split('@')[0] || "",
+                  isGroup: false,
+                  lastSeen: Date.now()
+                };
+                
+                contactStore.set(contactId, contactInfo);
+                contacts.push(contactInfo);
+              }
+            }
+            
+            baseLogger.info(`[syncContacts] ${validContacts.length} contatos válidos encontrados via getContacts()`);
+          }
+        } catch (getContactsErr) {
+          baseLogger.debug(`[syncContacts] getContacts não disponível: ${getContactsErr}`);
+        }
+        
+        // Remover duplicatas
+        const uniqueContacts = contacts.filter((contact, index, self) => 
+          index === self.findIndex((c) => c.number === contact.number)
+        );
+        
+        baseLogger.info(`[syncContacts] Sincronização da agenda pessoal concluída. ${uniqueContacts.length} contatos únicos encontrados para sessão ${whatsapp.id}`);
+        return uniqueContacts;
         
       } catch (error) {
-        baseLogger.error(`[syncContacts] Erro na sincronização: ${error}`);
+        baseLogger.error(`[syncContacts] Erro na sincronização da agenda pessoal: ${error}`);
         throw error;
       }
     };

@@ -35,7 +35,7 @@ contactRoutes.get("/contacts/:contactId", isAuth, ContactController.show);
 
 contactRoutes.post("/contacts", isAuth, ContactController.store);
 
-contactRoutes.post("/contacts/sync", isAuth, ContactController.syncContacts);
+contactRoutes.post("/contacts/import-personal", isAuth, ContactController.importPersonalContacts);
 
 contactRoutes.put("/contacts/:contactId", isAuth, ContactController.update);
 

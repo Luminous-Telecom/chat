@@ -1,26 +1,22 @@
-import * as Yup from "yup";
 import { Request, Response } from "express";
 import { head } from "lodash";
-import * as ExcelJS from "exceljs";
-import path from "path";
-import { v4 as uuidV4 } from "uuid";
-import fs from "fs";
-import ListContactsService from "../services/ContactServices/ListContactsService";
+import * as Yup from "yup";
+import AppError from "../errors/AppError";
+import Contact from "../models/Contact";
 import CreateContactService from "../services/ContactServices/CreateContactService";
+import DeleteContactService from "../services/ContactServices/DeleteContactService";
+import ListContactsService from "../services/ContactServices/ListContactsService";
 import ShowContactService from "../services/ContactServices/ShowContactService";
 import UpdateContactService from "../services/ContactServices/UpdateContactService";
-import DeleteContactService from "../services/ContactServices/DeleteContactService";
 import UpdateContactTagsService from "../services/ContactServices/UpdateContactTagsService";
-
-import CheckIsValidContact from "../services/WbotServices/CheckIsValidContact";
-import GetProfilePicUrl from "../services/WbotServices/GetProfilePicUrl";
-import AppError from "../errors/AppError";
 import UpdateContactWalletsService from "../services/ContactServices/UpdateContactWalletsService";
-import SyncContactsWhatsappInstanceService from "../services/WbotServices/SyncContactsWhatsappInstanceService";
-import Whatsapp from "../models/Whatsapp";
 import { ImportFileContactsService } from "../services/WbotServices/ImportFileContactsService";
-import Contact from "../models/Contact";
+import Whatsapp from "../models/Whatsapp";
 import { getWbot } from "../libs/wbot";
+import * as ExcelJS from "exceljs";
+import * as path from "path";
+import * as fs from "fs";
+import { v4 as uuidV4 } from "uuid";
 
 type IndexQuery = {
   searchParam: string;
@@ -164,73 +160,21 @@ export const updateContactWallet = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { wallets } = req.body;
   const { contactId } = req.params;
+  const { walletId } = req.body;
   const { tenantId } = req.user;
 
-  const contact = await UpdateContactWalletsService({
-    wallets,
-    contactId,
-    tenantId,
+  const contact = await Contact.findOne({
+    where: { id: contactId, tenantId }
   });
 
-  return res.status(200).json(contact);
-};
-
-export const syncContacts = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const { tenantId } = req.user;
-  
-  const sessoes = await Whatsapp.findAll({
-    where: {
-      tenantId,
-      status: "CONNECTED",
-      type: "whatsapp",
-    },
-  });
-
-  if (!sessoes.length) {
-    throw new AppError(
-      "Não existem sessões ativas para sincronização dos contatos."
-    );
+  if (!contact) {
+    throw new AppError("ERR_CONTACT_NOT_FOUND", 404);
   }
 
-  interface SyncResult {
-    sessionId: number;
-    sessionName: string;
-    status: 'success' | 'error' | 'skipped';
-    error?: string;
-  }
+  await contact.update({ walletId });
 
-  const results: SyncResult[] = [];
-  let successful = 0;
-  let failed = 0;
-
-  for (const s of sessoes) {
-    if (s.id) {
-      try {
-        await SyncContactsWhatsappInstanceService(s.id, +tenantId);
-        results.push({ sessionId: s.id, sessionName: s.name, status: 'success' });
-        successful++;
-      } catch (error: any) {
-        console.error(`Erro na sincronização da sessão ${s.name}: ${error}`);
-        results.push({ sessionId: s.id, sessionName: s.name, status: 'error', error: error.message });
-        failed++;
-      }
-    } else {
-      results.push({ sessionId: s.id, sessionName: s.name, status: 'skipped' });
-    }
-  }
-  
-  const responseMessage = `Sincronização finalizada. Sucessos: ${successful}, Erros: ${failed}`;
-  console.info(responseMessage);
-
-  return res.status(200).json({ 
-    message: responseMessage,
-    details: results
-  });
+  return res.status(200).json({ contact });
 };
 
 export const upload = async (req: Request, res: Response) => {
@@ -312,23 +256,12 @@ export const exportContacts = async (req: Request, res: Response) => {
   }
 };
 
-export const importContactsFromNumbers = async (
+export const importPersonalContacts = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
-  const { numbers, source } = req.body; // Array de números ou source = 'csv'
-
-  if (!numbers || !Array.isArray(numbers)) {
-    throw new AppError("Lista de números é obrigatória", 400);
-  }
-
-  const results = {
-    imported: 0,
-    verified: 0,
-    errors: 0,
-    details: [] as any[]
-  };
+  const { method, data } = req.body;
 
   try {
     // Buscar uma sessão WhatsApp conectada para verificação
@@ -341,37 +274,133 @@ export const importContactsFromNumbers = async (
     });
 
     const wbot = whatsapp ? getWbot(whatsapp.id) : null;
+    const results = {
+      imported: 0,
+      verified: 0,
+      errors: 0,
+      details: [] as any[]
+    };
 
-    // Processar números em lotes
-    const batchSize = 10;
-    for (let i = 0; i < numbers.length; i += batchSize) {
-      const batch = numbers.slice(i, i + batchSize);
+    if (method === 'numbers') {
+      // Importar via lista de números
+      const { numbers } = data;
       
-      for (const numberData of batch) {
-        try {
-          const rawNumber = typeof numberData === 'string' ? numberData : numberData.number;
-          const name = typeof numberData === 'object' ? numberData.name : '';
-          
-          if (!rawNumber) {
-            results.errors++;
-            continue;
-          }
+      if (!numbers || !Array.isArray(numbers)) {
+        throw new AppError("Lista de números é obrigatória", 400);
+      }
 
-          // Limpar número
-          const cleanNumber = rawNumber.replace(/\D/g, "");
-          
-          // Validar se é um número válido
-          if (cleanNumber.length < 10 || cleanNumber.length > 13) {
-            results.details.push({
-              number: rawNumber,
-              status: 'error',
-              message: 'Número inválido'
+      // Processar números em lotes
+      const batchSize = 5;
+      for (let i = 0; i < numbers.length; i += batchSize) {
+        const batch = numbers.slice(i, i + batchSize);
+        
+        for (const number of batch) {
+          try {
+            const cleanNumber = String(number).replace(/\D/g, "");
+            
+            if (cleanNumber.length < 8 || cleanNumber.length > 15) {
+              results.errors++;
+              results.details.push({
+                number: cleanNumber,
+                status: 'invalid_number',
+                error: 'Número inválido'
+              });
+              continue;
+            }
+
+            // Verificar se contato já existe
+            const existingContact = await Contact.findOne({
+              where: { number: cleanNumber, tenantId }
             });
+
+            if (existingContact) {
+              results.details.push({
+                number: cleanNumber,
+                status: 'already_exists',
+                name: existingContact.name
+              });
+              continue;
+            }
+
+            // Tentar verificar se está no WhatsApp
+            let contactName = `Contato ${cleanNumber}`;
+            let pushname = "";
+            
+            if (wbot) {
+              try {
+                const contactInfo = await (wbot as any).onWhatsApp(cleanNumber);
+                if (contactInfo && contactInfo.length > 0 && contactInfo[0].exists) {
+                  contactName = contactInfo[0].notify || contactName;
+                  pushname = contactInfo[0].notify || "";
+                  results.verified++;
+                }
+              } catch (verifyErr) {
+                // Continuar sem verificação
+              }
+            }
+
+            // Criar contato no banco
+            await Contact.create({
+              name: contactName,
+              number: cleanNumber,
+              pushname: pushname,
+              tenantId,
+              isWAContact: true
+            });
+
+            results.imported++;
+            results.details.push({
+              number: cleanNumber,
+              status: 'imported',
+              name: contactName
+            });
+
+          } catch (contactError) {
+            results.errors++;
+            results.details.push({
+              number: String(number),
+              status: 'error',
+              error: contactError.message
+            });
+          }
+        }
+
+        // Delay entre lotes
+        if (i + batchSize < numbers.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+
+    } else if (method === 'vcf') {
+      // Importar via arquivo VCF (vCard)
+      const { vcfContent } = data;
+      
+      if (!vcfContent) {
+        throw new AppError("Conteúdo VCF é obrigatório", 400);
+      }
+
+      // Parsear VCF e extrair números
+      const vcfLines = vcfContent.split('\n');
+      const numbers = [];
+      
+      for (const line of vcfLines) {
+        if (line.startsWith('TEL:')) {
+          const number = line.replace('TEL:', '').trim();
+          if (number) numbers.push(number);
+        }
+      }
+
+      // Processar números encontrados
+      for (const number of numbers) {
+        try {
+          const cleanNumber = String(number).replace(/\D/g, "");
+          
+          if (cleanNumber.length < 8 || cleanNumber.length > 15) {
             results.errors++;
             continue;
           }
 
-          // Verificar se já existe
+          // Verificar se contato já existe
           const existingContact = await Contact.findOne({
             where: { number: cleanNumber, tenantId }
           });
@@ -379,70 +408,48 @@ export const importContactsFromNumbers = async (
           if (existingContact) {
             results.details.push({
               number: cleanNumber,
-              status: 'exists',
-              message: 'Contato já existe'
+              status: 'already_exists',
+              name: existingContact.name
             });
             continue;
           }
 
-          // Tentar verificar se está no WhatsApp (se houver sessão)
-          let isOnWhatsApp = false;
-          let whatsappName = '';
-          
-          if (wbot) {
-            try {
-              const [result] = await (wbot as any).onWhatsApp(cleanNumber);
-              if (result && result.exists) {
-                isOnWhatsApp = true;
-                whatsappName = result.name || '';
-                results.verified++;
-              }
-            } catch (verifyErr) {
-              // Continuar mesmo se verificação falhar
-            }
-          }
-
           // Criar contato
-          const contactName = name || whatsappName || `Contato ${cleanNumber}`;
-          
           await Contact.create({
+            name: `Contato ${cleanNumber}`,
             number: cleanNumber,
-            name: contactName,
+            pushname: "",
             tenantId,
-            isWAContact: isOnWhatsApp,
-            pushname: whatsappName
-          } as any);
+            isWAContact: true
+          });
 
           results.imported++;
           results.details.push({
             number: cleanNumber,
-            name: contactName,
             status: 'imported',
-            onWhatsApp: isOnWhatsApp
+            name: `Contato ${cleanNumber}`
           });
 
-        } catch (contactErr: any) {
+        } catch (contactError) {
           results.errors++;
-          results.details.push({
-            number: numberData,
-            status: 'error',
-            message: contactErr.message
-          });
         }
       }
 
-      // Pausa entre lotes para não sobrecarregar
-      if (i + batchSize < numbers.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    } else {
+      throw new AppError("Método de importação inválido. Use 'numbers' ou 'vcf'", 400);
     }
 
+    const responseMessage = `Importação concluída. Importados: ${results.imported}, Verificados: ${results.verified}, Erros: ${results.errors}`;
+    
     return res.status(200).json({
-      message: `Importação concluída. ${results.imported} importados, ${results.verified} verificados no WhatsApp, ${results.errors} erros`,
-      results
+      message: responseMessage,
+      summary: results,
+      details: results.details
     });
 
   } catch (error: any) {
-    throw new AppError(`Erro na importação: ${error.message}`, 500);
+    return res.status(400).json({
+      error: error.message
+    });
   }
 };
