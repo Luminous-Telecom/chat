@@ -29,4 +29,11 @@ whatsappSessionRoutes.post(
   WhatsAppSessionController.connectByNumber
 );
 
+// NOVA ROTA: Debug de sessões
+whatsappSessionRoutes.get(
+  "/whatsappsession/:whatsappId/debug",
+  isAuth,
+  WhatsAppSessionController.debugSession
+);
+
 export default whatsappSessionRoutes;

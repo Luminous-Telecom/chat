@@ -251,6 +251,77 @@ export const connectByNumber = async (
   return res.status(200).json({ message: "Iniciando sessão via número." });
 };
 
+// NOVO ENDPOINT: Debug e correção de sessões
+export const debugSession = async (
+  req: UserRequest,
+  res: Response
+): Promise<Response> => {
+  const { whatsappId } = req.params;
+  const { tenantId } = req.user;
+
+  try {
+    const whatsapp = await Whatsapp.findOne({
+      where: { id: whatsappId, tenantId },
+    });
+
+    if (!whatsapp) {
+      throw new AppError("No WhatsApp instance found with this ID.");
+    }
+
+    // Import das funções necessárias
+    const { 
+      getBaileysSession, 
+      fixSessionUserInfo 
+    } = await import("../libs/baileys");
+
+    const session = getBaileysSession(Number(whatsappId));
+    
+    const debugInfo = {
+      sessionExists: !!session,
+      whatsappStatus: whatsapp.status,
+      sessionId: whatsappId,
+      tenantId: tenantId
+    };
+
+    if (session) {
+      debugInfo.connectionState = (session as any)?.connection;
+      debugInfo.hasWebSocket = !!(session as any)?.ws;
+      debugInfo.wsReadyState = (session as any)?.ws?.readyState;
+      debugInfo.hasUser = !!(session as any)?.user;
+      debugInfo.userInfo = (session as any)?.user;
+      debugInfo.hasAuthState = !!(session as any)?.authState;
+      debugInfo.hasCredentials = !!(session as any)?.authState?.creds;
+      debugInfo.meFromCreds = (session as any)?.authState?.creds?.me;
+      
+      // Tentar corrigir se não tem user
+      if (!debugInfo.hasUser) {
+        console.log(`🔧 Attempting to fix user info for session ${whatsappId}...`);
+        const fixed = await fixSessionUserInfo(Number(whatsappId));
+        debugInfo.userFixAttempted = true;
+        debugInfo.userFixed = fixed;
+        
+        // Verificar novamente após tentativa de correção
+        debugInfo.hasUserAfterFix = !!(session as any)?.user;
+        debugInfo.userInfoAfterFix = (session as any)?.user;
+      }
+    }
+
+    console.log(`🔍 Debug info for session ${whatsappId}:`, debugInfo);
+
+    return res.status(200).json({
+      message: "Debug session completed",
+      debug: debugInfo
+    });
+
+  } catch (err) {
+    console.error(`❌ Error debugging session ${whatsappId}:`, err);
+    return res.status(500).json({
+      error: "Failed to debug session",
+      details: err.message
+    });
+  }
+};
+
 export default {
- store, remove, update, connectByNumber 
+ store, remove, update, connectByNumber, debugSession 
 };

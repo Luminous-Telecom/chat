@@ -798,6 +798,36 @@ export async function initBaileys(
           retries: 0
         });
 
+        // CORREÇÃO: Garantir que o user seja definido corretamente
+        try {
+          // Aguardar um pouco para o Baileys processar completamente a autenticação
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Verificar se user está definido, senão tentar definir manualmente
+          if (!(wbot as any).user) {
+            const authState = (wbot as any).authState;
+            if (authState?.creds?.me) {
+              (wbot as any).user = authState.creds.me;
+              baseLogger.info(`User manually set for session ${whatsapp.id}: ${authState.creds.me.id}`);
+            } else {
+              // Tentar buscar informações do usuário
+              try {
+                const me = await wbot.user;
+                if (me) {
+                  (wbot as any).user = me;
+                  baseLogger.info(`User retrieved for session ${whatsapp.id}: ${me.id}`);
+                }
+              } catch (userErr) {
+                baseLogger.warn(`Could not get user for session ${whatsapp.id}: ${userErr}`);
+              }
+            }
+          } else {
+            baseLogger.info(`Session ${whatsapp.id} user already defined: ${(wbot as any).user.id}`);
+          }
+        } catch (userSetupErr) {
+          baseLogger.warn(`Error setting up user for session ${whatsapp.id}: ${userSetupErr}`);
+        }
+
         // Setup handlers after successful connection
         try {
           const setupHandlers = await getSetupAdditionalHandlers();
@@ -940,6 +970,93 @@ export const getSessionCount = (): number => {
 export const isSessionConnected = (whatsappId: number): boolean => {
   const session = getBaileysSession(whatsappId);
   return session ? (session as any)?.connection === "open" : false;
+};
+
+// NOVA FUNÇÃO: Corrigir sessões sem user definido
+export const fixSessionUserInfo = async (whatsappId: number): Promise<boolean> => {
+  try {
+    const session = getBaileysSession(whatsappId);
+    if (!session) {
+      baseLogger.warn(`[fixSessionUserInfo] Session ${whatsappId} not found`);
+      return false;
+    }
+
+    const connectionState = (session as any)?.connection;
+    if (connectionState !== "open") {
+      baseLogger.warn(`[fixSessionUserInfo] Session ${whatsappId} not open: ${connectionState}`);
+      return false;
+    }
+
+    // Verificar se já tem user
+    if ((session as any).user) {
+      baseLogger.info(`[fixSessionUserInfo] Session ${whatsappId} user already defined`);
+      return true;
+    }
+
+    baseLogger.info(`[fixSessionUserInfo] Attempting to fix user info for session ${whatsappId}`);
+
+    // Tentar definir user das credenciais
+    const authState = (session as any).authState;
+    if (authState?.creds?.me) {
+      (session as any).user = authState.creds.me;
+      baseLogger.info(`[fixSessionUserInfo] User set from credentials for session ${whatsappId}: ${authState.creds.me.id}`);
+      return true;
+    }
+
+    // Tentar buscar user via Baileys
+    try {
+      const me = await (session as any).user;
+      if (me) {
+        (session as any).user = me;
+        baseLogger.info(`[fixSessionUserInfo] User retrieved for session ${whatsappId}: ${me.id}`);
+        return true;
+      }
+    } catch (userErr) {
+      baseLogger.warn(`[fixSessionUserInfo] Could not retrieve user for session ${whatsappId}: ${userErr}`);
+    }
+
+    // Tentar via fetchStatus do próprio número
+    try {
+      const whatsapp = await import("../models/Whatsapp");
+      const whatsappInstance = await whatsapp.default.findByPk(whatsappId);
+      if (whatsappInstance?.number) {
+        const jid = `${whatsappInstance.number}@s.whatsapp.net`;
+        const status = await (session as any).fetchStatus(jid);
+        if (status) {
+          const userInfo = {
+            id: jid,
+            name: whatsappInstance.name,
+            notify: whatsappInstance.name
+          };
+          (session as any).user = userInfo;
+          baseLogger.info(`[fixSessionUserInfo] User created from WhatsApp info for session ${whatsappId}`);
+          return true;
+        }
+      }
+    } catch (statusErr) {
+      baseLogger.warn(`[fixSessionUserInfo] Could not get status for session ${whatsappId}: ${statusErr}`);
+    }
+
+    baseLogger.warn(`[fixSessionUserInfo] Could not fix user info for session ${whatsappId}`);
+    return false;
+  } catch (err) {
+    baseLogger.error(`[fixSessionUserInfo] Error fixing session ${whatsappId}: ${err}`);
+    return false;
+  }
+};
+
+// NOVA FUNÇÃO: Verificar e corrigir todas as sessões
+export const fixAllSessionsUserInfo = async (): Promise<void> => {
+  const sessions = getAllSessions();
+  baseLogger.info(`[fixAllSessionsUserInfo] Checking ${sessions.length} sessions for user info`);
+  
+  for (const session of sessions) {
+    try {
+      await fixSessionUserInfo((session as any).id);
+    } catch (err) {
+      baseLogger.error(`[fixAllSessionsUserInfo] Error checking session ${(session as any).id}: ${err}`);
+    }
+  }
 };
 
 export { sessions };

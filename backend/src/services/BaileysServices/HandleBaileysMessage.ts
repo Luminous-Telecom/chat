@@ -63,13 +63,67 @@ const shouldLogWarning = (key: string): boolean => {
 
 const isSessionReady = (wbot: BaileysClient): boolean => {
   try {
-    return !!(
-      wbot &&
-      (wbot as any).ws &&
-      (wbot as any).ws.readyState === 1 &&
-      (wbot as any).user
-    );
+    const hasWbot = !!wbot;
+    const hasWs = !!(wbot as any).ws;
+    const wsReadyState = (wbot as any).ws?.readyState;
+    const hasUser = !!(wbot as any).user;
+    const connectionState = (wbot as any).connection;
+    
+    // CORREÇÃO: Verificação mais inteligente
+    // Se a conexão está "open", consideramos pronto mesmo com wsState undefined
+    if (hasWbot && connectionState === "open" && hasUser) {
+      // Verificação adicional: se tem WebSocket mas readyState é undefined,
+      // pode ser que esteja funcionando mas não expondo a propriedade
+      if (hasWs && (wsReadyState === 1 || wsReadyState === undefined)) {
+        return true;
+      }
+      // Se não tem WebSocket mas conexão está open, ainda pode estar OK
+      if (!hasWs) {
+        // Log para debug mas ainda considera válido
+        const sessionKey = `session-no-ws-${wbot?.id}`;
+        if (shouldLogWarning(sessionKey)) {
+          logger.warn(
+            `[isSessionReady] Session ${wbot?.id} has open connection but no WebSocket - may still work`
+          );
+        }
+        return true; // Tentar processar mesmo assim
+      }
+    }
+    
+    // Verificação tradicional para outros casos
+    const isBasicReady = hasWbot && hasWs && wsReadyState === 1;
+    const isConnectionOpen = connectionState === "open";
+    
+    // Se tem user e WebSocket com readyState correto, está definitivamente pronto
+    if (isBasicReady && hasUser) {
+      return true;
+    }
+    
+    // Se não tem user mas a conexão está open e WebSocket ativo, pode estar em processo de inicialização
+    if (isBasicReady && isConnectionOpen) {
+      // Verificar se tem pelo menos as propriedades básicas da autenticação
+      const authState = (wbot as any).authState;
+      const creds = authState?.creds;
+      
+      if (creds && creds.me) {
+        // Tem credenciais válidas, mesmo sem user definido ainda
+        return true;
+      }
+    }
+    
+    // Log detalhado apenas quando realmente não conseguir determinar se está pronto
+    const sessionKey = `session-debug-${wbot?.id}`;
+    if (shouldLogWarning(sessionKey)) {
+      logger.warn(
+        `[isSessionReady] Session ${wbot?.id} not ready: ` +
+        `hasWbot=${hasWbot}, hasWs=${hasWs}, wsState=${wsReadyState}, ` +
+        `hasUser=${hasUser}, connection=${connectionState}`
+      );
+    }
+    
+    return false;
   } catch (err) {
+    logger.error(`[isSessionReady] Error checking session ${(wbot as any)?.id}: ${err}`);
     return false;
   }
 };
