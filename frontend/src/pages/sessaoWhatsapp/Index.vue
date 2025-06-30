@@ -371,15 +371,20 @@ export default {
               return
             }
             if (['DISCONNECTED', 'TIMEOUT', 'ERROR'].includes(status.status)) {
-              this.$q.notify({
-                type: 'negative',
-                message: 'Falha na conexão. Tente novamente.',
-                position: 'bottom-right'
-              })
+              // Só mostra o alerta se for a última tentativa
+              if (attempts + 1 >= maxAttempts) {
+                this.$q.notify({
+                  type: 'negative',
+                  message: 'Falha na conexão. Tente novamente.',
+                  position: 'bottom-right'
+                })
+              } else {
+                // Continua tentando conectar silenciosamente
+                attempts++
+                setTimeout(checkConnection, 2000)
+              }
               return
             }
-            attempts++
-            setTimeout(checkConnection, 2000)
           } catch (error) {
             // Erro ao verificar conexão
             attempts++
