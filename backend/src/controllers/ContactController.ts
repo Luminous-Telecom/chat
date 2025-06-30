@@ -20,6 +20,7 @@ import SyncContactsWhatsappInstanceService from "../services/WbotServices/SyncCo
 import Whatsapp from "../models/Whatsapp";
 import { ImportFileContactsService } from "../services/WbotServices/ImportFileContactsService";
 import Contact from "../models/Contact";
+import { getWbot } from "../libs/wbot";
 
 type IndexQuery = {
   searchParam: string;
@@ -181,6 +182,7 @@ export const syncContacts = async (
   res: Response
 ): Promise<Response> => {
   const { tenantId } = req.user;
+  
   const sessoes = await Whatsapp.findAll({
     where: {
       tenantId,
@@ -195,19 +197,40 @@ export const syncContacts = async (
     );
   }
 
-  await Promise.all(
-    sessoes.map(async s => {
-      if (s.id) {
-        if (s.id) {
-          await SyncContactsWhatsappInstanceService(s.id, +tenantId);
-        }
-      }
-    })
-  );
+  interface SyncResult {
+    sessionId: number;
+    sessionName: string;
+    status: 'success' | 'error' | 'skipped';
+    error?: string;
+  }
 
-  return res
-    .status(200)
-    .json({ message: "Contatos estão sendo sincronizados." });
+  const results: SyncResult[] = [];
+  let successful = 0;
+  let failed = 0;
+
+  for (const s of sessoes) {
+    if (s.id) {
+      try {
+        await SyncContactsWhatsappInstanceService(s.id, +tenantId);
+        results.push({ sessionId: s.id, sessionName: s.name, status: 'success' });
+        successful++;
+      } catch (error: any) {
+        console.error(`Erro na sincronização da sessão ${s.name}: ${error}`);
+        results.push({ sessionId: s.id, sessionName: s.name, status: 'error', error: error.message });
+        failed++;
+      }
+    } else {
+      results.push({ sessionId: s.id, sessionName: s.name, status: 'skipped' });
+    }
+  }
+  
+  const responseMessage = `Sincronização finalizada. Sucessos: ${successful}, Erros: ${failed}`;
+  console.info(responseMessage);
+
+  return res.status(200).json({ 
+    message: responseMessage,
+    details: results
+  });
 };
 
 export const upload = async (req: Request, res: Response) => {
@@ -286,5 +309,140 @@ export const exportContacts = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Erro ao salvar arquivo:", err);
     return res.status(500).send("Erro ao exportar contatos");
+  }
+};
+
+export const importContactsFromNumbers = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { tenantId } = req.user;
+  const { numbers, source } = req.body; // Array de números ou source = 'csv'
+
+  if (!numbers || !Array.isArray(numbers)) {
+    throw new AppError("Lista de números é obrigatória", 400);
+  }
+
+  const results = {
+    imported: 0,
+    verified: 0,
+    errors: 0,
+    details: [] as any[]
+  };
+
+  try {
+    // Buscar uma sessão WhatsApp conectada para verificação
+    const whatsapp = await Whatsapp.findOne({
+      where: {
+        tenantId,
+        status: "CONNECTED",
+        type: "whatsapp",
+      },
+    });
+
+    const wbot = whatsapp ? getWbot(whatsapp.id) : null;
+
+    // Processar números em lotes
+    const batchSize = 10;
+    for (let i = 0; i < numbers.length; i += batchSize) {
+      const batch = numbers.slice(i, i + batchSize);
+      
+      for (const numberData of batch) {
+        try {
+          const rawNumber = typeof numberData === 'string' ? numberData : numberData.number;
+          const name = typeof numberData === 'object' ? numberData.name : '';
+          
+          if (!rawNumber) {
+            results.errors++;
+            continue;
+          }
+
+          // Limpar número
+          const cleanNumber = rawNumber.replace(/\D/g, "");
+          
+          // Validar se é um número válido
+          if (cleanNumber.length < 10 || cleanNumber.length > 13) {
+            results.details.push({
+              number: rawNumber,
+              status: 'error',
+              message: 'Número inválido'
+            });
+            results.errors++;
+            continue;
+          }
+
+          // Verificar se já existe
+          const existingContact = await Contact.findOne({
+            where: { number: cleanNumber, tenantId }
+          });
+
+          if (existingContact) {
+            results.details.push({
+              number: cleanNumber,
+              status: 'exists',
+              message: 'Contato já existe'
+            });
+            continue;
+          }
+
+          // Tentar verificar se está no WhatsApp (se houver sessão)
+          let isOnWhatsApp = false;
+          let whatsappName = '';
+          
+          if (wbot) {
+            try {
+              const [result] = await (wbot as any).onWhatsApp(cleanNumber);
+              if (result && result.exists) {
+                isOnWhatsApp = true;
+                whatsappName = result.name || '';
+                results.verified++;
+              }
+            } catch (verifyErr) {
+              // Continuar mesmo se verificação falhar
+            }
+          }
+
+          // Criar contato
+          const contactName = name || whatsappName || `Contato ${cleanNumber}`;
+          
+          await Contact.create({
+            number: cleanNumber,
+            name: contactName,
+            tenantId,
+            isWAContact: isOnWhatsApp,
+            pushname: whatsappName
+          } as any);
+
+          results.imported++;
+          results.details.push({
+            number: cleanNumber,
+            name: contactName,
+            status: 'imported',
+            onWhatsApp: isOnWhatsApp
+          });
+
+        } catch (contactErr: any) {
+          results.errors++;
+          results.details.push({
+            number: numberData,
+            status: 'error',
+            message: contactErr.message
+          });
+        }
+      }
+
+      // Pausa entre lotes para não sobrecarregar
+      if (i + batchSize < numbers.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    return res.status(200).json({
+      message: `Importação concluída. ${results.imported} importados, ${results.verified} verificados no WhatsApp, ${results.errors} erros`,
+      results
+    });
+
+  } catch (error: any) {
+    throw new AppError(`Erro na importação: ${error.message}`, 500);
   }
 };

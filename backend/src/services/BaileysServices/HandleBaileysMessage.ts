@@ -469,6 +469,24 @@ const processMessageContact = async (
     });
   }
 
+  // NOVO: Adicionar contato ao store personalizado para sincronização
+  if (wbot && (wbot as any).store?.contacts) {
+    try {
+      const contactStore = (wbot as any).store.contacts;
+      contactStore.set(contactJid, {
+        id: contactJid,
+        name: contactName,
+        pushname: contactPushname,
+        notify: contactPushname,
+        number: contactNumber, // CORREÇÃO: Adicionar o número!
+        isGroup: false,
+        lastSeen: Date.now()
+      });
+    } catch (storeErr) {
+      // Erro silencioso - store é opcional
+    }
+  }
+
   // Criar objeto de contato compatível
   const msgContact = {
     id: {

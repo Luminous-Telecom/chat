@@ -21,18 +21,7 @@
     "pm2:delete": "pm2 delete ecosystem.config.js",
     "pm2:logs": "pm2 logs",
     "pm2:monit": "pm2 monit",
-    "clear-sessions": "ts-node src/utils/clearCorruptedSessions.ts",
-    "session-monitor": "ts-node src/commands/sessionMonitor.ts",
-    "session-diagnostics": "ts-node src/commands/sessionDiagnostics.ts",
-    "session-health": "ts-node src/commands/sessionDiagnostics.ts health",
-    "session-diagnose": "ts-node src/commands/sessionDiagnostics.ts diagnose",
-    "session-restart": "ts-node src/commands/sessionDiagnostics.ts restart",
-    "session-monitor-continuous": "ts-node src/commands/sessionDiagnostics.ts monitor",
-    "session-fix-all": "ts-node src/commands/sessionDiagnostics.ts fix-all",
-    "campaign-ack-diagnostics": "ts-node src/commands/campaignAckDiagnostics.ts",
-    "test-campaign-ack": "node src/commands/testCampaignAckSimple.js",
-    "debug-campaign-ack": "node src/commands/debugCampaignAck.js",
-    "check-campaign-status": "node src/commands/checkCampaignStatus.js"
+    "clear-sessions": "ts-node src/utils/clearCorruptedSessions.ts"
   },
   "engines": {
     "node": ">=18"

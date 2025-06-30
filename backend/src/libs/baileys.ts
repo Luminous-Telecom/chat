@@ -13,6 +13,32 @@ import { logger as baseLogger } from "../utils/logger";
 import { BaileysClient } from "../types/baileys";
 import Whatsapp from "../models/Whatsapp";
 
+// Store personalizado para contatos
+interface ContactInfo {
+  id: string;
+  name?: string;
+  pushname?: string;
+  notify?: string;
+  number: string; // CORREÇÃO: Adicionar number como obrigatório
+  isGroup: boolean;
+  lastSeen?: number;
+}
+
+const contactStores = new Map<number, Map<string, ContactInfo>>();
+
+// Função para obter ou criar store de contatos para uma sessão
+const getContactStore = (sessionId: number): Map<string, ContactInfo> => {
+  if (!contactStores.has(sessionId)) {
+    contactStores.set(sessionId, new Map());
+  }
+  return contactStores.get(sessionId)!;
+};
+
+// Função para limpar store de contatos
+const clearContactStore = (sessionId: number): void => {
+  contactStores.delete(sessionId);
+};
+
 // Dynamic imports for circular dependency resolution
 let socketIO: any;
 let setupAdditionalHandlers: any;
@@ -212,6 +238,7 @@ export const removeBaileysSession = async (
       messageQueue.delete(whatsappId);
       processingLock.delete(whatsappId);
       lastProcessTime.delete(whatsappId);
+      clearContactStore(whatsappId);
 
       // Remove event listeners essenciais (otimizado)
       const criticalEvents = [
@@ -446,9 +473,9 @@ export async function initBaileys(
         // Método 1: Business Profile
         try {
           const businessProfile = await wbot.getBusinessProfile(id);
-          if (businessProfile?.name) {
-            contactName = businessProfile.name;
-            contactPushname = businessProfile.name;
+          if (businessProfile && (businessProfile as any)?.description) {
+            contactName = (businessProfile as any).description || "";
+            contactPushname = (businessProfile as any).description || "";
           }
         } catch (businessErr) {
           baseLogger.debug(`[getContactById] No business profile`);
@@ -461,7 +488,7 @@ export async function initBaileys(
             if (profilePic) {
               const contactInfo = await wbot.onWhatsApp(contactNumber);
               if (contactInfo && contactInfo.length > 0) {
-                const contact = contactInfo[0];
+                const contact = contactInfo[0] as any;
                 contactName = contact.notify || contact.name || "";
                 contactPushname = contact.notify || "";
               }
@@ -474,7 +501,7 @@ export async function initBaileys(
         // Método 3: Status
         if (!contactName) {
           try {
-            const status = await wbot.fetchStatus(id);
+            const status = await wbot.fetchStatus(id) as any;
             if (status?.setBy && status.setBy !== contactNumber) {
               contactName = status.setBy;
               contactPushname = status.setBy;
@@ -503,6 +530,67 @@ export async function initBaileys(
         isMyContact: true,
         getProfilePicUrl: async () => ""
       } as any;
+    };
+
+    // Adicionar store personalizado para contatos
+    (baileysClient as any).store = {
+      contacts: getContactStore(whatsapp.id)
+    };
+
+    // Função para sincronizar contatos do WhatsApp
+    (baileysClient as any).syncContacts = async (): Promise<ContactInfo[]> => {
+      const contactStore = getContactStore(whatsapp.id);
+      const contacts: ContactInfo[] = [];
+      
+      try {
+        baseLogger.info(`[syncContacts] Iniciando sincronização de contatos para sessão ${whatsapp.id}`);
+        
+        // Método 1: Tentar obter contatos via onWhatsApp com números conhecidos
+        // Este método funciona para números que já interagiram
+        
+        // Método 2: Usar eventos de mensagens recebidas para coletar contatos
+        // Os contatos serão coletados automaticamente quando mensagens chegarem
+        
+        // Método 3: Tentar buscar contatos da agenda do telefone (limitado)
+        try {
+          // Esta funcionalidade é limitada no WhatsApp Web
+          const chats = await wbot.groupFetchAllParticipating();
+          
+          for (const [chatId, chatInfo] of Object.entries(chats)) {
+            if (chatId.endsWith('@g.us')) {
+              // Processar participantes de grupos
+              for (const participant of chatInfo.participants || []) {
+                const contactId = participant.id;
+                const number = contactId.split('@')[0];
+                
+                                 if (!contactStore.has(contactId)) {
+                   const contactInfo: ContactInfo = {
+                     id: contactId,
+                     name: participant.notify || number,
+                     pushname: participant.notify || "",
+                     notify: participant.notify || "",
+                     number: number, // CORREÇÃO: Adicionar número aqui também
+                     isGroup: false,
+                     lastSeen: Date.now()
+                   };
+                   
+                   contactStore.set(contactId, contactInfo);
+                   contacts.push(contactInfo);
+                 }
+              }
+            }
+          }
+        } catch (groupErr) {
+          baseLogger.debug(`[syncContacts] Erro ao buscar grupos: ${groupErr}`);
+        }
+        
+        baseLogger.info(`[syncContacts] Sincronização concluída. ${contacts.length} contatos encontrados para sessão ${whatsapp.id}`);
+        return contacts;
+        
+      } catch (error) {
+        baseLogger.error(`[syncContacts] Erro na sincronização: ${error}`);
+        throw error;
+      }
     };
     
     (baileysClient as any).getNumberId = async (number: string) => {
