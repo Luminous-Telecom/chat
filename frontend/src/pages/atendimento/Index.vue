@@ -168,50 +168,50 @@
                      </q-avatar>
                   </div>
                   <div class="contact-info-details">
-                    <div class="contact-name" style="display: flex; align-items: center;">
-                      <span v-if="!editandoNomeContato">{{ ticketFocado.contact.name || '' }}</span>
-                      <q-input
-                        v-else
-                        v-model="novoNomeContato"
-                        dense
-                        autofocus
-                        @keyup.enter="salvarNomeContato"
-                        style="max-width: 180px;"
-                      />
-                      <q-btn
-                        v-if="!editandoNomeContato"
-                        flat
-                        dense
-                        round
-                        icon="edit"
-                        size="sm"
-                        @click="iniciarEdicaoNomeContato"
-                        class="q-ml-xs"
-                        :disable="!ticketFocado.contact.id"
-                        style="min-width: 24px;"
-                      />
-                      <q-btn
-                        v-if="editandoNomeContato"
-                        flat
-                        dense
-                        round
-                        icon="check"
-                        size="sm"
-                        @click="salvarNomeContato"
-                        class="q-ml-xs"
-                        style="min-width: 24px; color: green;"
-                      />
-                      <q-btn
-                        v-if="editandoNomeContato"
-                        flat
-                        dense
-                        round
-                        icon="close"
-                        size="sm"
-                        @click="cancelarEdicaoNomeContato"
-                        class="q-ml-xs"
-                        style="min-width: 24px; color: red;"
-                      />
+                    <div class="contact-name" style="display: flex; align-items: center; justify-content: center; width: 100%;">
+                      <template v-if="!editandoNomeContato">
+                        <span style="font-size: 1.2em; font-weight: 500;">{{ ticketFocado.contact.name || '' }}</span>
+                        <q-btn
+                          flat
+                          dense
+                          round
+                          icon="edit"
+                          size="sm"
+                          @click="iniciarEdicaoNomeContato"
+                          class="q-ml-xs"
+                          :disable="!ticketFocado.contact.id"
+                          style="min-width: 24px; margin-left: 8px;"
+                        />
+                      </template>
+                      <template v-else>
+                        <q-input
+                          v-model="novoNomeContato"
+                          dense
+                          autofocus
+                          @keyup.enter="salvarNomeContato"
+                          style="max-width: 180px; text-align: center;"
+                        />
+                        <q-btn
+                          flat
+                          dense
+                          round
+                          icon="check"
+                          size="sm"
+                          @click="salvarNomeContato"
+                          class="q-ml-xs"
+                          style="min-width: 24px; color: green; margin-left: 8px;"
+                        />
+                        <q-btn
+                          flat
+                          dense
+                          round
+                          icon="close"
+                          size="sm"
+                          @click="cancelarEdicaoNomeContato"
+                          class="q-ml-xs"
+                          style="min-width: 24px; color: red; margin-left: 4px;"
+                        />
+                      </template>
                     </div>
                     <div
                       class="contact-number"
