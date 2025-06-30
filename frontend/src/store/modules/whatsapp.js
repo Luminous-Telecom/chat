@@ -20,13 +20,10 @@ const whatsapp = {
       state.whatsApps = [...newWhats]
     },
     UPDATE_SESSION (state, payload) {
-      console.log('🔄 UPDATE_SESSION mutation called with:', payload)
       const whatsApp = payload
       const whatsAppIndex = state.whatsApps.findIndex(s => s.id === whatsApp.id)
 
       if (whatsAppIndex !== -1) {
-        console.log('📝 Updating existing WhatsApp in store:', whatsAppIndex)
-
         // Use Vue.set to ensure reactivity for each property
         Vue.set(state.whatsApps[whatsAppIndex], 'status', whatsApp.status)
         Vue.set(state.whatsApps[whatsAppIndex], 'qrcode', whatsApp.qrcode)
@@ -36,15 +33,10 @@ const whatsapp = {
         if (whatsApp.retries !== undefined) {
           Vue.set(state.whatsApps[whatsAppIndex], 'retries', whatsApp.retries)
         }
-
-        console.log('✅ WhatsApp updated in store:', state.whatsApps[whatsAppIndex])
-
         // Force reactivity by creating a new array reference
         state.whatsApps = [...state.whatsApps]
-
         return state.whatsApps
       } else {
-        console.log('❌ WhatsApp not found in store for ID:', whatsApp.id)
         return state.whatsApps
       }
     },
