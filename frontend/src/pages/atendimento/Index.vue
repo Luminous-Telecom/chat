@@ -811,6 +811,21 @@
         </q-card>
       </q-dialog>
 
+      <q-dialog v-model="mostrarPopupPermissaoAudio" persistent>
+        <q-card>
+          <q-card-section class="row items-center">
+            <q-icon name="volume_up" color="primary" size="2em" class="q-mr-md" />
+            <div>
+              <div class="text-h6">Permissão de áudio necessária</div>
+              <div>Para receber notificações sonoras, clique no botão abaixo para liberar o áudio.</div>
+            </div>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn color="primary" label="Liberar áudio" @click="liberarPermissaoAudio" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
     </q-layout>
   </div>
 </template>
@@ -845,7 +860,7 @@ import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
 import ModalTimeline from './ModalTimeline.vue'
 import ModernSearch from 'src/components/ModernSearch'
 
-import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio } from 'src/helpers/helpersNotifications'
+import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
 import { socketIO } from 'src/utils/socket'
 
 const socket = socketIO()
@@ -911,7 +926,8 @@ export default {
       loadingEntrarConversa: false,
       searchTimeout: null,
       editandoNomeContato: false,
-      novoNomeContato: ''
+      novoNomeContato: '',
+      mostrarPopupPermissaoAudio: false
     }
   },
   computed: {
@@ -1035,7 +1051,22 @@ export default {
       try {
         await tocarSomNotificacao()
       } catch (error) {
+        if (error && error.name === 'NotAllowedError') {
+          this.mostrarPopupPermissaoAudio = true
+        }
         console.error('[playNotificationSound] Erro ao tocar som:', error)
+      }
+    },
+    async liberarPermissaoAudio () {
+      try {
+        await solicitarPermissaoAudio()
+        this.mostrarPopupPermissaoAudio = false
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Não foi possível liberar o áudio. Tente novamente.',
+          position: 'bottom-right'
+        })
       }
     },
 
@@ -1132,6 +1163,7 @@ export default {
     handlerNotifications (data) {
       // Verificar se deve mostrar notificação do navegador
       // Verificar se data tem a estrutura esperada
+
       if (!data) {
         console.warn('Dados de notificação vazios:', data)
         return
@@ -1165,31 +1197,7 @@ export default {
       }
 
       // Notificação removida conforme solicitado
-      /*
-      const options = {
-        body: `${message.body} - ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
-        icon: contact.profilePicUrl,
-        tag: ticket.id,
-        renotify: true
-      }
-
-      const notification = new Notification(
-        `Mensagem de ${contact.name}`,
-        options
-      )
-
-      setTimeout(() => {
-        notification.close()
-      }, 10000)
-
-      notification.onclick = e => {
-        e.preventDefault()
-        window.focus()
-        this.$store.dispatch('AbrirChatMensagens', ticket)
-        this.$router.push({ name: 'atendimento' })
-        // history.push(`/tickets/${ticket.id}`);
-      }
-      */
+      /* ... código original ... */
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()
@@ -1913,8 +1921,6 @@ export default {
       // Força atualização do ticket focado para mostrar a nova mensagem agendada
       this.$forceUpdate()
 
-      console.log('Mensagem agendada com sucesso:', mensagem)
-
       this.$q.notify({
         type: 'info',
         message: `Mensagem agendada para ${this.$formatarData(mensagem.scheduleDate, 'dd/MM/yyyy HH:mm')}`,
@@ -1934,8 +1940,6 @@ export default {
 
       // Força atualização da interface
       this.$forceUpdate()
-
-      console.log('Mensagem cancelada:', mensagemId)
     },
     iniciarEdicaoNomeContato () {
       this.novoNomeContato = this.ticketFocado.contact.name
@@ -1991,11 +1995,14 @@ export default {
       }
     }
 
-    // Solicitar permissão de áudio e inicializar serviço
+    // Verificar permissão de áudio antes de solicitar
     try {
-      await solicitarPermissaoAudio()
+      if (!temPermissaoAudio()) {
+        this.mostrarPopupPermissaoAudio = true
+      }
       inicializarServicoAudio()
     } catch (error) {
+      this.mostrarPopupPermissaoAudio = true
       console.error('[mounted] Erro ao inicializar áudio:', error)
     }
 
@@ -2032,6 +2039,46 @@ export default {
 
     // Define configurações iniciais
     this.$setConfigsUsuario({ isDark: this.$q.dark.isActive })
+
+    // Log global de todos os eventos recebidos pelo socket
+    if (window.socketIO) {
+      const socket = window.socketIO()
+      socket.onAny((event, ...args) => {
+      })
+      // Adicionar listener para appMessage
+      const usuario = JSON.parse(localStorage.getItem('usuario'))
+      if (usuario && usuario.tenantId) {
+        const eventName = `tenant:${usuario.tenantId}:appMessage`
+        socket.on(eventName, (data) => {
+          try {
+            const payload = Array.isArray(data) ? data[0] : data
+            if (payload && payload.action === 'create' && payload.message && !payload.message.fromMe) {
+              this.playNotificationSound()
+            }
+          } catch (e) {
+            console.error('[appMessage] Erro ao processar notificação:', e)
+          }
+        })
+      }
+    } else if (typeof socket !== 'undefined' && socket && socket.onAny) {
+      socket.onAny((event, ...args) => {
+      })
+      // Adicionar listener para appMessage
+      const usuario = JSON.parse(localStorage.getItem('usuario'))
+      if (usuario && usuario.tenantId) {
+        const eventName = `tenant:${usuario.tenantId}:appMessage`
+        socket.on(eventName, (data) => {
+          try {
+            const payload = Array.isArray(data) ? data[0] : data
+            if (payload && payload.action === 'create' && payload.message && !payload.message.fromMe) {
+              this.playNotificationSound()
+            }
+          } catch (e) {
+            console.error('[appMessage] Erro ao processar notificação:', e)
+          }
+        })
+      }
+    }
   },
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
