@@ -901,13 +901,24 @@ export default {
     // Watcher para monitorar mudanças nos WhatsApps e adicionar notificações de erro
     whatsapps: {
       handler (newWhatsapps, oldWhatsapps) {
-        if (!oldWhatsapps) return
+        // Remover qualquer notificação de erro relacionada ao canal que ficou CONNECTED
+        newWhatsapps.forEach(whatsapp => {
+          if (whatsapp.status === 'CONNECTED') {
+            (this.errorNotifications || [])
+              .filter(n =>
+                (n.details?.whatsappId === whatsapp.id) ||
+                (n.message && n.message.includes(whatsapp.name)) ||
+                (n.title && n.title.includes(whatsapp.name))
+              )
+              .forEach(n => this.removerNotificacaoErro(n.id))
+          }
+        })
 
-        // Verificar se houve mudança de status para problemas
+        // Lógica existente para adicionar notificações de erro
+        if (!oldWhatsapps) return
         newWhatsapps.forEach((whatsapp, index) => {
           const oldWhatsapp = oldWhatsapps[index]
           if (oldWhatsapp && oldWhatsapp.status !== whatsapp.status) {
-            // Se mudou para um status problemático, adicionar notificação
             if (['DISCONNECTED', 'TIMEOUT', 'PAIRING'].includes(whatsapp.status)) {
               let titulo = ''
               let mensagem = ''
