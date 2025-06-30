@@ -17,20 +17,43 @@ import { BaileysMessageAdapter } from "./BaileysMessageAdapter";
 import Message from "../../models/Message";
 import CreateMessageService from "../MessageServices/CreateMessageService";
 
+// Cache para controlar logs repetitivos
+const warningCache = new Map<string, number>();
+const WARNING_COOLDOWN = 30000; // 30 segundos
+
+// Cache para mensagens com erro de criptografia já processadas
+const cryptoErrorProcessedMessages = new Set<string>();
+const CRYPTO_ERROR_CACHE_SIZE = 1000; // Limitar tamanho do cache
+const CRYPTO_ERROR_CACHE_TTL = 3600000; // 1 hora
+
 // Cache para controlar tentativas de reconexão
 const reconnectionAttempts = new Map<number, number>();
 const MAX_RECONNECTION_ATTEMPTS = 3;
-const RECONNECTION_COOLDOWN = 30000; // 30 segundos
+const RECONNECTION_COOLDOWN = 300000; // 5 minutos
 
-// Cache para controlar rate limiting de warnings
-const warningCache = new Map<string, number>();
-const WARNING_THROTTLE_TIME = 60000; // 1 minuto
+// Função para limpar cache de crypto errors antigos
+const cleanupCryptoErrorCache = () => {
+  if (cryptoErrorProcessedMessages.size > CRYPTO_ERROR_CACHE_SIZE) {
+    // Limpar os primeiros itens (mais antigos)
+    const itemsToRemove = cryptoErrorProcessedMessages.size - CRYPTO_ERROR_CACHE_SIZE + 100;
+    const iterator = cryptoErrorProcessedMessages.values();
+    for (let i = 0; i < itemsToRemove; i++) {
+      const item = iterator.next();
+      if (!item.done) {
+        cryptoErrorProcessedMessages.delete(item.value);
+      }
+    }
+  }
+};
+
+// Limpar cache periodicamente
+setInterval(cleanupCryptoErrorCache, CRYPTO_ERROR_CACHE_TTL);
 
 const shouldLogWarning = (key: string): boolean => {
   const now = Date.now();
   const lastWarning = warningCache.get(key);
   
-  if (!lastWarning || now - lastWarning > WARNING_THROTTLE_TIME) {
+  if (!lastWarning || now - lastWarning > WARNING_COOLDOWN) {
     warningCache.set(key, now);
     return true;
   }
@@ -40,33 +63,13 @@ const shouldLogWarning = (key: string): boolean => {
 
 const isSessionReady = (wbot: BaileysClient): boolean => {
   try {
-    const sessionState = (wbot as any)?.connection;
-    const wsExists = !!(wbot as any)?.ws;
-    const wsState = (wbot as any)?.ws?.readyState;
-    
-    // MELHORADO: Aceitar mais estados de conexão como válidos
-    // 'open' é o ideal, mas 'connecting' com WebSocket ativo também deve processar mensagens
-    const isStateValid = sessionState === "open" || 
-                        (sessionState === "connecting" && wsExists) ||
-                        (sessionState === "connecting" && !wsExists); // Pode estar reconectando
-    
-    // WebSocket states: CONNECTING = 0, OPEN = 1, CLOSING = 2, CLOSED = 3
-    // Aceitar estados 0, 1 e até mesmo undefined durante reconexão
-    const isWsOk = !wsExists || 
-                   wsState === undefined || 
-                   wsState === 0 || 
-                   wsState === 1;
-    
-    const isConnected = isStateValid && isWsOk;
-    
-    // Log apenas quando realmente há problema
-    if (!isConnected && sessionState === "close") {
-      logger.debug(`[isSessionReady] Session ${wbot.id} truly not ready - State: ${sessionState}, WS: ${wsExists}, WS State: ${wsState}`);
-    }
-    
-    return isConnected;
+    return !!(
+      wbot &&
+      (wbot as any).ws &&
+      (wbot as any).ws.readyState === 1 &&
+      (wbot as any).user
+    );
   } catch (err) {
-    logger.error(`[isSessionReady] Error checking session ${wbot.id}: ${err}`);
     return false;
   }
 };
@@ -82,6 +85,36 @@ const shouldProcessEncryptedMessage = (msg: proto.IWebMessageInfo): boolean => {
   const hasBasicData = !!(msg.key.id && msg.key.remoteJid && msg.messageTimestamp);
   
   return hasBasicData;
+};
+
+// Função para verificar se uma mensagem com crypto error já foi processada
+const isCryptoErrorAlreadyProcessed = async (msgId: string, tenantId: number): Promise<boolean> => {
+  // 1. Verificar cache em memória primeiro (mais rápido)
+  if (cryptoErrorProcessedMessages.has(msgId)) {
+    return true;
+  }
+  
+  // 2. Verificar no banco de dados
+  try {
+    const existingMessage = await Message.findOne({
+      where: { 
+        messageId: msgId,
+        tenantId: tenantId
+      }
+    });
+    
+    if (existingMessage) {
+      // Adicionar ao cache para próximas verificações
+      cryptoErrorProcessedMessages.add(msgId);
+      cleanupCryptoErrorCache();
+      return true;
+    }
+  } catch (dbError) {
+    // Em caso de erro no banco, continuar processamento para ser seguro
+    logger.error(`[HandleBaileysMessage] Error checking crypto message in DB: ${dbError}`);
+  }
+  
+  return false;
 };
 
 const HandleBaileysMessage = async (
@@ -107,6 +140,19 @@ const HandleBaileysMessage = async (
         if (!msg || !msg.key) {
           resolve();
           return;
+        }
+
+        // NOVO: Verificação precoce para mensagens com erro de criptografia já processadas
+        if (!msg.message && msg.key.id) {
+          const whatsapp = await ShowWhatsAppService({ id: wbot.id });
+          if (whatsapp) {
+            const alreadyProcessed = await isCryptoErrorAlreadyProcessed(msg.key.id, whatsapp.tenantId);
+            if (alreadyProcessed) {
+              // Mensagem com crypto error já foi processada - sair silenciosamente
+              resolve();
+              return;
+            }
+          }
         }
 
         // Verificar se é um erro de criptografia de grupo
@@ -578,6 +624,12 @@ const processMessage = async (
         messageData: systemMessageData,
         tenantId: ticket.tenantId,
       });
+      
+      // Marcar no cache que esta mensagem com crypto error foi processada
+      if (msg.key.id) {
+        cryptoErrorProcessedMessages.add(msg.key.id);
+        cleanupCryptoErrorCache();
+      }
       
       logger.info(`[HandleBaileysMessage] Created system message for crypto error: ${msg.key.id}`);
     } else if (adaptedMessage.hasMedia) {

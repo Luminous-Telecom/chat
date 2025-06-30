@@ -16,6 +16,15 @@ import socketEmit from "../../../helpers/socketEmit";
 // Cache para mensagens em processamento
 const processingMessages = new Set<string>();
 
+// Cache para controlar logs repetitivos de mensagens já existentes
+const existingMessageLogCache = new Set<string>();
+const EXISTING_MESSAGE_LOG_TTL = 300000; // 5 minutos
+
+// Limpar cache de logs periodicamente
+setInterval(() => {
+  existingMessageLogCache.clear();
+}, EXISTING_MESSAGE_LOG_TTL);
+
 const writeFileAsync = promisify(writeFile);
 
 const getMediaType = (mimetype: string | undefined): string => {
@@ -23,8 +32,6 @@ const getMediaType = (mimetype: string | undefined): string => {
   const [type] = mimetype.split("/");
   return type || "application";
 };
-
-
 
 const getFileExtension = (mimetype: string | undefined): string => {
   if (!mimetype) return "bin";
@@ -105,14 +112,14 @@ const processVerifyMediaMessage = async (
       return;
     }
 
-    // Log detalhado para debug de mensagens de imagem
-    logger.info(
+    // Log detalhado apenas quando necessário (reduzido para debug)
+    logger.debug(
       `[VerifyMediaMessage] DEBUG - Processing message ${msg.id.id} for ticket ${ticket.id}`
     );
-    logger.info(
+    logger.debug(
       `[VerifyMediaMessage] DEBUG - Message type: ${msg.type}, hasMedia: ${msg.hasMedia}, fromMe: ${msg.fromMe}`
     );
-    logger.info(
+    logger.debug(
       `[VerifyMediaMessage] DEBUG - Message body: ${msg.body || 'empty'}`
     );
 
@@ -133,14 +140,18 @@ const processVerifyMediaMessage = async (
     });
 
     if (existingMessage) {
-      logger.info(
-        `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} already exists in database, skipping`
-      );
+      // Log apenas uma vez por mensagem para evitar spam
+      if (!existingMessageLogCache.has(msg.id.id)) {
+        logger.debug(
+          `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} already exists in database, skipping`
+        );
+        existingMessageLogCache.add(msg.id.id);
+      }
       processingMessages.delete(msg.id.id);
       return existingMessage;
     }
 
-    logger.info(
+    logger.debug(
       `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} is new, proceeding with processing`
     );
 
@@ -151,14 +162,14 @@ const processVerifyMediaMessage = async (
     const validMediaTypes = ["image", "video", "audio", "document", "sticker", "contactMessage", "imageMessage", "videoMessage", "audioMessage", "documentMessage", "stickerMessage"];
     const invalidTypes = ["messageContextInfo", "conversation", "extendedTextMessage", "chat", "text", "ephemeralMessage"];
     
-    // Log para debug de tipos de mensagem
-    logger.info(
+    // Log para debug de tipos de mensagem (reduzido)
+    logger.debug(
       `[VerifyMediaMessage] DEBUG - Message type validation - type: ${msg.type}, hasMedia: ${msg.hasMedia}`
     );
     
     // Rejeitar tipos explicitamente não-mídia
     if (invalidTypes.includes(msg.type)) {
-      logger.info(
+      logger.debug(
         `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} rejected - type '${msg.type}' is not a media type`
       );
       processingMessages.delete(msg.id.id);
@@ -166,14 +177,14 @@ const processVerifyMediaMessage = async (
     }
     
     if (!msg.hasMedia && !validMediaTypes.includes(msg.type)) {
-      logger.warn(
+      logger.debug(
         `[VerifyMediaMessage] DEBUG - Message ${msg.id.id} has no media content for ticket ${ticket.id} - hasMedia: ${msg.hasMedia}, type: ${msg.type}`
       );
       processingMessages.delete(msg.id.id);
       return;
     }
 
-    logger.info(
+    logger.debug(
       `[VerifyMediaMessage] DEBUG - Starting media download for message ${msg.id.id}`
     );
 
