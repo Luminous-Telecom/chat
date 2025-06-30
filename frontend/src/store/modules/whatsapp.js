@@ -1,3 +1,5 @@
+import Vue from 'vue'
+
 const whatsapp = {
   state: {
     whatsApps: []
@@ -24,11 +26,22 @@ const whatsapp = {
 
       if (whatsAppIndex !== -1) {
         console.log('📝 Updating existing WhatsApp in store:', whatsAppIndex)
-        state.whatsApps[whatsAppIndex].status = whatsApp.status
-        state.whatsApps[whatsAppIndex].updatedAt = whatsApp.updatedAt
-        state.whatsApps[whatsAppIndex].qrcode = whatsApp.qrcode
-        state.whatsApps[whatsAppIndex].retries = whatsApp.retries
+
+        // Use Vue.set to ensure reactivity for each property
+        Vue.set(state.whatsApps[whatsAppIndex], 'status', whatsApp.status)
+        Vue.set(state.whatsApps[whatsAppIndex], 'qrcode', whatsApp.qrcode)
+        if (whatsApp.updatedAt) {
+          Vue.set(state.whatsApps[whatsAppIndex], 'updatedAt', whatsApp.updatedAt)
+        }
+        if (whatsApp.retries !== undefined) {
+          Vue.set(state.whatsApps[whatsAppIndex], 'retries', whatsApp.retries)
+        }
+
         console.log('✅ WhatsApp updated in store:', state.whatsApps[whatsAppIndex])
+
+        // Force reactivity by creating a new array reference
+        state.whatsApps = [...state.whatsApps]
+
         return state.whatsApps
       } else {
         console.log('❌ WhatsApp not found in store for ID:', whatsApp.id)

@@ -201,6 +201,16 @@ export default {
         }
       },
       immediate: true
+    },
+    'channel.qrcode': {
+      handler (newQrcode, oldQrcode) {
+        console.log('🔄 QR Code watcher triggered!')
+        console.log('📱 New QR Code:', newQrcode ? 'QR CODE RECEIVED' : 'NO QR CODE')
+        console.log('📱 Old QR Code:', oldQrcode ? 'HAD QR CODE' : 'NO PREVIOUS QR CODE')
+        console.log('🆔 Channel ID:', this.channel.id)
+        console.log('📊 Channel status:', this.channel.status)
+      },
+      immediate: true
     }
   },
   data () {
@@ -218,7 +228,14 @@ export default {
     cQrcode () {
       console.log('🔍 cQrcode computed called, channel:', this.channel)
       console.log('📱 QR Code value:', this.channel.qrcode)
-      return this.channel.qrcode
+      console.log('📊 Channel status:', this.channel.status)
+      console.log('🆔 Channel ID:', this.channel.id)
+
+      // Force reactivity by accessing the property
+      const qrcode = this.channel && this.channel.qrcode ? this.channel.qrcode : ''
+      console.log('✅ Returning QR code:', qrcode ? 'QR CODE PRESENT' : 'NO QR CODE')
+
+      return qrcode
     }
   },
   methods: {

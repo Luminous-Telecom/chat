@@ -263,8 +263,22 @@ export default {
   },
   watch: {
     whatsapps: {
-      handler () {
+      handler (newWhatsapps) {
         this.canais = JSON.parse(JSON.stringify(this.whatsapps))
+
+        console.log('🔄 Whatsapps store updated, checking selected whatsapp...')
+
+        // Se há um whatsapp selecionado e o modal está aberto, atualize a referência
+        if (this.whatsappSelecionado && this.whatsappSelecionado.id && this.abrirModalQR) {
+          const updatedWhatsapp = newWhatsapps.find(w => w.id === this.whatsappSelecionado.id)
+          if (updatedWhatsapp) {
+            console.log('📱 Updating selected whatsapp reference:', updatedWhatsapp)
+            console.log('🔑 QR Code in updated whatsapp:', updatedWhatsapp.qrcode ? 'QR CODE PRESENT' : 'NO QR CODE')
+
+            // Force update the reference
+            this.whatsappSelecionado = { ...updatedWhatsapp }
+          }
+        }
       },
       deep: true
     }
@@ -273,7 +287,15 @@ export default {
     ...mapGetters(['whatsapps']),
     cDadosWhatsappSelecionado () {
       const { id } = this.whatsappSelecionado
-      return this.whatsapps.find(w => w.id === id)
+      console.log('🔍 cDadosWhatsappSelecionado computed called for ID:', id)
+      console.log('📊 Current whatsapps in store:', this.whatsapps.length)
+
+      const found = this.whatsapps.find(w => w.id === id)
+      console.log('📱 Found whatsapp:', found)
+      console.log('🔑 QR Code in found whatsapp:', found ? found.qrcode : 'NO WHATSAPP FOUND')
+      console.log('📊 Status in found whatsapp:', found ? found.status : 'NO WHATSAPP FOUND')
+
+      return found
     }
   },
   methods: {

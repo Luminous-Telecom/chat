@@ -103,10 +103,25 @@ export default {
 
       socket.on(`${usuario.tenantId}:whatsappSession`, data => {
         console.log('🔍 Socket received whatsappSession:', data)
+        console.log('📱 Session data:', data.session)
+        console.log('🔑 QR Code in session:', data.session.qrcode ? 'QR CODE PRESENT' : 'NO QR CODE')
+        console.log('📊 Session status:', data.session.status)
+        console.log('🆔 Session ID:', data.session.id)
+
         if (data.action === 'update') {
           console.log('📱 Updating session in store:', data.session)
           this.$store.commit('UPDATE_SESSION', data.session)
+
+          // Force Vue to re-render by emitting the event
+          console.log('📡 Emitting UPDATE_SESSION event via $root')
           this.$root.$emit('UPDATE_SESSION', data.session)
+
+          // Additional debug: check store state after update
+          setTimeout(() => {
+            const storeSession = this.$store.state.whatsapp.whatsApps.find(w => w.id === data.session.id)
+            console.log('🔍 Store session after update:', storeSession)
+            console.log('🔑 QR Code in store after update:', storeSession ? storeSession.qrcode : 'NOT FOUND')
+          }, 100)
         }
 
         if (data.action === 'readySession') {
