@@ -657,9 +657,11 @@ export async function initBaileys(
       return { _serialized: `${number}@c.us` };
     };
     
+    // Salvar referência original do logout do WASocket
+    const originalLogout = wbot.logout.bind(wbot);
     (baileysClient as any).logout = async () => {
-      // Implement logout method
-      await wbot.logout();
+      // Chama o método original do WASocket, evitando recursão infinita
+      await originalLogout();
     };
 
     // Optimized credentials handler with debouncing
