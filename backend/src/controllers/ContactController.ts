@@ -17,6 +17,7 @@ import * as ExcelJS from "exceljs";
 import * as path from "path";
 import * as fs from "fs";
 import { v4 as uuidV4 } from "uuid";
+import CheckIsValidContact from "../services/WbotServices/CheckIsValidContact";
 
 type IndexQuery = {
   searchParam: string;
