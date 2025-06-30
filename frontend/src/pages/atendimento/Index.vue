@@ -168,8 +168,50 @@
                      </q-avatar>
                   </div>
                   <div class="contact-info-details">
-                    <div class="contact-name">
-                      {{ ticketFocado.contact.name || '' }}
+                    <div class="contact-name" style="display: flex; align-items: center;">
+                      <span v-if="!editandoNomeContato">{{ ticketFocado.contact.name || '' }}</span>
+                      <q-input
+                        v-else
+                        v-model="novoNomeContato"
+                        dense
+                        autofocus
+                        @keyup.enter="salvarNomeContato"
+                        style="max-width: 180px;"
+                      />
+                      <q-btn
+                        v-if="!editandoNomeContato"
+                        flat
+                        dense
+                        round
+                        icon="edit"
+                        size="sm"
+                        @click="iniciarEdicaoNomeContato"
+                        class="q-ml-xs"
+                        :disable="!ticketFocado.contact.id"
+                        style="min-width: 24px;"
+                      />
+                      <q-btn
+                        v-if="editandoNomeContato"
+                        flat
+                        dense
+                        round
+                        icon="check"
+                        size="sm"
+                        @click="salvarNomeContato"
+                        class="q-ml-xs"
+                        style="min-width: 24px; color: green;"
+                      />
+                      <q-btn
+                        v-if="editandoNomeContato"
+                        flat
+                        dense
+                        round
+                        icon="close"
+                        size="sm"
+                        @click="cancelarEdicaoNomeContato"
+                        class="q-ml-xs"
+                        style="min-width: 24px; color: red;"
+                      />
                     </div>
                     <div
                       class="contact-number"
@@ -790,7 +832,7 @@ import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { ListarMensagensRapidas } from 'src/service/mensagensRapidas'
 import { ListarEtiquetas } from 'src/service/etiquetas'
-import { EditarEtiquetasContato, EditarCarteiraContato } from 'src/service/contatos'
+import { EditarEtiquetasContato, EditarCarteiraContato, EditarContato } from 'src/service/contatos'
 import { RealizarLogout } from 'src/service/login'
 import { ListarUsuarios } from 'src/service/user'
 import MensagemChat from './MensagemChat.vue'
@@ -867,7 +909,9 @@ export default {
       usuarioSelecionado: null,
       usuario: {},
       loadingEntrarConversa: false,
-      searchTimeout: null
+      searchTimeout: null,
+      editandoNomeContato: false,
+      novoNomeContato: ''
     }
   },
   computed: {
@@ -1892,6 +1936,37 @@ export default {
       this.$forceUpdate()
 
       console.log('Mensagem cancelada:', mensagemId)
+    },
+    iniciarEdicaoNomeContato () {
+      this.novoNomeContato = this.ticketFocado.contact.name
+      this.editandoNomeContato = true
+    },
+    cancelarEdicaoNomeContato () {
+      this.editandoNomeContato = false
+      this.novoNomeContato = ''
+    },
+    async salvarNomeContato () {
+      if (!this.novoNomeContato || this.novoNomeContato === this.ticketFocado.contact.name) {
+        this.cancelarEdicaoNomeContato()
+        return
+      }
+      try {
+        const response = await EditarContato(this.ticketFocado.contact.id, { name: this.novoNomeContato })
+        const data = response?.data || response?.contact || response
+        this.$store.commit('UPDATE_CONTACT', data)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Nome do contato atualizado com sucesso!',
+          position: 'bottom-right'
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao atualizar nome do contato',
+          position: 'bottom-right'
+        })
+      }
+      this.cancelarEdicaoNomeContato()
     }
   },
   beforeMount () {
