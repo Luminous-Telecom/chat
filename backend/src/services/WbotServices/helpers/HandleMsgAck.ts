@@ -194,8 +194,8 @@ export const HandleMsgAck = async (
   // CRÍTICO: Validar ACK antes de processar
   if (!isValidAck(ack, mediaType)) {
     if (ack === 5) {
-      // Log de debug apenas, não error - é comportamento normal do WhatsApp
-      logger.debug(`[HandleMsgAck] ACK 5 ignorado para messageId ${messageId} (mediaType: ${mediaType || 'undefined'}) - não é áudio`);
+      // Removido log de debug para ACK 5 ignorado
+      // logger.debug(`[HandleMsgAck] ACK 5 ignorado para messageId ${messageId} (mediaType: ${mediaType || 'undefined'}) - não é áudio`);
     } else if (ack > 3) {
       // Log apenas para ACKs realmente inválidos
       logger.warn(`[HandleMsgAck] ACK inválido ${ack} ignorado para messageId: ${messageId}`);
