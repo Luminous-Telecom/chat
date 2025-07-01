@@ -2024,15 +2024,9 @@ export default {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 8px;
   justify-content: flex-end;
   padding-right: 8px;
   flex-direction: row;
-}
-
-/* Espaçamento extra entre grupos de mensagens */
-.user-header-with-spacing {
-  margin-top: 16px;
 }
 
 /* Espaçamento reduzido para mensagens agrupadas */
