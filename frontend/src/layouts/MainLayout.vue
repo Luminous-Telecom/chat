@@ -806,6 +806,13 @@ export default {
     },
     navigateAndClose (routeName) {
       this.topMenuOpen = false
+
+      // Limpar ticket focado se navegando para páginas que não são de atendimento
+      const atendimentoRoutes = ['atendimento', 'chat-empty', 'chat', 'chat-contatos']
+      if (!atendimentoRoutes.includes(routeName)) {
+        this.$store.commit('TICKET_FOCADO', {})
+      }
+
       this.$router.push({ name: routeName }).catch(err => {
         if (err.name !== 'NavigationDuplicated') throw err
       })
@@ -947,6 +954,20 @@ export default {
         })
       },
       deep: true
+    },
+    $route: {
+      handler (newRoute, oldRoute) {
+        // Limpar ticket focado se navegando para páginas que não são de atendimento
+        const atendimentoRoutes = ['atendimento', 'chat-empty', 'chat', 'chat-contatos']
+        const isAtendimentoRoute = atendimentoRoutes.includes(newRoute.name)
+        const wasAtendimentoRoute = oldRoute ? atendimentoRoutes.includes(oldRoute.name) : false
+
+        // Se estava em atendimento e agora não está, limpar ticket focado
+        if (wasAtendimentoRoute && !isAtendimentoRoute) {
+          this.$store.commit('TICKET_FOCADO', {})
+        }
+      },
+      immediate: false
     }
   },
   destroyed () {
