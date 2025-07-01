@@ -1,6 +1,13 @@
 import { SequelizeOptions } from "sequelize-typescript";
 import { Dialect } from "sequelize";
 
+// Carregar dotenv se não estiver carregado (necessário para Sequelize CLI)
+if (!process.env.POSTGRES_HOST) {
+  require('dotenv').config({
+    path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+  });
+}
+
 // Validação das variáveis de ambiente obrigatórias
 const requiredEnvVars = {
   POSTGRES_HOST: process.env.POSTGRES_HOST,
