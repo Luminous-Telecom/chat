@@ -276,7 +276,7 @@ export const debugSession = async (
 
     const session = getBaileysSession(Number(whatsappId));
     
-    const debugInfo = {
+    const debugInfo: any = {
       sessionExists: !!session,
       whatsappStatus: whatsapp.status,
       sessionId: whatsappId,

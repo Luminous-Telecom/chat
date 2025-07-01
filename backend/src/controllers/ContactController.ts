@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { head } from "lodash";
 import * as Yup from "yup";
+import * as ExcelJS from "exceljs";
+import * as path from "path";
+import * as fs from "fs";
+import { v4 as uuidV4 } from "uuid";
 import AppError from "../errors/AppError";
 import Contact from "../models/Contact";
 import CreateContactService from "../services/ContactServices/CreateContactService";
@@ -13,10 +17,6 @@ import UpdateContactWalletsService from "../services/ContactServices/UpdateConta
 import { ImportFileContactsService } from "../services/WbotServices/ImportFileContactsService";
 import Whatsapp from "../models/Whatsapp";
 import { getWbot } from "../libs/wbot";
-import * as ExcelJS from "exceljs";
-import * as path from "path";
-import * as fs from "fs";
-import { v4 as uuidV4 } from "uuid";
 import CheckIsValidContact from "../services/WbotServices/CheckIsValidContact";
 
 type IndexQuery = {
@@ -71,7 +71,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 
   const waNumber = await CheckIsValidContact(newContact.number, tenantId);
 
-  const profilePicUrl = await GetProfilePicUrl(newContact.number, tenantId);
+  const profilePicUrl = undefined;
 
   const contact = await CreateContactService({
     ...newContact,
@@ -162,7 +162,7 @@ export const updateContactWallet = async (
   res: Response
 ): Promise<Response> => {
   const { contactId } = req.params;
-  const { walletId } = req.body;
+  const { wallets } = req.body;
   const { tenantId } = req.user;
 
   const contact = await Contact.findOne({
@@ -173,7 +173,7 @@ export const updateContactWallet = async (
     throw new AppError("ERR_CONTACT_NOT_FOUND", 404);
   }
 
-  await contact.update({ walletId });
+  await contact.update({ wallets });
 
   return res.status(200).json({ contact });
 };
@@ -311,7 +311,7 @@ export const importPersonalContacts = async (
 
             // Verificar se contato já existe
             const existingContact = await Contact.findOne({
-              where: { number: cleanNumber, tenantId }
+              where: { number: cleanNumber, tenantId: Number(tenantId) }
             });
 
             if (existingContact) {
@@ -345,9 +345,11 @@ export const importPersonalContacts = async (
               name: contactName,
               number: cleanNumber,
               pushname: pushname,
-              tenantId,
-              isWAContact: true
-            });
+              tenantId: Number(tenantId),
+              isWAContact: true,
+              isGroup: false,
+              isUser: false
+            } as any);
 
             results.imported++;
             results.details.push({
@@ -368,7 +370,7 @@ export const importPersonalContacts = async (
 
         // Delay entre lotes
         if (i + batchSize < numbers.length) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => { setTimeout(resolve, 2000); });
         }
       }
 
@@ -382,7 +384,7 @@ export const importPersonalContacts = async (
 
       // Parsear VCF e extrair números
       const vcfLines = vcfContent.split('\n');
-      const numbers = [];
+      const numbers: string[] = [];
       
       for (const line of vcfLines) {
         if (line.startsWith('TEL:')) {
@@ -403,7 +405,7 @@ export const importPersonalContacts = async (
 
           // Verificar se contato já existe
           const existingContact = await Contact.findOne({
-            where: { number: cleanNumber, tenantId }
+            where: { number: cleanNumber, tenantId: Number(tenantId) }
           });
 
           if (existingContact) {
@@ -420,9 +422,11 @@ export const importPersonalContacts = async (
             name: `Contato ${cleanNumber}`,
             number: cleanNumber,
             pushname: "",
-            tenantId,
-            isWAContact: true
-          });
+            tenantId: Number(tenantId),
+            isWAContact: true,
+            isGroup: false,
+            isUser: false
+          } as any);
 
           results.imported++;
           results.details.push({

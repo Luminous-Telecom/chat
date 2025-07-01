@@ -25,7 +25,7 @@ const getContactNameFromWhatsApp = async (
 
   try {
     // Tentar encontrar uma sessão WhatsApp ativa para este tenant
-    let wbot = null;
+    let wbot: any = null;
     try {
       const whatsapps = await require("../../../models/Whatsapp").default.findAll({
         where: { 

@@ -564,8 +564,8 @@ export async function initBaileys(
         
         // Método 2: Tentar buscar contatos de chats individuais recentes
         try {
-          if (typeof wbot.loadChats === 'function') {
-            const chats = await wbot.loadChats(50);
+          if (typeof (wbot as any).loadChats === 'function') {
+            const chats = await (wbot as any).loadChats(50);
             
             // Filtrar apenas chats individuais (não grupos)
             const individualChats = chats.filter((chat: any) => {
@@ -602,8 +602,8 @@ export async function initBaileys(
         
         // Método 3: Tentar buscar contatos via função específica (se disponível)
         try {
-          if (typeof wbot.getContacts === 'function') {
-            const allContacts = await wbot.getContacts();
+          if (typeof (wbot as any).getContacts === 'function') {
+            const allContacts = await (wbot as any).getContacts();
             
             const validContacts = allContacts.filter((contact: any) => {
               if (contact.isGroup) return false;
