@@ -16,6 +16,8 @@ import Contact from "../../models/Contact";
 import { BaileysMessageAdapter } from "./BaileysMessageAdapter";
 import Message from "../../models/Message";
 import CreateMessageService from "../MessageServices/CreateMessageService";
+import Ticket from "../../models/Ticket";
+import { Op } from "sequelize";
 
 // Cache para controlar logs repetitivos
 const warningCache = new Map<string, number>();
@@ -303,7 +305,42 @@ const HandleBaileysMessage = async (
                           (msg.message && Object.keys(msg.message).includes('reactionMessage'));
 
         // Se for reação, não incrementar unreadMessages
-        const unreadMessages = msg.key.fromMe || isReaction ? 0 : 1;
+        let unreadMessages = 0;
+        
+        if (!msg.key.fromMe && !isReaction) {
+          // Para mensagens recebidas, contar mensagens não lidas reais do banco
+          const contact = await VerifyContact(msgContact, tenantId);
+          
+          // Buscar ticket existente para este contato
+          const existingTicket = await Ticket.findOne({
+            where: {
+              status: {
+                [Op.or]: ["open", "pending"],
+              },
+              tenantId,
+              whatsappId: wbot.id,
+              contactId: groupContact ? groupContact.id : contact.id,
+            },
+          });
+
+          if (existingTicket) {
+            // Se já existe ticket, contar mensagens não lidas + 1 (nova mensagem)
+            const unreadCount = await Message.count({
+              where: {
+                ticketId: existingTicket.id,
+                read: false,
+                fromMe: false,
+              },
+            });
+            unreadMessages = unreadCount + 1;
+            console.log(`[DEBUG] Ticket ${existingTicket.id} - Mensagens não lidas existentes: ${unreadCount}, Nova mensagem: 1, Total: ${unreadMessages}`);
+          } else {
+            // Se não existe ticket, é a primeira mensagem
+            unreadMessages = 1;
+            console.log(`[DEBUG] Novo ticket - Primeira mensagem: ${unreadMessages}`);
+          }
+        }
+
         const contact = await VerifyContact(msgContact, tenantId);
 
         const ticket = await FindOrCreateTicketService({
