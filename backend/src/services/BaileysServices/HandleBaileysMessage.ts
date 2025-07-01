@@ -333,11 +333,9 @@ const HandleBaileysMessage = async (
               },
             });
             unreadMessages = unreadCount + 1;
-            console.log(`[DEBUG] Ticket ${existingTicket.id} - Mensagens não lidas existentes: ${unreadCount}, Nova mensagem: 1, Total: ${unreadMessages}`);
           } else {
             // Se não existe ticket, é a primeira mensagem
             unreadMessages = 1;
-            console.log(`[DEBUG] Novo ticket - Primeira mensagem: ${unreadMessages}`);
           }
         }
 
