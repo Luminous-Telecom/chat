@@ -498,7 +498,7 @@ export default {
         // Badge para atendimentos em andamento
         if (menu.routeName === 'atendimento' && menu.query?.status === 'open') {
           let totalOpen = 0
-          let totalUnread = 0
+          let ticketsWithUnread = 0
 
           if (this.notifications) {
             // Usar os dados combinados
@@ -507,15 +507,13 @@ export default {
             }
 
             if (Array.isArray(this.notifications.ticketsUnread)) {
-              // Somar o total de mensagens não lidas de todos os tickets
-              totalUnread = this.notifications.ticketsUnread.reduce((sum, ticket) => {
-                return sum + (ticket.unreadMessages || 0)
-              }, 0)
+              // Contar apenas a quantidade de tickets com mensagens não lidas
+              ticketsWithUnread = this.notifications.ticketsUnread.length
             } else if (Array.isArray(this.notifications.tickets)) {
-              // Fallback: somar mensagens não lidas dos tickets
-              totalUnread = this.notifications.tickets.reduce((sum, ticket) => {
-                return sum + (ticket.unreadMessages || 0)
-              }, 0)
+              // Fallback: contar tickets que têm mensagens não lidas
+              ticketsWithUnread = this.notifications.tickets.filter(ticket =>
+                ticket.unreadMessages && ticket.unreadMessages > 0
+              ).length
             }
           }
 
@@ -523,10 +521,10 @@ export default {
           let badgeColor = 'blue'
           let badgeCount = totalOpen
 
-          // Se há mensagens não lidas, mostrar badge vermelho com contagem de não lidas
-          if (totalUnread > 0) {
+          // Se há tickets com mensagens não lidas, mostrar badge vermelho com contagem de tickets
+          if (ticketsWithUnread > 0) {
             badgeColor = 'red'
-            badgeCount = totalUnread
+            badgeCount = ticketsWithUnread
           }
 
           // Sempre mostrar o badge azul, mesmo se badgeCount for 0
