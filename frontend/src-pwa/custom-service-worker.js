@@ -7,6 +7,7 @@
 /*
  * Service Worker customizado para notificações push (Quasar PWA)
  * https://quasar.dev/quasar-cli/developing-pwa/service-worker-customization
+ * Version: 2.0.0 - Fixed notification click handler
  */
 
 /* global clients */
@@ -14,6 +15,10 @@
 import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
 import { NetworkFirst } from 'workbox-strategies'
+
+// Versão do service worker para forçar atualização
+const SW_VERSION = '2.0.0'
+console.log(`Service Worker ${SW_VERSION} iniciado`)
 
 // Precaching dos assets gerados pelo Quasar CLI
 precacheAndRoute(self.__WB_MANIFEST || [])
@@ -92,52 +97,53 @@ self.addEventListener('push', (event) => {
 
 // Listener para clique na notificação
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notificação clicada:', event.action)
-
+  // Fechar a notificação
   event.notification.close()
 
-  // Tratar diferentes actions
+  // Se for ação de fechar, apenas retornar
   if (event.action === 'close') {
-    // Apenas fechar a notificação
     return
   }
 
-  // Para action 'open' ou clique na notificação principal
-  // Validação de URL mais rigorosa
-  let urlToOpen = '/'
-  if (event.notification.data?.url) {
-    try {
-      const url = new URL(event.notification.data.url, self.location.origin)
-      // Só permitir URLs do mesmo domínio
-      if (url.origin === self.location.origin) {
-        urlToOpen = url.pathname + url.search + url.hash
+  // Construir URL de destino
+  let targetUrl = self.location.origin
+
+  try {
+    if (event.notification.data && event.notification.data.url) {
+      const notificationUrl = event.notification.data.url
+      // Se for URL relativa, adicionar origem
+      if (notificationUrl.startsWith('/')) {
+        targetUrl = self.location.origin + notificationUrl
+      } else if (notificationUrl.startsWith(self.location.origin)) {
+        targetUrl = notificationUrl
       }
-    } catch (e) {
-      // URL inválida, usar fallback
-      urlToOpen = '/'
     }
+  } catch (e) {
+    // Em caso de erro, usar página inicial
+    targetUrl = self.location.origin
   }
 
+  // Abrir janela de forma super simples
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Procurar se já existe uma janela aberta
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          // Se encontrar uma janela, navegar para a URL e focar
-          client.navigate(urlToOpen)
-          return client.focus()
+    new Promise((resolve) => {
+      try {
+        // Tentar abrir janela
+        const windowPromise = clients.openWindow(targetUrl)
+        if (windowPromise && windowPromise.then) {
+          windowPromise
+            .then(() => resolve())
+            .catch(() => {
+              // Fallback: tentar abrir só a origem
+              clients.openWindow(self.location.origin)
+                .then(() => resolve())
+                .catch(() => resolve())
+            })
+        } else {
+          resolve()
         }
-      }
-
-      // Se não encontrar janela aberta, abrir nova
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen)
-      }
-    }).catch((err) => {
-      console.error('Erro ao abrir janela:', err)
-      // Fallback: tentar abrir janela simples
-      if (clients.openWindow) {
-        return clients.openWindow('/')
+      } catch (error) {
+        // Qualquer erro, apenas resolver
+        resolve()
       }
     })
   )
