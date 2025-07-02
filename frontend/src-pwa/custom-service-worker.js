@@ -42,14 +42,49 @@ self.addEventListener('push', (event) => {
   }
 
   const title = (data.title || 'Nova Mensagem').substring(0, 100)
+
+  // Múltiplos fallbacks para ícones
+  const getNotificationIcon = () => {
+    if (data.icon && data.icon !== '/icons/icon-128x128.png') {
+      return data.icon // Usar ícone personalizado (foto do contato)
+    }
+
+    // Fallbacks para ícone do sistema
+    const iconFallbacks = [
+      '/icons/icon-128x128.png',
+      '/icons/favicon-128x128.png',
+      '/lumi-suite-logo-mini.png',
+      '/favicon.ico'
+    ]
+
+    return iconFallbacks[0] // Usar o primeiro como padrão
+  }
+
   const options = {
     body: (data.body || 'Você tem uma nova notificação.').substring(0, 300),
-    icon: data.icon || '/icons/icon-128x128.png',
-    badge: data.badge || '/icons/icon-128x128.png',
+    icon: getNotificationIcon(),
+    badge: '/icons/icon-128x128.png',
+    image: data.image, // Para notificações com imagem
     data: data.data,
     vibrate: [200, 100, 200],
     requireInteraction: true,
-    tag: 'chat-notification'
+    tag: 'lumi-suite-notification',
+    renotify: true,
+    timestamp: Date.now(),
+    actions: [
+      {
+        action: 'open',
+        title: 'Abrir',
+        icon: '/icons/icon-128x128.png'
+      },
+      {
+        action: 'close',
+        title: 'Fechar'
+      }
+    ],
+    // Configurações visuais aprimoradas
+    silent: false,
+    lang: 'pt-BR'
   }
 
   event.waitUntil(self.registration.showNotification(title, options))
@@ -57,8 +92,17 @@ self.addEventListener('push', (event) => {
 
 // Listener para clique na notificação
 self.addEventListener('notificationclick', (event) => {
+  console.log('Notificação clicada:', event.action)
+
   event.notification.close()
 
+  // Tratar diferentes actions
+  if (event.action === 'close') {
+    // Apenas fechar a notificação
+    return
+  }
+
+  // Para action 'open' ou clique na notificação principal
   // Validação de URL mais rigorosa
   let urlToOpen = '/'
   if (event.notification.data?.url) {
@@ -75,9 +119,25 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   event.waitUntil(
-    clients.openWindow(urlToOpen).then((windowClient) => {
-      if (windowClient) {
-        windowClient.focus()
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Procurar se já existe uma janela aberta
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          // Se encontrar uma janela, navegar para a URL e focar
+          client.navigate(urlToOpen)
+          return client.focus()
+        }
+      }
+
+      // Se não encontrar janela aberta, abrir nova
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen)
+      }
+    }).catch((err) => {
+      console.error('Erro ao abrir janela:', err)
+      // Fallback: tentar abrir janela simples
+      if (clients.openWindow) {
+        return clients.openWindow('/')
       }
     })
   )
