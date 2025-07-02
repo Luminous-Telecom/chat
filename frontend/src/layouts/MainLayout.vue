@@ -346,20 +346,6 @@
       :modalUsuario.sync="modalUsuario"
       :usuarioEdicao.sync="usuario"
     />
-    <q-dialog v-model="mostrarPopupPermissaoAudio" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
-          <q-icon name="volume_up" color="primary" size="2em" class="q-mr-md" />
-          <div>
-            <div class="text-h6">Permissão de áudio necessária</div>
-            <div>Para receber notificações sonoras, clique no botão abaixo para liberar o áudio.</div>
-          </div>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn color="primary" label="Liberar áudio" @click="liberarPermissaoAudio" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
   </q-layout>
 </template>
 
@@ -926,9 +912,17 @@ export default {
     // Verificar problemas de conexão iniciais
     this.verificarProblemasConexao()
 
-    const { temPermissaoAudio, tocarSomNotificacao } = await import('src/helpers/helpersNotifications')
-    if (!temPermissaoAudio()) {
-      this.mostrarPopupPermissaoAudio = true
+    // Inicializar o áudio no primeiro clique do usuário, sem popup
+    const { inicializarServicoAudio } = await import('src/helpers/helpersNotifications')
+    if (localStorage.getItem('audioPermissionGiven') === 'true') {
+      inicializarServicoAudio()
+    } else {
+      const liberarAudio = () => {
+        inicializarServicoAudio()
+        localStorage.setItem('audioPermissionGiven', 'true')
+        document.removeEventListener('click', liberarAudio)
+      }
+      document.addEventListener('click', liberarAudio, { once: true })
     }
 
     // Função global para testar o som manualmente pelo console
