@@ -110,9 +110,7 @@ const CreateOrUpdateContactService = async ({
     // Decidir se deve atualizar o nome
     if (isNameBetter(name, contact.name, number)) {
       updateData.name = name;
-      console.log(`[CreateOrUpdateContactService] Updating contact name: ${contact.name} -> ${name} (${number})`);
     } else {
-      console.log(`[CreateOrUpdateContactService] Keeping existing name: ${contact.name} for ${number} (new: ${name})`);
     }
 
     await contact.update(updateData);
@@ -133,7 +131,6 @@ const CreateOrUpdateContactService = async ({
       messengerId: messengerId ? String(messengerId) : null,
     } as any);
     
-    console.log(`[CreateOrUpdateContactService] Created new contact: ${contact.name} (${number})`);
   }
 
   socketEmit({

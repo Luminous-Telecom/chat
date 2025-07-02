@@ -40,7 +40,6 @@ const getContactNameFromWhatsApp = async (
         wbot = getWbot(whatsapps[0].id);
       }
     } catch (wbotErr) {
-      logger.debug(`[VerifyContact] No active WhatsApp session found for tenant ${tenantId}`);
     }
 
     if (!wbot) {
@@ -56,7 +55,6 @@ const getContactNameFromWhatsApp = async (
         if (storedContact && storedContact.name && storedContact.name !== contactNumber) {
           contactName = storedContact.name;
           contactPushname = storedContact.pushname || storedContact.notify || "";
-          logger.debug(`[VerifyContact] Found store name: ${contactName} for ${contactNumber}`);
           
           // Armazenar no cache
           nameSearchCache.set(cacheKey, { name: contactName, pushname: contactPushname, timestamp: Date.now() });
@@ -74,7 +72,6 @@ const getContactNameFromWhatsApp = async (
       if (businessProfile?.name || businessProfile?.description) {
         contactName = businessProfile.name || businessProfile.description || "";
         contactPushname = businessProfile.name || businessProfile.description || "";
-        logger.debug(`[VerifyContact] Found business profile name: ${contactName} for ${contactNumber}`);
         
         // Armazenar no cache
         nameSearchCache.set(cacheKey, { name: contactName, pushname: contactPushname, timestamp: Date.now() });
@@ -94,7 +91,6 @@ const getContactNameFromWhatsApp = async (
         if (contact.notify || contact.name) {
           contactName = contact.notify || contact.name || "";
           contactPushname = contact.notify || "";
-          logger.debug(`[VerifyContact] Found onWhatsApp name: ${contactName} for ${contactNumber}`);
           
           // Armazenar no cache
           nameSearchCache.set(cacheKey, { name: contactName, pushname: contactPushname, timestamp: Date.now() });
@@ -102,11 +98,9 @@ const getContactNameFromWhatsApp = async (
         }
       }
     } catch (onWhatsAppErr) {
-      logger.debug(`[VerifyContact] onWhatsApp failed for ${contactNumber}: ${onWhatsAppErr}`);
     }
 
   } catch (searchErr) {
-    logger.debug(`[VerifyContact] Error searching WhatsApp name for ${contactNumber}: ${searchErr}`);
   }
 
   // Armazenar resultado vazio no cache para evitar repetir tentativas
@@ -149,7 +143,6 @@ const VerifyContact = async (
                           contactNumber.length <= 15;
 
   if (shouldSearchName) {
-    logger.debug(`[VerifyContact] No name found for ${contactNumber}, searching WhatsApp...`);
     
     const whatsappContactInfo = await getContactNameFromWhatsApp(
       contactJid, 

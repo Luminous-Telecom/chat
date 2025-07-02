@@ -2,6 +2,8 @@ import Message from "../../models/Message";
 import Ticket from "../../models/Ticket";
 import socketEmit from "../../helpers/socketEmit";
 import { logger } from "../../utils/logger";
+import PushController from '../../controllers/PushController';
+import webpush from 'web-push';
 
 interface MessageData {
   id?: string;
@@ -97,6 +99,24 @@ const CreateMessageService = async ({
       type: "chat:create",
       payload: message,
     });
+
+    // Enviar push notification se a mensagem não for do próprio usuário
+    if (message && message.fromMe === false) {
+      const subscriptions = PushController.getSubscriptions();
+      const payload = JSON.stringify({
+        title: `Mensagem de ${message.ticket?.contact?.name || 'Contato'}`,
+        body: message.body || 'Nova mensagem recebida',
+        icon: message.ticket?.contact?.profilePicUrl || '/icons/icon-128x128.png',
+        data: { url: `/atendimento/${message.ticket?.id || ''}` }
+      });
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification(sub, payload);
+        } catch (err) {
+          logger.error('[PushNotification] Erro ao enviar push:', err.message);
+        }
+      }
+    }
 
     return message;
   } catch (err) {

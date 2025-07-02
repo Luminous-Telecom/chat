@@ -23,6 +23,7 @@ import WebHooksRoutes from "./WebHooksRoutes";
 import adminRoutes from "./adminRoutes";
 import facebookRoutes from "./facebookRoutes";
 import ticketObservationRoutes from "./ticketObservationRoutes";
+import PushController from '../controllers/PushController'
 
 const routes = Router();
 
@@ -49,5 +50,8 @@ routes.use(WebHooksRoutes);
 routes.use(adminRoutes);
 routes.use(facebookRoutes);
 routes.use("/ticket-observations", ticketObservationRoutes);
+routes.post('/push/subscribe', PushController.subscribe)
+routes.post('/push/send-test', PushController.sendTest)
+routes.post('/push/send', PushController.send)
 
 export default routes;

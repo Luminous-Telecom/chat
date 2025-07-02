@@ -23,7 +23,6 @@ export class BaileysMessageAdapter {
                          messageKeys.some(key => key.toLowerCase().includes('reaction'));
       
       if (isReaction) {
-        console.log(`[BaileysMessageAdapter] DEBUG - Reaction message blocked at conversion:`, messageKeys);
         throw new Error('REACTION_MESSAGE_IGNORED');
       }
     }
@@ -51,7 +50,6 @@ export class BaileysMessageAdapter {
       status: 1,
       downloadMedia: async () => {
         if (!wbot || !msg.message) {
-          // console.log('[BaileysMessageAdapter] No wbot or message available for download');
           return null;
         }
 
@@ -62,9 +60,6 @@ export class BaileysMessageAdapter {
           msg.message.stickerMessage;
 
         if (!content || typeof content !== "object" || !("url" in content)) {
-          console.log(`[BaileysMessageAdapter] No valid media content found. Message type: ${messageType}`);
-          console.log(`[BaileysMessageAdapter] Available message keys:`, Object.keys(msg.message || {}));
-          console.log(`[BaileysMessageAdapter] Content object:`, content);
           return null;
         }
 
@@ -72,12 +67,8 @@ export class BaileysMessageAdapter {
         let retryCount = 0;
         const maxRetries = 2;
         const timeoutMs = messageType === 'stickerMessage' ? 10000 : 20000; // Timeout menor para stickers
-
-        console.log(`[BaileysMessageAdapter] Starting download for ${messageType} with ${timeoutMs}ms timeout`);
-
         while (retryCount <= maxRetries) {
           try {
-            console.log(`[BaileysMessageAdapter] Attempting to download media (attempt ${retryCount + 1}/${maxRetries + 1}) for message type: ${messageType}`);
 
             // Use timeout wrapper para evitar travamentos
             const buffer = await Promise.race([
@@ -88,11 +79,9 @@ export class BaileysMessageAdapter {
             ]);
 
             if (buffer && buffer.length > 0) {
-              console.log(`[BaileysMessageAdapter] Successfully downloaded ${messageType}, buffer size: ${buffer.length}`);
               return buffer as Buffer;
             }
             
-            console.log(`[BaileysMessageAdapter] Download returned null/empty buffer for ${messageType}`);
             if (retryCount === maxRetries) {
               return null;
             }
@@ -120,7 +109,6 @@ export class BaileysMessageAdapter {
           if (retryCount <= maxRetries) {
             // Aguardar antes da próxima tentativa (tempo menor para stickers)
             const waitTime = messageType === 'stickerMessage' ? 500 : 1000 * retryCount;
-            console.log(`[BaileysMessageAdapter] Waiting ${waitTime}ms before retry ${retryCount + 1} for ${messageType}`);
             await new Promise<void>(resolve => {
               setTimeout(() => resolve(), waitTime);
             });
@@ -335,11 +323,6 @@ export class BaileysMessageAdapter {
 
     const messageKeys = Object.keys(msg.message);
     
-    // Log para debug quando messageContextInfo é detectado
-    if (messageKeys.includes("messageContextInfo")) {
-      console.log(`[BaileysMessageAdapter] DEBUG - Message with messageContextInfo detected. All keys:`, messageKeys);
-    }
-    
     // Tipos que devem ser ignorados pois são contexto, não conteúdo real
     const ignoredTypes = [
       "messageContextInfo",
@@ -358,7 +341,6 @@ export class BaileysMessageAdapter {
       key === 'reactionMessage');
     
     if (hasReaction) {
-      console.log(`[BaileysMessageAdapter] DEBUG - Reaction message detected and ignored:`, messageKeys);
       return "reactionMessage"; // Retornar tipo que será ignorado
     }
 
@@ -387,7 +369,6 @@ export class BaileysMessageAdapter {
     // Procurar primeiro por tipos de mídia
     for (const key of messageKeys) {
       if (mediaTypes.includes(key)) {
-        console.log(`[BaileysMessageAdapter] DEBUG - Detected media type: ${key}`);
         return key;
       }
     }
@@ -395,21 +376,18 @@ export class BaileysMessageAdapter {
     // Depois procurar por tipos de texto
     for (const key of messageKeys) {
       if (textTypes.includes(key)) {
-        console.log(`[BaileysMessageAdapter] DEBUG - Detected text type: ${key}`);
         return key;
       }
     }
 
     // Procurar por mensagens especiais como viewOnceMessage e ephemeralMessage
     if (msg.message.viewOnceMessage?.message) {
-      console.log(`[BaileysMessageAdapter] DEBUG - Processing viewOnceMessage`);
       return this.getCorrectMessageType({ 
         message: msg.message.viewOnceMessage.message 
       } as proto.IWebMessageInfo);
     }
 
     if (msg.message.ephemeralMessage?.message) {
-      console.log(`[BaileysMessageAdapter] DEBUG - Processing ephemeralMessage`);
       return this.getCorrectMessageType({ 
         message: msg.message.ephemeralMessage.message 
       } as proto.IWebMessageInfo);
@@ -419,12 +397,9 @@ export class BaileysMessageAdapter {
     const validKeys = messageKeys.filter(key => !ignoredTypes.includes(key));
     
     if (validKeys.length > 0) {
-      console.log(`[BaileysMessageAdapter] DEBUG - Using first valid key: ${validKeys[0]} from keys:`, messageKeys);
       return validKeys[0];
     }
 
-    // Default para chat se nada for encontrado
-    console.log(`[BaileysMessageAdapter] DEBUG - Defaulting to 'chat' for message keys:`, messageKeys);
     return "chat";
   }
 }

@@ -350,17 +350,22 @@ export default {
             // Faz verificação para se certificar que notificação pertence a fila do usuário
             var pass_noti = false
             verify.data.tickets.forEach((element) => { pass_noti = (element.id == data.payload.id ? true : pass_noti) })
-            // Notificação removida conforme solicitado
-            /*
-            // Exibe Notificação
+            // Enviar notificação push via backend
             if (pass_noti) {
-              // eslint-disable-next-line no-new
-              new self.Notification('Novo cliente pendente', {
-                body: 'Cliente: ' + data.payload.contact.name,
-                tag: 'simple-push-demo-notification'
+              fetch('/api/push/send', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+                },
+                body: JSON.stringify({
+                  title: 'Novo cliente pendente',
+                  body: `Cliente: ${data.payload.contact.name}`,
+                  icon: '/icons/icon-128x128.png',
+                  data: { url: '/atendimento' }
+                })
               })
             }
-            */
           }
         })
 

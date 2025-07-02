@@ -1172,16 +1172,20 @@ export default {
       // Tocar áudio de notificação para cada mensagem recebida de outro usuário
       this.playNotificationSound()
 
-      // Verificar se notificações são suportadas
-      if (!('Notification' in window) || Notification.permission !== 'granted') {
-        console.warn('[handlerNotifications] Notificações não suportadas ou sem permissão:', {
-          supported: 'Notification' in window,
-          permission: Notification.permission
+      // Enviar notificação push via backend
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({
+          title: `Mensagem de ${contact.name}`,
+          body: message.body || 'Nova mensagem recebida',
+          icon: contact.profilePicUrl || '/icons/icon-128x128.png',
+          data: { url: '/atendimento' }
         })
-      }
-
-      // Notificação removida conforme solicitado
-      /* ... código original ... */
+      })
     },
     async listarConfiguracoes () {
       const { data } = await ListarConfiguracoes()

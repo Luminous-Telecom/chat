@@ -393,9 +393,6 @@ const processTextMessage = async (
 
     // Dividir mensagem se for muito grande
     const messageParts = splitLargeMessage(messageData.body);
-    logger.info(
-      `[CreateMessageSystemService] Mensagem dividida em ${messageParts.length} partes`
-    );
 
     // Enviar cada parte da mensagem
     for (let i = 0; i < messageParts.length; i++) {

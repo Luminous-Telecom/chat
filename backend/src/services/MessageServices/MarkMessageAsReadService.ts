@@ -22,13 +22,11 @@ export const MarkMessageAsReadService = async ({
   try {
     // Verificar se a mensagem já está marcada como lida
     if (message.read) {
-      logger.debug(`[MarkMessageAsReadService] Message ${message.id} already marked as read`);
       return;
     }
 
     // Verificar se é uma mensagem recebida (não enviada por mim)
     if (message.fromMe) {
-      logger.debug(`[MarkMessageAsReadService] Skipping read mark for outgoing message ${message.id}`);
       return;
     }
 

@@ -37,14 +37,20 @@ export default {
         if (data.type === 'chat:create') {
           if (data.payload.fromMe) return
           if (data.payload.ticket.userId !== userId) return
-          // eslint-disable-next-line no-unused-vars
-          const message = new self.Notification('Contato: ' + data.payload.ticket.contact.name, {
-            body: 'Mensagem: ' + data.payload.body,
-            tag: 'simple-push-demo-notification',
-            image: data.payload.ticket.contact.profilePicUrl,
-            icon: data.payload.ticket.contact.profilePicUrl
+          // Enviar notificação push via backend
+          fetch('/api/push/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+            },
+            body: JSON.stringify({
+              title: `Contato: ${data.payload.ticket.contact.name}`,
+              body: `Mensagem: ${data.payload.body}`,
+              icon: data.payload.ticket.contact.profilePicUrl || '/icons/icon-128x128.png',
+              data: { url: '/atendimento' }
+            })
           })
-
           // Tocar som de notificação usando o serviço centralizado
           tocarSomNotificacao()
 

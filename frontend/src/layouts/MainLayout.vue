@@ -364,6 +364,8 @@ import { ConsultarTickets } from 'src/service/tickets'
 import { ContarTicketsPendentesPorFila } from 'src/service/filas'
 import { tocarSomNotificacao, atualizarTituloGuia } from 'src/helpers/helpersNotifications'
 import errorNotificationService from 'src/services/errorNotificationService'
+import { VAPID_PUBLIC_KEY } from 'src/pwa-push-config'
+import request from 'src/service/request'
 
 const socket = socketIO()
 
@@ -575,29 +577,21 @@ export default {
       this.$store.commit('LOAD_WHATSAPPS', data)
     },
     handlerNotifications (data) {
-      // Notificação removida conforme solicitado
-      /*
-      const { message, contact, ticket } = data
-      const options = {
-        body: `${message.body} - ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`,
-        icon: contact.profilePicUrl,
-        tag: ticket.id,
-        renotify: true
-      }
-
-      const notification = new Notification(
-        `Mensagem de ${contact.name}`,
-        options
-      )
-
-      notification.onclick = e => {
-        e.preventDefault()
-        window.focus()
-        this.$store.dispatch('AbrirChatMensagens', ticket)
-        this.$router.push({ name: 'atendimento' })
-      }
-      */
-
+      // Enviar notificação push via backend
+      // Aqui, você pode customizar o payload conforme necessário
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({
+          title: `Mensagem de ${data.contact?.name || 'Contato'}`,
+          body: data.message?.body || 'Nova mensagem recebida',
+          icon: data.contact?.profilePicUrl || '/icons/icon-128x128.png',
+          data: { url: '/atendimento' }
+        })
+      })
       // Tocar som de notificação usando o serviço centralizado
       tocarSomNotificacao()
     },
@@ -946,6 +940,27 @@ export default {
         }
       })
     }
+
+    // Solicitar permissão de notificação e inscrever no Push API
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        try {
+          const permission = await Notification.requestPermission()
+          console.log('Permissão de notificação:', permission)
+        } catch (e) {
+          console.error('Erro ao solicitar permissão de notificação:', e)
+        }
+      }
+
+      // Só tentar registrar push se a permissão foi concedida
+      if (Notification.permission === 'granted') {
+        subscribeUserToPush()
+      } else {
+        console.warn('Push notifications não serão configuradas - permissão não concedida')
+      }
+    } else {
+      console.warn('Notifications API não suportada neste navegador')
+    }
   },
   watch: {
     // Watcher para monitorar mudanças nas notificações e atualizar o título da guia
@@ -1039,6 +1054,67 @@ export default {
     }
   }
 }
+
+async function subscribeUserToPush () {
+  try {
+    // Verificar suporte do navegador
+    if (!('serviceWorker' in navigator)) {
+      console.warn('Service Worker não suportado neste navegador')
+      return
+    }
+
+    if (!('PushManager' in window)) {
+      console.warn('Push Manager não suportado neste navegador')
+      return
+    }
+
+    // Verificar permissão de notificação
+    if (Notification.permission !== 'granted') {
+      console.warn('Permissão de notificação não concedida. Status:', Notification.permission)
+      return
+    }
+
+    // Aguardar service worker estar pronto
+    const registration = await navigator.serviceWorker.ready
+
+    // Verificar se já existe uma subscription
+    let subscription = await registration.pushManager.getSubscription()
+
+    if (!subscription) {
+      // Criar nova subscription
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      })
+    }
+
+    // Sempre envie a subscription para o backend
+    await request({
+      url: '/api/push/subscribe',
+      method: 'POST',
+      data: subscription,
+      silentError: true
+    })
+  } catch (error) {
+    if (error.name === 'NotAllowedError') {
+      console.warn('Usuário negou permissão para notificações push')
+    } else if (error.name === 'NotSupportedError') {
+      console.warn('Push notifications não suportadas neste navegador')
+    }
+  }
+}
+
+function urlBase64ToUint8Array (base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
+
 </script>
 <style>
 .q-img__image {

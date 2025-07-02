@@ -46,7 +46,7 @@ export default async function application() {
     httpServer = createHttpServer(app);
   }
 
-  const port = app.get("port") || env.PORT || 3100;
+  const port = app.get("port") || env.PORT;
 
   await bootstrap(app);
 

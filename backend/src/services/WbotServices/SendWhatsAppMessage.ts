@@ -33,9 +33,6 @@ export const SendWhatsAppMessage = async (
       ticket.isGroup ? "g.us" : "s.whatsapp.net"
     }`;
 
-    logger.info(`[ENVIO] Enviando mensagem para contato: ID=${contact.id}, Nome=${contact.name}, Número=${contact.number}`);
-    logger.info(`[ENVIO] Ticket associado: ID=${ticket.id}, contactId=${ticket.contactId}, status=${ticket.status}`);
-
     // Adicionar assinatura do usuário ao corpo da mensagem se userId estiver disponível
     let messageBody = body;
     if (userId) {

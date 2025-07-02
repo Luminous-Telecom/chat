@@ -167,11 +167,6 @@ export const HandleMsgAck = async (
 
   const messageId = msg.key.id;
   
-  // Log apenas para ACKs importantes (3, 5) ou debug mode
-  if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
-    logger.info(`[HandleMsgAck] Processando ACK ${ack} para messageId: ${messageId}`);
-  }
-  
   // Para ACK 5, precisamos verificar se é uma mensagem de áudio
   let mediaType: string | undefined;
   if (ack === 5) {
@@ -184,7 +179,6 @@ export const HandleMsgAck = async (
       });
       mediaType = audioMessage?.mediaType;
       if (process.env.DEBUG_ACK === 'true') {
-        logger.info(`[HandleMsgAck] MediaType encontrado para ACK 5: ${mediaType}`);
       }
     } catch (error) {
       logger.error(`[HandleMsgAck] Erro ao buscar mediaType: ${error}`);
@@ -194,8 +188,6 @@ export const HandleMsgAck = async (
   // CRÍTICO: Validar ACK antes de processar
   if (!isValidAck(ack, mediaType)) {
     if (ack === 5) {
-      // Removido log de debug para ACK 5 ignorado
-      // logger.debug(`[HandleMsgAck] ACK 5 ignorado para messageId ${messageId} (mediaType: ${mediaType || 'undefined'}) - não é áudio`);
     } else if (ack > 3) {
       // Log apenas para ACKs realmente inválidos
       logger.warn(`[HandleMsgAck] ACK inválido ${ack} ignorado para messageId: ${messageId}`);
@@ -263,10 +255,6 @@ export const HandleMsgAck = async (
     }
 
     if (messages.length === 0) {
-      // Log apenas para ACKs importantes ou modo debug
-      if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
-        logger.debug(`[HandleMsgAck] Nenhuma mensagem encontrada para messageId: ${messageId} (ACK ${ack})`);
-      }
       await messageTransaction.rollback();
       return;
     }
@@ -278,7 +266,6 @@ export const HandleMsgAck = async (
       // Se só temos uma mensagem, ela é a que devemos atualizar
       messageToUpdate = messages[0];
       if (process.env.DEBUG_ACK === 'true') {
-        logger.info(`[HandleMsgAck] Mensagem única encontrada: ${messageToUpdate.id} (${messageToUpdate.mediaType})`);
       }
     } else {
       // Se temos múltiplas mensagens, vamos analisar cada uma
@@ -292,9 +279,6 @@ export const HandleMsgAck = async (
       });
       
       if (messagesWithHigherAck.length > 0) {
-        if (process.env.DEBUG_ACK === 'true') {
-          logger.debug(`[HandleMsgAck] ACK ${ack} ignorado - mensagem já tem ACK maior ou igual`);
-        }
         await messageTransaction.rollback();
         return;
       }
@@ -317,7 +301,6 @@ export const HandleMsgAck = async (
       // Todas as outras mensagens são duplicadas
       duplicateMessages = messages.filter(m => m.id !== messageToUpdate?.id);
       if (process.env.DEBUG_ACK === 'true' || duplicateMessages.length > 0) {
-        logger.info(`[HandleMsgAck] ${messages.length} mensagens encontradas, atualizando: ${messageToUpdate?.id}`);
       }
     }
 
@@ -345,9 +328,6 @@ export const HandleMsgAck = async (
     }
     
     if (!canUpdateAck) {
-      if (process.env.DEBUG_ACK === 'true') {
-        logger.debug(`[HandleMsgAck] ACK ${ack} ignorado - mensagem ${messageToUpdate.id} (fromMe: ${messageToUpdate.fromMe}) já tem ACK ${messageToUpdate.ack}`);
-      }
       await messageTransaction.rollback();
       return;
     }
@@ -371,11 +351,9 @@ export const HandleMsgAck = async (
     
     // Log diferenciado para mensagens enviadas vs recebidas
     if (ack === 5) {
-      logger.info(`[HandleMsgAck] 🔊 ÁUDIO OUVIDO: Atualizando mensagem ${messageToUpdate.id} (${messageToUpdate.mediaType}, fromMe: ${messageToUpdate.fromMe}) de ACK ${messageToUpdate.ack} para ${ack} (${newStatus})`);
     } else if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
       const messageType = messageToUpdate.fromMe ? "ENVIADA" : "RECEBIDA";
       const ackMeaning = messageToUpdate.fromMe ? "lida pelo destinatário" : "lida por nós no WhatsApp";
-      logger.info(`[HandleMsgAck] ${messageType}: Atualizando mensagem ${messageToUpdate.id} de ACK ${messageToUpdate.ack} para ${ack} (${ackMeaning})`);
     }
     
     // Preparar dados para atualização da mensagem
@@ -478,11 +456,6 @@ export const HandleMsgAck = async (
       });
       
       
-    }
-    
-    // Log apenas para ACKs importantes ou modo debug
-    if (ack >= 3 || process.env.DEBUG_ACK === 'true') {
-      logger.info(`[HandleMsgAck] 📡 EVENTOS EMITIDOS: ticketList${isAutoMarkedAsRead ? ' + messageAutoRead' : ''} para ${messageToUpdate.mediaType} com ACK ${ack}`);
     }
 
     // Se temos mensagens duplicadas, marca como deletadas
