@@ -12,19 +12,32 @@
 
 /* global clients */
 
-import { precacheAndRoute } from 'workbox-precaching'
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
 import { NetworkFirst } from 'workbox-strategies'
+import { clientsClaim } from 'workbox-core'
 
 // No início do arquivo, adicionar:
 self.__WB_DISABLE_DEV_LOGS = true
 
+// Configurações de controle do Service Worker
+self.skipWaiting() // Ativar imediatamente o novo SW
+clientsClaim() // Assumir controle de todos os clientes imediatamente
+
 // Versão do service worker para forçar atualização
 const SW_VERSION = '2.0.0'
-console.log(`Service Worker ${SW_VERSION} iniciado`)
 
-// Precaching dos assets gerados pelo Quasar CLI
-precacheAndRoute(self.__WB_MANIFEST || [])
+// Verificar se já foi inicializado para evitar múltiplas execuções
+if (!self.__SW_INITIALIZED) {
+  console.log(`Service Worker ${SW_VERSION} iniciado`)
+  self.__SW_INITIALIZED = true
+
+  // Precaching dos assets gerados pelo Quasar CLI
+  precacheAndRoute(self.__WB_MANIFEST || [])
+
+  // Limpar caches desatualizados
+  cleanupOutdatedCaches()
+}
 
 // Exemplo: cache para chamadas de API
 registerRoute(

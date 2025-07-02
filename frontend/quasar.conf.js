@@ -82,6 +82,15 @@ module.exports = function (ctx) {
           }
         })
         cfg.devtool = 'source-map'
+
+        // Reduzir warnings durante desenvolvimento
+        if (process.env.NODE_ENV === 'development') {
+          cfg.stats = cfg.stats || {}
+          cfg.stats.warnings = false
+          cfg.performance = {
+            hints: false // Desabilitar hints de performance
+          }
+        }
       }
     },
 
@@ -91,6 +100,8 @@ module.exports = function (ctx) {
       open: true, // opens browser window automatically
       hot: false, // disable hot reload
       liveReload: false, // disable live reload
+      quiet: true, // Reduzir saída do console
+      overlay: false, // Desabilitar overlay de warnings
       proxy: {
         '/api': {
           target: 'http://localhost:3000',
@@ -136,7 +147,21 @@ module.exports = function (ctx) {
     pwa: {
       workboxPluginMode: 'InjectManifest', // 'GenerateSW' or 'InjectManifest'
       swSrc: 'src-pwa/custom-service-worker.js',
-      workboxOptions: {}, // only for GenerateSW
+      workboxOptions: {
+        // Configurações específicas para reduzir warnings
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5MB
+      }, // only for GenerateSW
+      metaVariables: {
+        appleMobileWebAppCapable: 'no', // Desabilitar a meta tag deprecated
+        appleMobileWebAppStatusBarStyle: 'default',
+        appleTouchIcon120: 'icons/apple-icon-120x120.png',
+        appleTouchIcon180: 'icons/apple-icon-180x180.png',
+        appleTouchIcon152: 'icons/apple-icon-152x152.png',
+        appleTouchIcon167: 'icons/apple-icon-167x167.png',
+        appleSafariPinnedTab: 'icons/safari-pinned-tab.svg',
+        msapplicationTileImage: 'icons/ms-icon-144x144.png',
+        msapplicationTileColor: '#027be3'
+      },
       manifest: {
         name: 'LUMI SUITE',
         short_name: 'LUMI SUITE',
