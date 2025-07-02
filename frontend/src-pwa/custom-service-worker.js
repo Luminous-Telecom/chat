@@ -16,6 +16,9 @@ import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
 import { NetworkFirst } from 'workbox-strategies'
 
+// No início do arquivo, adicionar:
+self.__WB_DISABLE_DEV_LOGS = true
+
 // Versão do service worker para forçar atualização
 const SW_VERSION = '2.0.0'
 console.log(`Service Worker ${SW_VERSION} iniciado`)
