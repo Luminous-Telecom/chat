@@ -811,21 +811,6 @@
         </q-card>
       </q-dialog>
 
-      <q-dialog v-model="mostrarPopupPermissaoAudio" persistent>
-        <q-card>
-          <q-card-section class="row items-center">
-            <q-icon name="volume_up" color="primary" size="2em" class="q-mr-md" />
-            <div>
-              <div class="text-h6">Permissão de áudio necessária</div>
-              <div>Para receber notificações sonoras, clique no botão abaixo para liberar o áudio.</div>
-            </div>
-          </q-card-section>
-          <q-card-actions align="right">
-            <q-btn color="primary" label="Liberar áudio" @click="liberarPermissaoAudio" />
-          </q-card-actions>
-        </q-card>
-      </q-dialog>
-
     </q-layout>
   </div>
 </template>
@@ -860,7 +845,7 @@ import ModalAgendarMensagem from './ModalAgendarMensagem.vue'
 import ModalTimeline from './ModalTimeline.vue'
 import ModernSearch from 'src/components/ModernSearch'
 
-import { tocarSomNotificacao, solicitarPermissaoAudio, inicializarServicoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
+import { tocarSomNotificacao, solicitarPermissaoAudio, temPermissaoAudio } from 'src/helpers/helpersNotifications'
 import { socketIO } from 'src/utils/socket'
 
 const socket = socketIO()
@@ -926,8 +911,7 @@ export default {
       loadingEntrarConversa: false,
       searchTimeout: null,
       editandoNomeContato: false,
-      novoNomeContato: '',
-      mostrarPopupPermissaoAudio: false
+      novoNomeContato: ''
     }
   },
   computed: {
@@ -1995,15 +1979,9 @@ export default {
       }
     }
 
-    // Verificar permissão de áudio antes de solicitar
-    try {
-      if (!temPermissaoAudio()) {
-        this.mostrarPopupPermissaoAudio = true
-      }
-      inicializarServicoAudio()
-    } catch (error) {
+    // Verificar permissão de áudio - agora gerenciada globalmente
+    if (!temPermissaoAudio()) {
       this.mostrarPopupPermissaoAudio = true
-      console.error('[mounted] Erro ao inicializar áudio:', error)
     }
 
     await this.listarFilas()

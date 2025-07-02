@@ -346,6 +346,20 @@
       :modalUsuario.sync="modalUsuario"
       :usuarioEdicao.sync="usuario"
     />
+    <q-dialog v-model="mostrarPopupPermissaoAudio" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <q-icon name="volume_up" color="primary" size="2em" class="q-mr-md" />
+          <div>
+            <div class="text-h6">Permissão de áudio necessária</div>
+            <div>Para receber notificações sonoras, clique no botão abaixo para liberar o áudio.</div>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn color="primary" label="Liberar áudio" @click="liberarPermissaoAudio" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
@@ -455,7 +469,8 @@ export default {
       menuDataAdmin: objMenuAdmin,
       ticketsList: [],
       queueTicketCounts: {},
-      consultarTicketsTimeout: null // Para debounce da consulta
+      consultarTicketsTimeout: null, // Para debounce da consulta
+      mostrarPopupPermissaoAudio: false
     }
   },
   computed: {
@@ -537,10 +552,20 @@ export default {
   methods: {
 
     requestNotificationPermissionOnInteraction () {
-      const requestPermission = () => {
+      const requestPermission = async () => {
+        // Solicitar permissão de notificação
         if ('Notification' in window && Notification.permission === 'default') {
           Notification.requestPermission()
         }
+
+        // Solicitar permissão de áudio
+        try {
+          const { solicitarPermissaoAudio } = await import('src/helpers/helpersNotifications')
+          await solicitarPermissaoAudio()
+        } catch (error) {
+          console.warn('Erro ao solicitar permissão de áudio:', error)
+        }
+
         // Remove the event listener after first interaction
         document.removeEventListener('click', requestPermission)
         document.removeEventListener('keydown', requestPermission)
@@ -863,6 +888,19 @@ export default {
           error.details
         )
       })
+    },
+    async liberarPermissaoAudio () {
+      try {
+        const { solicitarPermissaoAudio } = await import('src/helpers/helpersNotifications')
+        await solicitarPermissaoAudio()
+        this.mostrarPopupPermissaoAudio = false
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Não foi possível liberar o áudio. Tente novamente.',
+          position: 'bottom-right'
+        })
+      }
     }
   },
   async mounted () {
@@ -887,6 +925,33 @@ export default {
 
     // Verificar problemas de conexão iniciais
     this.verificarProblemasConexao()
+
+    const { temPermissaoAudio, tocarSomNotificacao } = await import('src/helpers/helpersNotifications')
+    if (!temPermissaoAudio()) {
+      this.mostrarPopupPermissaoAudio = true
+    }
+
+    // Função global para testar o som manualmente pelo console
+    window.testarSom = async () => {
+      const { tocarSomNotificacao } = await import('src/helpers/helpersNotifications')
+      tocarSomNotificacao()
+    }
+
+    // Conectar socket global para notificações de mensagem
+    const usuario = JSON.parse(localStorage.getItem('usuario'))
+    if (usuario && usuario.tenantId) {
+      const eventName = `tenant:${usuario.tenantId}:appMessage`
+      socket.on(eventName, (data) => {
+        try {
+          const payload = Array.isArray(data) ? data[0] : data
+          if (payload && payload.action === 'create' && payload.message && !payload.message.fromMe) {
+            tocarSomNotificacao()
+          }
+        } catch (e) {
+          console.error('[appMessage] Erro ao processar notificação:', e)
+        }
+      })
+    }
   },
   watch: {
     // Watcher para monitorar mudanças nas notificações e atualizar o título da guia

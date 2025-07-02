@@ -370,10 +370,8 @@ export default {
 
         // 🔥 NOVO: Listener para eventos de leitura automática
         socket.on(`${usuario.tenantId}:messageRead`, function (data) {
-          console.log('[Frontend] 📖 Evento messageRead recebido:', data)
-
           if (data.type === 'message:read' && data.payload) {
-            const { messageId, ticketId, ack, source, ticket } = data.payload
+            const { messageId, ticketId, ack, ticket } = data.payload
 
             // Atualizar status da mensagem como lida
             self.$store.commit('UPDATE_MESSAGE_STATUS', {
@@ -399,16 +397,11 @@ export default {
               // 🔥 NOVO: Atualizar notifications para sincronizar menu lateral e título da guia
               self.atualizarNotificacoesGlobais()
             }
-
-            // Log para debug
-            console.log(`[Frontend] ✅ Mensagem ${messageId} marcada como lida automaticamente (${source})`)
           }
         })
 
         // 🔥 NOVO: Listener para eventos específicos de auto-read
         socket.on(`${usuario.tenantId}:messageAutoRead`, function (data) {
-          console.log('[Frontend] 🤖 Evento messageAutoRead recebido:', data)
-
           if (data.type === 'message:autoRead' && data.payload) {
             const { messageId, ticketId, ack, ticket } = data.payload
 
@@ -595,8 +588,6 @@ export default {
             mod.atualizarTituloGuia(notifications, notifications_p)
           })
         }
-
-        console.log('[Frontend] 🔄 Notificações globais atualizadas após leitura automática')
       } catch (err) {
         console.error('[Frontend] ❌ Erro ao atualizar notificações globais:', err)
       }
