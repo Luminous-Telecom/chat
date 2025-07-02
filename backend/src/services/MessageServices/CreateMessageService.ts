@@ -109,12 +109,40 @@ const CreateMessageService = async ({
         icon: message.ticket?.contact?.profilePicUrl || '/icons/icon-128x128.png',
         data: { url: `/atendimento/${message.ticket?.id || ''}` }
       });
+      
+      let successCount = 0;
+      
+      // Função local para verificar se é erro de subscription inválida
+      const isInvalidSubscriptionError = (err: any): boolean => {
+        return err.statusCode === 410 || 
+               err.statusCode === 404 || 
+               err.message?.includes('invalid') ||
+               err.message?.includes('expired') ||
+               err.message?.includes('unregistered') ||
+               err.message?.includes('gone')
+      }
+      
       for (const sub of subscriptions) {
         try {
           await webpush.sendNotification(sub, payload);
+          successCount++;
         } catch (err) {
-          logger.error('[PushNotification] Erro ao enviar push:', err.message);
+          // Usar função para verificar se é subscription inválida
+          if (isInvalidSubscriptionError(err)) {
+            // Subscription inválida - log como warning
+            logger.warn(`[PushNotification] Subscription inválida detectada: ${err.message}`);
+          } else {
+            // Erro real - logar como erro
+            logger.error('[PushNotification] Erro crítico ao enviar push:', err.message);
+          }
         }
+      }
+      
+      // Log de resumo apenas se necessário
+      if (successCount === 0 && subscriptions.length > 0) {
+        logger.error('[PushNotification] Falha total no envio de push notifications');
+      } else if (successCount > 0) {
+        logger.info(`[PushNotification] Push enviado com sucesso para ${successCount}/${subscriptions.length} dispositivos`);
       }
     }
 

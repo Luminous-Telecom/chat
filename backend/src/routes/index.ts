@@ -53,5 +53,7 @@ routes.use("/ticket-observations", ticketObservationRoutes);
 routes.post('/push/subscribe', PushController.subscribe)
 routes.post('/push/send-test', PushController.sendTest)
 routes.post('/push/send', PushController.send)
+routes.get('/push/stats', PushController.getStats)
+routes.post('/push/clean-invalid', PushController.cleanInvalid)
 
 export default routes;
