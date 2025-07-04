@@ -241,10 +241,7 @@ export default {
               return
             }
 
-            // Log para debug de ACKs rápidos
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`[ACK] Message ${messageId} - ACK: ${data.payload.ack} - FromMe: ${data.payload.fromMe} - Status: ${data.payload.status}`)
-            }
+
 
             // Preparar payload comum
             const statusPayload = {
