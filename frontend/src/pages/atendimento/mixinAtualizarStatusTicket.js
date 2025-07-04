@@ -108,7 +108,14 @@ export default {
             })
             */
             this.$store.commit('TICKET_FOCADO', {})
-            if (status !== 'open') this.$router.push({ name: 'chat-empty' })
+            if (status !== 'open') {
+              this.$router.push({ name: 'chat-empty' })
+              if (typeof this.BuscarTicketFiltro === 'function') {
+                this.BuscarTicketFiltro()
+              } else if (this.$parent && typeof this.$parent.BuscarTicketFiltro === 'function') {
+                this.$parent.BuscarTicketFiltro()
+              }
+            }
           })
           .catch(error => {
             this.loading = false
