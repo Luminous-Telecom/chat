@@ -347,6 +347,8 @@
                 style="height: 40px; min-width: 180px; max-width: 240px; width: 100%;"
                 @update:model-value="tagSelecionada"
                 @blur="blurTags"
+                multiple
+                display-value=""
               />
               <!-- Seletor de Carteira -->
               <q-select
@@ -1148,7 +1150,8 @@ export default {
       })
     },
     async tagSelecionada (tags) {
-      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, [...tags])
+      const lista = Array.isArray(tags) ? tags : tags ? [tags] : [];
+      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, [...lista])
       this.contatoEditado(data)
     },
     async removeTag (tagToRemove) {
@@ -2024,6 +2027,12 @@ export default {
     filaSelecionada: {
       handler (newVal) {
         this.filterUsers()
+      },
+      immediate: true
+    },
+    'ticketFocado.contact': {
+      handler(novoContato) {
+        this.selectedTags = (novoContato.tags || []).map(tag => tag.id)
       },
       immediate: true
     }
