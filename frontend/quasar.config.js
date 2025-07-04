@@ -93,7 +93,7 @@ module.exports = configure(function (ctx) {
       open: true, // opens browser window automatically
       proxy: {
         '/api': {
-          target: 'http://localhost:3000',
+          target: process.env.VUE_URL_API,
           changeOrigin: true
         }
       }
