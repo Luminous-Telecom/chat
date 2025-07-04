@@ -8,8 +8,7 @@ import CheckIsValidContact from "./CheckIsValidContact";
 export async function ImportFileContactsService(
   tenantId: number,
   file: Express.Multer.File | undefined,
-  tags: string[],
-  wallets: string[]
+  tags: string[]
 ) {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(file?.path as string);
@@ -91,9 +90,7 @@ export async function ImportFileContactsService(
         await setContact.setTags(tags, { through: { tenantId } });
       }
 
-      if (wallets?.length) {
-        await setContact.setWallets(wallets, { through: { tenantId } });
-      }
+
     } catch (error) {
       console.error(`Número não é uma conta válida ${contact.number}`);
     }

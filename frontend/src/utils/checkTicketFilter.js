@@ -19,11 +19,7 @@ const checkTicketFilter = (ticket) => {
     return (conf?.value === 'enabled')
   }
 
-  const DirectTicketsToWallets = () => {
-    const configuracoes = JSON.parse(localStorage.getItem('configuracoes'))
-    const conf = configuracoes?.find(c => c.key === 'DirectTicketsToWallets')
-    return (conf?.value === 'enabled')
-  }
+  
 
   const isNotViewAssignedTickets = () => {
     const configuracoes = JSON.parse(localStorage.getItem('configuracoes'))
@@ -95,14 +91,7 @@ const checkTicketFilter = (ticket) => {
     }
   }
 
-  // se configuração para carteira ativa: verificar se já é um ticket da carteira do usuário
-  if (DirectTicketsToWallets() && (ticket?.contact?.wallets?.length || 0) > 0) {
-    const idx = ticket?.contact?.wallets.findIndex(w => w.id == userId)
-    if (idx !== -1) {
-      return true
-    }
-    return false
-  }
+
 
   // verificar se o parametro para não permitir visualizar
   // tickets atribuidos à outros usuários está ativo

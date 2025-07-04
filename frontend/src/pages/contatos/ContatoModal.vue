@@ -139,7 +139,7 @@ export default {
         number: null,
         email: '',
         extraInfo: [],
-        wallets: []
+  
       },
       usuarios: []
     }

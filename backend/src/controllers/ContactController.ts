@@ -13,7 +13,7 @@ import ListContactsService from "../services/ContactServices/ListContactsService
 import ShowContactService from "../services/ContactServices/ShowContactService";
 import UpdateContactService from "../services/ContactServices/UpdateContactService";
 import UpdateContactTagsService from "../services/ContactServices/UpdateContactTagsService";
-import UpdateContactWalletsService from "../services/ContactServices/UpdateContactWalletsService";
+
 import { ImportFileContactsService } from "../services/WbotServices/ImportFileContactsService";
 import Whatsapp from "../models/Whatsapp";
 import { getWbot } from "../libs/wbot";
@@ -33,7 +33,7 @@ interface ContactData {
   number: string;
   email?: string;
   extraInfo?: ExtraInfo[];
-  wallets?: null | number[] | string[];
+
 }
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
@@ -151,52 +151,29 @@ export const updateContactTags = async (
   const contact = await UpdateContactTagsService({
     tags,
     contactId,
-    tenantId,
+    tenantId
   });
 
   return res.status(200).json(contact);
 };
 
-export const updateContactWallet = async (
-  req: Request,
-  res: Response
-): Promise<Response> => {
-  const { contactId } = req.params;
-  const { wallets } = req.body;
-  const { tenantId } = req.user;
 
-  const contact = await Contact.findOne({
-    where: { id: contactId, tenantId }
-  });
-
-  if (!contact) {
-    throw new AppError("ERR_CONTACT_NOT_FOUND", 404);
-  }
-
-  await contact.update({ wallets });
-
-  return res.status(200).json({ contact });
-};
 
 export const upload = async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[];
   const file: Express.Multer.File = head(files) as Express.Multer.File;
   const { tenantId } = req.user;
-  let { tags, wallets } = req.body;
+  let { tags } = req.body;
 
   if (tags) {
     tags = tags.split(",");
-  }
-
-  if (wallets) {
-    wallets = wallets.split();
   }
 
   const response = await ImportFileContactsService(
     +tenantId,
     file,
     tags,
-    wallets
+
   );
 
   // const io = getIO();
@@ -227,7 +204,7 @@ export const exportContacts = async (req: Request, res: Response) => {
   if (contacts.length > 0) {
     const headers = Object.keys(contacts[0]);
     worksheet.addRow(headers);
-    
+
     // Adiciona os dados
     contacts.forEach(contact => {
       worksheet.addRow(Object.values(contact));
@@ -285,7 +262,7 @@ export const importPersonalContacts = async (
     if (method === 'numbers') {
       // Importar via lista de números
       const { numbers } = data;
-      
+
       if (!numbers || !Array.isArray(numbers)) {
         throw new AppError("Lista de números é obrigatória", 400);
       }
@@ -294,11 +271,11 @@ export const importPersonalContacts = async (
       const batchSize = 5;
       for (let i = 0; i < numbers.length; i += batchSize) {
         const batch = numbers.slice(i, i + batchSize);
-        
+
         for (const number of batch) {
           try {
             const cleanNumber = String(number).replace(/\D/g, "");
-            
+
             if (cleanNumber.length < 8 || cleanNumber.length > 15) {
               results.errors++;
               results.details.push({
@@ -326,7 +303,7 @@ export const importPersonalContacts = async (
             // Tentar verificar se está no WhatsApp
             let contactName = `Contato ${cleanNumber}`;
             let pushname = "";
-            
+
             if (wbot) {
               try {
                 const contactInfo = await (wbot as any).onWhatsApp(cleanNumber);
@@ -377,7 +354,7 @@ export const importPersonalContacts = async (
     } else if (method === 'vcf') {
       // Importar via arquivo VCF (vCard)
       const { vcfContent } = data;
-      
+
       if (!vcfContent) {
         throw new AppError("Conteúdo VCF é obrigatório", 400);
       }
@@ -385,7 +362,7 @@ export const importPersonalContacts = async (
       // Parsear VCF e extrair números
       const vcfLines = vcfContent.split('\n');
       const numbers: string[] = [];
-      
+
       for (const line of vcfLines) {
         if (line.startsWith('TEL:')) {
           const number = line.replace('TEL:', '').trim();
@@ -397,7 +374,7 @@ export const importPersonalContacts = async (
       for (const number of numbers) {
         try {
           const cleanNumber = String(number).replace(/\D/g, "");
-          
+
           if (cleanNumber.length < 8 || cleanNumber.length > 15) {
             results.errors++;
             continue;
@@ -445,7 +422,7 @@ export const importPersonalContacts = async (
     }
 
     const responseMessage = `Importação concluída. Importados: ${results.imported}, Verificados: ${results.verified}, Erros: ${results.errors}`;
-    
+
     return res.status(200).json({
       message: responseMessage,
       summary: results,

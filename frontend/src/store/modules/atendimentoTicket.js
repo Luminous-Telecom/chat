@@ -28,12 +28,6 @@ const checkTicketFilter = (ticket, currentFilters = null) => {
     return (conf?.value === 'enabled')
   }
 
-  const DirectTicketsToWallets = () => {
-    const configuracoes = JSON.parse(localStorage.getItem('configuracoes'))
-    const conf = configuracoes?.find(c => c.key === 'DirectTicketsToWallets')
-    return (conf?.value === 'enabled')
-  }
-
   const isNotViewAssignedTickets = () => {
     const configuracoes = JSON.parse(localStorage.getItem('configuracoes'))
     const conf = configuracoes?.find(c => c.key === 'NotViewAssignedTickets')
@@ -112,14 +106,7 @@ const checkTicketFilter = (ticket, currentFilters = null) => {
     }
   }
 
-  // se configuração para carteira ativa: verificar se já é um ticket da carteira do usuário
-  if (DirectTicketsToWallets() && (ticket?.contact?.wallets?.length || 0) > 0) {
-    const idx = ticket?.contact?.wallets.findIndex(w => w.id == userId)
-    if (idx !== -1) {
-      return true
-    }
-    return false
-  }
+
 
   // verificar se o parametro para não permitir visualizar
   // tickets atribuidos à outros usuários está ativo
@@ -147,7 +134,6 @@ const atendimentoTicket = {
     ticketFocado: {
       contact: {
         tags: [],
-        wallets: [],
         extraInfo: []
       },
       scheduledMessages: []
@@ -337,13 +323,11 @@ const atendimentoTicket = {
           if (!ticketData.contact) {
             ticketData.contact = {
               tags: [],
-              wallets: [],
               extraInfo: []
             }
           } else {
             // Garantir que os arrays dentro de contact existam
             ticketData.contact.tags = Array.isArray(ticketData.contact.tags) ? ticketData.contact.tags : []
-            ticketData.contact.wallets = Array.isArray(ticketData.contact.wallets) ? ticketData.contact.wallets : []
             ticketData.contact.extraInfo = Array.isArray(ticketData.contact.extraInfo) ? ticketData.contact.extraInfo : []
           }
 
@@ -375,14 +359,7 @@ const atendimentoTicket = {
             }))
           }
 
-          // CORREÇÃO: Garantir chaves únicas para wallets
-          if (ticketData.contact.wallets) {
-            ticketData.contact.wallets = ticketData.contact.wallets.map((wallet, idx) => ({
-              ...wallet,
-              id: wallet.id || `wallet-${ticketData.id || 'unknown'}-${idx}`,
-              uniqueKey: `wallet-${wallet.id || idx}-${ticketData.id || 'unknown'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` // Chave única primitiva
-            }))
-          }
+
 
           state.ticketFocado = ticketData
         } catch (error) {
@@ -391,7 +368,6 @@ const atendimentoTicket = {
           state.ticketFocado = {
             contact: {
               tags: [],
-              wallets: [],
               extraInfo: []
             },
             scheduledMessages: []
@@ -402,7 +378,6 @@ const atendimentoTicket = {
         state.ticketFocado = {
           contact: {
             tags: [],
-            wallets: [],
             extraInfo: []
           },
           scheduledMessages: []
@@ -626,7 +601,6 @@ const atendimentoTicket = {
         await commit('TICKET_FOCADO', {
           contact: {
             tags: [],
-            wallets: [],
             extraInfo: []
           },
           scheduledMessages: []
@@ -641,7 +615,6 @@ const atendimentoTicket = {
         // Garantir estruturas essenciais
         if (!ticketData.contact) ticketData.contact = {}
         if (!ticketData.contact.tags) ticketData.contact.tags = []
-        if (!ticketData.contact.wallets) ticketData.contact.wallets = []
         if (!ticketData.contact.extraInfo) ticketData.contact.extraInfo = []
         if (!ticketData.scheduledMessages) ticketData.scheduledMessages = []
 
@@ -694,7 +667,6 @@ const atendimentoTicket = {
         // Garantir estruturas essenciais
         if (!ticketData.contact) ticketData.contact = {}
         if (!ticketData.contact.tags) ticketData.contact.tags = []
-        if (!ticketData.contact.wallets) ticketData.contact.wallets = []
         if (!ticketData.contact.extraInfo) ticketData.contact.extraInfo = []
         if (!ticketData.scheduledMessages) ticketData.scheduledMessages = []
 

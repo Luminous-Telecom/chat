@@ -247,23 +247,7 @@
             </q-select>
           </div>
           <div class="col-12">
-            <q-select
-              outlined
-              dense
-              rounded
-              class="full-width"
-              v-model="wallets"
-              multiple
-              :max-values="1"
-              :options="usuarios"
-              use-chips
-              label="Carteira"
-              option-value="id"
-              option-label="name"
-              emit-value
-              map-options
-            >
-            </q-select>
+
 
           </div>
 
@@ -329,7 +313,7 @@ export default {
         searchParam: null,
         hasMore: true
       },
-      wallets: [],
+
       tags: [],
       etiquetas: [],
       usuarios: [],
@@ -355,14 +339,6 @@ export default {
           }
         },
         { name: 'number', label: 'WhatsApp', field: 'number', align: 'center', style: 'width: 300px' },
-        {
-          name: 'wallet',
-          label: 'Carteira',
-          field: 'wallet',
-          align: 'center',
-          style: 'width: 300px'
-          // format: v => v ? v.map(n => n.name)?.join(', ') : ''
-        },
         {
           name: 'instagramPK',
           label: 'Instagram',
@@ -406,9 +382,7 @@ export default {
         if (this.tags.length > 0) {
           formData.append('tags', this.tags)
         }
-        if (this.wallets.length > 0) {
-          formData.append('wallets', this.wallets)
-        }
+
         await ImportarArquivoContato(formData)
         this.$notificarSucesso('Contatos importados com sucesso!')
         await this.listarContatos()

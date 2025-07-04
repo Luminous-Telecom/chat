@@ -31,19 +31,16 @@ const ListContactsService = async ({
     "Contact"."tenantId" = ${tenantId}
     and (LOWER("Contact"."name") like '%${searchParam.toLowerCase().trim()}%'
         or "Contact"."number" like '%${searchParam.toLowerCase().trim()}%')
-    and (('${profile}' = 'admin') or (("cw"."walletId" = ${userId}) or ("cw"."walletId" is null)))
   `;
 
   const queryCount = `
     select count(*)
     from "Contacts" as "Contact"
-    left join "ContactWallets" cw on cw."contactId" = "Contact".id
     where ${where}
   `;
 
   const query = `
     select
-      distinct
       "Contact"."id",
       "Contact"."name",
       "Contact"."number",
@@ -58,13 +55,9 @@ const ListContactsService = async ({
       "Contact"."isGroup",
       "Contact"."tenantId",
       "Contact"."createdAt",
-      "Contact"."updatedAt",
-      "cw"."walletId",
-      "u"."name" as "wallet"
+      "Contact"."updatedAt"
     from
       "Contacts" as "Contact"
-    left join "ContactWallets" cw on cw."contactId" = "Contact".id
-    left join "Users" u on cw."walletId" = u."id"
     where ${where}
     order by "Contact"."name" asc
     limit ${limit} offset ${offset}

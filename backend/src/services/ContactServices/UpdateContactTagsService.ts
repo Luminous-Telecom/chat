@@ -49,10 +49,7 @@ const UpdateContactService = async ({
         as: "tags",
         through: { attributes: [] }
       },
-      {
-        association: "wallets",
-        attributes: ["id", "name"],
-      },
+
     ],
   });
 

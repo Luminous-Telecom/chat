@@ -350,21 +350,7 @@
                 multiple
                 display-value=""
               />
-              <!-- Seletor de Carteira -->
-              <q-select
-                v-model="selectedWallets"
-                :options="usuarios"
-                option-label="name"
-                option-value="id"
-                outlined
-                dense
-                label="Carteira"
-                class="q-mx-xs"
-                :class="{'q-select--without-value': !selectedWallets.length}"
-                style="height: 40px; min-width: 180px; max-width: 240px; width: 100%;"
-                @update:model-value="carteiraDefinida"
-                @blur="blurWallets"
-              />
+
             </div>
 
             <!-- Participantes da Conversa -->
@@ -690,7 +676,7 @@ import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { ListarMensagensRapidas } from 'src/service/mensagensRapidas'
 import { ListarEtiquetas } from 'src/service/etiquetas'
-import { EditarEtiquetasContato, EditarCarteiraContato, EditarContato } from 'src/service/contatos'
+import { EditarEtiquetasContato, EditarContato } from 'src/service/contatos'
 import { RealizarLogout } from 'src/service/login'
 import { ListarUsuarios } from 'src/service/user'
 import MensagemChat from './MensagemChat.vue'
@@ -771,7 +757,7 @@ export default {
       editandoNomeContato: false,
       novoNomeContato: '',
       selectedTags: [],
-      selectedWallets: [],
+
     }
   },
   computed: {
@@ -1195,38 +1181,11 @@ export default {
       const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, newTagIds)
       this.contatoEditado(data)
     },
-    async carteiraDefinida (wallets) {
-      const { data } = await EditarCarteiraContato(this.ticketFocado.contact.id, [...wallets])
-      this.contatoEditado(data)
-    },
-    async toggleWallet (walletId) {
-      const currentWallets = this.ticketFocado.contact.wallets || []
-      let newWalletIds
 
-      if (currentWallets.includes(walletId)) {
-        // Remove carteira se já estiver selecionada
-        newWalletIds = currentWallets.filter(id => id !== walletId)
-      } else {
-        // Como carteira tem max-values="1", substitui a carteira atual
-        newWalletIds = [walletId]
-      }
 
-      const { data } = await EditarCarteiraContato(this.ticketFocado.contact.id, newWalletIds)
-      this.contatoEditado(data)
-    },
-    isWalletSelected (walletId) {
-      return this.ticketFocado.contact.wallets && this.ticketFocado.contact.wallets.includes(walletId)
-    },
-    getWalletName (walletId) {
-      const wallet = this.usuarios.find(user => user.id === walletId)
-      return wallet ? wallet.name : 'Carteira não encontrada'
-    },
-    async removeWalletById (walletId) {
-      const currentWallets = this.ticketFocado.contact.wallets || []
-      const newWalletIds = currentWallets.filter(id => id !== walletId)
-      const { data } = await EditarCarteiraContato(this.ticketFocado.contact.id, newWalletIds)
-      this.contatoEditado(data)
-    },
+
+
+
     async carregarObservacoes () {
       if (!this.ticketFocado?.id) return
 
@@ -1824,9 +1783,7 @@ export default {
     blurTags() {
       if (!this.selectedTags.length) this.selectedTags = [];
     },
-    blurWallets() {
-      if (!this.selectedWallets.length) this.selectedWallets = [];
-    },
+
   },
   beforeMount () {
     this.listarFilas()
@@ -2669,84 +2626,7 @@ export default {
   color: #f39c12;
 }
 
-/* Wallet selector styles */
-.custom-wallet-selector {
-  height: 32px !important;
-  min-height: 32px !important;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--background-color-paper);
-  color: var(--text-color-primary);
-  justify-content: flex-start;
-  text-transform: none;
-  font-weight: normal;
-  padding: 0 12px;
-}
 
-.custom-wallet-selector:hover {
-  background-color: var(--background-color-default);
-  border-color: var(--primary-color);
-}
-
-.selected-wallets-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  max-height: 80px;
-  overflow-y: auto;
-}
-
-.wallet-menu {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.wallet-option-item {
-  padding: 8px 16px;
-  transition: background-color 0.2s;
-}
-
-.wallet-option-item:hover {
-  background-color: #f5f5f5;
-}
-
-/* Wallet title styles */
-.wallet-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: $dark-tertiary;
-  display: flex;
-  align-items: center;
-}
-
-/* Dark mode styles for wallet selector */
-.body--dark .custom-wallet-selector {
-  border-color: $dark-border;
-  background-color: $dark-secondary;
-  color: var(--text-color-primary);
-}
-
-.body--dark .custom-wallet-selector:hover {
-  background-color: $dark-hover;
-  border-color: $dark-accent;
-}
-
-.body--dark .wallet-title {
-  color: var(--text-color-primary);
-}
-
-.body--dark .wallet-menu {
-  background-color: $dark-secondary;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-.body--dark .wallet-option-item {
-  color: var(--text-color-primary);
-}
-
-.body--dark .wallet-option-item:hover {
-  background-color: var(--background-color-default);
-}
 
 /* Enhanced scroll area customization */
 .observations-container .q-scrollarea__thumb {

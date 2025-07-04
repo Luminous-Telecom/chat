@@ -18,7 +18,7 @@ import {
 import Campaign from "./Campaign";
 import CampaignContacts from "./CampaignContacts";
 import ContactCustomField from "./ContactCustomField";
-import ContactWallet from "./ContactWallet";
+
 // import Message from "./Message";
 import Tags from "./Tag";
 import Tenant from "./Tenant";
@@ -95,11 +95,7 @@ class Contact extends Model<Contact> {
   @BelongsToMany(() => Tags, () => ContactTag, "contactId", "tagId")
   tags: Tags[];
 
-  @BelongsToMany(() => User, () => ContactWallet, "contactId", "walletId")
-  wallets: ContactWallet[];
 
-  @HasMany(() => ContactWallet)
-  contactWallets: ContactWallet[];
 
   @HasMany(() => CampaignContacts)
   campaignContacts: CampaignContacts[];

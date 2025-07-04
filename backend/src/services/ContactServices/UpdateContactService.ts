@@ -2,7 +2,7 @@ import AppError from "../../errors/AppError";
 import socketEmit from "../../helpers/socketEmit";
 import Contact from "../../models/Contact";
 import ContactCustomField from "../../models/ContactCustomField";
-import ContactWallet from "../../models/ContactWallet";
+
 
 interface ExtraInfo {
   id?: number;
@@ -10,18 +10,14 @@ interface ExtraInfo {
   value: string;
 }
 
-interface Wallet {
-  walletId: number | string;
-  contactId: number | string;
-  tenantId: number | string;
-}
+
 
 interface ContactData {
   email?: string;
   number?: string;
   name?: string;
   extraInfo?: ExtraInfo[];
-  wallets?: null | number[] | string[];
+
 }
 
 interface Request {
@@ -35,7 +31,7 @@ const UpdateContactService = async ({
   contactId,
   tenantId,
 }: Request): Promise<Contact> => {
-  const { email, name, number, extraInfo, wallets } = contactData;
+  const { email, name, number, extraInfo } = contactData;
 
   const contact = await Contact.findOne({
     where: { id: contactId, tenantId },
@@ -43,10 +39,7 @@ const UpdateContactService = async ({
     include: [
       "extraInfo",
       "tags",
-      {
-        association: "wallets",
-        attributes: ["id", "name"],
-      },
+
     ],
   });
 
@@ -72,26 +65,7 @@ const UpdateContactService = async ({
     );
   }
 
-  if (wallets) {
-    await ContactWallet.destroy({
-      where: {
-        tenantId,
-        contactId,
-      },
-    });
 
-    const contactWallets: Wallet[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    wallets.forEach((wallet: any) => {
-      contactWallets.push({
-        walletId: !wallet.id ? wallet : wallet.id,
-        contactId,
-        tenantId,
-      });
-    });
-
-    await ContactWallet.bulkCreate(contactWallets as any);
-  }
 
   await contact.update({
     name,
@@ -104,10 +78,7 @@ const UpdateContactService = async ({
     include: [
       "extraInfo",
       "tags",
-      {
-        association: "wallets",
-        attributes: ["id", "name"],
-      },
+
     ],
   });
 

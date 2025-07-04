@@ -79,10 +79,7 @@ const FindOrCreateTicketService = async ({
         include: [
           "extraInfo",
           "tags",
-          {
-            association: "wallets",
-            attributes: ["id", "name"],
-          },
+
         ],
       },
       {
@@ -124,10 +121,7 @@ const FindOrCreateTicketService = async ({
           include: [
             "extraInfo",
             "tags",
-            {
-              association: "wallets",
-              attributes: ["id", "name"],
-            },
+
           ],
         },
         {
@@ -178,10 +172,7 @@ const FindOrCreateTicketService = async ({
           include: [
             "extraInfo",
             "tags",
-            {
-              association: "wallets",
-              attributes: ["id", "name"],
-            },
+
           ],
         },
         {
@@ -213,10 +204,7 @@ const FindOrCreateTicketService = async ({
     }
   }
 
-  const DirectTicketsToWallets =
-    (await ListSettingsService(tenantId))?.find(
-      s => s.key === "DirectTicketsToWallets"
-    )?.value === "enabled" || false;
+
 
   const ticketObj: any = {
     contactId: groupContact ? groupContact.id : contact.id,
@@ -228,15 +216,7 @@ const FindOrCreateTicketService = async ({
     channel,
   };
 
-  if (DirectTicketsToWallets && contact.id) {
-    const wallet: any = contact;
-    const wallets = await wallet.getWallets();
-    if (wallets && wallets[0]?.id) {
-      ticketObj.status = "open";
-      ticketObj.userId = wallets[0].id;
-      ticketObj.startedAttendanceAt = new Date().getTime();
-    }
-  }
+
 
   const ticketCreated = await Ticket.create(ticketObj);
 

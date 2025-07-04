@@ -46,10 +46,6 @@ contactRoutes.put(
   isAuth,
   ContactController.updateContactTags
 );
-contactRoutes.put(
-  "/contact-wallet/:contactId",
-  isAuth,
-  ContactController.updateContactWallet
-);
+
 
 export default contactRoutes;

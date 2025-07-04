@@ -19,11 +19,7 @@ const ShowTicketService = async ({
         as: "contact",
         include: [
           "extraInfo",
-          "tags",
-          {
-            association: "wallets",
-            attributes: ["id", "name"],
-          },
+          "tags"
         ],
       },
       {

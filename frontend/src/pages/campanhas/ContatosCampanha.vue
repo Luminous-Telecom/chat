@@ -232,40 +232,7 @@
                   </template>
                 </q-select>
               </div>
-              <div class="col-xs-12 col-sm-4 grow text-center">
-                <q-select
-                  outlined
-                  rounded
-                  label="Carteira"
-                  dense
-                  v-model="pesquisa.wallets"
-                  multiple
-                  :options="usuarios"
-                  use-chips
-                  option-value="id"
-                  option-label="name"
-                  emit-value
-                  map-options
-                  dropdown-icon="add"
-                >
-                  <template v-slot:option="{ itemProps, itemEvents, opt, selected, toggleOption }">
-                    <q-item
-                      v-bind="itemProps"
-                      v-on="itemEvents"
-                    >
-                      <q-item-section>
-                        <q-item-label v-html="opt.name"></q-item-label>
-                      </q-item-section>
-                      <q-item-section side>
-                        <q-checkbox
-                          :value="selected"
-                          @input="toggleOption(opt)"
-                        />
-                      </q-item-section>
-                    </q-item>
-                  </template>
-                </q-select>
-              </div>
+
               <div class="col-xs-12 col-sm-4 grow text-center">
                 <ModernSearch
                   v-model="pesquisa.searchParam"
@@ -377,7 +344,7 @@ export default {
         endDate: format(new Date(), 'yyyy-MM-dd'),
         ddds: [],
         tags: [],
-        wallets: [],
+
         searchParam: ''
       },
       estadoPorDdd,

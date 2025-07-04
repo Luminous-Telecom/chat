@@ -14,10 +14,7 @@ const ShowContactService = async ({
     include: [
       "extraInfo",
       "tags",
-      {
-        association: "wallets",
-        attributes: ["id", "name"],
-      },
+
     ],
   });
 

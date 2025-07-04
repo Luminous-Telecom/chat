@@ -58,28 +58,7 @@
         </q-item-section>
       </q-item>
 
-      <q-item
-        tag="label"
-        v-ripple
-      >
-        <q-item-section>
-          <q-item-label>Forçar atendimento via Carteira</q-item-label>
-          <q-item-label caption>Caso o contato tenha carteira vínculada, o sistema irá direcionar o atendimento somente para os donos da carteira de clientes.</q-item-label>
-        </q-item-section>
-        <q-item-section avatar>
-          <q-toggle
-            v-model="DirectTicketsToWallets"
-            false-value="disabled"
-            true-value="enabled"
-            checked-icon="check"
-            keep-color
-            :color="DirectTicketsToWallets === 'enabled' ? 'green' : 'negative'"
-            size="md"
-            unchecked-icon="clear"
-            @input="atualizarConfiguracao('DirectTicketsToWallets')"
-          />
-        </q-item-section>
-      </q-item>
+
 
       <q-item
         tag="label"
@@ -192,7 +171,7 @@ export default {
       listaFilas: [],
       NotViewAssignedTickets: null,
       NotViewTicketsChatBot: null,
-      DirectTicketsToWallets: null,
+
       botTicketActive: null,
       defaultQueueId: null,
       rejectCalls: null,

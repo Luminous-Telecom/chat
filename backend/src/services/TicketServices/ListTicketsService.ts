@@ -154,14 +154,7 @@ const ListTicketsService = async ({
   //   "contact->tags->ContactTag"."tenantId" as "contact.tags.ContactTag.tenantId",
   //   "contact->tags->ContactTag"."createdAt" as "contact.tags.ContactTag.createdAt",
   //   "contact->tags->ContactTag"."updatedAt" as "contact.tags.ContactTag.updatedAt",
-  //   "contact->wallets"."id" as "contact.wallets.id",
-  //   "contact->wallets"."name" as "contact.wallets.name",
-  //   "contact->wallets->ContactWallet"."id" as "contact.wallets.ContactWallet.id",
-  //   "contact->wallets->ContactWallet"."contactId" as "contact.wallets.ContactWallet.contactId",
-  //   "contact->wallets->ContactWallet"."walletId" as "contact.wallets.ContactWallet.walletId",
-  //   "contact->wallets->ContactWallet"."tenantId" as "contact.wallets.ContactWallet.tenantId",
-  //   "contact->wallets->ContactWallet"."createdAt" as "contact.wallets.ContactWallet.createdAt",
-  //   "contact->wallets->ContactWallet"."updatedAt" as "contact.wallets.ContactWallet.updatedAt",
+
   //   "user"."id" as "user.id",
   //   "user"."name" as "user.name",
   //   "user"."profile" as "user.profile"
@@ -194,10 +187,7 @@ const ListTicketsService = async ({
   //   inner join "Tags" as "contact->tags" on
   //   "contact->tags"."id" = "contact->tags->ContactTag"."tagId") on
   //   "contact"."id" = "contact->tags->ContactTag"."contactId"
-  //   left outer join ( "ContactWallets" as "contact->wallets->ContactWallet"
-  //   inner join "Users" as "contact->wallets" on
-  //   "contact->wallets"."id" = "contact->wallets->ContactWallet"."walletId") on
-  //   "contact"."id" = "contact->wallets->ContactWallet"."contactId"
+
   //   left outer join "Users" as "user" on
   //   "Ticket"."userId" = "user"."id"
   //   order by
@@ -227,7 +217,7 @@ const ListTicketsService = async ({
         (:isExistsQueueTenant = 'S' and (t."queueId" in ( :queuesIdsUser ) or (:isNotAssigned = 'S' and t."queueId" is null)))
         or t."userId" = :userId 
         or exists (select 1 from "TicketParticipants" tp where tp."ticketId" = t.id and tp."userId" = :userId and tp."isActive" = true and tp."tenantId" = :tenantId)
-        or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
+        )
       ) OR (:isShowAll = 'S') OR (t."isGroup" = true) OR (:isExistsQueueTenant = 'N') 
     ))
   )
