@@ -391,19 +391,29 @@
         </q-chat-message>
           </div>
           <div class="user-avatar-external">
-            <img
-              v-if="getUserProfilePic(mensagem)"
-              :src="getUserProfilePic(mensagem)"
-              class="user-avatar-image"
-              @error="showAvatarFallback"
-              @load="hideAvatarFallback"
-            />
-            <div
-              class="user-avatar-fallback-external"
-              :class="{ 'avatar-fallback-hidden': getUserProfilePic(mensagem) }"
+            <q-avatar
+              size="36px"
+              color="#f3f4f6"
+              text-color="#616161"
+              style="border: 1px solid #e0e0e0; background: #f3f4f6 !important;"
+              rounded
             >
-              <q-icon name="mdi-account-outline" size="22px" color="white" />
-            </div>
+              <q-icon
+                name="mdi-account"
+                size="2.5em"
+                color="#616161"
+                v-if="!getUserProfilePic(mensagem)"
+              />
+              <q-img
+                v-else
+                :src="getUserProfilePic(mensagem)"
+                style="width: 50px; height: 50px; border-radius: 50%;"
+              >
+                <template v-slot:error>
+                  <q-icon name="mdi-account" size="1.5em" color="#616161" />
+                </template>
+              </q-img>
+            </q-avatar>
           </div>
         </div>
 
@@ -2013,9 +2023,17 @@ export default {
 
   .user-avatar-external {
     flex-shrink: 0;
-    order: 2; /* Avatar após a mensagem */
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    /* background: #f3f4f6; */
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
   }
 }
 
@@ -2062,11 +2080,11 @@ export default {
 
 .user-avatar-external {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  /* background: #f3f4f6; */ /* Removido para não sobrescrever o q-avatar */
+  border: 1px solid #e0e0e0;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -2081,12 +2099,12 @@ export default {
 
 .user-avatar-external:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .user-avatar-fallback-external {
-  background: #9e9e9e;
-  color: white;
+  background: #f3f4f6;
+  color: #616161;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2133,16 +2151,17 @@ export default {
 }
 
 .body--dark .user-avatar-external {
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: #23272e;
+  border-color: #404040;
 }
 
 .body--dark .user-avatar-external:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .body--dark .user-avatar-fallback-external {
-  background: #616161;
+  background: #23272e;
+  color: #b0b0b0;
 }
 
 .body--dark .user-avatar-fallback-external::before {
