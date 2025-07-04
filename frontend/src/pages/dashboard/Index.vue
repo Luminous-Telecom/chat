@@ -376,7 +376,8 @@ import {
   ArcElement,
   DoughnutController,
   BarController,
-  BarElement
+  BarElement,
+  Filler
 } from 'chart.js'
 import { ListarFilas } from 'src/service/filas'
 import {
@@ -402,7 +403,8 @@ Chart.register(
   ArcElement,
   DoughnutController,
   BarController,
-  BarElement
+  BarElement,
+  Filler
 )
 
 // Inicializar todas as variáveis reativas
