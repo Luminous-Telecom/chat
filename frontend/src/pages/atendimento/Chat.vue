@@ -62,6 +62,7 @@
         @mensagem-chat:encaminhar-mensagem="abrirModalEncaminharMensagem"
         :ativarMultiEncaminhamento.sync="ativarMultiEncaminhamento"
         :mensagensParaEncaminhar.sync="mensagensParaEncaminhar"
+        @update:replyingMessage="replyingMessage = $event"
       />
       <div id="fimListaMensagensChat" style="height: 1px;"></div>
     </q-scroll-area>
