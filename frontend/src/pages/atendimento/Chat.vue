@@ -32,8 +32,8 @@
         <!-- Container único para conteúdo múltiplo -->
         <div>
           <!-- Botão para carregar mais mensagens -->
-          <div 
-            v-if="cMessages.length && hasMore && !loading" 
+          <div
+            v-if="cMessages.length && hasMore && !loading"
             class="text-center q-pa-md"
           >
             <q-btn
@@ -45,8 +45,8 @@
               :loading="loading"
             />
           </div>
-          <div 
-            v-if="loading" 
+          <div
+            v-if="loading"
             class="text-center q-pa-md"
           >
             <q-spinner-dots color="primary" size="2em" />
@@ -123,56 +123,18 @@
       v-if="ticketFocado.id && ticketFocado.status === 'open'"
       class="input-area"
     >
-      <!-- Mensagem de resposta -->
-      <q-list
-        v-if="replyingMessage"
-        :style="`border-top: 1px solid transparent; max-height: 140px; width: 100%;`"
-        style="max-height: 100px;"
-        class="q-pa-none q-py-md text-black row items-center col justify-center full-width"
-        :class="{
-            'bg-grey-1': !$q.dark.isActive,
-            'bg-grey-10': $q.dark.isActive
-          }"
-      >
-        <q-item
-          class="q-card--bordered q-pb-sm btn-rounded"
-          :style="`
-            width: 460px;
-            min-width: 460px;
-            max-width: 460px;
-            max-height: 110px;
-          `"
-          :class="{
-              'bg-blue-1': !replyingMessage.fromMe && !$q.dark.isActive,
-              'bg-blue-2 text-black': !replyingMessage.fromMe && $q.dark.isActive,
-              'bg-grey-2 text-black': replyingMessage.fromMe
-            }"
-        >
-          <q-item-section>
-            <q-item-label
-              v-if="!replyingMessage.fromMe"
-              :class="{ 'text-black': $q.dark.isActive }"
-              caption
-            >
-              {{ replyingMessage.contact && replyingMessage.contact.name }}
-            </q-item-label>
-            <q-item-label
-              lines="4"
-              v-html="formatarMensagemWhatsapp(replyingMessage.body)"
-            >
-            </q-item-label>
-          </q-item-section>
-          <q-btn
-            @click="replyingMessage = null"
-            dense
-            flat
-            round
-            icon="close"
-            class="float-right absolute-top-right z-max"
-            :disabled="loading || ticketFocado.status !== 'open'"
-          />
-        </q-item>
-      </q-list>
+      <!-- Mensagem de resposta - Design WhatsApp Web -->
+      <div v-if="replyingMessage" class="wa-quoted-wrapper">
+        <div class="wa-quoted-msg">
+          <div class="wa-quoted-bar"></div>
+          <div class="wa-quoted-content">
+            <div v-if="replyingMessage.contact && replyingMessage.contact.name" class="wa-quoted-title">{{ replyingMessage.contact.name }}</div>
+            <div v-if="replyingMessage.author" class="wa-quoted-author">{{ replyingMessage.author }}</div>
+            <div class="wa-quoted-body">{{ replyingMessage.body }}</div>
+          </div>
+          <button class="wa-quoted-close" @click="logCloseReplyingMessage">×</button>
+        </div>
+      </div>
 
       <!-- Banner de encaminhamento -->
       <q-banner
@@ -237,11 +199,11 @@
       </q-banner>
 
       <!-- Input de mensagem -->
-      <InputMensagem
-        v-if="!mensagensParaEncaminhar.length"
-        :mensagensRapidas="mensagensRapidas"
-        :replyingMessage.sync="replyingMessage"
-      />
+              <InputMensagem
+          v-if="!mensagensParaEncaminhar.length"
+          :mensagensRapidas="mensagensRapidas"
+          :replyingMessage="replyingMessage"
+        />
       <q-resize-observer @resize="onResizeInputMensagem" />
     </div>
 
@@ -432,7 +394,7 @@ export default {
   },
   watch: {
     mensagensTicket () {
-      this.replyingMessage = null
+      this.replyingMessage = null;
     },
     replyingMessage (newVal, oldVal) {
       // Watcher para replyingMessage - pode ser usado para futuras funcionalidades
@@ -562,6 +524,9 @@ export default {
         .catch(e => {
           this.$notificarErro('Não foi possível encaminhar mensagem. Tente novamente em alguns minutos!', e)
         })
+    },
+    logCloseReplyingMessage() {
+      this.replyingMessage = null;
     }
   },
   created () {
@@ -707,6 +672,14 @@ body.body--dark .wa-bg-overlay {
   }
 }
 
+/* Remove estilos antigos de reply que não são mais necessários */
+.replyginContactMsgSideColor,
+.replyginSelfMsgSideColor,
+.replyginMsgBody,
+.messageContactName {
+  /* Mantidos para compatibilidade, mas não utilizados na nova implementação */
+}
+
 /* Preserva todos os estilos originais */
 audio {
   height: 40px;
@@ -844,5 +817,121 @@ body.body--dark .textContentItemDeleted {
 .fade-enter,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Estilos para mensagem citada - Design igual WhatsApp Web */
+.wa-quoted-msg {
+  display: flex;
+  align-items: stretch;
+  background: #23272a;
+  border-radius: 8px;
+  position: relative;
+}
+.wa-quoted-bar {
+  width: 4px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background: #53bdeb;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+.wa-quoted-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 7px 12px 10px 11px;
+}
+.wa-quoted-title {
+  color: #53bdeb;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  line-height: 1.1;
+  word-break: break-all;
+}
+.wa-quoted-author {
+  color: #e9edef;
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 2px;
+  line-height: 1.1;
+  word-break: break-all;
+}
+.wa-quoted-body {
+  color: #e9edef;
+  font-size: 13px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+.wa-quoted-close {
+  background: none;
+  border: none;
+  color: #aebac1;
+  font-size: 20px;
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0;
+  line-height: 1;
+}
+body.body--light .wa-quoted-msg {
+  background: #f0f2f5;
+}
+body.body--light .wa-quoted-author,
+body.body--light .wa-quoted-body {
+  color: #222e35;
+}
+
+/* Animação de entrada */
+/* Animações removidas conforme solicitado */
+
+/* Responsivo */
+@media (max-width: 599px) {
+  .modern-reply-container {
+    margin: 0 4px;
+    border-radius: 6px 6px 0 0;
+    padding: 6px 8px;
+    min-height: 36px;
+  }
+
+  .modern-reply-card {
+    padding: 0;
+  }
+
+  .modern-reply-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .modern-reply-label {
+    font-size: 11px;
+  }
+
+  .modern-reply-author {
+    font-size: 12px;
+  }
+
+  .modern-reply-text {
+    font-size: 11px;
+  }
+
+  .modern-reply-close {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+  }
+}
+
+.wa-quoted-wrapper {
+  background: #2e3540;
+  border-radius: 16px 16px 0 0;
+  margin: 0 12px 0 12px;
+  padding: 8px;
+}
+body.body--light .wa-quoted-wrapper {
+  background: #fff;
 }
 </style>
