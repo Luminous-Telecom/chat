@@ -79,22 +79,22 @@
       </template>
       <template v-slot:body-cell-profilePicUrl="props">
         <q-td>
-          <q-avatar style="border: 1px solid #9e9e9ea1 !important">
+          <q-avatar style="border: 1px solid #e0e0e0 !important; background: #f3f4f6 !important; color: #424242 !important; border-radius: 50% !important;" size="40px" rounded>
             <q-icon
               name="mdi-account"
               size="1.5em"
-              color="grey-5"
+              color="grey-6"
               v-if="!props.value"
             />
             <q-img
               :src="props.value"
-              style="max-width: 150px"
+              style="max-width: 150px; border-radius: 50%;"
             >
               <template v-slot:error>
                 <q-icon
                   name="mdi-account"
                   size="1.5em"
-                  color="grey-5"
+                  color="grey-6"
                 />
               </template>
             </q-img>

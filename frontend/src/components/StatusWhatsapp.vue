@@ -164,8 +164,8 @@
         class="bg-grey"
         round
       >
-        <q-avatar size="32px">
-          <q-icon name="mdi-account" />
+        <q-avatar size="32px" color="grey-2" text-color="grey-8" rounded>
+          <q-icon name="mdi-account" size="20px" color="grey-6" />
         </q-avatar>
         <q-menu>
           <q-list style="min-width: 100px">

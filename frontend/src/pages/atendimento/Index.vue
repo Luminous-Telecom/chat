@@ -145,27 +145,26 @@
               <q-card-section class="contact-profile-section">
                 <div class="contact-profile-wrapper">
                   <div class="contact-avatar-container">
-                    <q-avatar class="contact-profile-avatar">
-                       <q-icon
-                         name="mdi-account"
-                         style="width: 50px; height: 50px"
-                         size="2.5em"
-                         color="grey-4"
-                         v-if="!ticketFocado.contact.profilePicUrl"
-                       />
-                       <q-img
-                         :src="ticketFocado.contact.profilePicUrl"
-                         style="width: 50px; height: 50px"
-                       >
-                         <template v-slot:error>
-                           <q-icon
-                             name="mdi-account"
-                             size="1.5em"
-                             color="grey-4"
-                           />
-                         </template>
-                       </q-img>
-                     </q-avatar>
+                    <q-avatar class="contact-profile-avatar" color="grey-2" text-color="grey-8" size="50px" rounded>
+                      <q-icon
+                        name="mdi-account"
+                        size="2.5em"
+                        color="grey-6"
+                        v-if="!ticketFocado.contact.profilePicUrl"
+                      />
+                      <q-img
+                        :src="ticketFocado.contact.profilePicUrl"
+                        style="width: 50px; height: 50px; border-radius: 50%;"
+                      >
+                        <template v-slot:error>
+                          <q-icon
+                            name="mdi-account"
+                            size="1.5em"
+                            color="grey-6"
+                          />
+                        </template>
+                      </q-img>
+                    </q-avatar>
                   </div>
                   <div class="contact-info-details">
                     <div class="contact-name" style="display: flex; align-items: center; justify-content: center; width: 100%;">

@@ -963,3 +963,32 @@ body.body--dark .messageLeft
   font-size: 0.65rem !important
   opacity: 0.6 !important
 
+// Estilos globais para avatares modernos e neutros
+.q-avatar
+  border-radius: 50% !important
+  background: #f3f4f6 !important
+  color: #424242 !important
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08)
+  border: 1px solid #e0e0e0 !important
+  transition: all 0.3s ease
+
+  &:hover
+    transform: scale(1.05)
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12)
+
+  .q-icon
+    color: #616161 !important
+
+  .q-img
+    border-radius: 50% !important
+
+// Dark mode para avatares
+.body--dark .q-avatar
+  background: #23272e !important
+  color: #e0e0e0 !important
+  border-color: #404040 !important
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2)
+
+  .q-icon
+    color: #b0b0b0 !important
+

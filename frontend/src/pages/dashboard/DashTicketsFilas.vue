@@ -95,8 +95,8 @@
                 </q-avatar>
               </q-item-section>
               <q-item-section avatar v-else>
-                <q-avatar>
-                  <q-icon name="mdi-account-circle" size="md" />
+                <q-avatar color="grey-2" text-color="grey-8" size="40px" rounded>
+                  <q-icon name="mdi-account-circle" size="md" color="grey-6" />
                 </q-avatar>
               </q-item-section>
               <q-item-section>

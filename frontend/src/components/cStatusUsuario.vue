@@ -18,8 +18,8 @@
             class="q-my-none q-ml-sm q-mr-none q-py-md"
           >
             <q-avatar
-              :color="cStatus.color"
-              text-color="white"
+              color="grey-2"
+              text-color="grey-8"
               size="40px"
               :icon="cStatus.icon"
               rounded
