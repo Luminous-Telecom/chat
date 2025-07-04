@@ -942,3 +942,24 @@ body.body--dark .messageLeft
 
 // Efeitos de hover e animações das setas removidos
 
+// Diminuir tamanho do texto da hora nas mensagens
+.q-chat-message .q-message-stamp,
+.q-message-stamp,
+.q-chat-message [class*="stamp"],
+.q-message-text .q-message-stamp,
+.q-chat-message .text-caption,
+.q-message-text .text-caption,
+.q-message-stamp.text-caption,
+.q-chat-message div[class*="caption"],
+.q-message-text div[class*="caption"]
+  font-size: 0.65rem !important
+  opacity: 0.6 !important
+  font-weight: 400 !important
+  line-height: 1.2 !important
+
+// Forçar aplicação em todos os elementos de timestamp
+.q-chat-message *[class*="stamp"],
+.q-chat-message *[class*="caption"]
+  font-size: 0.65rem !important
+  opacity: 0.6 !important
+

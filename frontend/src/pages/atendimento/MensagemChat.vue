@@ -2452,7 +2452,14 @@ export default {
 
 .emoji-text {
   font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif !important;
-  font-size: 1.2em;
+}
+
+/* Garantir que emojis não sejam afetados por outras regras */
+.emoji-text *,
+.emoji-text img,
+.emoji-text span {
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
 
 </style>
