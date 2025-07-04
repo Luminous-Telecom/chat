@@ -16,6 +16,11 @@ const GetTicketWbot = async (ticket: Ticket): Promise<Session> => {
     throw new Error("ERR_WAPP_NOT_INITIALIZED");
   }
 
+  // Checagem adicional: garantir que a sessão está conectada
+  if ((wbot as any).connection !== "open") {
+    throw new Error("ERR_WAPP_NOT_CONNECTED");
+  }
+
   return wbot;
 };
 

@@ -35,6 +35,10 @@ export default {
           `WhatsApp session not found for ID: ${data.whatsappId}`
         );
       }
+      if ((wbot as any).connection !== "open") {
+        console.error(`[CAMPAIGN JOB] ❌ Session not connected for ID: ${data.whatsappId}`);
+        throw new Error(`WhatsApp session not connected for ID: ${data.whatsappId}`);
+      }
 
       // Verificar se a mensagem não está vazia
       if (!data.message || data.message.trim() === '') {

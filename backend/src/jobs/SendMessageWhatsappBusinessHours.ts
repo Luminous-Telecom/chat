@@ -22,6 +22,9 @@ export default {
           `WhatsApp session not found for ID: ${data.ticket.whatsappId}`
         );
       }
+      if ((wbot as any).connection !== "open") {
+        throw new Error(`WhatsApp session not connected for ID: ${data.ticket.whatsappId}`);
+      }
 
       const message = await wbot.sendMessage(
         `${data.ticket.contact.number}@c.us`,

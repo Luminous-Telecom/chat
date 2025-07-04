@@ -34,6 +34,9 @@ export default {
       if (!wbot) {
         throw new AppError("ERR_WAPP_NOT_INITIALIZED");
       }
+      if ((wbot as any).connection !== "open") {
+        throw new AppError("ERR_WAPP_NOT_CONNECTED");
+      }
       // const message: any = {} as WbotMessage;
       try {
         const idNumber = await wbot.getNumberId(data.number);
