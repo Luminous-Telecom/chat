@@ -1,6 +1,6 @@
 import { format, parseJSON } from 'date-fns'
-import pt from 'date-fns/locale/pt-BR'
-import { processEmojis } from 'src/utils/emojiUtils'
+import { ptBR } from 'date-fns/locale'
+import { processAllEmojisWithAppleEmoji } from 'src/utils/emojiUtils'
 
 export default {
   computed: {
@@ -13,7 +13,7 @@ export default {
   methods: {
     scrollToBottom () {
       setTimeout(() => {
-        this.$root.$emit('scrollToBottomMessageChat')
+        this.$eventBus.emit('scrollToBottomMessageChat')
       }, 200)
     },
     dataInWords (date) {
@@ -23,7 +23,7 @@ export default {
         if (isNaN(parsedDate.getTime())) {
           return ''
         }
-        return format(parsedDate, 'HH:mm', { locale: pt })
+        return format(parsedDate, 'HH:mm', { locale: ptBR })
       } catch (error) {
         // Erro ao formatar data
         return ''
@@ -70,8 +70,8 @@ export default {
       // Processar quebras de linha
       format = format.replace(/\n/gi, '<br>')
 
-      // Processar emojis convertendo para SVG usando Twemoji
-      format = processEmojis(format)
+      // Substituir todos os emojis por imagens Apple Emoji
+      format = processAllEmojisWithAppleEmoji(format)
 
       return format
     },
@@ -81,13 +81,13 @@ export default {
       try {
         // Otimização: parseJSON é o mais eficiente para dados do backend
         const parsedDate = parseJSON(data)
-        return format(parsedDate, formato, { locale: pt })
+        return format(parsedDate, formato, { locale: ptBR })
       } catch (error) {
         // Fallback apenas se parseJSON falhar
         try {
           const fallbackDate = new Date(data)
           if (!isNaN(fallbackDate.getTime())) {
-            return format(fallbackDate, formato, { locale: pt })
+            return format(fallbackDate, formato, { locale: ptBR })
           }
         } catch (e) {
           console.warn('[formatarData] Erro ao formatar data:', data)

@@ -11,37 +11,59 @@
         <!-- Filtros em linha horizontal -->
         <div class="filters-container">
           <div class="filter-item">
-            <q-datetime-picker
+            <q-input
               class="modern-input"
               dense
               outlined
               stack-label
               label="Data Inicial"
-              mode="date"
               color="primary"
               v-model="params.startDate"
+              readonly
             >
               <template v-slot:prepend>
                 <q-icon name="mdi-calendar-start" />
               </template>
-            </q-datetime-picker>
+              <template v-slot:append>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-date v-model="params.startDate" mask="YYYY-MM-DD">
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup label="Fechar" color="primary" flat />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
           </div>
 
           <div class="filter-item">
-            <q-datetime-picker
+            <q-input
               class="modern-input"
               dense
               outlined
               stack-label
               label="Data Final"
-              mode="date"
               color="primary"
               v-model="params.endDate"
+              readonly
             >
               <template v-slot:prepend>
                 <q-icon name="mdi-calendar-end" />
               </template>
-            </q-datetime-picker>
+              <template v-slot:append>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-date v-model="params.endDate" mask="YYYY-MM-DD">
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup label="Fechar" color="primary" flat />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
           </div>
 
           <div class="filter-item filter-select">
@@ -259,7 +281,7 @@
           </div>
           <div class="table-content">
             <q-table
-              :data="ticketsPerUsersDetail"
+              :rows="ticketsPerUsersDetail"
               :columns="columns"
               :pagination="{
                 rowsPerPage: 10,
@@ -301,7 +323,7 @@
         </div>
         <div class="chart-content">
           <q-table
-            :data="ticketsPerUsersDetail"
+            :rows="ticketsPerUsersDetail"
             :columns="columns"
             :pagination="{
               rowsPerPage: 10,

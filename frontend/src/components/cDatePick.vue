@@ -49,7 +49,7 @@
   </div>
 </template>
 <script>
-import { singleErrorExtractorMixin } from 'vuelidate-error-extractor'
+import { singleErrorExtractorMixin } from 'src/components/VuelidateErrorExtractor'
 import { format, parse, isValid } from 'date-fns'
 
 export default {

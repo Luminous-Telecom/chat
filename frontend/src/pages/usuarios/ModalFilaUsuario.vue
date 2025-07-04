@@ -1,7 +1,7 @@
 <template>
   <q-dialog
     persistent
-    :value="modalFilaUsuario"
+    :model-value="modalFilaUsuario"
     @hide="fecharModal"
     @show="abrirModal"
     class="modal-modern"
@@ -13,10 +13,9 @@
         <div class="text-subtitle2">Email: {{ usuarioSelecionado.email }}</div>
       </q-card-section>
       <q-card-section class="modal-content">
-        <template v-for="fila in filas">
+        <template v-for="fila in filas" :key="fila.id">
           <div
             class="row col"
-            :key="fila.id"
           >
             <q-checkbox
               :disable="!fila.isActive"

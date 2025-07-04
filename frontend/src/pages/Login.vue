@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import { required, email } from 'vuelidate/lib/validators'
+import { required, email } from '@vuelidate/validators'
 
 export default {
   name: 'Login',

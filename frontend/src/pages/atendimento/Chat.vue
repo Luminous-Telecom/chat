@@ -15,6 +15,9 @@
       'bg-dark': $q.dark.isActive
     }"
   >
+    <!-- Overlay de background igual WhatsApp Web -->
+    <div class="wa-bg-overlay x10l6tqk x13vifvy x1o0tod xh8yej3 x5yr21d x182nak8 x1wwuglj x1vs56c6" data-asset-chat-background-dark="true"></div>
+    <div v-if="$q.dark.isActive === false" class="wa-bg-color"></div>
     <q-scroll-area
       ref="scrollContainer"
       class="scroll-y"
@@ -26,22 +29,29 @@
         enter-active-class="animated fadeIn"
         leave-active-class="animated fadeOut"
       >
-        <infinite-loading
-          v-if="cMessages.length"
-          @infinite="onLoadMore"
-          direction="top"
-          :identificador="ticketFocado.id"
-          spinner="spiral"
-        >
-          <div slot="no-results">
-            <div v-if="!cMessages.length">
-              Sem resultados :(
-            </div>
+        <!-- Container único para conteúdo múltiplo -->
+        <div>
+          <!-- Botão para carregar mais mensagens -->
+          <div 
+            v-if="cMessages.length && hasMore && !loading" 
+            class="text-center q-pa-md"
+          >
+            <q-btn
+              @click="loadMoreMessages"
+              color="primary"
+              outline
+              label="Carregar mais mensagens"
+              icon="mdi-arrow-up"
+              :loading="loading"
+            />
           </div>
-          <div slot="no-more">
-            Nada mais a carregar :)
+          <div 
+            v-if="loading" 
+            class="text-center q-pa-md"
+          >
+            <q-spinner-dots color="primary" size="2em" />
           </div>
-        </infinite-loading>
+        </div>
       </transition>
       <MensagemChat
         :replyingMessage.sync="replyingMessage"
@@ -111,10 +121,6 @@
     <div
       v-if="ticketFocado.id && ticketFocado.status === 'open'"
       class="input-area"
-      :class="{
-        'bg-white': !$q.dark.isActive,
-        'bg-dark': $q.dark.isActive
-      }"
     >
       <!-- Mensagem de resposta -->
       <q-list
@@ -354,10 +360,11 @@ import MensagemChat from './MensagemChat'
 import InputMensagem from './InputMensagem'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import mixinSockets from './mixinSockets'
-import InfiniteLoading from 'vue-infinite-loading'
+// Removido InfiniteLoading - usando implementação nativa
 import { ListarContatos } from 'src/service/contatos'
 import { EncaminharMensagem } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
+import eventBus from 'src/utils/eventBus'
 
 export default {
   name: 'Chat',
@@ -367,8 +374,7 @@ export default {
   },
   components: {
     MensagemChat,
-    InputMensagem,
-    InfiniteLoading
+    InputMensagem
   },
   data () {
     return {
@@ -435,11 +441,11 @@ export default {
     async onResizeInputMensagem (size) {
       this.heigthInputMensagem = size.height
     },
-    async onLoadMore (infiniteState) {
+    async loadMoreMessages () {
       if (this.loading) return
 
       if (!this.hasMore || !this.ticketFocado?.id) {
-        return infiniteState.complete()
+        return
       }
 
       try {
@@ -447,12 +453,11 @@ export default {
         this.params.ticketId = this.ticketFocado.id
         this.params.pageNumber += 1
         await this.$store.dispatch('LocalizarMensagensTicket', this.params)
-        this.loading = false
-        infiniteState.loaded()
       } catch (error) {
-        infiniteState.complete()
+        console.error('Erro ao carregar mais mensagens:', error)
+      } finally {
+        this.loading = false
       }
-      this.loading = false
     },
     scrollArea (e) {
       this.hideOptions = true
@@ -559,14 +564,14 @@ export default {
     }
   },
   created () {
-    this.$root.$on('scrollToBottomMessageChat', this.scrollToBottom)
+    this.$eventBus.on('scrollToBottomMessageChat', this.scrollToBottom)
     this.socketTicket()
   },
   mounted () {
     this.socketMessagesList()
   },
   destroyed () {
-    this.$root.$off('scrollToBottomMessageChat', this.scrollToBottom)
+    this.$eventBus.off('scrollToBottomMessageChat', this.scrollToBottom)
     // Limpar timeout se existir
     if (this.scrollReadTimeout) {
       clearTimeout(this.scrollReadTimeout)
@@ -578,8 +583,41 @@ export default {
 <style lang="scss" scoped>
 .chat-container {
   height: 100vh;
-  overflow: hidden;
+  overflow: hidden !important;
   position: relative;
+}
+
+body.body--light .chat-container {
+  background-color: #ede7dc !important;
+}
+
+.wa-bg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url('../../../public/background.png');
+  background-size: 710px;
+  background-repeat: repeat;
+  background-position: center;
+  pointer-events: none;
+}
+
+body.body--light .wa-bg-overlay {
+  opacity: 1 !important;
+}
+
+body.body--light .wa-bg-color {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #ede7dc;
+  opacity: 0.85;
+  pointer-events: none;
+  mix-blend-mode: lighten;
+}
+
+body.body--dark .wa-bg-overlay {
+  opacity: 0.06 !important;
 }
 
 .input-area {
@@ -588,7 +626,6 @@ export default {
   left: 0;
   right: 0;
   z-index: 10;
-  /* Remove qualquer separação visual */
   border: none !important;
   box-shadow: none !important;
   margin: 0 !important;

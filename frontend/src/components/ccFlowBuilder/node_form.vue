@@ -188,11 +188,10 @@
                   style="height: calc(100vh - 490px)"
                   class="row bg-grey-3 q-pa-sm scroll q-mt-md col justify-start"
                 >
-                  <template v-for="(condition, idx) in node.conditions">
+                  <template v-for="(condition, idx) in node.conditions" :key="condition.id">
                     <q-card
                       bordered
                       flat
-                      :key="condition.id"
                       class="full-width q-my-sm"
                       style="min-height: 250px;"
                     >

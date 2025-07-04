@@ -46,7 +46,7 @@
                 size="15px"
               />
             </div>
-            <span class="message-text">{{ ticket.lastMessage }}</span>
+            <span class="message-text" v-html="formatarMensagemWhatsapp(ticket.lastMessage)"></span>
           </div>
         </div>
 
@@ -100,12 +100,13 @@
 
 <script>
 import { formatDistance, parseJSON } from 'date-fns'
-import pt from 'date-fns/locale/pt-BR'
+import { ptBR } from 'date-fns/locale'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
+import mixinCommon from './mixinCommon'
 
 export default {
   name: 'ItemTicket',
-  mixins: [mixinAtualizarStatusTicket],
+  mixins: [mixinAtualizarStatusTicket, mixinCommon],
   data () {
     return {
       recalcularHora: 1,
@@ -192,14 +193,14 @@ export default {
       if (timestamp) {
         data = new Date(Number(timestamp))
       }
-      return formatDistance(data, new Date(), { locale: pt })
+      return formatDistance(data, new Date(), { locale: ptBR })
     },
     async abrirChatContato (ticket) {
       // Permitir visualizar ticket sempre, removendo a restrição para tickets pendentes
       // O botão "Atender" continuará disponível para iniciar o atendimento quando necessário
 
       if (this.$q.screen.lt.md && ticket.status !== 'pending') {
-        this.$root.$emit('infor-cabecalo-chat:acao-menu')
+        this.$eventBus.emit('infor-cabecalo-chat:acao-menu')
       }
 
       // Verificar se o ticket já está focado
@@ -227,7 +228,7 @@ export default {
 
         // Focar o input após recarregar
         setTimeout(() => {
-          this.$root.$emit('ticket:refocus-input')
+          this.$eventBus.emit('ticket:refocus-input')
         }, 300)
       } catch (error) {
         console.error('[recarregarChat] Erro ao recarregar chat:', error)

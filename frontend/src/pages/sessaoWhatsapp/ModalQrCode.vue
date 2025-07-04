@@ -1,11 +1,16 @@
 <template>
-  <q-dialog :value="abrirModalQR"
+  <q-dialog 
+    v-model="modalVisible"
     @hide="fecharModalQrModal"
     persistent
-    class="modal-modern">
+    transition-show="scale"
+    transition-hide="scale"
+    class="modal-modern"
+    style="z-index: 9999;">
     <q-card
       class="modern-modal-professional"
-      :class="{ 'light-theme': !$q.dark.isActive, 'dark-theme': $q.dark.isActive }">
+      :class="{ 'light-theme': !$q.dark.isActive, 'dark-theme': $q.dark.isActive }"
+      style="min-width: 400px; max-width: 90vw;">
 
       <!-- Header -->
       <q-card-section class="professional-header">
@@ -16,7 +21,10 @@
             </div>
             <div class="title-text">
               <div class="main-title">Conectar WhatsApp</div>
-              <div class="subtitle">Escaneie o código QR para conectar</div>
+              <div class="subtitle">
+                {{ channel?.name || 'Carregando...' }} - 
+                {{ channel?.status || 'Verificando status...' }}
+              </div>
             </div>
           </div>
           <q-btn
@@ -182,16 +190,23 @@ export default {
     }
   },
   watch: {
+    abrirModalQR: {
+      handler (newValue, oldValue) {
+        // Modal opened/closed
+      },
+      immediate: true
+    },
     channel: {
-      handler (v) {
-        if (this.channel.status === 'CONNECTED') {
+      handler (newChannel, oldChannel) {
+        if (newChannel && newChannel.status === 'CONNECTED') {
           this.fecharModalQrModal()
         }
       },
-      deep: true
+      deep: true,
+      immediate: true
     },
     'channel.status': {
-      handler (newStatus) {
+      handler (newStatus, oldStatus) {
         if (newStatus === 'CONNECTED') {
           this.fecharModalQrModal()
         }
@@ -200,7 +215,7 @@ export default {
     },
     'channel.qrcode': {
       handler (newQrcode, oldQrcode) {
-
+        // QR Code updated
       },
       immediate: true
     }
@@ -219,6 +234,14 @@ export default {
   computed: {
     cQrcode () {
       return this.channel && this.channel.qrcode ? this.channel.qrcode : ''
+    },
+    modalVisible: {
+      get () {
+        return this.abrirModalQR
+      },
+      set (value) {
+        this.$emit('update:abrirModalQR', value)
+      }
     }
   },
   methods: {
@@ -227,6 +250,9 @@ export default {
     },
     fecharModalQrModal () {
       this.$emit('update:abrirModalQR', false)
+      this.$nextTick(() => {
+        this.modalVisible = false
+      })
     },
     conectarPorNumero () {
       if (!this.selectedCountry || !this.phoneNumber) {
@@ -240,8 +266,8 @@ export default {
   },
   mounted () {
     // Listener direto para atualizações de sessão via socket
-    this.$root.$on('UPDATE_SESSION', (session) => {
-      if (session.id === this.channel.id) {
+    this.$eventBus.on('UPDATE_SESSION', (session) => {
+      if (session.id === this.channel?.id) {
         // Só fecha o modal se a sessão estiver conectada, não para qrcode
         if (session.status === 'CONNECTED') {
           this.fecharModalQrModal()
@@ -252,8 +278,8 @@ export default {
     })
 
     // Listener adicional para readySession
-    this.$root.$on('READY_SESSION', (session) => {
-      if (session.id === this.channel.id) {
+    this.$eventBus.on('READY_SESSION', (session) => {
+      if (session.id === this.channel?.id) {
         this.fecharModalQrModal()
       }
     })

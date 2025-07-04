@@ -63,14 +63,13 @@
       </div>
 
       <div
-        style="padding-top: 10px; padding-bottom: 10px"
-        class="row bg-white justify-start items-center text-grey-9 relative-position"
+        class="row justify-start items-center text-grey-9 relative-position"
       >
         <div
           class="row col-12 q-pa-sm"
           v-if="isScheduleDate"
         >
-          <q-datetime-picker
+          <q-input
             style="width: 300px"
             dense
             rounded
@@ -79,72 +78,79 @@
             stack-label
             bottom-slots
             label="Data/Hora Agendamento"
-            mode="datetime"
             color="primary"
             v-model="scheduleDate"
-            format24h
-          />
+            readonly
+          >
+            <template v-slot:append>
+              <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="scheduleDate" mask="YYYY-MM-DD HH:mm">
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Fechar" color="primary" flat />
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-icon>
+              <q-icon name="access_time" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                  <q-time v-model="scheduleDate" mask="YYYY-MM-DD HH:mm" format24h>
+                    <div class="row items-center justify-end">
+                      <q-btn v-close-popup label="Fechar" color="primary" flat />
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
         </div>
 
-        <template v-if="!isRecordingAudio">
-
-          <q-input
-            hide-bottom-space
-            :loading="loading"
-            :disable="cDisableActions"
-            ref="inputEnvioMensagem"
-            id="inputEnvioMensagem"
-            type="textarea"
-            placeholder="Mensagem"
-            input-style="background: rgba(255,255,255,0.12); border: none; border-radius: 18px; padding: 10px 16px; font-size: 15px; color: var(--text-color-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.04); transition: box-shadow 0.2s, background 0.2s;"
-            autogrow
-            rounded
-            dense
-            outlined
-            v-model="textChat"
-            :value="textChat"
-            @keydown.exact.enter.prevent="() => textChat.trim().length ? enviarMensagem() : ''"
-            @keydown.shift.enter.stop=""
+                <template v-if="!isRecordingAudio">
+          <!-- Input moderno estilo WhatsApp -->
+          <div
+            class="modern-input-container col-grow q-mx-xs"
             v-show="!cMostrarEnvioArquivo"
-            class="col-grow q-mx-xs text-grey-10 inputEnvioMensagem"
-            bg-color="grey-2"
-            :maxlength="4096"
-            :color="textChat.length > 3500 ? 'warning' : textChat.length > 4000 ? 'negative' : 'grey-7'"
           >
-            <template v-slot:prepend>
+            <!-- Botões da esquerda -->
+            <div class="input-actions-left">
               <q-btn
                 flat
                 icon="mdi-emoticon-happy-outline"
                 :disable="cDisableActions"
                 dense
                 round
-                :color="$q.dark.isActive ? 'white' : ''"
+                size="sm"
+                color="grey-7"
                 @click="saveCursorPosition"
               >
                 <q-tooltip content-class="text-bold">Emoji</q-tooltip>
-                <q-menu
-                  v-model="showEmojiPicker2"
-                  anchor="top right"
-                  self="bottom middle"
-                  :offset="[5, 40]"
-                  :auto-close="false"
-                  persistent
-                  ref="emojiPicker2"
-                >
-                  <Picker
+                                  <q-menu
+                    v-model="showEmojiPicker2"
+                    anchor="top right"
+                    self="bottom middle"
+                    :offset="[5, 40]"
+                    :auto-close="false"
+                    persistent
+                    ref="emojiPicker2"
+                    @hide="onEmojiPickerHide"
+                  >
+                  <EmojiPicker
                     :theme="pickerTheme"
-                    :key="pickerTheme"
                     :locale="'pt'"
-                    :previewPosition="'none'"
-                    :perLine="9"
-                    :showPreview="false"
-                    :showSkinTones="true"
-                    :showCategoryButtons="true"
-                    :showSearch="true"
+                    native
                     style="width: 420px"
                     @select="onEmojiSelectMart"
                     @click.stop.prevent
                   />
+                  <div class="q-pa-sm text-center">
+                    <q-btn
+                      flat
+                      dense
+                      size="sm"
+                      label="Fechar"
+                      @click="showEmojiPicker2 = false"
+                    />
+                  </div>
                 </q-menu>
               </q-btn>
               <q-btn
@@ -153,7 +159,8 @@
                 :disable="cDisableActions"
                 dense
                 round
-                :color="$q.dark.isActive ? 'white' : ''"
+                size="sm"
+                color="grey-7"
                 @click="abrirEnvioArquivo"
               >
                 <q-tooltip content-class="text-bold">Enviar arquivo</q-tooltip>
@@ -162,7 +169,9 @@
                 dense
                 flat
                 round
+                size="sm"
                 icon="mdi-message-flash-outline"
+                color="grey-7"
                 @click="visualizarMensagensRapidas = !visualizarMensagensRapidas"
               >
                 <q-tooltip content-class="text-bold">Mensagens Rápidas</q-tooltip>
@@ -171,41 +180,77 @@
                 flat
                 dense
                 round
+                size="sm"
                 icon="mdi-message-video"
                 :disable="cDisableActions"
-                :color="$q.dark.isActive ? 'white' : ''"
+                color="grey-7"
                 @click="handlSendLinkVideo"
               >
                 <q-tooltip content-class="text-bold">Enviar link para videoconferência</q-tooltip>
               </q-btn>
+            </div>
 
-            </template>
-            <template v-slot:append>
+            <!-- Input moderno com suporte a emojis -->
+            <div class="input-field-wrapper">
+              <div
+                ref="inputEnvioMensagem"
+                id="inputEnvioMensagem"
+                contenteditable="true"
+                :class="['modern-textarea', 'emoji-input']"
+                :data-placeholder="cDisableActions ? '' : 'Mensagem'"
+                :data-disabled="cDisableActions"
+                :data-maxlength="4096"
+                @keydown.enter.exact.prevent="handleEnterKey"
+                @keydown.enter.shift.stop=""
+                @input="handleContentEditableInput"
+                @paste="handlePaste"
+                @blur="handleContentEditableBlur"
+                @focus="handleContentEditableFocus"
+              ></div>
+
+              <!-- Contador de caracteres -->
+              <div
+                v-if="textChat.length > 3500"
+                class="char-counter"
+                :class="{
+                  'text-warning': textChat.length > 3500 && textChat.length <= 4000,
+                  'text-negative': textChat.length > 4000
+                }"
+              >
+                {{ textChat.length }}/4096
+              </div>
+            </div>
+
+            <!-- Botões da direita -->
+            <div class="input-actions-right">
               <q-btn
-                v-if="textChat || cMostrarEnvioArquivo"
+                v-if="textChat && textChat.trim()"
                 ref="btnEnviarMensagem"
                 @click="enviarMensagem"
                 :disabled="ticketFocado.status !== 'open'"
                 flat
                 icon="mdi-send"
-                class="bg-padrao btn-rounded q-mx-xs"
-                :color="$q.dark.isActive ? 'white' : ''"
+                round
+                size="sm"
+                class="send-button"
+                color="primary"
               >
-                <q-tooltip content-class=" text-bold">Enviar Mensagem</q-tooltip>
+                <q-tooltip content-class="text-bold">Enviar Mensagem</q-tooltip>
               </q-btn>
               <q-btn
-                v-if="!textChat && !cMostrarEnvioArquivo && !isRecordingAudio"
+                v-else
                 @click="handleSartRecordingAudio"
                 :disabled="cDisableActions"
                 flat
                 icon="mdi-microphone"
-                class="bg-padrao btn-rounded q-mx-xs"
-                :color="$q.dark.isActive ? 'white' : ''"
+                round
+                size="sm"
+                color="grey-7"
               >
                 <q-tooltip content-class="text-bold">Gravar Áudio</q-tooltip>
               </q-btn>
-            </template>
-          </q-input>
+            </div>
+          </div>
           <!-- tamanho maximo por arquivo de 10mb -->
           <q-file
             :loading="loading"
@@ -329,6 +374,7 @@
     <!-- Debug info -->
     <div v-if="$route.query.debug" class="q-pa-sm bg-orange-1">
       <small>Debug: Status = {{ ticketFocado.status }}, ID = {{ ticketFocado.id }}</small>
+      <br><small>TextChat: "{{ textChat }}" (length: {{ textChat ? textChat.length : 0 }})</small>
     </div>
 
   </div>
@@ -341,16 +387,23 @@ import { EnviarMensagemTexto } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import RecordingTimer from './RecordingTimer'
 import MicRecorder from 'mic-recorder-to-mp3'
-import { Picker } from 'emoji-mart-vue'
-import 'emoji-mart-vue/css/emoji-mart.css'
+import EmojiPicker from 'vue3-emoji-picker'
+import 'vue3-emoji-picker/css'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
-import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
+import { hasEmojis, extractEmojiChar } from 'src/utils/emojiUtils'
+import { processAllEmojisWithAppleEmoji } from 'src/utils/emojiUtils'
 
 const Mp3Recorder = new MicRecorder({
   bitRate: 128,
   sampleRate: 44100
 })
 
+// Função utilitária para obter o código unicode do emoji em hexadecimal
+function emojiToHex(emoji) {
+  return Array.from(emoji)
+    .map(c => c.codePointAt(0).toString(16))
+    .join('-')
+}
 export default {
   name: 'InputMensagem',
   mixins: [mixinAtualizarStatusTicket, mixinCommon],
@@ -370,7 +423,7 @@ export default {
   },
   components: {
     RecordingTimer,
-    Picker
+    EmojiPicker
   },
   data () {
     return {
@@ -409,6 +462,11 @@ export default {
     },
     pickerTheme () {
       return this.$q.dark.isActive ? 'dark' : 'light'
+    },
+    // Processar texto do input com emojis usando o mesmo CDN do chat
+    processedTextChat () {
+      if (!this.textChat) return ''
+      return processAllEmojisWithAppleEmoji(this.textChat)
     }
   },
   watch: {
@@ -481,29 +539,20 @@ export default {
         }
 
         // Verificar se já está focado antes de tentar
-        const textarea = this.$refs.inputEnvioMensagem?.$el?.querySelector('textarea')
-        if (textarea && document.activeElement === textarea) {
+        const inputElement = this.$refs.inputEnvioMensagem
+        if (inputElement && document.activeElement === inputElement) {
           this._focusAttempting = false
           return // Já está focado
         }
 
-        if (this.$refs.inputEnvioMensagem) {
+        if (inputElement) {
           try {
-            this.$refs.inputEnvioMensagem.focus()
+            inputElement.focus()
 
             // Verificar se o foco foi aplicado corretamente
-            if (textarea && document.activeElement === textarea) {
+            if (document.activeElement === inputElement) {
               this._focusAttempting = false
               return
-            }
-
-            // Tentar focar diretamente no textarea se o componente não funcionar
-            if (textarea) {
-              textarea.focus()
-              if (document.activeElement === textarea) {
-                this._focusAttempting = false
-                return
-              }
             }
           } catch (error) {
             console.warn('[InputMensagem] Erro ao focar input na tentativa', attempt + 1, error)
@@ -526,7 +575,7 @@ export default {
     handleInputPaste (e) {
       if (!this.ticketFocado?.id) return
       if (e.clipboardData.files[0]) {
-        this.textChat = ''
+        this.clearInput()
         this.arquivos = [e.clipboardData.files[0]]
         this.abrirModalPreviewImagem = true
         this.urlMediaPreview = {
@@ -576,11 +625,67 @@ export default {
       }
     },
     saveCursorPosition () {
-      // Salvar a posição atual do cursor antes de abrir o emoji picker
-      const textarea = this.$refs.inputEnvioMensagem
-      if (textarea && textarea.$el && textarea.$el.querySelector('textarea')) {
-        const textareaElement = textarea.$el.querySelector('textarea')
-        this.savedCursorPosition = textareaElement.selectionStart
+      // Função simplificada - foco será no final sempre
+    },
+
+    onEmojiPickerHide () {
+      // Quando o emoji picker é fechado, restaurar foco no input
+      this.$nextTick(() => {
+        const inputElement = this.$refs.inputEnvioMensagem
+        if (inputElement && this.ticketFocado?.status === 'open') {
+          inputElement.focus()
+          this.placeCursorAtEnd(inputElement)
+        }
+      })
+    },
+
+    getCaretPosition (element) {
+      // Obter posição do cursor em caracteres dentro do contenteditable
+      try {
+        const selection = window.getSelection()
+        if (selection.rangeCount === 0) return 0
+        
+        const range = selection.getRangeAt(0)
+        const preCaretRange = range.cloneRange()
+        preCaretRange.selectNodeContents(element)
+        preCaretRange.setEnd(range.endContainer, range.endOffset)
+        
+        // Contar caracteres incluindo emojis
+        let charCount = 0
+        const walker = document.createTreeWalker(
+          preCaretRange.extractContents(),
+          NodeFilter.SHOW_TEXT + NodeFilter.SHOW_ELEMENT,
+          null,
+          false
+        )
+        
+        let node
+        while ((node = walker.nextNode())) {
+          if (node.nodeType === Node.TEXT_NODE) {
+            // Pular texto dentro de spans de emoji ocultos
+            if (node.parentNode && node.parentNode.classList &&
+                node.parentNode.classList.contains('whatsapp-emoji-char')) {
+              continue
+            }
+            charCount += node.textContent.length
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Se é um span de emoji, contar como 1 caractere
+            if (node.classList && node.classList.contains('whatsapp-emoji-span')) {
+              charCount += 1
+            } else if (node.tagName === 'IMG' && node.alt) {
+              // Imagem de emoji direto
+              charCount += node.alt.length
+            } else if (node.tagName === 'BR') {
+              // Quebra de linha
+              charCount += 1
+            }
+          }
+        }
+        
+        return charCount
+      } catch (error) {
+        console.warn('Erro ao calcular posição do cursor:', error)
+        return 0
       }
     },
     mensagemRapidaSelecionada (mensagem) {
@@ -591,35 +696,28 @@ export default {
     },
     onEmojiSelectMart (emoji, event) {
       try {
-        // Prevent event propagation to avoid closing the modal
         if (event) {
           event.stopPropagation()
           event.preventDefault()
         }
-
-        const textarea = this.$refs.inputEnvioMensagem
-
-        // Garantir que o textarea tenha foco antes de inserir o emoji
-        textarea.focus()
-
-        // Restaurar posição do cursor salva ou definir para o final se não houver posição salva
-        if (this.savedCursorPosition !== undefined) {
-          textarea.selectionStart = textarea.selectionEnd = this.savedCursorPosition
-        } else if (this.textChat.length > 0) {
-          // Se não há posição salva e há texto, inserir no final
-          textarea.selectionStart = textarea.selectionEnd = this.textChat.length
-        }
-
-        const success = insertEmojiInTextarea(
-          emoji,
-          textarea,
-          (newValue) => {
-            this.textChat = newValue
-          },
-          this.textChat
-        )
-
-        if (!success) {
+        const emojiChar = extractEmojiChar(emoji)
+        if (emojiChar) {
+          const inputElement = this.$refs.inputEnvioMensagem
+          let currentText = ''
+          if (inputElement) {
+            currentText = this.extractPlainText(inputElement) || this.textChat
+          } else {
+            currentText = this.textChat
+          }
+          const newText = currentText + emojiChar
+          this.textChat = newText
+          if (inputElement) {
+            // Processa o texto inteiro para Apple Emoji imediatamente
+            inputElement.innerHTML = processAllEmojisWithAppleEmoji(newText)
+            this.placeCursorAtEnd(inputElement)
+            inputElement.focus()
+          }
+        } else {
           this.$q.notify({
             type: 'warning',
             message: 'Erro ao inserir emoji. Tente novamente.',
@@ -627,15 +725,21 @@ export default {
             timeout: 3000
           })
         }
-
-        // Limpar posição salva após usar
-        this.savedCursorPosition = undefined
       } catch (error) {
-        console.error('Erro ao inserir emoji:', error)
+        const emojiChar = extractEmojiChar(emoji)
+        if (emojiChar) {
+          this.textChat += emojiChar
+          const inputElement = this.$refs.inputEnvioMensagem
+          if (inputElement) {
+            inputElement.innerHTML = processAllEmojisWithAppleEmoji(this.textChat)
+            this.placeCursorAtEnd(inputElement)
+            inputElement.focus()
+          }
+        }
       }
     },
     abrirEnvioArquivo (event) {
-      this.textChat = ''
+      this.clearInput()
       this.abrirFilePicker = true
       this.$refs.PickerFileMessage.pickFiles(event)
     },
@@ -702,7 +806,7 @@ export default {
         const ticketId = this.ticketFocado.id
         await EnviarMensagemTexto(ticketId, formData)
         this.arquivos = []
-        this.textChat = ''
+        this.clearInput()
         this.$emit('update:replyingMessage', null)
         this.abrirFilePicker = false
         this.abrirModalPreviewImagem = false
@@ -823,7 +927,7 @@ export default {
         if (!this.cMostrarEnvioArquivo && !this.textChat) return
         await EnviarMensagemTexto(ticketId, message)
         this.arquivos = []
-        this.textChat = ''
+        this.clearInput()
         this.$emit('update:replyingMessage', null)
         this.abrirFilePicker = false
         this.abrirModalPreviewImagem = false
@@ -918,9 +1022,18 @@ export default {
       this.hasMicrophonePermission = false
     },
 
+    // Método para limpar o input de forma consistente
+    clearInput () {
+      this.textChat = ''
+      const inputElement = this.$refs.inputEnvioMensagem
+      if (inputElement) {
+        inputElement.innerHTML = ''
+      }
+    },
+
     // Método para fazer scroll para o final da conversa
     scrollToBottom () {
-      this.$root.$emit('scrollToBottomMessageChat')
+                this.$eventBus.emit('scrollToBottomMessageChat')
     },
 
     // Método específico para focar o input quando uma mensagem é selecionada para resposta
@@ -930,7 +1043,310 @@ export default {
         // Uma única tentativa - o método focusInputWithRetry já tem retry interno
         this.focusInputWithRetry()
       })
-    }
+    },
+
+    // Métodos para emojis SVG
+    hasEmojis (text) {
+      return hasEmojis(text)
+    },
+
+    // Métodos para o input moderno
+    handleEnterKey () {
+      if (this.textChat.trim().length) {
+        this.enviarMensagem()
+      }
+    },
+
+
+
+    handlePaste (event) {
+      // Permitir colar texto normalmente
+      setTimeout(() => {
+        this.handleContentEditableInput(event)
+      }, 0)
+    },
+
+    // Métodos para contenteditable com suporte a emojis
+    handleContentEditableInput (event) {
+      const element = event.target;
+      // Extrair texto plano primeiro
+      const plainText = this.extractPlainText(element);
+
+      // Sempre atualizar o modelo de dados, mesmo se vazio
+      this.textChat = plainText;
+
+      // Se o campo está vazio, limpe o innerHTML e não processe emojis
+      if (!plainText) {
+        element.innerHTML = '';
+        return;
+      }
+
+      // Processar emojis usando a mesma função do chat
+      this.$nextTick(() => {
+        const processedHTML = processAllEmojisWithAppleEmoji(plainText);
+        if (element.innerHTML !== processedHTML) {
+          element.innerHTML = processedHTML;
+          this.placeCursorAtEnd(element);
+        }
+      });
+
+      // Auto-resize do contenteditable
+      this.autoResizeContentEditable(element);
+    },
+
+    handleContentEditableBlur (event) {
+      const element = event.target
+      const plainText = this.extractPlainText(element)
+      this.textChat = plainText
+    },
+
+    handleContentEditableFocus (event) {
+      const element = event.target
+      // Garantir que o cursor esteja no final do texto
+      this.placeCursorAtEnd(element)
+    },
+
+    extractPlainText (element) {
+      if (!element) return '';
+
+      let text = '';
+      try {
+        // Método mais robusto para extrair texto preservando emojis
+        const processNode = (node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            // Pular texto dentro de spans de emoji ocultos
+            if (node.parentNode && node.parentNode.classList &&
+                node.parentNode.classList.contains('whatsapp-emoji-char')) {
+              return;
+            }
+            text += node.nodeValue;
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Se é um span de emoji, extrair o emoji do atributo alt ou title
+            if (node.classList && node.classList.contains('whatsapp-emoji-span')) {
+              // Procurar img dentro do span
+              const img = node.querySelector('img');
+              if (img && img.alt) {
+                text += img.alt;
+              } else if (node.getAttribute('data-emoji')) {
+                text += node.getAttribute('data-emoji');
+              }
+            } else if (node.tagName === 'IMG') {
+              // Imagem de emoji direto - usar alt ou title
+              if (node.alt) {
+                text += node.alt;
+              } else if (node.title) {
+                text += node.title;
+              } else {
+                // Tentar extrair emoji do src da imagem (emoji-js)
+                const src = node.src;
+                if (src && src.includes('emoji-datasource')) {
+                  // Tentar extrair emoji do nome do arquivo
+                  const match = src.match(/([a-f0-9-]+)\.png/);
+                  if (match) {
+                    try {
+                      // Converter código hex para emoji
+                      const codes = match[1].split('-').map(hex => parseInt(hex, 16));
+                      const emoji = String.fromCodePoint(...codes);
+                      text += emoji;
+                    } catch (e) {
+                      console.warn('Erro ao converter emoji:', e);
+                    }
+                  }
+                }
+              }
+            } else if (node.tagName === 'BR') {
+              // Quebra de linha
+              text += '\n';
+            } else {
+              // Processar nós filhos
+              for (let child of node.childNodes) {
+                processNode(child);
+              }
+            }
+          }
+        };
+
+        // Processar todos os nós
+        for (let child of element.childNodes) {
+          processNode(child);
+        }
+
+        // Se não conseguiu extrair texto, usar fallback
+        if (!text) {
+          text = element.innerText || element.textContent || '';
+        }
+        
+      } catch (error) {
+        console.warn('Erro ao extrair texto:', error);
+        // Fallback para método simples
+        text = element.innerText || element.textContent || '';
+      }
+
+      // Limitar o tamanho do texto
+      if (text.length > 4096) {
+        text = text.substring(0, 4096);
+      }
+
+      return text;
+    },
+
+    autoResizeContentEditable (element) {
+      // Auto-resize do contenteditable
+      element.style.height = 'auto'
+      const maxHeight = 120 // ~6 linhas
+      const newHeight = Math.min(element.scrollHeight, maxHeight)
+      element.style.height = newHeight + 'px'
+
+      // Scroll para baixo se necessário
+      if (element.scrollHeight > maxHeight) {
+        element.scrollTop = element.scrollHeight
+      }
+    },
+
+    placeCursorAtEnd (element) {
+      // Colocar cursor no final do texto
+      const range = document.createRange()
+      const selection = window.getSelection()
+
+      try {
+        if (element.childNodes.length > 0) {
+          // Encontrar o último nó de texto ou elemento
+          let lastNode = element.lastChild
+
+          // Se o último nó é um span de emoji, ir para depois dele
+          if (lastNode.nodeType === Node.ELEMENT_NODE &&
+              lastNode.classList.contains('whatsapp-emoji-span')) {
+            range.setStartAfter(lastNode)
+            range.setEndAfter(lastNode)
+          } else if (lastNode.nodeType === Node.TEXT_NODE) {
+            range.setStart(lastNode, lastNode.length)
+            range.setEnd(lastNode, lastNode.length)
+          } else {
+            range.setStartAfter(lastNode)
+            range.setEndAfter(lastNode)
+          }
+        } else {
+          range.setStart(element, 0)
+          range.setEnd(element, 0)
+        }
+
+        selection.removeAllRanges()
+        selection.addRange(range)
+
+        // Garantir que o elemento tenha foco
+        element.focus()
+      } catch (error) {
+        console.warn('Erro ao posicionar cursor:', error)
+        // Fallback simples
+        element.focus()
+      }
+    },
+
+    placeCursorAtPosition (element, position) {
+      // Posicionar cursor em uma posição específica
+      try {
+        const range = document.createRange()
+        const selection = window.getSelection()
+        
+        // Contar caracteres percorridos para encontrar a posição correta
+        let charCount = 0
+        let nodeStack = [element]
+        let node, foundNode = null, foundOffset = 0
+        
+        // Percorrer os nós para encontrar a posição correta
+        while (nodeStack.length > 0) {
+          node = nodeStack.pop()
+          
+          if (node.nodeType === Node.TEXT_NODE) {
+            const nextCharCount = charCount + node.textContent.length
+            
+            if (charCount <= position && position <= nextCharCount) {
+              foundNode = node
+              foundOffset = position - charCount
+              break
+            }
+            charCount = nextCharCount
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            // Se é um span de emoji, contar como 1 caractere
+            if (node.classList && node.classList.contains('whatsapp-emoji-span')) {
+              const nextCharCount = charCount + 1
+              
+              if (charCount <= position && position <= nextCharCount) {
+                foundNode = node
+                foundOffset = position === charCount ? 0 : 1
+                break
+              }
+              charCount = nextCharCount
+            } else {
+              // Adicionar nós filhos à pilha em ordem reversa
+              for (let i = node.childNodes.length - 1; i >= 0; i--) {
+                nodeStack.push(node.childNodes[i])
+              }
+            }
+          }
+        }
+        
+        // Posicionar cursor
+        if (foundNode) {
+          if (foundNode.nodeType === Node.TEXT_NODE) {
+            range.setStart(foundNode, Math.min(foundOffset, foundNode.textContent.length))
+            range.setEnd(foundNode, Math.min(foundOffset, foundNode.textContent.length))
+          } else {
+            // Para elementos (como spans de emoji)
+            if (foundOffset === 0) {
+              range.setStartBefore(foundNode)
+              range.setEndBefore(foundNode)
+            } else {
+              range.setStartAfter(foundNode)
+              range.setEndAfter(foundNode)
+            }
+          }
+        } else {
+          // Fallback: posicionar no final
+          this.placeCursorAtEnd(element)
+          return
+        }
+        
+        selection.removeAllRanges()
+        selection.addRange(range)
+        
+      } catch (error) {
+        console.warn('Erro ao posicionar cursor na posição especificada:', error)
+        // Fallback: posicionar no final
+        this.placeCursorAtEnd(element)
+      }
+    },
+
+    // Método para processar emojis como imagens do WhatsApp Web
+    processEmojisAsImages (element) {
+      if (!element) return;
+
+      // Usar a mesma função que o chat usa para consistência
+      const currentHTML = element.innerHTML;
+      const processedHTML = processAllEmojisWithAppleEmoji(currentHTML);
+
+      // Só atualizar se houve mudança
+      if (currentHTML !== processedHTML) {
+        // Salvar posição do cursor
+        const selection = window.getSelection();
+        let cursorPosition = 0;
+
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          cursorPosition = range.startOffset;
+        }
+
+        // Atualizar HTML
+        element.innerHTML = processedHTML;
+
+        // Restaurar cursor no final
+        this.$nextTick(() => {
+          this.placeCursorAtEnd(element);
+        });
+      }
+    },
+
+
   },
   async mounted () {
     // Verificar permissão do microfone apenas uma vez por sessão
@@ -1022,12 +1438,12 @@ export default {
     }
 
     // Restaurar o código original do mounted
-    this.$root.$on('mensagem-chat:focar-input-mensagem', (mensagem) => {
+    this.$eventBus.on('mensagem-chat:focar-input-mensagem', (mensagem) => {
       this.focusOnReply()
     })
 
     // Escutar evento de refoco quando o mesmo ticket for clicado novamente
-    this.$root.$on('ticket:refocus-input', () => {
+    this.$eventBus.on('ticket:refocus-input', () => {
       this.$nextTick(() => {
         if (this.ticketFocado?.status === 'open') {
           this.focusInputWithRetry()
@@ -1047,6 +1463,8 @@ export default {
         this.focusInputWithRetry()
       }
     })
+
+    // Sistema de emoji SVG carregado
   },
   beforeDestroy () {
     const self = this
@@ -1059,67 +1477,129 @@ export default {
     this._focusAttempting = false
   },
   destroyed () {
-    this.$root.$off('mensagem-chat:focar-input-mensagem')
-    this.$root.$off('ticket:refocus-input')
+    this.$eventBus.off('mensagem-chat:focar-input-mensagem')
+    this.$eventBus.off('ticket:refocus-input')
   }
 }
 </script>
 
 <style lang="sass" scoped>
-@media (max-width: 850px)
-  .inputEnvioMensagem,
-  .PickerFileMessage
-    width: 150px
+// --- WhatsApp Web Style ---
+.modern-input-container
+  display: flex
+  align-items: center
+  background: #202c33
+  border-radius: 8px
+  padding: 8px 12px
+  box-shadow: 0 1px 1px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.06)
+  border: none
+  min-height: 56px
+  margin: 0 8px 8px 8px
+  position: relative
+  gap: 8px
 
-@media (min-width: 851px), (max-width: 1360px)
-  .inputEnvioMensagem,
-  .PickerFileMessage
-    width: 200px !important
+  .input-actions-left, .input-actions-right
+    display: flex
+    align-items: center
+    gap: 4px
 
-// Menu de gravação compacto e elegante
-.recording-controls
-  border-radius: 20px
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1)
-  border: 1px solid rgba(0, 0, 0, 0.08)
-  backdrop-filter: blur(10px)
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06)
-  animation: slideInFade 0.3s ease-out
+.input-field-wrapper
+  flex: 1
+  display: flex
+  flex-direction: column
+  justify-content: flex-end
+  min-width: 0
 
-  &:hover
-    transform: translateY(-1px)
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1)
+.emoji-input
+  min-height: 24px
+  max-height: 120px
+  padding: 10px 16px
+  border-radius: 8px
+  background: var(--q-bg, #fff)
+  color: var(--q-text, #222d34)
+  font-size: 15px
+  line-height: 1.5
+  border: none
+  outline: none
+  box-shadow: none
+  resize: none
+  overflow-y: auto
+  word-break: break-word
+  white-space: pre-wrap
+  transition: background 0.2s, color 0.2s
+  font-family: 'Segoe UI', 'Roboto', 'Apple Color Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
 
-// Modo escuro para o menu de gravação
-.body--dark .recording-controls
-  border-color: rgba(255, 255, 255, 0.08)
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3)
+  &:empty:before
+    content: attr(data-placeholder)
+    color: var(--q-placeholder, #8696a0)
+    pointer-events: none
+    font-style: normal
+    font-size: 15px
 
-  &:hover
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4)
+  &[data-disabled="true"]
+    background: var(--q-bg-disabled, #f5f5f5)
+    color: var(--q-text-disabled, #6b7b8a)
+    cursor: not-allowed
+    pointer-events: none
 
-// Botões super compactos
-.recording-controls .q-btn
-  min-height: 24px !important
-  min-width: 24px !important
-  font-size: 12px !important
-  margin: 0 2px !important
+// Responsividade
+@media (max-width: 600px)
+  .modern-input-container
+    min-height: 48px
+    padding: 4px 4px
+  .emoji-input
+    font-size: 14px
+    padding: 8px 8px
 
-  .q-btn__wrapper
-    padding: 2px !important
+.char-counter
+  align-self: flex-end
+  font-size: 12px
+  color: #8696a0
+  margin-top: 2px
 
-// Timer compacto
-.recording-controls .text-caption
-  margin-left: 6px
-  font-size: 10px !important
-  font-weight: 600
-  letter-spacing: 0.5px
+body.body--dark .bg-white
+  background: transparent !important
 
-// Animação elegante de entrada
-@keyframes slideInFade
-  from
-    opacity: 0
-    transform: translateX(15px) scale(0.95)
-  to
-    opacity: 1
-    transform: translateX(0) scale(1)
+body.body--light .modern-input-container
+  background: #fff !important
+  border: none !important
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08)
+  border-radius: 999px
+  margin: 0 12px 12px 12px
+  min-height: 48px
+  padding: 0 16px
+  font-size: 16px
+  display: flex
+  align-items: center
+
+body.body--light .emoji-input
+  background: transparent !important
+  box-shadow: none !important
+  border: none !important
+  color: #222d34 !important
+  padding: 12px 0
+  min-height: 48px
+  font-size: 16px
+
+body.body--dark .modern-input-container
+  background: #29303b !important
+  border: none !important
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important
+  border-radius: 999px !important
+  margin: 0 12px 12px 12px !important
+  min-height: 48px !important
+  padding: 0 16px !important
+  font-size: 16px !important
+  display: flex !important
+  align-items: center !important
+
+body.body--dark .emoji-input
+  background: transparent !important
+  box-shadow: none !important
+  border: none !important
+  color: #e9edef !important
+  padding: 12px 0 !important
+  min-height: 48px !important
+  font-size: 16px !important
+
 </style>

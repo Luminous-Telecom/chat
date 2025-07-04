@@ -34,7 +34,7 @@
                     frameborder="0"
                     title="Preview do PDF"
                   >
-                    <p>Seu navegador não suporta visualização de PDF. <a :href="cMediaUrl" target="_blank">Clique aqui para baixar</a></p>
+                    Seu navegador não suporta visualização de PDF.
                   </iframe>
                 </div>
               </div>
@@ -121,7 +121,7 @@
             frameborder="0"
             title="PDF em tela cheia"
           >
-            <p>Seu navegador não suporta visualização de PDF. <a :href="currentPdfUrl" target="_blank">Clique aqui para baixar</a></p>
+            Seu navegador não suporta visualização de PDF.
           </iframe>
         </q-card-section>
       </q-card>

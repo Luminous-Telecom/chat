@@ -4,14 +4,14 @@
       class="my-sticky-dynamic"
       title="Contatos"
       :id="`tabela-contatos-${isChatContact ? 'atendimento' : ''}`"
-      :data="contacts"
+      :rows="contacts"
       :columns="columns"
       :loading="loading"
       row-key="id"
       virtual-scroll
       :virtual-scroll-item-size="48"
       :virtual-scroll-sticky-size-start="48"
-      :pagination.sync="pagination"
+      v-model:pagination="pagination"
       :rows-per-page-options="[0]"
       @virtual-scroll="onScroll"
       :bordered="isChatContact"
@@ -144,7 +144,7 @@
     </q-table>
     <ContatoModal
       :contactId="selectedContactId"
-      :modalContato.sync="modalContato"
+      v-model:modalContato="modalContato"
       @contatoModal:contato-editado="UPDATE_CONTACTS"
       @contatoModal:contato-criado="UPDATE_CONTACTS"
     />
@@ -624,7 +624,7 @@ export default {
     abrirChatContato (ticket) {
       // caso esteja em um tamanho mobile, fechar a drawer dos contatos
       if (this.$q.screen.lt.md && ticket.status !== 'pending') {
-        this.$root.$emit('infor-cabecalo-chat:acao-menu')
+        this.$eventBus.emit('infor-cabecalo-chat:acao-menu')
       }
       if (!(ticket.status !== 'pending' && (ticket.id !== this.$store.getters.ticketFocado.id || this.$route.name !== 'chat'))) return
       this.$store.commit('SET_HAS_MORE', true)

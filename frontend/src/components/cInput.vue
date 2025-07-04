@@ -41,7 +41,7 @@
   </div>
 </template>
 <script>
-import { singleErrorExtractorMixin } from 'vuelidate-error-extractor'
+import { singleErrorExtractorMixin } from 'src/components/VuelidateErrorExtractor'
 export default {
   extends: singleErrorExtractorMixin,
   name: 'ccInput',

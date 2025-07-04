@@ -1,7 +1,7 @@
 <template>
   <q-dialog
-    :value="value"
-    @input="$emit('update:value', $event)"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
     persistent
     transition-show="scale"
     transition-hide="scale"
@@ -204,7 +204,7 @@ export default {
     ModalEditarMensagemAgendada
   },
   props: {
-    value: {
+    modelValue: {
       type: Boolean,
       default: false
     },
@@ -359,7 +359,7 @@ export default {
     },
 
     novamensagemAgendada () {
-      this.$emit('update:value', false)
+      this.$emit('update:modelValue', false)
       this.$emit('nova-mensagem-agendada')
     },
 
@@ -369,7 +369,7 @@ export default {
     },
 
     fecharModal () {
-      this.$emit('update:value', false)
+      this.$emit('update:modelValue', false)
     }
   }
 }

@@ -1,7 +1,7 @@
 <template>
   <q-dialog
-    :value="value"
-    @input="$emit('update:value', $event)"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
     persistent
     transition-show="scale"
     transition-hide="scale"
@@ -96,7 +96,7 @@ export default {
     VueEasyLightbox
   },
   props: {
-    value: {
+    modelValue: {
       type: Boolean,
       required: true
     },
@@ -114,7 +114,7 @@ export default {
     }
   },
   watch: {
-    value (val) {
+    modelValue (val) {
       if (val && this.ticketId) {
         this.carregarObservacoes()
       }

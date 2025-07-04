@@ -118,6 +118,7 @@
                 class="row justify-center"
                 @mensagem-respondida:focar-mensagem="focarMensagem"
                 :mensagem="mensagem.quotedMsg"
+                :ticketFocado="ticketFocado"
               />
             </div>
             <q-btn
@@ -264,7 +265,7 @@
                           frameborder="0"
                           title="Preview do PDF"
                         >
-                          <p>Seu navegador não suporta visualização de PDF. <a :href="mensagem.mediaUrl" target="_blank">Clique aqui para baixar</a></p>
+                          Seu navegador não suporta visualização de PDF.
                         </iframe>
                       </div>
                     </div>
@@ -301,14 +302,14 @@
                     content-class="text-bold"
                   >
                     Baixar: {{ mensagem.mediaName }}
-                    {{ mensagem.body }}
+                    <span v-html="formatarMensagemWhatsapp(mensagem.body)"></span>
                   </q-tooltip>
                   <div class="row items-center q-ma-xs ">
                     <div
                       class="ellipsis col-grow q-pr-sm"
                       style="max-width: 290px"
+                      v-html="formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName)"
                     >
-                      {{ formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName) }}
                     </div>
                     <q-icon name="mdi-download" />
                   </div>
@@ -321,7 +322,7 @@
               :class=" { 'q-mt-sm': mensagem.mediaType !== 'chat' } "
               class="q-message-container row items-end no-wrap"
             >
-              <div v-html="formatarMensagemWhatsapp(mensagem.body)"></div>
+              <div v-html="formatarMensagemWhatsapp(mensagem.body)" class="emoji-text"></div>
             </div>
 
             <!-- Botões Interativos -->
@@ -504,6 +505,7 @@
                 class="row justify-center"
                 @mensagem-respondida:focar-mensagem="focarMensagem"
                 :mensagem="mensagem.quotedMsg"
+                :ticketFocado="ticketFocado"
               />
             </div>
             <q-btn
@@ -650,7 +652,7 @@
                           frameborder="0"
                           title="Preview do PDF"
                         >
-                          <p>Seu navegador não suporta visualização de PDF. <a :href="mensagem.mediaUrl" target="_blank">Clique aqui para baixar</a></p>
+                          Seu navegador não suporta visualização de PDF.
                         </iframe>
                       </div>
                     </div>
@@ -687,14 +689,14 @@
                     content-class="text-bold"
                   >
                     Baixar: {{ mensagem.mediaName }}
-                    {{ mensagem.body }}
+                    <span v-html="formatarMensagemWhatsapp(mensagem.body)"></span>
                   </q-tooltip>
                   <div class="row items-center q-ma-xs ">
                     <div
                       class="ellipsis col-grow q-pr-sm"
                       style="max-width: 290px"
+                      v-html="formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName)"
                     >
-                      {{ formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName) }}
                     </div>
                     <q-icon name="mdi-download" />
                   </div>
@@ -707,7 +709,7 @@
               :class=" { 'q-mt-sm': mensagem.mediaType !== 'chat' } "
               class="q-message-container row items-end no-wrap"
             >
-              <div v-html="formatarMensagemWhatsapp(mensagem.body)"></div>
+              <div v-html="formatarMensagemWhatsapp(mensagem.body)" class="emoji-text"></div>
             </div>
 
             <!-- Botões Interativos -->
@@ -798,7 +800,7 @@
             frameborder="0"
             title="PDF em tela cheia"
           >
-            <p>Seu navegador não suporta visualização de PDF. <a :href="currentPdfUrl" target="_blank">Clique aqui para baixar</a></p>
+            Seu navegador não suporta visualização de PDF.
           </iframe>
         </q-card-section>
       </q-card>
@@ -1148,7 +1150,7 @@ export default {
 
       // Emitir evento para focar o input com delay para garantir que a mensagem seja definida primeiro
       this.$nextTick(() => {
-        this.$root.$emit('mensagem-chat:focar-input-mensagem', mensagem)
+        this.$eventBus.emit('mensagem-chat:focar-input-mensagem', mensagem)
       })
     },
     showMessageOptions (messageId) {
@@ -2447,4 +2449,10 @@ export default {
     transform: none !important;
   }
 }
+
+.emoji-text {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif !important;
+  font-size: 1.2em;
+}
+
 </style>

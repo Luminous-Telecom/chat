@@ -1,7 +1,7 @@
 <template>
   <q-dialog
-    :value="value"
-    @input="$emit('input', $event)"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
     persistent
     transition-show="scale"
     transition-hide="scale"
@@ -208,7 +208,7 @@ import { uid } from 'quasar'
 export default {
   name: 'ModalAgendarMensagem',
   props: {
-    value: {
+    modelValue: {
       type: Boolean,
       default: false
     },
@@ -275,7 +275,7 @@ export default {
     }
   },
   watch: {
-    value (newVal) {
+    modelValue (newVal) {
       if (newVal) {
         this.resetarFormulario()
       }
@@ -371,7 +371,7 @@ export default {
         })
 
         this.resetarFormulario()
-        this.$emit('update:value', false)
+        this.$emit('update:modelValue', false)
       } catch (error) {
         console.error('Erro ao agendar mensagem:', error)
         this.$q.notify({
@@ -386,7 +386,7 @@ export default {
 
     cancelar () {
       this.resetarFormulario()
-      this.$emit('update:value', false)
+      this.$emit('update:modelValue', false)
     }
   }
 }

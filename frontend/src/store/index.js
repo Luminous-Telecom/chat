@@ -1,5 +1,4 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 import user from './modules/user'
 import whatsapp from './modules/whatsapp'
 import atendimentoTicket from './modules/atendimentoTicket'
@@ -8,8 +7,6 @@ import chatFlow from './modules/chatFlow'
 import usersApp from './modules/usersApp'
 import getters from './getters'
 // import example from './module-example'
-
-Vue.use(Vuex)
 
 /*
  * If not building with SSR mode, you can
@@ -21,7 +18,7 @@ Vue.use(Vuex)
  */
 
 export default function (/* { ssrContext } */) {
-  const Store = new Vuex.Store({
+  const Store = createStore({
     getters,
     modules: {
       // example

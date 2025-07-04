@@ -14,19 +14,18 @@
     </el-alert>
     <br />
     <!--一个高亮显示的插件-->
-    <codemirror
-      :value="flowJsonData"
-      :options="options"
+    <Codemirror
+      v-model="flowJsonData"
+      :extensions="extensions"
       class="code"
-    ></codemirror>
+    />
   </q-dialog>
 </template>
 
 <script>
-import 'codemirror/lib/codemirror.css'
-import { codemirror } from 'vue-codemirror'
-
-require('codemirror/mode/javascript/javascript')
+import { Codemirror } from 'vue-codemirror'
+import { javascript } from '@codemirror/lang-javascript'
+import { oneDark } from '@codemirror/theme-one-dark'
 
 export default {
   props: {
@@ -36,14 +35,11 @@ export default {
     return {
       dialogVisible: false,
       flowJsonData: {},
-      options: {
-        mode: { name: 'javascript', json: true },
-        lineNumbers: true
-      }
+      extensions: [javascript()]
     }
   },
   components: {
-    codemirror
+    Codemirror
   },
   methods: {
     init () {

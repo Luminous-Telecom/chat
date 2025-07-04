@@ -1,5 +1,3 @@
-import Vue from 'vue'
-
 const whatsapp = {
   state: {
     whatsApps: []
@@ -24,14 +22,14 @@ const whatsapp = {
       const whatsAppIndex = state.whatsApps.findIndex(s => s.id === whatsApp.id)
 
       if (whatsAppIndex !== -1) {
-        // Use Vue.set to ensure reactivity for each property
-        Vue.set(state.whatsApps[whatsAppIndex], 'status', whatsApp.status)
-        Vue.set(state.whatsApps[whatsAppIndex], 'qrcode', whatsApp.qrcode)
+        // In Vue 3, Vue.set is not needed - direct assignment works
+        state.whatsApps[whatsAppIndex].status = whatsApp.status
+        state.whatsApps[whatsAppIndex].qrcode = whatsApp.qrcode
         if (whatsApp.updatedAt) {
-          Vue.set(state.whatsApps[whatsAppIndex], 'updatedAt', whatsApp.updatedAt)
+          state.whatsApps[whatsAppIndex].updatedAt = whatsApp.updatedAt
         }
         if (whatsApp.retries !== undefined) {
-          Vue.set(state.whatsApps[whatsAppIndex], 'retries', whatsApp.retries)
+          state.whatsApps[whatsAppIndex].retries = whatsApp.retries
         }
         // Force reactivity by creating a new array reference
         state.whatsApps = [...state.whatsApps]

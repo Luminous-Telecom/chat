@@ -65,6 +65,8 @@ api.interceptors.response.use(
   }
 )
 
-export default ({ Vue }) => {
-  Vue.prototype.$axios = api
-}
+import { boot } from 'quasar/wrappers'
+
+export default boot(({ app }) => {
+  app.config.globalProperties.$axios = api
+})

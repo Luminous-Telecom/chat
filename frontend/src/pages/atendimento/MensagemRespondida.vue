@@ -141,15 +141,14 @@
                 v-if="mensagem.mediaUrl"
                 content-class="bg-padrao text-grey-9 text-bold"
               >
-                Baixar: {{ mensagem.body }}
+                Baixar: <span v-html="formatarMensagemWhatsapp(mensagem.body)"></span>
               </q-tooltip>
               <template slot>
                 <div
                   class="row items-center q-my-sm"
                   style="max-width: 180px"
                 >
-                  <div class="ellipsis col-grow q-pr-sm">
-                    {{ formatarMensagemWhatsapp(mensagem.body) }}
+                  <div class="ellipsis col-grow q-pr-sm" v-html="formatarMensagemWhatsapp(mensagem.body)">
                   </div>
                   <q-icon
                     class="col"
@@ -271,6 +270,10 @@ export default {
       type: Object,
       default: () => { }
     },
+    ticketFocado: {
+      type: Object,
+      default: () => { }
+    },
     size: {
       type: [String, Number],
       default: '5'
@@ -333,7 +336,7 @@ export default {
 
         // Enviar resposta do botão
         await EnviarRespostaBotao({
-          ticketId: this.$parent.ticketFocado?.id,
+          ticketId: this.ticketFocado?.id,
           buttonId: button.id,
           buttonText: buttonText,
           messageId: mensagem.id
@@ -375,7 +378,7 @@ export default {
 
         // Enviar resposta do botão da lista
         await EnviarRespostaBotao({
-          ticketId: this.$parent.ticketFocado?.id,
+          ticketId: this.ticketFocado?.id,
           buttonId: section.id || `section_${sectionIndex}`,
           buttonText: buttonText,
           messageId: mensagem.id

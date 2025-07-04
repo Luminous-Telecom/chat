@@ -110,10 +110,10 @@ export default {
       socket.on(`${usuario.tenantId}:whatsappSession`, data => {
         if (data.action === 'update') {
           this.$store.commit('UPDATE_SESSION', data.session)
-          this.$root.$emit('UPDATE_SESSION', data.session)
+          this.$eventBus.emit('UPDATE_SESSION', data.session)
         }
         if (data.action === 'readySession') {
-          this.$root.$emit('READY_SESSION', data.session)
+          this.$eventBus.emit('READY_SESSION', data.session)
           this.$q.notify({
             position: 'bottom-right',
             icon: 'mdi-wifi-arrow-up-down',

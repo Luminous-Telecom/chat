@@ -103,17 +103,12 @@
                 :offset="[5, 40]"
                 ref="emojiPicker"
               >
-                <Picker
+                <EmojiPicker
                   :theme="$q.dark.isActive ? 'dark' : 'light'"
                   :locale="'pt'"
-                  :previewPosition="'none'"
-                  :perLine="9"
-                  :showPreview="false"
-                  :showSkinTones="true"
-                  :showCategoryButtons="true"
-                  :showSearch="true"
+                  native
                   style="width: 420px"
-                  @emoji-select="onEmojiSelectMart"
+                  @select="onEmojiSelectMart"
                 />
               </q-menu>
             </q-btn>
@@ -158,15 +153,15 @@
 </template>
 
 <script>
-import { Picker } from 'emoji-mart-vue'
-import 'emoji-mart-vue/css/emoji-mart.css'
+import EmojiPicker from 'vue3-emoji-picker'
+import 'vue3-emoji-picker/css'
 const userId = +localStorage.getItem('userId')
 import { CriarAcaoEtapa, EditarAcaoEtapa } from 'src/service/autoResposta'
 
 export default {
   name: 'ModalAcaoEtapa',
   components: {
-    Picker
+    EmojiPicker
   },
   props: {
     modalAcaoEtapa: {

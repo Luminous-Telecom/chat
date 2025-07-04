@@ -1,5 +1,4 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import { Notify } from 'quasar'
 
 import routes from './routes.js'
@@ -19,8 +18,6 @@ import routes from './routes.js'
 //   })
 // }
 
-Vue.use(VueRouter)
-
 /*
  * If not building with SSR mode, you can
  * directly export the Router instantiation;
@@ -30,14 +27,15 @@ Vue.use(VueRouter)
  * with the Router instance.
  */
 
-const Router = new VueRouter({
-  scrollBehavior: () => ({ x: 0, y: 0 }),
+const createHistory = process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory
+
+const Router = createRouter({
+  scrollBehavior: () => ({ left: 0, top: 0 }),
   routes,
-  // Leave these as they are and change in quasar.conf.js instead!
-  // quasar.conf.js -> build -> vueRouterMode
-  // quasar.conf.js -> build -> publicPath
-  mode: process.env.VUE_ROUTER_MODE,
-  base: process.env.VUE_ROUTER_BASE
+  // Leave these as they are and change in quasar.config.js instead!
+  // quasar.config.js -> build -> vueRouterMode
+  // quasar.config.js -> build -> publicPath
+  history: createHistory(process.env.VUE_ROUTER_BASE)
 })
 
 const whiteListName = [

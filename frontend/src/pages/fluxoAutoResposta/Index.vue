@@ -20,11 +20,11 @@
             class="my-sticky-dynamic q-ma-lg"
             title="Auto Resposta"
             hide-bottom
-            :data="listaAutoResposta"
+            :rows="listaAutoResposta"
             :columns="columns"
             :loading="loading"
             row-key="id"
-            :pagination.sync="pagination"
+            v-model:pagination="pagination"
             :rows-per-page-options="[0]"
           >
             <template v-slot:top-right>
@@ -98,11 +98,11 @@
                     flat
                     bordered
                     hide-bottom
-                    :data="props.row.stepsReply"
+                    :rows="props.row.stepsReply"
                     :columns="columnsEtapas"
                     :loading="loading"
                     row-key="id"
-                    :pagination.sync="pagination"
+                    v-model:pagination="pagination"
                     :rows-per-page-options="[0]"
                   >
                     <template v-slot:top-right>
@@ -176,12 +176,12 @@
                             bordered
                             class="my-sticky-dynamic"
                             title="Ações"
-                            :data="etapas.row.stepsReplyAction"
+                            :rows="etapas.row.stepsReplyAction"
                             :columns="columnsAcoes"
                             :loading="loading"
                             row-key="id"
                             hide-bottom
-                            :pagination.sync="pagination"
+                            v-model:pagination="pagination"
                             :rows-per-page-options="[0]"
                           >
                             <template v-slot:top-right>

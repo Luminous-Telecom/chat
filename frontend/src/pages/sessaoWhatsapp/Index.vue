@@ -13,7 +13,7 @@
               color="black"
               icon="mdi-plus"
               label="Adicionar"
-              @click="modalWhatsapp = true"
+              @click="handleOpenModalAdd"
             />
           </div>
         </q-card-section>
@@ -160,14 +160,14 @@
       </q-card>
     </div>
     <ModalQrCode
-      :abrirModalQR.sync="abrirModalQR"
+      v-model:abrirModalQR="abrirModalQR"
       :channel="cDadosWhatsappSelecionado"
       @gerar-novo-qrcode="v => handleRequestNewQrCode(v, 'btn-qrCode')"
       @conectar-por-numero="handleConnectByNumber"
     />
     <ModalWhatsapp
-      :modalWhatsapp.sync="modalWhatsapp"
-      :whatsAppEdit.sync="whatsappSelecionado"
+      v-model:modalWhatsapp="modalWhatsapp"
+      v-model:whatsAppEdit="whatsappSelecionado"
       @recarregar-lista="listarWhatsapps"
     />
     <q-inner-loading :showing="loading">
@@ -183,7 +183,7 @@
 
 import { ListarWhatsapps, DeletarWhatsapp, UpdateWhatsapp, StartWhatsappSession, RequestNewQrCode, DeleteWhatsappSession, GetWhatSession } from 'src/service/sessoesWhatsapp'
 import { format, parseISO } from 'date-fns'
-import pt from 'date-fns/locale/pt-BR/index'
+import { ptBR } from 'date-fns/locale'
 import ModalQrCode from './ModalQrCode'
 import { mapGetters } from 'vuex'
 import ModalWhatsapp from './ModalWhatsapp'
@@ -281,21 +281,49 @@ export default {
   computed: {
     ...mapGetters(['whatsapps']),
     cDadosWhatsappSelecionado () {
+      // Garantir que whatsappSelecionado tem um ID válido
+      if (!this.whatsappSelecionado || !this.whatsappSelecionado.id) {
+        return this.whatsappSelecionado || {}
+      }
+
       const { id } = this.whatsappSelecionado
       const found = this.whatsapps.find(w => w.id === id)
+      
+      if (!found) {
+        // Retorna o whatsappSelecionado original se não encontrar no store
+        return this.whatsappSelecionado
+      }
+
       return found
     }
   },
   methods: {
     formatarData (data, formato) {
-      return format(parseISO(data), formato, { locale: pt })
+              return format(parseISO(data), formato, { locale: ptBR })
     },
     handleOpenQrModal (channel) {
-      this.whatsappSelecionado = channel
+      // Validar se o canal é válido
+      if (!channel || !channel.id) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro: Canal inválido para abrir QR code',
+          position: 'bottom-right'
+        })
+        return
+      }
+
+      // Atualizar o whatsapp selecionado
+      this.whatsappSelecionado = { ...channel }
+      
+      // Abrir o modal
       this.abrirModalQR = true
     },
     handleOpenModalWhatsapp (whatsapp) {
-      this.whatsappSelecionado = whatsapp
+      this.whatsappSelecionado = { ...whatsapp }
+      this.modalWhatsapp = true
+    },
+    handleOpenModalAdd () {
+      this.whatsappSelecionado = {}
       this.modalWhatsapp = true
     },
     async handleDisconectWhatsSession (whatsAppId) {
@@ -421,44 +449,70 @@ export default {
 
       this.loading = true
       try {
+        // 1. Sempre desconectar primeiro se não estiver desconectado
         if (channel.status !== 'DISCONNECTED') {
           await DeleteWhatsappSession(channel.id)
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
 
+        // 2. Abrir o modal IMEDIATAMENTE para melhor UX
+        this.handleOpenQrModal(channel)
+
+        // 3. Solicitar novo QR code
         const qrCodeData = { id: channel.id, isQrcode: true, forceNewSession: true }
         await RequestNewQrCode(qrCodeData)
 
-        // O QR code será recebido via WebSocket e automaticamente atualizado no store
-        // Aguardar um tempo para o QR code ser gerado
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        // 4. Aguardar QR code ser gerado (com timeout mais longo)
+        let tentativas = 0
+        const maxTentativas = 15 // Aumentei para 15 tentativas
+        
+        const aguardarQrCode = async () => {
+          while (tentativas < maxTentativas) {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            tentativas++
 
-        // Buscar o canal atualizado do store (que foi atualizado via WebSocket)
-        const updatedChannelFromStore = this.$store.state.whatsapp.whatsApps.find(w => w.id === channel.id)
+            // Buscar o canal atualizado do store
+            const updatedChannel = this.$store.state.whatsapp.whatsApps.find(w => w.id === channel.id)
 
-        if (updatedChannelFromStore && updatedChannelFromStore.qrcode) {
-          // Se o modal já está aberto, apenas atualizar o canal selecionado
-          if (this.abrirModalQR) {
-            this.whatsappSelecionado = updatedChannelFromStore
-          } else {
-            this.handleOpenQrModal(updatedChannelFromStore)
+            if (updatedChannel) {
+              // Atualizar o canal selecionado sempre
+              this.whatsappSelecionado = { ...updatedChannel }
+              
+              // Se tem QR code, sucesso!
+              if (updatedChannel.qrcode) {
+                // Garantir que o modal está aberto
+                if (!this.abrirModalQR) {
+                  this.abrirModalQR = true
+                }
+                
+                this.$q.notify({
+                  type: 'positive',
+                  message: 'QR Code gerado com sucesso! Escaneie com seu celular.',
+                  position: 'bottom-right'
+                })
+                return true
+              }
+              
+              // Se o status mudou para 'qrcode', continue aguardando
+              if (updatedChannel.status === 'qrcode' || updatedChannel.status === 'CONNECTING') {
+                continue
+              }
+            }
           }
-        } else {
-          // Aguardar mais um pouco e tentar novamente
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          const finalChannel = this.$store.state.whatsapp.whatsApps.find(w => w.id === channel.id)
-          // Se o modal já está aberto, apenas atualizar o canal selecionado
-          if (this.abrirModalQR) {
-            this.whatsappSelecionado = finalChannel || channel
-          } else {
-            this.handleOpenQrModal(finalChannel || channel)
-          }
+          
+          // Timeout - não conseguiu gerar QR code
+          throw new Error('Timeout ao aguardar geração do QR Code')
         }
+
+        await aguardarQrCode()
+
       } catch (error) {
-        console.error('❌ Error in handleRequestNewQrCode:', error)
+        // Fechar o modal em caso de erro crítico
+        this.abrirModalQR = false
+        
         this.$q.notify({
           type: 'negative',
-          message: 'Erro ao gerar novo QR code. Tente novamente em alguns segundos.',
+          message: error.message || 'Erro ao gerar novo QR code. Tente novamente em alguns segundos.',
           position: 'bottom-right'
         })
       } finally {
@@ -621,7 +675,8 @@ export default {
       } finally {
         this.loading = false
       }
-    }
+    },
+
   },
   mounted () {
     this.isAdmin = localStorage.getItem('profile')

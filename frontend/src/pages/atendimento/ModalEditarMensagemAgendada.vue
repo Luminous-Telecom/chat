@@ -1,7 +1,7 @@
 <template>
   <q-dialog
-    :value="value"
-    @input="$emit('input', $event)"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
     persistent
     transition-show="scale"
     transition-hide="scale"
@@ -15,7 +15,7 @@
           flat
           round
           dense
-          @click="$emit('input', false)"
+          @click="$emit('update:modelValue', false)"
         />
       </q-card-section>
 
@@ -117,7 +117,7 @@
               label="Cancelar"
               flat
               color="grey"
-              @click="$emit('input', false)"
+              @click="$emit('update:modelValue', false)"
             />
             <q-btn
               label="Salvar Alterações"
@@ -142,7 +142,7 @@ export default {
   name: 'ModalEditarMensagemAgendada',
 
   props: {
-    value: {
+    modelValue: {
       type: Boolean,
       default: false
     },
@@ -328,7 +328,7 @@ export default {
           ...dados
         })
 
-        this.$emit('input', false)
+        this.$emit('update:modelValue', false)
       } catch (error) {
         console.error('Erro ao editar mensagem agendada:', error)
         this.$q.notify({

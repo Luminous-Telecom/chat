@@ -4,45 +4,15 @@
 @import "scrollbar-styles"
 
 *
-  font-family: 'Nunito', sans-serif
+  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif
 
-// Configurações para melhor exibição de emojis como caracteres Unicode
-.emoji
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
-  font-size: 1.1em
-  line-height: 1.2
-  vertical-align: baseline
-  display: inline-block
+// Aumentar tamanho dos ícones dos botões
+.q-btn .q-icon,
+.q-btn .q-spinner
+  font-size: 2em
 
-// Estilos para emojis SVG do Twemoji
-.emoji-svg
-  height: 1.2em !important
-  width: 1.2em !important
-  vertical-align: -0.1em !important
-  display: inline-block !important
-  margin: 0 0.05em 0 0.1em !important
 
-// Melhorar exibição de emojis em mensagens
-.q-message-container, .messageLeft, .messageRight, .quotedMsg
-  .emoji
-    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
-    font-size: 1.2em
-    line-height: 1
-    vertical-align: middle
-    display: inline
 
-// Configurações específicas para o VEmojiPicker
-.v-emoji-picker
-  .emoji
-    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif !important
-    font-size: 1.5em !important
-    line-height: 1 !important
-    vertical-align: middle !important
-
-// Fallback para emojis não suportados
-@supports not (font-variant-emoji: emoji)
-  .emoji
-    font-family: 'Segoe UI Symbol', 'Arial Unicode MS', 'Lucida Sans Unicode', sans-serif
 
 body
   color: $content-color
@@ -559,10 +529,6 @@ div.q-card, .q-table, .q-table__container
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important
   transition: box-shadow 0.2s ease
 
-// Estilos para seleção de mensagens
-.q-message-text--selected
-  background: rgba(37, 211, 102, 0.1) !important
-  border: 2px solid #25d366 !important
 
 // Estilos para mensagens encaminhadas
 .q-message-text--forwarded
@@ -605,6 +571,45 @@ div.q-card, .q-table, .q-table__container
   margin-left: auto !important
   margin-right: 0 !important
   min-width: 200px !important
+
+// Customizações específicas para emojis SVG
+.emoji-svg
+  height: 1.2em !important
+  width: 1.2em !important
+  vertical-align: -0.1em !important
+  display: inline-block !important
+  margin: 0 0.05em !important
+  max-width: none !important
+  max-height: none !important
+
+// Estilos específicos para textarea com emojis SVG
+.input-mensagem-wrapper
+  .emoji-svg
+    height: 1.2em !important
+    width: 1.2em !important
+    vertical-align: -0.1em !important
+    display: inline-block !important
+    margin: 0 0.05em !important
+
+// Estilos específicos para mensagens de chat
+.q-message-container
+  .emoji-svg
+    height: 1.2em !important
+    width: 1.2em !important
+    vertical-align: -0.1em !important
+    display: inline-block !important
+    margin: 0 0.05em !important
+
+// Forçar exibição de emojis SVG em todos os contextos
+img.emoji-svg
+  height: 1.2em !important
+  width: 1.2em !important
+  vertical-align: -0.1em !important
+  display: inline-block !important
+  margin: 0 0.05em !important
+  border: none !important
+  outline: none !important
+  background: none !important
   max-width: 350px !important
   width: 100% !important
   display: flex !important
@@ -680,11 +685,6 @@ body.body--dark
   #chat-message-resp .message-status
     color: var(--text-color-secondary)
 
-.q-message-text
-.messageLeft
-.messageRight
-  color: var(--text-color-primary) !important
-
 .messageLeft
   background-color: var(--q-message-received-bg) !important
 
@@ -692,8 +692,8 @@ body.body--dark
   background-color: var(--q-message-sent-bg) !important
 
 // Modo escuro
-.body--dark .q-message-text
-.body--dark .messageLeft
+.body--dark .q-message-text,
+.body--dark .messageLeft,
 .body--dark .messageRight
   color: var(--text-color-primary) !important
 
@@ -740,24 +740,7 @@ body.body--dark
     width: 100% !important
     box-sizing: border-box
 
-.inputEnvioMensagem
 
-  &:focus
-    outline: none
-    background: rgba(255,255,255,0.18)
-    box-shadow: 0 2px 8px rgba(25,118,210,0.10)
-
-  &::placeholder
-    color: var(--text-color-secondary)
-    opacity: 0.7
-    font-size: 15px
-
-  &:focus
-    background: rgba(30,32,44,0.9)
-    box-shadow: 0 2px 8px rgba(25,118,210,0.18)
-
-.inputEnvioMensagem + .q-field__bottom
-  display: none !important
 
 // Balão de mensagem recebida (claro) - agora igual ao enviado
 .messageLeft,

@@ -43,7 +43,7 @@ export default {
           this.$store.commit('SET_HAS_MORE', true)
 
           // Mudar para "meus atendimentos" após atender o ticket
-          this.$root.$emit('trocar-para-meus-atendimentos')
+          this.$eventBus.emit('trocar-para-meus-atendimentos')
 
           // Reduzir delay para melhorar responsividade
           setTimeout(() => {

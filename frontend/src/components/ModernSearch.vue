@@ -215,8 +215,6 @@ body.body--dark {
 
     &:focus-within {
       background: rgba(30, 42, 58, 0.95);
-      border-color: rgba(100, 181, 246, 0.5);
-      box-shadow: 0 0 0 4px rgba(100, 181, 246, 0.1);
     }
   }
 

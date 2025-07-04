@@ -6,11 +6,11 @@
       hide-bottom
       class="my-sticky-dynamic q-ma-lg"
       title="Campanhas"
-      :data="campanhas"
+      :rows="campanhas"
       :columns="columns"
       :loading="loading"
       row-key="id"
-      :pagination.sync="pagination"
+      v-model:pagination="pagination"
       :rows-per-page-options="[0]"
     >
       <template v-slot:top-right>

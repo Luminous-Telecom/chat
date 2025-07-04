@@ -55,11 +55,10 @@
         class="q-pa-none q-ma-none full-width bg-amber"
         height="90px"
       >
-        <template v-for="(wbot, index) in whatsapps">
-          <q-carousel-slide
-            :key="wbot.id + index"
-            :name="index"
-            class="q-pa-none q-ma-none"
+                  <template v-for="(wbot, index) in whatsapps" :key="wbot.id + index">
+            <q-carousel-slide
+              :name="index"
+              class="q-pa-none q-ma-none"
           >
             <ItemStatusWhatsapp :wbot="wbot" />
           </q-carousel-slide>

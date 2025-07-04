@@ -1,5 +1,5 @@
-import Vuelidate from 'vuelidate'
-import VuelidateErrorExtractor from 'vuelidate-error-extractor'
+import { boot } from 'quasar/wrappers'
+import { createVuelidate } from '@vuelidate/core'
 
 import linkify from 'vue-linkify'
 
@@ -20,13 +20,11 @@ const mapNames = {
   username: 'Usuário'
 }
 
-export default ({
-  Vue
-}) => {
-  Vue.directive('linkified', linkify)
-  Vue.use(Vuelidate)
-  Vue.use(VuelidateErrorExtractor, {
-    messages,
-    attributes: mapNames
-  })
-}
+export default boot(({ app }) => {
+  app.directive('linkified', linkify)
+  
+  // Vuelidate 2.0 para Vue 3 não precisa ser registrado globalmente
+  // Usar useVuelidate() diretamente nos componentes
+  app.config.globalProperties.$vuelidateMessages = messages
+  app.config.globalProperties.$vuelidateMapNames = mapNames
+})

@@ -189,7 +189,7 @@ export default {
     // },
     scrollToBottom () {
       setTimeout(() => {
-        this.$root.$emit('scrollToBottomMessageChat')
+        this.$eventBus.emit('scrollToBottomMessageChat')
       }, 200)
     },
     ticketListSocket () {

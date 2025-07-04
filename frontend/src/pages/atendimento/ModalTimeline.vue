@@ -1,7 +1,7 @@
 <template>
   <q-dialog
-    :value="modalTimeline"
-    @input="$emit('update:modalTimeline', $event)"
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
     @hide="fecharModal"
     persistent
     transition-show="scale"
@@ -23,8 +23,8 @@
             <q-spinner color="primary" size="3em" />
           </div>
           <div v-else class="q-pa-sm">
-            <template v-for="(mensagem, index) in mensagens">
-              <div :key="mensagem.id">
+            <template v-for="(mensagem, index) in mensagens" :key="mensagem.id">
+              <div>
                 <div v-if="deveExibirData(mensagem, index)" class="row justify-center q-my-sm">
                   <q-chip
                     color="grey-3"
@@ -133,7 +133,7 @@
                                       frameborder="0"
                                       title="Preview do PDF"
                                     >
-                                      <p>Seu navegador não suporta visualização de PDF. <a :href="mensagem.mediaUrl" target="_blank">Clique aqui para baixar</a></p>
+                                      Seu navegador não suporta visualização de PDF.
                                     </iframe>
                                   </div>
                                 </div>
@@ -171,14 +171,14 @@
                                 content-class="text-bold"
                               >
                                 Baixar: {{ mensagem.mediaName }}
-                                {{ mensagem.body }}
+                                <span v-html="formatarMensagemWhatsapp(mensagem.body)"></span>
                               </q-tooltip>
                               <div class="row items-center q-ma-xs">
                                 <div
                                   class="ellipsis col-grow q-pr-sm"
                                   style="max-width: 290px"
+                                  v-html="formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName)"
                                 >
-                                  {{ formatarMensagemWhatsapp(mensagem.body || mensagem.mediaName) }}
                                 </div>
                                 <q-icon name="mdi-download" />
                               </div>
@@ -247,7 +247,7 @@
             frameborder="0"
             title="PDF em tela cheia"
           >
-            <p>Seu navegador não suporta visualização de PDF. <a :href="currentPdfUrl" target="_blank">Clique aqui para baixar</a></p>
+            Seu navegador não suporta visualização de PDF.
           </iframe>
         </q-card-section>
       </q-card>
@@ -269,7 +269,7 @@ export default {
     WhatsAppAudioPlayer
   },
   props: {
-    modalTimeline: {
+    modelValue: {
       type: Boolean,
       default: false
     },
@@ -293,7 +293,7 @@ export default {
   },
   methods: {
     fecharModal () {
-      this.$emit('update:modalTimeline', false)
+      this.$emit('update:modelValue', false)
     },
     async carregarMensagens () {
       if (!this.contato || !this.contato.id) return
@@ -407,7 +407,7 @@ export default {
     }
   },
   watch: {
-    modalTimeline (newVal) {
+    modelValue (newVal) {
       if (newVal) {
         this.carregarMensagens()
       } else {

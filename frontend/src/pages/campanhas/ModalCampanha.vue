@@ -45,7 +45,7 @@
               :error="$v.campanha.name.$error"
               error-message="Obrigatório"
             />
-            <q-datetime-picker
+            <q-input
               style="width: 200px"
               dense
               rounded
@@ -54,14 +54,34 @@
               stack-label
               bottom-slots
               label="Data/Hora início"
-              mode="datetime"
               color="primary"
-              format24h
               v-model="campanha.start"
               @blur="$v.campanha.start.$touch"
               :error="$v.campanha.start.$error"
               error-message="Não pode ser inferior ao dia atual"
-            />
+              readonly
+            >
+              <template v-slot:append>
+                <q-icon name="event" class="cursor-pointer">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-date v-model="campanha.start" mask="YYYY-MM-DD HH:mm">
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup label="Fechar" color="primary" flat />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+                <q-icon name="access_time" class="cursor-pointer">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-time v-model="campanha.start" mask="YYYY-MM-DD HH:mm" format24h>
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup label="Fechar" color="primary" flat />
+                      </div>
+                    </q-time>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
             <q-select
               rounded
               dense
@@ -361,7 +381,7 @@
 </template>
 
 <script>
-import { required } from 'vuelidate/lib/validators'
+import { required } from '@vuelidate/validators'
 import axios from 'axios'
 import cMolduraCelular from 'src/components/cMolduraCelular'
 import MensagemChat from 'src/pages/atendimento/MensagemChat'
@@ -369,6 +389,7 @@ import { mapGetters } from 'vuex'
 import { CriarCampanha, AlterarCampanha } from 'src/service/campanhas'
 import { parseISO, startOfDay } from 'date-fns'
 import { insertEmojiInTextarea } from 'src/utils/emojiUtils'
+import mixinCommon from 'src/pages/atendimento/mixinCommon'
 import 'emoji-picker-element'
 
 const isValidDate = (v) => {
@@ -386,6 +407,7 @@ const downloadImageCors = axios.create({
 export default {
   name: 'ModalCampanha',
   components: { cMolduraCelular, MensagemChat },
+  mixins: [mixinCommon],
   props: {
     modalCampanha: {
       type: Boolean,

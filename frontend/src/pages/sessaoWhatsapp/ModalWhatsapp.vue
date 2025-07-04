@@ -1,7 +1,6 @@
 <template>
   <q-dialog
-    :value="modalWhatsapp"
-    @hide="fecharModal"
+    v-model="modalVisible"
     @show="abrirModal"
     persistent
     class="modal-modern"
@@ -35,29 +34,12 @@
             />
           </div>
           <div class="col-12">
-            <c-input
+            <q-input
               outlined
               rounded
               label="Nome"
               dense
               v-model="whatsapp.name"
-              :validator="$v.whatsapp.name"
-              @blur="$v.whatsapp.name.$touch"
-            />
-          </div>
-
-          <div
-            class="col-12 q-mt-md"
-            v-if="whatsapp.type === 'whatsapp'"
-          >
-            <c-input
-              outlined
-              dense
-              label="Número para Conexão"
-              v-model="whatsapp.connectionNumber"
-              hint="Número para conexão direta via API (ex: 5511999999999)"
-              mask="(##) #####-####"
-              unmasked-value
             />
           </div>
 
@@ -65,7 +47,7 @@
             class="col-12 q-mt-md"
             v-if="whatsapp.type === 'telegram'"
           >
-            <c-input
+            <q-input
               outlined
               dense
               label="Token Telegram"
@@ -83,7 +65,7 @@
                   class="col-12 q-mb-md"
                   v-if="whatsapp.type === 'instagram'"
                 >
-                  <c-input
+                  <q-input
                     outlined
                     dense
                     label="Usuário"
@@ -110,7 +92,7 @@
                   class="col-12"
                   v-if="whatsapp.type === 'instagram' && isEdit"
                 >
-                  <c-input
+                  <q-input
                     outlined
                     rounded
                     label="Senha"
@@ -142,7 +124,7 @@
                         @click="isPwd = !isPwd"
                       />
                     </template>
-                  </c-input>
+                  </q-input>
                 </div>
               </fieldset>
 
@@ -209,7 +191,7 @@
           label="Sair"
           class="q-px-md q-mr-lg"
           color="negative"
-          v-close-popup
+          @click="fecharModal"
         />
         <q-btn
           label="Salvar"
@@ -224,13 +206,10 @@
 </template>
 
 <script>
-import { required, minLength, maxLength } from 'vuelidate/lib/validators'
 import { UpdateWhatsapp, CriarWhatsapp } from 'src/service/sessoesWhatsapp'
-import cInput from 'src/components/cInput.vue'
 import { copyToClipboard, Notify } from 'quasar'
 
 export default {
-  components: { cInput },
   name: 'ModalWhatsapp',
   props: {
     modalWhatsapp: {
@@ -258,8 +237,7 @@ export default {
         instagramKey: '',
         tokenAPI: '',
         type: 'whatsapp',
-        farewellMessage: '',
-        connectionNumber: ''
+        farewellMessage: ''
       },
       optionsWhatsappsTypes: [
         { label: 'Whatsapp', value: 'whatsapp' },
@@ -273,16 +251,20 @@ export default {
       ]
     }
   },
-  validations: {
-    whatsapp: {
-      name: { required, minLength: minLength(3), maxLength: maxLength(50) },
-      isDefault: {}
-    }
-  },
   computed: {
+    modalVisible: {
+      get () {
+        return this.modalWhatsapp
+      },
+      set (value) {
+        this.$emit('update:modalWhatsapp', value)
+      }
+    },
     cBaseUrlIntegração () {
       return this.whatsapp.UrlMessengerWebHook
     }
+  },
+  watch: {
   },
   methods: {
     copy (text) {
@@ -316,8 +298,15 @@ export default {
     fecharModal () {
       this.whatsapp = {
         name: '',
-        isDefault: false
+        isDefault: false,
+        tokenTelegram: '',
+        instagramUser: '',
+        instagramKey: '',
+        tokenAPI: '',
+        type: 'whatsapp',
+        farewellMessage: ''
       }
+      this.isEdit = false
       this.$emit('update:whatsAppEdit', {})
       this.$emit('update:modalWhatsapp', false)
     },
@@ -327,13 +316,13 @@ export default {
       }
     },
     async handleSaveWhatsApp (whatsapp) {
-      this.$v.whatsapp.$touch()
-      if (this.$v.whatsapp.$error) {
+      // Validação básica do nome
+      if (!whatsapp.name || whatsapp.name.length < 3) {
         return this.$q.notify({
           type: 'warning',
           progress: true,
           position: 'bottom-right',
-          message: 'Ops! Verifique os erros...',
+          message: 'Ops! O nome deve ter pelo menos 3 caracteres.',
           actions: [{
             icon: 'close',
             round: true,
@@ -388,7 +377,6 @@ export default {
     }
   },
   destroyed () {
-    this.$v.whatsapp.$reset()
   }
 }
 </script>

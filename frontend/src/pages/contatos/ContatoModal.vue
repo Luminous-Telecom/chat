@@ -49,9 +49,8 @@
         </div>
         <div class="text-bold q-my-md">Informações adicionais</div>
         <div class="row q-col-gutter-md justify-center">
-        <template v-for="(extraInfo, index) in contato.extraInfo">
+        <template v-for="(extraInfo, index) in contato.extraInfo" :key="index">
           <div
-            :key="index"
             class="col-12 row justify-center q-col-gutter-sm"
           >
             <q-input
@@ -118,7 +117,7 @@
 </template>
 
 <script>
-import { required, email, minLength, maxLength } from 'vuelidate/lib/validators'
+import { required, email, minLength, maxLength } from '@vuelidate/validators'
 import { ObterContato, CriarContato, EditarContato } from 'src/service/contatos'
 import { ListarUsuarios } from 'src/service/user'
 export default {

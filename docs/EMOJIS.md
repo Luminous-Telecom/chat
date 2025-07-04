@@ -197,77 +197,6 @@ export default {
 - **Impacto**: Bandeiras apareciam como caracteres separados ou não renderizados
 - **Causa**: Regex não incluía suporte específico para bandeiras
 
-## ✅ **Soluções Implementadas**
-
-### 1. **Configurações CSS para Emojis**
-
-```scss
-// Fontes específicas para emojis
-.emoji, .emoticon, [data-emoji]
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif
-  font-size: 1.1em
-  line-height: 1
-  vertical-align: middle
-  font-variant-emoji: emoji
-  text-rendering: optimizeLegibility
-
-// Configurações específicas para bandeiras
-.emoji[data-emoji*="🇧🇷"], .emoji[data-emoji*="🇺🇸"], .emoji[data-emoji*="🇪🇸"], .emoji[data-emoji*="🇵🇹"], 
-.emoji[data-emoji*="🇦🇷"], .emoji[data-emoji*="🇨🇱"], .emoji[data-emoji*="🇨🇴"], .emoji[data-emoji*="🇲🇽"],
-.emoji[data-emoji*="🇻🇪"], .emoji[data-emoji*="🇵🇪"], .emoji[data-emoji*="🇨🇷"], .emoji[data-emoji*="🇪🇨"],
-.emoji[data-emoji*="🇧🇴"], .emoji[data-emoji*="🇵🇾"], .emoji[data-emoji*="🇺🇾"], .emoji[data-emoji*="🇬🇾"],
-.emoji[data-emoji*="🇸🇷"], .emoji[data-emoji*="🇫🇷"], .emoji[data-emoji*="🇩🇪"], .emoji[data-emoji*="🇮🇹"],
-.emoji[data-emoji*="🇯🇵"], .emoji[data-emoji*="🇨🇳"], .emoji[data-emoji*="🇰🇷"], .emoji[data-emoji*="🇷🇺"],
-.emoji[data-emoji*="🇨🇦"], .emoji[data-emoji*="🇦🇺"], .emoji[data-emoji*="🇳🇿"], .emoji[data-emoji*="🇿🇦"]
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'Twemoji Mozilla', 'Segoe UI Symbol', sans-serif !important
-  font-size: 1.2em !important
-  line-height: 1 !important
-  vertical-align: middle !important
-  font-variant-emoji: emoji !important
-```
-
-### 2. **Utilitários para Processamento de Emojis**
-
-- **Arquivo**: `frontend/src/utils/emojiUtils.js`
-- **Funções**:
-  - `hasEmojis()`: Detecta se texto contém emojis
-  - `hasFlags()`: Detecta se texto contém bandeiras
-  - `processEmojis()`: Processa texto com classes CSS
-  - `formatTextWithEmojis()`: Formata texto completo
-  - `countEmojis()`: Conta emojis em texto
-  - `removeEmojis()`: Remove emojis de texto
-  - `processTextWithEmojiFallback()`: Processamento robusto com fallback
-  - `insertEmojiInTextArea()`: Inserção correta de emojis em textarea
-
-### 3. **Regex Unicode para Emojis e Bandeiras**
-
-```javascript
-// Regex para detectar emojis Unicode (incluindo bandeiras)
-const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]|[\u{238C}-\u{2454}]|[\u{20D0}-\u{20FF}]|[\u{FE00}-\u{FE0F}]|[\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F910}-\u{1F96B}]|[\u{1F980}-\u{1F9E0}]/gu
-
-// Regex específico para bandeiras (Regional Indicator Symbols)
-const FLAG_REGEX = /[\u{1F1E6}-\u{1F1FF}]{2}/gu
-```
-
-### 4. **Configurações Otimizadas do VEmojiPicker**
-
-```javascript
-export const emojiPickerConfig = {
-  showSearch: false,
-  emojisByRow: 20,
-  labelSearch: 'Localizar...',
-  lang: 'pt-BR',
-  emojiSize: '1.5em',
-  emojiFont: "'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif"
-}
-```
-
-### 5. **Importação Global do VEmojiPicker**
-
-- **Arquivo**: `frontend/src/boot/ccComponents.js`
-- **Melhoria**: VEmojiPicker importado globalmente
-- **Resultado**: Disponível em todos os componentes sem importação individual
-
 ### 6. **Processamento Robusto com Fallback**
 
 ```javascript
@@ -295,19 +224,6 @@ export const processTextWithEmojiFallback = (text) => {
 - **Melhoria**: Usa `processTextWithEmojiFallback()` para melhor compatibilidade
 - **Resultado**: Emojis e bandeiras exibidos corretamente em mensagens
 
-## 🎨 **Fontes de Emoji Suportadas**
-
-### **Prioridade de Fontes**
-
-1. **Apple Color Emoji** (macOS/iOS)
-2. **Segoe UI Emoji** (Windows 10+)
-3. **Segoe UI Symbol** (Windows)
-4. **Noto Color Emoji** (Android/Google)
-5. **Android Emoji** (Android)
-6. **EmojiSymbols** (Linux)
-7. **EmojiOne Mozilla** (Firefox)
-8. **Twemoji Mozilla** (Twitter)
-9. **Segoe UI** (Fallback)
 
 ### **Fallback para Sistemas Antigos**
 
@@ -364,21 +280,6 @@ export default {
 </script>
 ```
 
-## 🔧 **Configurações Adicionais**
-
-### **Configurações para Twemoji**
-
-```scss
-.twemoji
-  display: inline-block
-  height: 1em
-  width: 1em
-  margin: 0 .05em 0 .1em
-  vertical-align: -0.1em
-  background-size: contain
-  background-repeat: no-repeat
-  background-position: center
-```
 
 ### **Configurações para Melhor Renderização**
 

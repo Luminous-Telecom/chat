@@ -463,7 +463,7 @@
                     </q-item-section>
                     <q-item-section side>
                       <q-checkbox
-                        :value="isTagSelected(etiqueta.id)"
+                        :model-value="isTagSelected(etiqueta.id)"
                         :color="etiqueta.color"
                         @click.stop="toggleTag(etiqueta)"
                       />
@@ -539,7 +539,7 @@
                     </q-item-section>
                     <q-item-section side>
                       <q-checkbox
-                        :value="isWalletSelected(wallet.id)"
+                        :model-value="isWalletSelected(wallet.id)"
                         color="primary"
                         @click.stop="toggleWallet(wallet.id)"
                       />
@@ -698,10 +698,10 @@
         </q-scroll-area>
       </q-drawer>
 
-      <ModalNovoTicket :modalNovoTicket.sync="modalNovoTicket" />
+      <ModalNovoTicket v-model:modalNovoTicket="modalNovoTicket" />
       <ContatoModal
         :contactId="selectedContactId"
-        :modalContato.sync="modalContato"
+        v-model:modalContato="modalContato"
         @contatoModal:contato-editado="contatoEditado"
       />
 
@@ -712,18 +712,18 @@
       />
 
       <ModalObservacao
-        :value.sync="modalObservacao"
+        v-model="modalObservacao"
         :ticket-id="ticketFocado.id || null"
         @observacao-salva="handleObservacaoSalva"
       />
 
       <ModalListarObservacoes
-        :value.sync="modalListarObservacoes"
+        v-model="modalListarObservacoes"
         :ticket-id="ticketFocado.id || null"
       />
 
       <ModalListarMensagensAgendadas
-        :value.sync="modalListarMensagensAgendadas"
+        v-model="modalListarMensagensAgendadas"
         :ticket-id="ticketFocado.id || null"
         :mensagens-agendadas="ticketFocado.scheduledMessages || []"
         :contato="ticketFocado.contact || {}"
@@ -732,7 +732,7 @@
       />
 
       <ModalAgendarMensagem
-        :value.sync="modalAgendarMensagem"
+        v-model="modalAgendarMensagem"
         :ticket-id="ticketFocado.id || null"
         :mensagens-rapidas="mensagensRapidas"
         :scheduled-messages="ticketFocado.scheduledMessages || []"
@@ -740,7 +740,7 @@
       />
 
       <ModalTimeline
-        :modalTimeline.sync="modalTimeline"
+        v-model="modalTimeline"
         :contato="ticketFocado.contact || {}"
       />
 
@@ -2012,10 +2012,10 @@ export default {
     }, 3000)
 
     // Listeners para eventos globais
-    this.$root.$on('handlerNotifications', this.handlerNotifications)
-    this.$root.$on('trocar-para-meus-atendimentos', this.trocarParaMeusAtendimentos)
+    this.$eventBus.on('handlerNotifications', this.handlerNotifications)
+    this.$eventBus.on('trocar-para-meus-atendimentos', this.trocarParaMeusAtendimentos)
 
-    this.$root.$on('ticket:update', () => {
+    this.$eventBus.on('ticket:update', () => {
       this.$forceUpdate()
     })
 

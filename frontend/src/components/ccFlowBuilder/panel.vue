@@ -42,10 +42,9 @@
         class="container"
         v-flowDrag
       >
-        <template v-for="node in data.nodeList">
+        <template v-for="node in data.nodeList" :key="node.id">
           <flow-node
             :id="node.id"
-            :key="node.id"
             :node="node"
             :activeElement="activeElement"
             @changeNodeSite="changeNodeSite"

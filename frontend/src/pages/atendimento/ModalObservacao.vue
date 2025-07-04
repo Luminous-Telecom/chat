@@ -1,5 +1,5 @@
 <template>
-  <q-dialog :value="value" @input="$emit('update:value', $event)" persistent transition-show="scale" transition-hide="scale" class="modal-modern">
+  <q-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" persistent transition-show="scale" transition-hide="scale" class="modal-modern">
     <q-card style="width: 500px; max-width: 90vw;">
       <q-card-section class="modal-header">
         <div class="text-h6">Nova Observação</div>
@@ -46,7 +46,7 @@ import { CriarObservacao } from '../../service/observacoes'
 export default {
   name: 'ModalObservacao',
   props: {
-    value: {
+    modelValue: {
       type: Boolean,
       required: true
     },
@@ -64,7 +64,7 @@ export default {
     }
   },
   watch: {
-    value (newVal) {
+    modelValue (newVal) {
       if (newVal) {
       }
     }
@@ -91,7 +91,7 @@ export default {
         })
         this.observacao = ''
         this.anexo = null
-        this.$emit('update:value', false)
+        this.$emit('update:modelValue', false)
       } catch (err) {
         console.error('ModalObservacao - Erro ao salvar:', err)
         this.$q.notify({

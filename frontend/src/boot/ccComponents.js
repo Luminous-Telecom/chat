@@ -5,11 +5,8 @@ import DatePick from 'src/components/cDatePick'
 import cDateTimePick from 'src/components/cDateTimePick'
 
 import { format, parseISO } from 'date-fns'
-import pt from 'date-fns/locale/pt-BR'
+import { ptBR } from 'date-fns/locale'
 import { UpdateConfiguracoesUsuarios } from 'src/service/user'
-import Vue from 'vue'
-import Viewer from 'v-viewer'
-import 'viewerjs/dist/viewer.css'
 
 const formatarValorMoeda = (num, black = false, intl = {}) => {
   const config = {
@@ -63,7 +60,7 @@ const iniciaisString = nomecompleto => {
 }
 
 const formatarData = (data, formato = 'dd/MM/yyyy') => {
-  return format(parseISO(data), formato, { locale: pt })
+      return format(parseISO(data), formato, { locale: ptBR })
 }
 
 const setConfigsUsuario = ({ isDark }) => {
@@ -94,20 +91,20 @@ const setConfigsUsuario = ({ isDark }) => {
   localStorage.setItem('usuario', JSON.stringify({ ...usuario, configs: data }))
 }
 
-Vue.use(Viewer)
+import { boot } from 'quasar/wrappers'
 
-export default ({
-  Vue
-}) => {
-  Vue.component('cInput', cInput)
-  Vue.component('DatePick', DatePick)
-  Vue.component('cDateTimePick', cDateTimePick)
-  Vue.prototype.$formatarValorMoeda = formatarValorMoeda
-  Vue.prototype.$round = arredodar
-  Vue.prototype.$formatarData = formatarData
-  Vue.prototype.$iniciaisString = iniciaisString
-  Vue.prototype.$notificarErro = notificarErro
-  Vue.prototype.$notificarSucesso = notificarSucesso
-  Vue.prototype.$setConfigsUsuario = setConfigsUsuario
-  Vue.prototype.$uuid = uid
-}
+export default boot(({ app }) => {
+  app.component('cInput', cInput)
+  app.component('DatePick', DatePick)
+  app.component('cDateTimePick', cDateTimePick)
+  
+  // Adicionar propriedades globais
+  app.config.globalProperties.$formatarValorMoeda = formatarValorMoeda
+  app.config.globalProperties.$round = arredodar
+  app.config.globalProperties.$formatarData = formatarData
+  app.config.globalProperties.$iniciaisString = iniciaisString
+  app.config.globalProperties.$notificarErro = notificarErro
+  app.config.globalProperties.$notificarSucesso = notificarSucesso
+  app.config.globalProperties.$setConfigsUsuario = setConfigsUsuario
+  app.config.globalProperties.$uuid = uid
+})

@@ -1,7 +1,7 @@
 <template>
   <div :id="`pagePrint-${id}`">
 
-    <body id="pageInit">
+    <div id="pageInit" class="print-body">
       <div class="marginsPage">
         <div class="page-header">
           <div class="row">
@@ -86,16 +86,22 @@
               </td>
             </tr>
           </tfoot>
-          <div id="footerAppendFiltros"></div>
 
         </table>
+        <div id="footerAppendFiltros"></div>
       </div>
-    </body>
+    </div>
 
   </div>
 </template>
 <script>
 const cssText = `
+  .print-body {
+    margin: 0px !important;
+    padding: 0px !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
   .marginsPage {
     margin-left: 1cm !important;
     margin-right: 1cm !important;

@@ -62,7 +62,7 @@
 </template>
 <script>
 import { format, parseISO } from 'date-fns'
-import pt from 'date-fns/locale/pt-BR/index'
+import { ptBR } from 'date-fns/locale'
 
 export default {
   name: 'ItemStatusChannel',
@@ -76,7 +76,7 @@ export default {
     formatarData (data, formato) {
       if (!data) return '---'
       try {
-        return format(parseISO(data), formato, { locale: pt })
+        return format(parseISO(data), formato, { locale: ptBR })
       } catch (e) {
         return '---'
       }
