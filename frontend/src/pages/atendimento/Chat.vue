@@ -72,14 +72,14 @@
       v-if="!ticketFocado.id"
     >
       <div class="empty-state-content">
-        <q-icon
-          size="6em"
-          color="grey-6"
-          name="mdi-emoticon-wink-outline"
-          class="empty-icon"
+        <img
+          src="/lumi-suite-logo.png"
+          alt="Lumi Suite"
+          class="empty-logo"
+          style="width: 200px; height: auto; opacity: 0.7;"
         />
         <h1 class="text-grey-6 empty-title">
-          Selecione um ticket!
+          Selecione um ticket para começar
         </h1>
       </div>
     </div>
@@ -676,6 +676,18 @@ body.body--dark .wa-bg-overlay {
 
 .empty-icon {
   margin-bottom: 20px;
+}
+
+.empty-logo {
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  filter: grayscale(0.3);
+}
+
+.empty-logo:hover {
+  transform: scale(1.05);
+  filter: grayscale(0);
+  opacity: 1 !important;
 }
 
 .empty-title {
