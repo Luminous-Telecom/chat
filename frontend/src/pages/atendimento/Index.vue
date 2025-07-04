@@ -297,78 +297,73 @@
               </q-card-section>
             </q-card>
 
-            <!-- Botão Iniciar Atendimento para tickets pending -->
-            <div class="q-mt-md" v-if="ticketFocado.status === 'pending'"></div>
-            <q-card class="action-card" v-if="ticketFocado.status === 'pending'">
-              <q-card-section class="action-section">
-                <q-btn
-                  flat
-                  color="positive"
-                  icon="mdi-send-circle"
-                  label="Iniciar o atendimento"
-                  @click="iniciarAtendimento(ticketFocado)"
-                  :loading="loading"
-                  class="full-width"
-                />
-              </q-card-section>
-            </q-card>
-
-            <!-- Botão Entrar na Conversa - quando o ticket não pertence ao usuário -->
-            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && !cTicketPertenceAoUsuario"></div>
-            <q-card class="action-card" v-if="ticketFocado.status === 'open' && !cTicketPertenceAoUsuario">
-              <q-card-section class="action-section">
-                <q-btn
-                  flat
-                  color="primary"
-                  icon="mdi-login"
-                  label="Entrar na conversa"
-                  @click="entrarNaConversa"
-                  :loading="loadingEntrarConversa"
-                  class="full-width"
-                />
-              </q-card-section>
-            </q-card>
-
-            <!-- Botão Encerrar Ticket - apenas para tickets em atendimento do usuário -->
-            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"></div>
-            <q-card class="action-card" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario">
-              <q-card-section class="action-section">
-                <q-btn
-                  flat
-                  color="positive"
-                  label="Encerrar Ticket"
-                  @click="resolverTicket"
-                  class="full-width"
-                />
-              </q-card-section>
-            </q-card>
-
-            <!-- Botões de Ação - apenas para tickets em atendimento do usuário -->
-            <div class="q-mt-md" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"></div>
-            <q-card class="action-card" v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario">
-              <q-card-section class="action-section">
-                <div class="row q-gutter-sm">
-                  <div class="col">
-                    <q-btn
-                      flat
-                      color="primary"
-                      label="Transferir"
-                      @click="abrirModalTransferirTicket"
-                      class="full-width"
-                    />
-                  </div>
-                  <div class="col">
-                    <q-btn
-                      flat
-                      color="info"
-                      label="Timeline"
-                      @click="abrirModalTimeline"
-                      class="full-width"
-                    />
-                  </div>
-                </div>
-              </q-card-section>
-            </q-card>
+            <!-- Botões de ação principais -->
+            <div class="q-gutter-sm flex flex-center" style="margin-top: 8px;">
+              <q-btn
+                v-if="ticketFocado.status === 'pending'"
+                color="primary"
+                icon="mdi-send-circle"
+                label="Iniciar o atendimento"
+                @click="iniciarAtendimento(ticketFocado)"
+                :loading="loading"
+              />
+              <q-btn
+                v-if="ticketFocado.status === 'open' && !cTicketPertenceAoUsuario"
+                color="primary"
+                icon="mdi-login"
+                label="Entrar na conversa"
+                @click="entrarNaConversa"
+                :loading="loadingEntrarConversa"
+              />
+              <q-btn
+                v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
+                color="primary"
+                label="Encerrar Ticket"
+                @click="resolverTicket"
+              />
+              <q-btn
+                v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
+                color="primary"
+                label="Transferir"
+                @click="abrirModalTransferirTicket"
+              />
+              <q-btn
+                v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
+                color="primary"
+                label="Timeline"
+                @click="abrirModalTimeline"
+              />
+              <!-- Seletor de Etiquetas -->
+              <q-select
+                v-model="selectedTags"
+                :options="etiquetas"
+                option-label="tag"
+                option-value="id"
+                outlined
+                dense
+                label="Etiquetas"
+                class="q-mx-xs"
+                :class="{'q-select--without-value': !selectedTags.length}"
+                style="height: 40px; min-width: 180px; max-width: 240px; width: 100%;"
+                @update:model-value="tagSelecionada"
+                @blur="blurTags"
+              />
+              <!-- Seletor de Carteira -->
+              <q-select
+                v-model="selectedWallets"
+                :options="usuarios"
+                option-label="name"
+                option-value="id"
+                outlined
+                dense
+                label="Carteira"
+                class="q-mx-xs"
+                :class="{'q-select--without-value': !selectedWallets.length}"
+                style="height: 40px; min-width: 180px; max-width: 240px; width: 100%;"
+                @update:model-value="carteiraDefinida"
+                @blur="blurWallets"
+              />
+            </div>
 
             <!-- Participantes da Conversa -->
             <div class="q-mt-md" v-if="ticketFocado.status === 'open' && ticketFocado.participants && ticketFocado.participants.length > 0"></div>
@@ -420,145 +415,6 @@
               </q-chip>
             </div>
 
-            <!-- Botão para adicionar tags -->
-            <q-btn
-              flat
-              dense
-              class="custom-tag-selector"
-              style="width: 100%"
-              :label="ticketFocado.contact.tags && ticketFocado.contact.tags.length > 0 ? 'Adicionar mais etiquetas' : 'Selecionar etiquetas'"
-              icon="mdi-tag-plus"
-              color="primary"
-            >
-              <q-menu
-                fit
-                class="tag-menu"
-                max-height="300px"
-              >
-                <q-list style="min-width: 250px">
-                  <q-item-label header class="text-primary text-weight-bold">
-                  </q-item-label>
-                  <q-separator />
-
-                  <q-item
-                    v-for="etiqueta in etiquetas"
-                    :key="etiqueta.id"
-                    clickable
-                    v-close-popup
-                    @click="toggleTag(etiqueta)"
-                    class="tag-option-item"
-                  >
-                    <q-item-section>
-                      <q-item-label class="text-weight-medium">
-                        <q-chip
-                          dense
-                          :style="{ backgroundColor: etiqueta.color, color: getContrastColor(etiqueta.color) }"
-                          class="q-mr-sm"
-                          size="sm"
-                        >
-                          <q-icon name="mdi-tag" size="12px" />
-                        </q-chip>
-                        {{ etiqueta.tag }}
-                      </q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-checkbox
-                        :model-value="isTagSelected(etiqueta.id)"
-                        :color="etiqueta.color"
-                        @click.stop="toggleTag(etiqueta)"
-                      />
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item v-if="etiquetas.length === 0" class="text-grey-6">
-                    <q-item-section>
-                      <q-item-label class="text-center">
-                        <q-icon name="mdi-tag-off" size="24px" class="q-mb-sm" />
-                        <div>Ops... Sem etiquetas criadas!</div>
-                        <div class="text-caption">Cadastre novas etiquetas na administração de sistemas.</div>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
-            <!-- Espaçamento entre botões -->
-            <div class="q-mt-md"></div>
-            <!-- Carteiras selecionadas -->
-            <div v-if="ticketFocado.contact.wallets && ticketFocado.contact.wallets.length > 0" class="selected-wallets-container q-mb-sm">
-              <q-chip
-                v-for="walletId in ticketFocado.contact.wallets"
-                :key="walletId.uniqueKey || `wallet-${walletId.id}`"
-                dense
-                removable
-                color="primary"
-                text-color="white"
-                class="q-ma-xs elegant-chip"
-                @remove="removeWalletById(walletId.id)"
-              >
-                <q-icon
-                  name="person"
-                  size="14px"
-                  class="q-mr-xs"
-                  style="color: white"
-                />
-                {{ getWalletName(walletId.id) }}
-              </q-chip>
-            </div>
-
-            <!-- Botão para adicionar carteiras -->
-            <q-btn
-              flat
-              dense
-              class="custom-wallet-selector"
-              style="width: 100%"
-              :label="ticketFocado.contact.wallets && ticketFocado.contact.wallets.length > 0 ? 'Alterar carteira' : 'Selecionar carteira'"
-              icon="person"
-              color="primary"
-            >
-              <q-menu
-                fit
-                class="wallet-menu"
-                max-height="300px"
-              >
-                <q-list style="min-width: 250px">
-                  <q-item-label header class="text-primary text-weight-bold">
-                  </q-item-label>
-                  <q-separator />
-
-                  <q-item
-                    v-for="wallet in usuarios"
-                    :key="wallet.id"
-                    clickable
-                    v-close-popup
-                    @click="toggleWallet(wallet.id)"
-                    class="wallet-option-item"
-                  >
-                    <q-item-section>
-                      <q-item-label class="text-weight-medium">{{ wallet.name }}</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-checkbox
-                        :model-value="isWalletSelected(wallet.id)"
-                        color="primary"
-                        @click.stop="toggleWallet(wallet.id)"
-                      />
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item v-if="usuarios.length === 0" class="text-grey-6">
-                    <q-item-section>
-                      <q-item-label class="text-center">
-                        <q-icon name="person_off" size="24px" class="q-mb-sm" />
-                        <div>Ops... Sem carteiras disponíveis!</div>
-                        <div class="text-caption">Cadastre novas carteiras na administração de sistemas.</div>
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-
-            </q-btn>
             <!-- Mensagens Agendadas -->
             <div class="scheduled-messages-container q-mb-md q-mt-md">
               <div class="row items-center q-mb-sm">
@@ -911,7 +767,9 @@ export default {
       loadingEntrarConversa: false,
       searchTimeout: null,
       editandoNomeContato: false,
-      novoNomeContato: ''
+      novoNomeContato: '',
+      selectedTags: [],
+      selectedWallets: [],
     }
   },
   computed: {
@@ -1959,7 +1817,13 @@ export default {
         })
       }
       this.cancelarEdicaoNomeContato()
-    }
+    },
+    blurTags() {
+      if (!this.selectedTags.length) this.selectedTags = [];
+    },
+    blurWallets() {
+      if (!this.selectedWallets.length) this.selectedWallets = [];
+    },
   },
   beforeMount () {
     this.listarFilas()
@@ -3642,5 +3506,40 @@ export default {
     height: calc(100vh - 140px) !important;
     min-height: calc(100vh - 140px) !important;
   }
+}
+
+/* Remove borda azul do q-select quando não há valor selecionado */
+.q-field--focused.q-select--without-value .q-field__control {
+  box-shadow: none !important;
+  border-color: #44444400 !important;
+}
+</style>
+
+<style scoped>
+/* Remove borda azul do q-select quando não há valor selecionado */
+.q-field--focused.q-select--without-value .q-field__control {
+  box-shadow: none !important;
+  border-color: #44444400 !important;
+}
+/* Remove qualquer borda/sombra de foco do q-select ao focar */
+.q-field--focused .q-field__control {
+  box-shadow: none !important;
+  border-color: #44444400 !important;
+}
+</style>
+
+<style>
+/* Remove qualquer borda/sombra de foco do q-select ao focar (global) */
+.q-field.q-field--focused .q-field__control,
+.q-field.q-field--focused .q-field__control:after,
+.q-field.q-field--focused .q-field__control:before,
+.q-field__control:before,
+.q-field__control:after,
+.q-field--dark .q-field__control:before,
+.q-field--dark .q-field__control:after {
+  border-color: #444b5e !important;
+  border-width: 1px !important;
+
+  box-shadow: none !important;
 }
 </style>
