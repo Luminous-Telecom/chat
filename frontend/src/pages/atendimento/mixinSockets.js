@@ -6,7 +6,7 @@ import { ConsultarTickets } from 'src/service/tickets'
 import { debounce } from 'quasar'
 
 const socket = socketIO()
-const DEBOUNCE_TIME = 300 // Manter em 300ms para ser responsivo mas evitar duplicações
+const DEBOUNCE_TIME = 150 // Reduzido para melhor responsividade em mensagens rápidas
 const userId = +localStorage.getItem('userId')
 
 // localStorage.debug = '*'
@@ -47,6 +47,13 @@ export default {
     // Criar versões com debounce das funções de atualização
     this.atualizarStatusMensagemComDebounce = debounce(this.atualizarStatusMensagem, DEBOUNCE_TIME)
     this.atualizarNaoLidasComDebounce = debounce(this.atualizarNaoLidas, DEBOUNCE_TIME)
+    
+    // Limpar cache de status a cada 5 minutos para evitar vazamentos de memória
+    setInterval(() => {
+      this.ultimoStatusMensagem.clear()
+      this.ultimoAck.clear()
+      this.ultimaAtualizacaoNaoLidas.clear()
+    }, 5 * 60 * 1000) // 5 minutos
   },
   methods: {
     scrollToBottom () {
@@ -234,6 +241,11 @@ export default {
               return
             }
 
+            // Log para debug de ACKs rápidos
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[ACK] Message ${messageId} - ACK: ${data.payload.ack} - FromMe: ${data.payload.fromMe} - Status: ${data.payload.status}`)
+            }
+
             // Preparar payload comum
             const statusPayload = {
               id: messageId,
@@ -250,23 +262,22 @@ export default {
             const statusAtual = self.ultimoStatusMensagem.get(chave)
 
             // Processar imediatamente nos casos:
-            // 1. ACK >= 3 (mensagem lida)
+            // 1. ACK >= 3 (mensagem lida) - CRÍTICO para feedback visual
             // 2. Não existe status atual
             // 3. ACK é maior que o atual
             // 4. ACK 5 (áudio ouvido) mesmo se atual for 3 (visualizado)
+            // 5. ACK 2 (entregue) para mensagens enviadas por nós - MELHORIA
             const processarImediatamente = data.payload.ack >= 3 ||
                                          !statusAtual ||
                                          data.payload.ack > statusAtual.ack ||
-                                         (data.payload.ack === 5 && statusAtual?.ack === 3)
+                                         (data.payload.ack === 5 && statusAtual?.ack === 3) ||
+                                         (data.payload.ack === 2 && data.payload.fromMe) // ACK 2 imediato para mensagens enviadas
 
             if (processarImediatamente) {
-              // Processar áudios imediatamente para melhor responsividade
-              if (data.payload.mediaType === 'audio') {
-
-              }
+              // Processar imediatamente para melhor responsividade
               self.atualizarStatusMensagem(statusPayload)
             } else {
-              // Para outros casos, usar debounce
+              // Para outros casos, usar debounce reduzido
               self.atualizarStatusMensagemComDebounce(statusPayload)
             }
 
@@ -474,16 +485,19 @@ export default {
       // Se já temos um status atual, verificar se a nova atualização é relevante
       if (statusAtual) {
         // Permitir ACK 5 sobrescrever ACK 3 (áudio ouvido sobrescreve visualizado)
+        // Permitir ACK 2 sobrescrever ACK 1 (entregue sobrescreve enviado)
         const podeAtualizar = ack > statusAtual.ack ||
-                             (ack === 5 && statusAtual.ack === 3)
+                             (ack === 5 && statusAtual.ack === 3) ||
+                             (ack === 2 && statusAtual.ack === 1)
 
-        // Se o ack atual é maior que o novo e não é o caso especial do ACK 5
+        // Se o ack atual é maior que o novo e não é um caso especial permitido
         if (!podeAtualizar) {
           return
         }
 
         // Se o ack é igual e o read não mudou, ignorar a atualização
-        if (statusAtual.ack === ack && statusAtual.read === (read || false)) {
+        // EXCEÇÃO: Sempre processar ACK 2 e ACK 3 mesmo se iguais (para garantir sincronização)
+        if (statusAtual.ack === ack && statusAtual.read === (read || false) && ack < 2) {
           return
         }
       }
