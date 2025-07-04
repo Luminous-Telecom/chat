@@ -3,6 +3,7 @@
     <!-- Interface normal de chat para tickets não pending -->
     <template v-if="ticketFocado.status !== 'pending'">
       <div
+        v-if="textChat.startsWith('/') || visualizarMensagensRapidas"
         class="row absolute-full fit col-12"
         ref="menuFast"
       >
@@ -109,6 +110,7 @@
           <!-- Input moderno estilo WhatsApp -->
           <div
             class="modern-input-container col-grow q-mx-xs"
+            :class="{ 'modern-input-container--no-top-border': replyingMessage }"
             v-show="!cMostrarEnvioArquivo"
           >
             <!-- Botões da esquerda -->
@@ -644,12 +646,12 @@ export default {
       try {
         const selection = window.getSelection()
         if (selection.rangeCount === 0) return 0
-        
+
         const range = selection.getRangeAt(0)
         const preCaretRange = range.cloneRange()
         preCaretRange.selectNodeContents(element)
         preCaretRange.setEnd(range.endContainer, range.endOffset)
-        
+
         // Contar caracteres incluindo emojis
         let charCount = 0
         const walker = document.createTreeWalker(
@@ -658,7 +660,7 @@ export default {
           null,
           false
         )
-        
+
         let node
         while ((node = walker.nextNode())) {
           if (node.nodeType === Node.TEXT_NODE) {
@@ -681,7 +683,7 @@ export default {
             }
           }
         }
-        
+
         return charCount
       } catch (error) {
         console.warn('Erro ao calcular posição do cursor:', error)
@@ -1175,7 +1177,7 @@ export default {
         if (!text) {
           text = element.innerText || element.textContent || '';
         }
-        
+
       } catch (error) {
         console.warn('Erro ao extrair texto:', error);
         // Fallback para método simples
@@ -1247,19 +1249,19 @@ export default {
       try {
         const range = document.createRange()
         const selection = window.getSelection()
-        
+
         // Contar caracteres percorridos para encontrar a posição correta
         let charCount = 0
         let nodeStack = [element]
         let node, foundNode = null, foundOffset = 0
-        
+
         // Percorrer os nós para encontrar a posição correta
         while (nodeStack.length > 0) {
           node = nodeStack.pop()
-          
+
           if (node.nodeType === Node.TEXT_NODE) {
             const nextCharCount = charCount + node.textContent.length
-            
+
             if (charCount <= position && position <= nextCharCount) {
               foundNode = node
               foundOffset = position - charCount
@@ -1270,7 +1272,7 @@ export default {
             // Se é um span de emoji, contar como 1 caractere
             if (node.classList && node.classList.contains('whatsapp-emoji-span')) {
               const nextCharCount = charCount + 1
-              
+
               if (charCount <= position && position <= nextCharCount) {
                 foundNode = node
                 foundOffset = position === charCount ? 0 : 1
@@ -1285,7 +1287,7 @@ export default {
             }
           }
         }
-        
+
         // Posicionar cursor
         if (foundNode) {
           if (foundNode.nodeType === Node.TEXT_NODE) {
@@ -1306,10 +1308,10 @@ export default {
           this.placeCursorAtEnd(element)
           return
         }
-        
+
         selection.removeAllRanges()
         selection.addRange(range)
-        
+
       } catch (error) {
         console.warn('Erro ao posicionar cursor na posição especificada:', error)
         // Fallback: posicionar no final
@@ -1484,19 +1486,7 @@ export default {
 </script>
 
 <style lang="sass" scoped>
-// --- WhatsApp Web Style ---
-.modern-input-container
-  display: flex
-  align-items: center
-  background: #202c33
-  border-radius: 8px
-  padding: 8px 12px
-  box-shadow: 0 1px 1px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.06)
-  border: none
-  min-height: 56px
-  margin: 0 8px 8px 8px
-  position: relative
-  gap: 8px
+
 
   .input-actions-left, .input-actions-right
     display: flex
@@ -1564,7 +1554,7 @@ body.body--light .modern-input-container
   background: #fff !important
   border: none !important
   box-shadow: 0 2px 8px rgba(0,0,0,0.08)
-  border-radius: 999px
+  border-radius: 24px
   margin: 0 12px 12px 12px
   min-height: 48px
   padding: 0 16px
@@ -1582,10 +1572,9 @@ body.body--light .emoji-input
   font-size: 16px
 
 body.body--dark .modern-input-container
-  background: #29303b !important
+  background: #2e3540 !important
   border: none !important
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important
-  border-radius: 999px !important
+  border-radius: 24px !important
   margin: 0 12px 12px 12px !important
   min-height: 48px !important
   padding: 0 16px !important
@@ -1601,5 +1590,20 @@ body.body--dark .emoji-input
   padding: 12px 0 !important
   min-height: 48px !important
   font-size: 16px !important
+
+// Classe para remover bordas superiores quando há mensagem citada
+.modern-input-container--no-top-border
+  border-top-left-radius: 0 !important
+  border-top-right-radius: 0 !important
+
+body.body--light .modern-input-container--no-top-border
+  border-top-left-radius: 0 !important
+  border-top-right-radius: 0 !important
+  background: #fff !important
+
+body.body--dark .modern-input-container--no-top-border
+  border-top-left-radius: 0 !important
+  border-top-right-radius: 0 !important
+  background: #2e3540 !important
 
 </style>
