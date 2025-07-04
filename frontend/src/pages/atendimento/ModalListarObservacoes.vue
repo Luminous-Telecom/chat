@@ -182,7 +182,7 @@ export default {
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      background: #f8f9fa;
   padding: 12px 16px;
   border-bottom: 1px solid #dee2e6;
 
@@ -212,7 +212,7 @@ export default {
   }
 
   .modal-header {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    background: rgba(255, 255, 255, 0.08);
     border-bottom-color: rgba(255, 255, 255, 0.1);
 
     .close-btn:hover {

@@ -316,17 +316,17 @@ export default {
   border: 1px solid rgba(255, 255, 255, 0.1);
 
   &.light-theme {
-    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    background: #ffffff;
   }
 
   &.dark-theme {
-    background: linear-gradient(145deg, $dark-secondary 0%, $dark-primary 100%);
+    background: $dark-secondary;
   }
 }
 
 // Professional Header
 .professional-header {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  background: #10b981;
   padding: 16px;
   position: relative;
   overflow: hidden;
@@ -338,7 +338,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    background: rgba(255,255,255,0.1);
     pointer-events: none;
   }
 }
@@ -420,7 +420,7 @@ export default {
 }
 
 .logo-badge {
-  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+  background: #ffffff;
   padding: 4px 8px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -455,7 +455,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+    background: rgba(16, 185, 129, 0.05);
     pointer-events: none;
   }
 }
@@ -552,7 +552,7 @@ export default {
 }
 
 .instruction-panel {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   padding: 8px;
   backdrop-filter: blur(10px);
@@ -574,7 +574,7 @@ export default {
 .step-icon {
   width: 24px;
   height: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b981;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -614,7 +614,7 @@ export default {
 }
 
 .refresh-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #10b981;
   color: white;
   border: none;
   border-radius: 4px;
@@ -628,7 +628,7 @@ export default {
   &:hover {
     transform: translateY(-0.5px);
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    background: #059669;
   }
 
   &:active {
@@ -639,7 +639,7 @@ export default {
 // Dark Theme Adjustments
 .dark-theme {
   .instruction-panel {
-    background: linear-gradient(145deg, rgba(45, 55, 72, 0.8) 0%, rgba(26, 32, 44, 0.8) 100%);
+    background: rgba(45, 55, 72, 0.8);
     border: 1px solid rgba(74, 85, 104, 0.3);
   }
 
@@ -660,7 +660,7 @@ export default {
   }
 
   .logo-badge {
-    background: linear-gradient(145deg, $dark-secondary 0%, $dark-tertiary 100%);
+    background: $dark-secondary;
   }
 }
 

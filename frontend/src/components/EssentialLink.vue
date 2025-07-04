@@ -134,14 +134,14 @@ export default {
 <style lang="sass">
 .menu-link-active-item-top
   border-radius: 0 8px 8px 0
-  background: linear-gradient(98deg, rgba(189, 189, 189, 0.1) 0%, rgba(189, 189, 189, 0.1) 100%)
+  background: rgba(189, 189, 189, 0.1)
 
 .houverList
   border-radius: 0 8px 8px 0
   padding: 6px 12px
   min-height: 36px
   &:hover
-    background: linear-gradient(98deg, rgba(189, 189, 189, 0.1) 0%, rgba(189, 189, 189, 0.1) 100%)
+    background: rgba(189, 189, 189, 0.1)
 
 .q-item__section--avatar
   min-width: 32px

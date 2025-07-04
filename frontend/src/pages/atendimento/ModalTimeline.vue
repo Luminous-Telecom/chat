@@ -523,7 +523,7 @@ export default {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #f8f9fa;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -590,7 +590,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(90deg, #1976d2 0%, #2196f3 100%);
+  background: #1976d2;
   color: #fff !important;
   border: none;
   line-height: 1;
@@ -598,7 +598,7 @@ export default {
 
 .pdf-action-btn:hover, .pdf-action-btn:focus {
   box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
-  background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
+  background: #1565c0;
   color: #fff !important;
   transform: translateY(-1px) scale(1.02);
 }
@@ -615,7 +615,7 @@ export default {
 }
 
 .body--dark .pdf-preview-header {
-  background: linear-gradient(135deg, #4a5568, #2d3748);
+  background: #4a5568;
 }
 
 .body--dark .pdf-preview-title {

@@ -382,7 +382,7 @@ export default {
   overflow: hidden;
 
   .modal-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: #f8f9fa;
     padding: 12px 16px;
     border-bottom: 1px solid #dee2e6;
     border-radius: 12px 12px 0 0;
@@ -403,7 +403,7 @@ export default {
   }
 
   .separator-custom {
-    background: linear-gradient(90deg, transparent 0%, #1976d2 50%, transparent 100%);
+    background: #1976d2;
     height: 2px;
   }
 
@@ -439,7 +439,7 @@ export default {
 }
 
 .q-avatar {
-  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  background: #1976d2;
   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 }
 
@@ -474,7 +474,7 @@ export default {
 }
 
 .message-preview {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #f8f9fa;
   padding: 12px 16px;
   border-radius: 12px;
   border-left: 4px solid var(--primary-color);
@@ -491,7 +491,7 @@ export default {
 }
 
 .q-scroll-area {
-  background: linear-gradient(180deg, rgba(248, 249, 250, 0.5) 0%, rgba(233, 236, 239, 0.3) 100%);
+  background: rgba(248, 249, 250, 0.5);
 }
 
 // Empty state styling
@@ -523,7 +523,7 @@ export default {
 .body--dark {
   .modal-listar-mensagens {
     .modal-header {
-      background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+      background: $dark-secondary;
       border-bottom-color: $dark-border;
 
       .close-btn:hover {
@@ -546,13 +546,13 @@ export default {
   }
 
   .message-preview {
-    background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+    background: $dark-secondary;
     color: $dark-text-primary;
     border-left-color: var(--primary-color);
   }
 
   .q-scroll-area {
-    background: linear-gradient(180deg, rgba(45, 55, 72, 0.5) 0%, rgba(26, 32, 44, 0.3) 100%);
+    background: rgba(45, 55, 72, 0.5);
   }
 
   .message-preview-content {

@@ -55,7 +55,7 @@ export default {
 .speaker {
   width: 40px;
   height: 10px;
-  background: linear-gradient(90deg, grey 20%, white 30%, black 40%);
+  background: grey;
   border-radius: 0.5em;
   margin-left: 165px;
   margin-top: -12px;

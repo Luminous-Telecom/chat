@@ -1221,18 +1221,18 @@ function urlBase64ToUint8Array (base64String) {
 
   /* Estilos para o novo menu lateral do topo */
   .top-menu-drawer {
-    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+    background: #ffffff !important;
     box-shadow: 2px 0 30px rgba(0, 0, 0, 0.1) !important;
   }
 
   .body--dark .top-menu-drawer {
-    background: linear-gradient(145deg, #1e293b 0%, #334155 100%) !important;
+    background: #1e293b !important;
     box-shadow: 2px 0 30px rgba(0, 0, 0, 0.4) !important;
   }
 
   .top-menu-header {
     padding: 24px 20px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: #3b82f6;
     color: white;
     display: flex;
     align-items: center;
@@ -1337,7 +1337,7 @@ function urlBase64ToUint8Array (base64String) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+    background: rgba(59, 130, 246, 0.1);
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 0;

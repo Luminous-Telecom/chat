@@ -2171,11 +2171,17 @@ export default {
 .WAL {
   width: 100%;
   height: 100vh;
-  background: linear-gradient(145deg, #f5f5f5 0%, #e0e0e0 100%);
+  background: #f5f5f5;
 
   &__layout {
     width: 100%;
     height: 100%;
+  }
+}
+
+.dark-mode {
+  .WAL {
+    background: $dark-primary;
   }
 }
 
@@ -2215,14 +2221,14 @@ export default {
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #424242 0%, rgba(25, 118, 210, 0.8) 100%);
+    background: #424242;
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.2);
     transition: all 0.3s ease;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgba(25, 118, 210, 0.8) 0%, rgba(21, 101, 192, 1) 100%);
+    background: rgba(25, 118, 210, 0.8);
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
   }
@@ -2242,17 +2248,6 @@ export default {
   justify-content: center;
 }
 
-.dark-mode {
-  .WAL {
-    background: linear-gradient(145deg, $dark-primary 0%, $dark-secondary 100%);
-  }
-
-  .q-drawer {
-    background: rgba(33, 33, 33, 0.95);
-  }
-}
-
-/* Modo escuro para seção de dados do contato */
 .body--dark {
   .contact-info-card {
     background: rgba(255, 255, 255, 0.05);
@@ -2260,12 +2255,12 @@ export default {
   }
 
   .contact-profile-section {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .contact-profile-avatar {
     border-color: rgba(255, 255, 255, 0.2);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .contact-name {
@@ -2335,7 +2330,7 @@ export default {
 }
 
 .contact-data-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   height: 50px;
   display: flex;
   align-items: center;
@@ -2366,7 +2361,7 @@ export default {
 .contact-profile-section {
   padding: 12px;
   text-align: center;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: #f8f9fa;
 }
 
 .contact-profile-wrapper {
@@ -2385,7 +2380,7 @@ export default {
   height: 50px;
   border: 2px solid var(--background-color-paper);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #f5f7fa;
 }
 
 .contact-info-details {
@@ -2881,7 +2876,7 @@ export default {
 
 /* Enhanced scroll area customization */
 .observations-container .q-scrollarea__thumb {
-  background: linear-gradient(180deg, #2e7d32 0%, #388e3c 100%);
+  background: #2e7d32;
   border-radius: 12px;
   opacity: 0.8;
   border: 1px solid rgba(255,255,255,0.2);
@@ -2903,7 +2898,7 @@ export default {
 }
 
 .scheduled-messages-container::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #1565c0 0%, #0d47a1 100%);
+  background: #1565c0;
   transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(25, 118, 210, 0.4);
 }
@@ -2923,13 +2918,13 @@ export default {
 }
 
 .q-drawer .q-scroll-area::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%);
+  background: rgba(0,0,0,0.3);
   border-radius: 15px;
   transition: all 0.3s ease;
 }
 
 .q-drawer .q-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%);
+  background: rgba(0,0,0,0.5);
   transform: scale(1.2);
 }
 
@@ -2945,14 +2940,14 @@ export default {
 }
 
 .scroll-y::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(96, 125, 139, 0.6) 0%, rgba(96, 125, 139, 0.8) 100%);
+  background: rgba(96, 125, 139, 0.6);
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.1);
   transition: all 0.3s ease;
 }
 
 .scroll-y::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(96, 125, 139, 0.8) 0%, rgba(69, 90, 100, 1) 100%);
+  background: rgba(96, 125, 139, 0.8);
   transform: scale(1.1);
   box-shadow: 0 2px 6px rgba(96, 125, 139, 0.3);
 }
@@ -3027,7 +3022,7 @@ export default {
 .scheduled-messages-container {
   border: 1px solid #e3f2fd;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffffff 0%, #f3e5f5 100%);
+      background: #ffffff;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   transition: all 0.3s ease;
@@ -3072,7 +3067,7 @@ export default {
   top: 0;
   height: 100%;
   width: 4px;
-  background: linear-gradient(180deg, #1976d2 0%, #42a5f5 100%);
+  background: #1976d2;
   transition: width 0.3s ease;
 }
 
@@ -3081,7 +3076,7 @@ export default {
 }
 
 .scheduled-messages-container .q-item:hover {
-  background: linear-gradient(135deg, rgba(243, 229, 245, 0.5) 0%, rgba(227, 242, 253, 0.5) 100%);
+      background: rgba(243, 229, 245, 0.5);
   border-color: var(--primary-color);
   transform: translateX(4px);
 }
@@ -3098,7 +3093,7 @@ export default {
 .observations-container {
   border: 1px solid #e8f5e8;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
+      background: #ffffff;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   transition: all 0.3s ease;
@@ -3143,7 +3138,7 @@ export default {
   top: 0;
   height: 100%;
   width: 4px;
-  background: linear-gradient(180deg, #2e7d32 0%, #66bb6a 100%);
+  background: #2e7d32;
   transition: width 0.3s ease;
 }
 
@@ -3152,7 +3147,7 @@ export default {
 }
 
 .observations-container .q-item:hover {
-  background: linear-gradient(135deg, rgba(241, 248, 233, 0.5) 0%, rgba(232, 245, 232, 0.5) 100%);
+      background: rgba(241, 248, 233, 0.5);
   border-color: var(--primary-color);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
@@ -3169,7 +3164,7 @@ export default {
 /* Dark mode styles for scheduled messages and observations */
 .body--dark .scheduled-messages-container {
   border-color: $dark-border;
-  background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+  background: $dark-secondary;
 }
 
 .body--dark .scheduled-messages-container .text-body1 {
@@ -3183,17 +3178,17 @@ export default {
 }
 
 .body--dark .scheduled-messages-container .q-item::before {
-  background: linear-gradient(180deg, $dark-accent 0%, #64b5f6 100%);
+  background: $dark-accent;
 }
 
 .body--dark .scheduled-messages-container .q-item:hover {
-  background: linear-gradient(135deg, $dark-tertiary 0%, $dark-secondary 100%);
+  background: $dark-tertiary;
   border-color: $dark-accent;
 }
 
 .body--dark .observations-container {
   border-color: $dark-border;
-  background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+  background: $dark-secondary;
 }
 
 .body--dark .observations-container .text-subtitle1 {
@@ -3207,11 +3202,11 @@ export default {
 }
 
 .body--dark .observations-container .q-item::before {
-  background: linear-gradient(180deg, $dark-success 0%, #81c784 100%);
+  background: $dark-success;
 }
 
 .body--dark .observations-container .q-item:hover {
-   background: linear-gradient(135deg, $dark-tertiary 0%, $dark-secondary 100%);
+   background: $dark-tertiary;
    border-color: $dark-success;
  }
 
@@ -3222,18 +3217,18 @@ export default {
    }
 
    &::-webkit-scrollbar-thumb {
-     background: linear-gradient(180deg, rgba(144, 202, 249, 0.6) 0%, rgba(144, 202, 249, 0.8) 100%);
+     background: rgba(144, 202, 249, 0.6);
      border: 1px solid rgba(0,0,0,0.2);
    }
 
    &::-webkit-scrollbar-thumb:hover {
-     background: linear-gradient(180deg, rgba(144, 202, 249, 0.8) 0%, rgba(100, 181, 246, 1) 100%);
+     background: rgba(144, 202, 249, 0.8);
      box-shadow: 0 2px 8px rgba(144, 202, 249, 0.4);
    }
  }
 
  .body--dark .observations-container .q-scrollarea__thumb {
-   background: linear-gradient(180deg, #a5d6a7 0%, #81c784 100%);
+   background: #a5d6a7;
    border: 1px solid rgba(0,0,0,0.2);
  }
 
@@ -3250,12 +3245,12 @@ export default {
  }
 
  .body--dark .scheduled-messages-container::-webkit-scrollbar-thumb {
-   background: linear-gradient(180deg, #90caf9 0%, #64b5f6 100%);
+   background: #90caf9;
    border: 1px solid rgba(0,0,0,0.2);
  }
 
  .body--dark .scheduled-messages-container::-webkit-scrollbar-thumb:hover {
-   background: linear-gradient(180deg, #64b5f6 0%, #42a5f5 100%);
+   background: #64b5f6;
    box-shadow: 0 2px 8px rgba(144, 202, 249, 0.4);
  }
 
@@ -3264,11 +3259,11 @@ export default {
  }
 
  .body--dark .q-drawer .q-scroll-area::-webkit-scrollbar-thumb {
-   background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.5) 100%);
+   background: rgba(255,255,255,0.4);
  }
 
  .body--dark .q-drawer .q-scroll-area::-webkit-scrollbar-thumb:hover {
-   background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.7) 100%);
+   background: rgba(255,255,255,0.6);
  }
 
  .body--dark .scroll-y::-webkit-scrollbar-track {
@@ -3276,12 +3271,12 @@ export default {
  }
 
  .body--dark .scroll-y::-webkit-scrollbar-thumb {
-   background: linear-gradient(180deg, rgba(176, 190, 197, 0.6) 0%, rgba(176, 190, 197, 0.8) 100%);
+   background: rgba(176, 190, 197, 0.7);
    border: 1px solid rgba(0,0,0,0.1);
  }
 
  .body--dark .scroll-y::-webkit-scrollbar-thumb:hover {
-   background: linear-gradient(180deg, rgba(176, 190, 197, 0.8) 0%, rgba(144, 164, 174, 1) 100%);
+   background: rgba(176, 190, 197, 0.9);
    box-shadow: 0 2px 6px rgba(176, 190, 197, 0.4);
  }
 
@@ -3358,7 +3353,7 @@ export default {
 
 /* Modern Search Toolbar */
 .modern-search-toolbar {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  background: #ffffff;
   border: none;
   padding: 12px 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -3395,7 +3390,7 @@ export default {
 }
 
 .modern-tooltip {
-  background: linear-gradient(135deg, #2c3e50, #3498db);
+  background: #2c3e50;
   color: white;
   font-weight: 500;
   border-radius: 8px;
@@ -3405,7 +3400,7 @@ export default {
 
 /* Modern Filters Section */
 .modern-filters-section {
-  background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+  background: #fafafa;
   padding: 12px 0 12px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   display: flex;
@@ -3450,7 +3445,7 @@ export default {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: rgba(255, 255, 255, 0.2);
     transition: left 0.5s;
   }
 
@@ -3466,7 +3461,7 @@ export default {
     border-color: #1976d2;
 
     &:hover {
-      background: linear-gradient(135deg, #1565c0, #1976d2);
+      background: #1565c0;
       transform: translateY(-2px);
     }
   }

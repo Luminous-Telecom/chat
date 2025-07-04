@@ -399,7 +399,7 @@ export default {
   overflow: hidden;
 
   .modal-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: #f8f9fa;
     padding: 16px 20px;
     border-bottom: 1px solid #dee2e6;
 
@@ -419,7 +419,7 @@ export default {
   }
 
   .separator-custom {
-    background: linear-gradient(90deg, transparent 0%, #1976d2 50%, transparent 100%);
+    background: #1976d2;
     height: 2px;
   }
 }
@@ -475,7 +475,7 @@ export default {
 .body--dark {
   .modal-agendar-mensagem {
     .modal-header {
-      background: linear-gradient(135deg, $dark-secondary 0%, $dark-primary 100%);
+      background: $dark-secondary;
       border-bottom-color: $dark-border;
 
       .close-btn:hover {

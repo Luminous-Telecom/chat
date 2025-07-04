@@ -725,7 +725,7 @@ audio {
 
   &:before {
     content: "";
-    background: linear-gradient(to right, transparent, #818078, transparent);
+    background: #818078;
     position: absolute;
     left: 0;
     top: 50%;

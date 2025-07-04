@@ -2,12 +2,12 @@
 
 .modern-dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  background: #f5f5f5;
   padding: 0;
 }
 
 body.body--dark .modern-dashboard {
-  background: linear-gradient(135deg, #0d1421 0%, #1e2a3a 100%);
+  background: #0d1421;
 }
 
 .dashboard-header {
@@ -621,10 +621,7 @@ body, .modern-dashboard {
 
 .modern-dashboard *::-webkit-scrollbar-track,
 .dashboard-container *::-webkit-scrollbar-track {
-  background: linear-gradient(45deg, rgba(52, 73, 94, 0.2) 25%, transparent 25%),
-              linear-gradient(-45deg, rgba(52, 73, 94, 0.2) 25%, transparent 25%),
-              linear-gradient(45deg, transparent 75%, rgba(52, 73, 94, 0.2) 75%),
-              linear-gradient(-45deg, transparent 75%, rgba(52, 73, 94, 0.2) 75%);
+  background: rgba(52, 73, 94, 0.2);
   background-size: 8px 8px;
   background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
   border-radius: 8px;
@@ -632,7 +629,7 @@ body, .modern-dashboard {
 
 .modern-dashboard *::-webkit-scrollbar-thumb,
 .dashboard-container *::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #64b5f6 0%, #1976d2 100%);
+  background: #64b5f6;
   border-radius: 8px;
   border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 2px 8px rgba(100, 181, 246, 0.4);
@@ -641,7 +638,7 @@ body, .modern-dashboard {
 
 .modern-dashboard *::-webkit-scrollbar-thumb:hover,
 .dashboard-container *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #1976d2 0%, #64b5f6 100%);
+  background: #1976d2;
   transform: scale(1.1);
   box-shadow: 0 4px 16px rgba(100, 181, 246, 0.6);
   animation: dashboard-scrollbar-glow 2s infinite;
@@ -661,19 +658,16 @@ body, .modern-dashboard {
 
 /* Modo claro para dashboard */
 body:not(.body--dark) .modern-dashboard *::-webkit-scrollbar-track {
-  background: linear-gradient(45deg, rgba(0, 0, 0, 0.03) 25%, transparent 25%),
-              linear-gradient(-45deg, rgba(0, 0, 0, 0.03) 25%, transparent 25%),
-              linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.03) 75%),
-              linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.03) 75%);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 body:not(.body--dark) .modern-dashboard *::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #667eea;
   border: 2px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 body:not(.body--dark) .modern-dashboard *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: #764ba2;
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
-} 
+}

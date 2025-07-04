@@ -1638,7 +1638,7 @@ export default {
     }
 
     .pdf-preview-footer {
-      background: linear-gradient(135deg, #1976d2, #1565c0);
+      background: #1976d2;
 
       .pdf-preview-action {
         color: white;
@@ -1666,7 +1666,7 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  background: #f8f9fa;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -1778,7 +1778,7 @@ export default {
 }
 
 .body--dark .pdf-preview-header {
-  background: linear-gradient(135deg, #4a5568, #2d3748);
+  background: #4a5568;
 }
 
 .body--dark .pdf-preview-title {
@@ -1899,21 +1899,21 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(90deg, #1976d2 0%, #2196f3 100%);
+  background: #1976d2;
   color: #fff !important;
   border: none;
   line-height: 1;
 }
 
 .pdf-action-btn.q-btn--outline {
-  background: linear-gradient(90deg, #e0e0e0 0%, #f5f5f5 100%);
+  background: #e0e0e0;
   color: #1976d2 !important;
   border: 1px solid #1976d2;
 }
 
 .pdf-action-btn:hover, .pdf-action-btn:focus {
   box-shadow: 0 2px 8px rgba(25, 118, 210, 0.10);
-  background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
+  background: #1565c0;
   color: #fff !important;
   transform: translateY(-1px) scale(1.02);
 }
@@ -2085,7 +2085,7 @@ export default {
 }
 
 .user-avatar-fallback-external {
-  background: linear-gradient(135deg, #9e9e9e 0%, #75757d 50%, #9e9e9e 100%);
+  background: #9e9e9e;
   color: white;
   display: flex;
   align-items: center;
@@ -2106,7 +2106,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
+  background: rgba(255,255,255,0.1);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -2142,11 +2142,11 @@ export default {
 }
 
 .body--dark .user-avatar-fallback-external {
-  background: linear-gradient(135deg, #616161 0%, #424242 50%, #616161 100%);
+  background: #616161;
 }
 
 .body--dark .user-avatar-fallback-external::before {
-  background: linear-gradient(45deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(255,255,255,0.2) 100%);
+  background: rgba(255,255,255,0.2);
 }
 
 /* Dark mode para container integrado */
@@ -2282,7 +2282,7 @@ export default {
     left: -8px;
     right: -8px;
     bottom: -8px;
-    background: linear-gradient(45deg, rgba(63, 81, 181, 0.15), rgb(0, 128, 255));
+    background: rgba(63, 81, 181, 0.2);
     border-radius: 12px;
     pointer-events: none;
     z-index: -1;
@@ -2345,7 +2345,7 @@ export default {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #818078, transparent);
+    background: #818078;
   }
 
   /* Badge da data */

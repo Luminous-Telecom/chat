@@ -273,7 +273,7 @@ export default {
     }
 
     .pdf-preview-footer {
-      background: linear-gradient(135deg, #1976d2, #1565c0);
+      background: #1976d2;
 
       .pdf-preview-action {
         color: white;
@@ -301,7 +301,7 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  background: #f8f9fa;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -413,7 +413,7 @@ export default {
 }
 
 .body--dark .pdf-preview-header {
-  background: linear-gradient(135deg, #4a5568, #2d3748);
+  background: #4a5568;
 }
 
 .body--dark .pdf-preview-title {

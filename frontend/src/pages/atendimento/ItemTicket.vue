@@ -303,7 +303,7 @@ export default {
   }
 
   &--pending {
-    background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%);
+            background: #fff3e0;
   }
 
   &--closed {
@@ -311,7 +311,7 @@ export default {
   }
 
   &--selected {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(25, 118, 210, 0.15) 100%);
+            background: rgba(25, 118, 210, 0.1);
     transform: translateY(-1px);
 
     .ticket-contact-name {
@@ -362,7 +362,7 @@ export default {
 }
 
 .unread-badge {
-  background: linear-gradient(135deg, #f44336, #e57373);
+        background: #f44336;
   color: white;
   border-radius: 12px;
   min-width: 18px;
@@ -463,7 +463,7 @@ export default {
     }
 
     .channel-name {
-      background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+      background: #e3f2fd;
       padding: 1px 5px;
       border-radius: 6px;
       font-weight: 500;
@@ -507,12 +507,12 @@ export default {
     border-radius: 50%;
 
     &--resolved {
-      background: linear-gradient(135deg, #4caf50, #66bb6a);
+      background: #4caf50;
       color: white;
     }
 
     &--bot {
-      background: linear-gradient(135deg, #2196f3, #42a5f5);
+      background: #2196f3;
       color: white;
       animation: bot-pulse 2s infinite;
     }
@@ -535,7 +535,7 @@ export default {
     }
 
     &--selected {
-      background: linear-gradient(135deg, rgba(144, 202, 249, 0.2) 0%, rgba(144, 202, 249, 0.3) 100%);
+      background: rgba(144, 202, 249, 0.2);
     }
 
     .ticket-contact-name {
