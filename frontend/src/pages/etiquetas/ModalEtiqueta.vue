@@ -1,7 +1,8 @@
 <template>
   <q-dialog
     persistent
-    :value="modalEtiqueta"
+    :model-value="modalEtiqueta"
+    @update:model-value="$emit('update:modalEtiqueta', $event)"
     @hide="fecharModal"
     @show="abrirModal"
     class="modal-modern"
@@ -19,40 +20,47 @@
           v-model="etiqueta.tag"
           label="Nome da Etiqueta"
         />
-        <q-input
-          rounded
-          outlined
-          dense
-          hide-bottom-space
-          :style="`background: ${etiqueta.color}; border-radius: 20px `"
-          v-model="etiqueta.color"
-          :rules="['anyColor']"
-          class="q-my-md"
-          :dark="false"
-        >
-          <template v-slot:preappend>
-          </template>
-          <template v-slot:append>
-            <q-icon
-              name="colorize"
-              class="cursor-pointer"
-            >
-              <q-popup-proxy
-                transition-show="scale"
-                transition-hide="scale"
+        <div class="q-my-md">
+          <q-input
+            rounded
+            outlined
+            dense
+            hide-bottom-space
+            v-model="etiqueta.color"
+            label="Cor da Etiqueta"
+            :rules="['anyColor']"
+            :dark="false"
+            class="color-input"
+            style="color: #333 !important;"
+          >
+            <template v-slot:prepend>
+              <div
+                class="color-preview"
+                :style="{ backgroundColor: etiqueta.color }"
+              ></div>
+            </template>
+            <template v-slot:append>
+              <q-icon
+                name="colorize"
+                class="cursor-pointer color-icon"
+                color="grey-7"
               >
-                <q-color
-                  format-model="hex"
-                  square
-                  default-view="palette"
-                  no-header
-                  bordered
-                  v-model="etiqueta.color"
-                />
-              </q-popup-proxy>
-            </q-icon>
-          </template>
-        </q-input>
+                <q-popup-proxy
+                  transition-show="scale"
+                  transition-hide="scale"
+                >
+                  <q-color
+                    v-model="etiqueta.color"
+                    square
+                    default-view="palette"
+                    no-header
+                    bordered
+                  />
+                </q-popup-proxy>
+              </q-icon>
+            </template>
+          </q-input>
+        </div>
         <q-checkbox
           v-model="etiqueta.isActive"
           label="Ativo"
@@ -173,5 +181,40 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+.color-input .q-field__control,
+.color-input .q-field__native,
+.color-input .q-field__input,
+.color-input .q-field__prefix,
+.color-input .q-field__suffix,
+.color-input input {
+  color: #333 !important;
+}
+.color-input .q-field__label {
+  color: #666 !important;
+}
+
+.body--dark .color-input .q-field__control,
+.body--dark .color-input .q-field__native,
+.body--dark .color-input .q-field__input,
+.body--dark .color-input .q-field__prefix,
+.body--dark .color-input .q-field__suffix,
+.body--dark .color-input input {
+  color: #fff !important;
+}
+.body--dark .color-input .q-field__label {
+  color: #bbb !important;
+}
+
+.color-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  margin-right: 8px;
+}
+
+.color-icon {
+  color: #666 !important;
+}
 </style>
