@@ -1,6 +1,7 @@
 import AppError from "../../errors/AppError";
 import Contact from "../../models/Contact";
 import ContactTag from "../../models/ContactTag";
+import Tag from "../../models/Tag";
 
 interface Request {
   tags: number[] | string[];
@@ -8,7 +9,7 @@ interface Request {
   tenantId: string | number;
 }
 
-interface Tag {
+interface TagType {
   tagId: number | string;
   contactId: number | string;
   tenantId: number | string;
@@ -26,7 +27,7 @@ const UpdateContactService = async ({
     },
   });
 
-  const contactTags: Tag[] = [];
+  const contactTags: TagType[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tags.forEach((tag: any) => {
     contactTags.push({
@@ -43,7 +44,11 @@ const UpdateContactService = async ({
     attributes: ["id", "name", "number", "email", "profilePicUrl"],
     include: [
       "extraInfo",
-      "tags",
+      {
+        model: Tag,
+        as: "tags",
+        through: { attributes: [] }
+      },
       {
         association: "wallets",
         attributes: ["id", "name"],

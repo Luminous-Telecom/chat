@@ -309,6 +309,7 @@ const atendimentoTicket = {
     // },
 
     UPDATE_TICKET_FOCADO_CONTACT (state, payload) {
+      payload.tags = Array.isArray(payload.tags) ? payload.tags : payload.tags ? [payload.tags] : [];
       state.ticketFocado.contact = payload
     },
     UPDATE_CONTACT (state, payload) {
