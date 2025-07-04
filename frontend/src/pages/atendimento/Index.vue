@@ -1971,8 +1971,9 @@ export default {
           let statusToSet
           if (newStatus) {
             statusToSet = [newStatus].filter(s => typeof s === 'string')
+          } else if (this.ticketFocado && this.ticketFocado.status === 'closed') {
+            statusToSet = ['closed']
           } else {
-            // Se estamos na rota de atendimento mas sem status, usar 'open' como padrão
             statusToSet = ['open']
           }
 
