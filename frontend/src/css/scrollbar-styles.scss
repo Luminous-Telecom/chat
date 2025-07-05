@@ -11,7 +11,7 @@ $scrollbar-thumb-light: #90a4ae;
 $scrollbar-thumb-hover-light: #607d8b;
 
 // Cores modo escuro (paleta azul escuro)
-$scrollbar-track-dark: rgba(52, 73, 94, 0.3);
+$scrollbar-track-dark:  rgb(52 73 94 / 8%);
 $scrollbar-thumb-dark: #2c3e54;
 $scrollbar-thumb-hover-dark: #34495e;
 
@@ -68,7 +68,7 @@ $scrollbar-thumb-hover-dark: #34495e;
   }
 
   // Firefox
-  scrollbar-color: #34495e $scrollbar-track-dark;
+  scrollbar-color: #34495e42 $scrollbar-track-dark;
 }
 
 // Aplicação global

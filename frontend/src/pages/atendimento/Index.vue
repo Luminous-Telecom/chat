@@ -133,14 +133,10 @@
         content-class="bg-grey-1"
       >
 
-        <q-separator />
-        <q-scroll-area
-          class="modern-scrollbar"
-          style="height: 100vh"
-        >
-          <div class="contact-data-container">
-            <!-- Espaçamento antes das informações do contato -->
-            <div class="q-mt-md"></div>
+
+        <div class="contact-data-container">
+          <!-- Espaçamento antes das informações do contato -->
+          <div class="q-mt-md"></div>
             <q-card class="contact-info-card">
               <q-card-section class="contact-profile-section">
                 <div class="contact-profile-wrapper">
@@ -538,7 +534,6 @@
               </q-scroll-area>
             </div>
           </div>
-        </q-scroll-area>
       </q-drawer>
 
       <ModalNovoTicket v-model:modalNovoTicket="modalNovoTicket" />
@@ -2185,7 +2180,7 @@ export default {
 }
 
 .contact-data-container {
-  padding: 12px;
+  padding: 0 12px;
 }
 
 .contact-info-card {
@@ -3410,6 +3405,50 @@ export default {
   box-shadow: none !important;
   border-color: #44444400 !important;
 }
+
+/* Ocultar barra de rolagem do drawer lateral direito por padrão, mostrar no hover */
+.q-drawer[side="right"] .q-drawer__content,
+.q-drawer[side="right"] .q-drawer__content.fit.overflow-auto {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+.q-drawer[side="right"] .q-drawer__content::-webkit-scrollbar,
+.q-drawer[side="right"] .q-drawer__content.fit.overflow-auto::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari and Opera */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Mostrar barra de rolagem no hover */
+.q-drawer[side="right"]:hover .q-drawer__content,
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto {
+  scrollbar-width: thin !important; /* Firefox */
+  -ms-overflow-style: auto !important; /* IE and Edge */
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content::-webkit-scrollbar,
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar {
+  display: block !important; /* Chrome, Safari and Opera */
+  width: 6px !important;
+  height: auto !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content::-webkit-scrollbar-track,
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content::-webkit-scrollbar-thumb,
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content::-webkit-scrollbar-thumb:hover,
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
 </style>
 
 <style scoped>
@@ -3438,5 +3477,44 @@ export default {
   border-width: 1px !important;
 
   box-shadow: none !important;
+}
+</style>
+
+<style lang="scss">
+/* CSS global para forçar ocultação da barra de rolagem */
+.q-drawer[side="right"] .q-drawer__content.fit.overflow-auto {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.q-drawer[side="right"] .q-drawer__content.fit.overflow-auto::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Mostrar no hover */
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto {
+  scrollbar-width: thin !important;
+  -ms-overflow-style: auto !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar {
+  display: block !important;
+  width: 6px !important;
+  height: auto !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
 }
 </style>
