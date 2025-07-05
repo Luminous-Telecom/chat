@@ -261,6 +261,21 @@
                     <q-tooltip content-class="modern-tooltip">Clique para copiar</q-tooltip>
                   </div>
 
+                  <!-- Botão Fixar no Topo -->
+                  <div class="contact-detail-item">
+                    <q-icon name="mdi-pin" class="detail-icon" />
+                    <span class="detail-text">
+                      Fixar no topo
+                    </span>
+                    <q-toggle
+                      :model-value="ticketFocado.isPinned"
+                      @update:model-value="togglePinnedTicket"
+                      :loading="loadingTogglePinned"
+                      color="primary"
+                      size="sm"
+                    />
+                  </div>
+
                   <!-- Informações de contato -->
                   <div v-if="ticketFocado.contact.email" class="contact-detail-item">
                     <q-icon name="mdi-email" class="detail-icon" />
@@ -775,6 +790,7 @@ export default {
       usuarioSelecionado: null,
       usuario: {},
       loadingEntrarConversa: false,
+      loadingTogglePinned: false,
       searchTimeout: null,
       editandoNomeContato: false,
       novoNomeContato: '',
@@ -1753,6 +1769,54 @@ export default {
           this.loadingEntrarConversa = false
         }
       })
+    },
+    async togglePinnedTicket (newValue) {
+      if (!this.ticketFocado?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Selecione um ticket para fixar/desfixar',
+          position: 'bottom-right'
+        })
+        return
+      }
+
+      try {
+        this.loadingTogglePinned = true
+
+        const response = await this.$axios.put(`/api/tickets/${this.ticketFocado.id}/toggle-pinned`)
+        const updatedTicket = response.data
+
+        // Atualizar o ticket focado no store
+        this.$store.commit('TICKET_FOCADO', {
+          ...this.ticketFocado,
+          isPinned: updatedTicket.isPinned
+        })
+
+        // Atualizar também na lista de tickets
+        this.$store.commit('UPDATE_TICKET', {
+          ...this.ticketFocado,
+          isPinned: updatedTicket.isPinned
+        })
+
+        // Buscar tickets atualizados para refletir a nova ordem
+        this.BuscarTicketFiltro()
+
+        this.$q.notify({
+          type: 'positive',
+          message: updatedTicket.isPinned ? 'Ticket fixado no topo!' : 'Ticket desfixado!',
+          position: 'bottom-right'
+        })
+      } catch (error) {
+        console.error('Erro ao alternar status de fixado:', error)
+        const errorMessage = error.response?.data?.error || 'Erro ao alternar status de fixado. Tente novamente.'
+        this.$q.notify({
+          type: 'negative',
+          message: errorMessage,
+          position: 'bottom-right'
+        })
+      } finally {
+        this.loadingTogglePinned = false
+      }
     },
     handleMensagemAgendada (mensagem) {
       // Atualizar a lista de tickets para refletir a nova mensagem agendada

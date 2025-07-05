@@ -200,6 +200,10 @@ class Ticket extends Model<Ticket> {
   @Column
   protocol: string;
 
+  @Default(false)
+  @Column
+  isPinned: boolean;
+
   @BeforeCreate
   @BeforeUpdate
   static generateProtocol(instance: Ticket) {

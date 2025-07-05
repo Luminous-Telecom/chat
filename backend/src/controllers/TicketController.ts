@@ -20,6 +20,7 @@ import { pupa } from "../utils/pupa";
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
 import { logger } from "../utils/logger";
 import UpdateTicketTagsService from "../services/TicketServices/UpdateTicketTagsService";
+import TogglePinnedTicketService from "../services/TicketServices/TogglePinnedTicketService";
 
 type IndexQuery = {
   searchParam: string;
@@ -441,4 +442,16 @@ export const getParticipants = async (
     logger.error("[getParticipants] Erro ao buscar participantes:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
+};
+
+export const togglePinned = async (req: Request, res: Response): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+
+  const ticket = await TogglePinnedTicketService({
+    ticketId: +ticketId,
+    tenantId: +tenantId,
+  });
+
+  return res.status(200).json(ticket);
 };

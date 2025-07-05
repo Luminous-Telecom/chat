@@ -52,4 +52,10 @@ ticketRoutes.get(
   TicketController.getParticipants
 );
 
+ticketRoutes.put(
+  "/tickets/:ticketId/toggle-pinned",
+  isAuth,
+  TicketController.togglePinned
+);
+
 export default ticketRoutes;

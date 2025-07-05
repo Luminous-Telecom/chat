@@ -47,6 +47,11 @@
               {{ dataInWords(ticket.lastMessageAt, ticket.updatedAt) }}
             </div>
             <div class="ticket-id">#{{ ticket.id }}</div>
+            <!-- Indicador de ticket fixado -->
+            <div v-if="ticket.isPinned" class="ticket-pinned-indicator">
+              <q-icon name="mdi-pin" size="14px" color="primary" />
+              <q-tooltip>Ticket fixado no topo</q-tooltip>
+            </div>
           </div>
         </div>
 
@@ -589,6 +594,14 @@ export default {
   }
 }
 
+.ticket-pinned-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  animation: pin-bounce 0.3s ease-in-out;
+}
+
 .ticket-status-icons {
   display: flex;
   gap: 4px;
@@ -644,10 +657,14 @@ export default {
     }
 
     .ticket-header-right {
-      .ticket-id {
-        color: var(--dark-text-primary);
-      }
+          .ticket-id {
+      color: var(--dark-text-primary);
     }
+
+    .ticket-pinned-indicator {
+      color: var(--dark-accent);
+    }
+  }
 
     .ticket-details {
       color: var(--dark-text-primary);
@@ -694,6 +711,18 @@ export default {
   50% {
     transform: scale(1.1);
     opacity: 0.8;
+  }
+}
+
+@keyframes pin-bounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
