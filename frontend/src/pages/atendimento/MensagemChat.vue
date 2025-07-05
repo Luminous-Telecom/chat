@@ -2237,20 +2237,6 @@ export default {
   z-index: 999999 !important;
 }
 
-/* Garantir que funcione com áudio players e outros componentes */
-.q-message-container .mensagem-hover-btn {
-  z-index: 999999 !important;
-  position: absolute !important;
-}
-
-/* Forçar posicionamento correto em qualquer contexto */
-.absolute-top-right.mensagem-hover-btn {
-  z-index: 999999 !important;
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-}
-
 /* Específico para elementos com mídia para garantir que o botão sempre apareça */
 .q-chat-message:has(audio),
 .q-chat-message:has(video),
@@ -2260,14 +2246,6 @@ export default {
     z-index: 999999 !important;
     position: absolute !important;
   }
-}
-
-/* Forçar posicionamento correto em qualquer contexto */
-.absolute-top-right.mensagem-hover-btn {
-  z-index: 999999 !important;
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
 }
 
 /* Específico para elementos com mídia para garantir que o botão sempre apareça */
