@@ -20,7 +20,7 @@
             {{ !ticket.name ? ticket.contact.name : ticket.name }}
             <!-- Etiquetas -->
             <div v-if="ticket.tags && ticket.tags.length > 0" class="ticket-tags-preview">
-              <q-chip
+              <q-chip style="margin-left: 0px;"
                 v-for="tag in ticket.tags"
                 :key="tag.id || tag"
                 size="sm"
@@ -333,13 +333,15 @@ export default {
 
 .ticket-tags-preview {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  /* Removido max-height e overflow-y para evitar quebra desnecessária */
 }
 
 .ticket-tag-chip {
   font-size: 11px !important;
   font-weight: 500 !important;
-  padding: 4px 8px !important;
+  padding: 2px 4px !important;
   border-radius: 8px !important;
   min-height: 20px !important;
   line-height: 1.2 !important;
@@ -349,12 +351,12 @@ export default {
   position: relative;
   background: #f1f1f1;
   border-radius: 8px;
-  padding: 8px 8px;
+  padding: 4px 6px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   user-select: none;
   -webkit-user-select: none;
@@ -442,7 +444,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 3px;
+  margin-bottom: 1px;
 
   .ticket-contact-name {
     font-weight: 600;
@@ -504,7 +506,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   font-size: 9px;
-  gap: 8px;
+  gap: 4px;
 }
 
 .ticket-details {
