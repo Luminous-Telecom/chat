@@ -352,6 +352,12 @@
                 label="Novo Atendimento"
                 @click="abrirModalEscolherCanal"
               />
+              <q-btn
+                v-if="ticketFocado.status === 'closed'"
+                color="primary"
+                label="Timeline"
+                @click="abrirModalTimeline"
+              />
 
             </div>
 
