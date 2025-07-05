@@ -359,7 +359,7 @@
             </div>
 
             <!-- Select de Etiquetas separado dos chips -->
-            <div class="etiquetas-container">
+            <div v-if="ticketFocado.status !== 'closed'" class="etiquetas-container">
               <q-select
                 v-model="selectedTags"
                 :options="etiquetas"
@@ -383,7 +383,7 @@
                 v-for="tag in ticketFocado.tags"
                 :key="tag.uniqueKey || `tag-${tag.id || tag}`"
                 dense
-                removable
+                :removable="ticketFocado.status !== 'closed'"
                 :style="{ backgroundColor: getTagColor(tag), color: getContrastColor(getTagColor(tag)) }"
                 class="q-ma-xs elegant-chip"
                 @remove="removeTagById(tag.id || tag)"
@@ -428,10 +428,11 @@
             <!-- Espaçamento entre botões -->
             <div class="q-mt-md"></div>
             <!-- Mensagens Agendadas -->
-            <div class="q-mb-xs">
+            <div v-if="ticketFocado.status !== 'closed'">
+              <div class="q-mb-xs">
                 <div class="text-body1 q-mb-sm text-primary" style="width: 100%; text-align: center; display: block; margin: 0 auto;">Mensagens agendadas</div>
-            </div>
-            <div class="scheduled-messages-container q-mb-md q-mt-md" style="background: none; border-radius: 5px; border: 1px solid rgb(95 95 95 / 27%);">
+              </div>
+              <div class="scheduled-messages-container q-mb-md q-mt-md" style="background: none; border-radius: 5px; border: 1px solid rgb(95 95 95 / 27%);">
                 <q-scroll-area
                   class="thin-scrollbar"
                   style="height: 200px"
@@ -451,6 +452,7 @@
                           size="sm"
                           color="negative"
                           @click="deletarMensagem(message)"
+                          :disable="ticketFocado.status === 'closed'"
                         >
                           <q-tooltip>Excluir</q-tooltip>
                         </q-btn>
@@ -472,13 +474,14 @@
                           color="primary"
                           no-caps
                           @click="abrirModalListarMensagensAgendadas"
+                          :disable="ticketFocado.status === 'closed'"
                         />
                       </q-item-section>
                     </q-item>
                   </q-list>
                 </q-scroll-area>
-            </div>
-            <div class="row q-gutter-x-sm q-mb-md justify-center">
+              </div>
+              <div class="row q-gutter-x-sm q-mb-md justify-center">
                 <q-btn
                   color="primary"
                   no-caps
@@ -489,6 +492,7 @@
                   no-caps
                   @click="abrirModalListarMensagensAgendadas"
                 >Ver todas</q-btn>
+              </div>
             </div>
             <!-- Observações -->
             <div class="q-mb-xs">
