@@ -42,10 +42,15 @@
               {{ ticket.unreadMessages }}
             </div>
           </div>
-          <div class="ticket-time">
-            {{ dataInWords(ticket.lastMessageAt, ticket.updatedAt) }}
+          <div class="ticket-header-right">
+            <div class="ticket-time">
+              {{ dataInWords(ticket.lastMessageAt, ticket.updatedAt) }}
+            </div>
+            <div class="ticket-id">#{{ ticket.id }}</div>
           </div>
         </div>
+
+
 
                 <!-- Last Message -->
         <div class="ticket-last-message">
@@ -75,9 +80,10 @@
           <div class="ticket-details">
             <div class="ticket-channel">
               <q-icon
-                :name="`img:${ticket.channel}-logo.png`"
-                size="12px"
+                :name="getChannelIcon(ticket.channel)"
+                size="14px"
                 class="channel-icon"
+                :color="getChannelColor(ticket.channel)"
               />
               <span class="channel-name">{{ ticket.whatsapp && ticket.whatsapp.name }}</span>
             </div>
@@ -88,7 +94,6 @@
           </div>
 
           <div class="ticket-metadata">
-            <div class="ticket-id">#{{ ticket.id }}</div>
             <div class="ticket-user">{{ ticket.username }}</div>
           </div>
 
@@ -262,6 +267,21 @@ export default {
 
       this.$store.commit('SET_HAS_MORE', true)
       this.$store.dispatch('AbrirChatMensagens', ticket)
+    },
+
+    getChannelIcon (channel) {
+      const icons = {
+        whatsapp: 'mdi-whatsapp',
+        instagram: 'mdi-instagram',
+        telegram: 'mdi-telegram',
+        messenger: 'mdi-facebook-messenger',
+        waba: 'mdi-whatsapp'
+      }
+      return icons[channel] || 'mdi-message'
+    },
+
+    getChannelColor (channel) {
+      return 'green' // Verde do Quasar para todos os canais
     },
 
     async recarregarChat (ticket) {
@@ -456,16 +476,31 @@ export default {
     text-overflow: ellipsis;
   }
 
-  .ticket-time {
-    font-size: 10px;
-    color: #7b8794;
-    font-weight: 500;
-    white-space: nowrap;
-    background: rgba(123, 135, 148, 0.1);
-    padding: 1px 6px;
-    border-radius: 8px;
+  .ticket-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+
+    .ticket-time {
+      font-size: 10px;
+      color: #7b8794;
+      font-weight: 500;
+      white-space: nowrap;
+      background: rgba(123, 135, 148, 0.1);
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    .ticket-id {
+      font-weight: 600;
+      color: #34495e;
+      font-size: 9px;
+    }
   }
 }
+
+
 
 .ticket-last-message {
   font-size: 13px;
@@ -510,9 +545,10 @@ export default {
 
 .ticket-details {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  gap: 8px;
   flex: 1;
+  align-items: center;
 
   .ticket-channel,
   .ticket-queue {
@@ -522,15 +558,17 @@ export default {
     color: #7b8794;
 
     .channel-icon {
-      border-radius: 2px;
+      border-radius: 50%;
+      color: #25D366 !important;
     }
 
     .channel-name {
       background: #e3f2fd;
-      padding: 1px 5px;
-      border-radius: 6px;
+      padding: 2px 5px;
+      border-radius: 4px;
       font-weight: 500;
       color: #1976d2;
+      font-size: 9px;
     }
   }
 }
@@ -541,14 +579,9 @@ export default {
   flex-direction: column;
   gap: 1px;
 
-  .ticket-id {
-    font-weight: 600;
-    color: #34495e;
-    background: rgba(52, 73, 94, 0.1);
-    padding: 1px 4px;
-    border-radius: 6px;
-    font-size: 8px;
-  }
+
+
+
 
   .ticket-user {
     color: #7b8794;
@@ -610,8 +643,16 @@ export default {
       color: var(--dark-text-primary);
     }
 
+    .ticket-header-right {
+      .ticket-id {
+        color: var(--dark-text-primary);
+      }
+    }
+
     .ticket-details {
       color: var(--dark-text-primary);
+
+
 
       .channel-name {
         background: rgba(144, 202, 249, 0.2);
