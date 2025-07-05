@@ -2,6 +2,8 @@ import AppError from "../../errors/AppError";
 import Ticket from "../../models/Ticket";
 import TicketTag from "../../models/TicketTag";
 import Tag from "../../models/Tag";
+import socketEmit from "../../helpers/socketEmit";
+import ShowTicketService from "./ShowTicketService";
 
 interface Request {
   tags: number[] | string[];
@@ -38,20 +40,15 @@ const UpdateTicketTagsService = async ({
 
   await TicketTag.bulkCreate(ticketTags as any);
 
-  const ticket = await Ticket.findOne({
-    where: { id: ticketId, tenantId },
-    include: [
-      {
-        model: Tag,
-        as: "tags",
-        through: { attributes: [] }
-      }
-    ],
-  });
+  // Buscar o ticket completo com todas as informações usando ShowTicketService
+  const ticket = await ShowTicketService({ id: ticketId, tenantId });
 
-  if (!ticket) {
-    throw new AppError("ERR_NO_TICKET_FOUND", 404);
-  }
+  // Emitir evento de socket para atualizar o ticket na lista
+  socketEmit({
+    tenantId,
+    type: "ticket:update",
+    payload: ticket,
+  });
 
   return ticket;
 };
