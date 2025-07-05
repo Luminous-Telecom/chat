@@ -94,15 +94,6 @@
 
           <!-- Status Icons - movido para o footer -->
           <div class="ticket-status-icons">
-            <!-- Ticket Resolvido -->
-            <div
-              v-if="ticket.status === 'closed'"
-              class="status-icon status-icon--resolved"
-            >
-              <q-icon name="mdi-check-circle" size="14px" />
-              <q-tooltip>Atendimento Resolvido</q-tooltip>
-            </div>
-
             <!-- ChatBot ativo -->
             <div
               v-if="(ticket.stepAutoReplyId && ticket.autoReplyId && ticket.status === 'pending') || (ticket.chatFlowId && ticket.stepChatFlow && ticket.status === 'pending')"
