@@ -17,7 +17,11 @@
         <!-- Header -->
         <div class="ticket-header">
           <div class="ticket-contact-name">
-            {{ !ticket.name ? ticket.contact.name : ticket.name }}
+            <span class="ticket-contact-name-text">
+              {{ ((!ticket.name ? ticket.contact.name : ticket.name) || '').length > 30
+                ? ((!ticket.name ? ticket.contact.name : ticket.name) || '').slice(0, 30) + '...'
+                : ((!ticket.name ? ticket.contact.name : ticket.name) || '') }}
+            </span>
             <!-- Etiquetas -->
             <div v-if="ticket.tags && ticket.tags.length > 0" class="ticket-tags-preview">
               <q-chip style="margin-left: 0px;"
@@ -58,7 +62,11 @@
                 size="15px"
               />
             </div>
-            <span class="message-text" v-html="formatarMensagemWhatsapp(ticket.lastMessage)"></span>
+            <span class="message-text" v-html="formatarMensagemWhatsapp(
+  (ticket.lastMessage || '').length > 60
+    ? (ticket.lastMessage || '').slice(0, 60) + '...'
+    : (ticket.lastMessage || '')
+)"></span>
           </div>
         </div>
 
@@ -690,5 +698,24 @@ export default {
   .ticket-footer {
     font-size: 8px;
   }
+}
+
+.message-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.ticket-contact-name-text {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-word;
 }
 </style>
