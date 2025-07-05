@@ -261,21 +261,6 @@
                     <q-tooltip content-class="modern-tooltip">Clique para copiar</q-tooltip>
                   </div>
 
-                  <!-- Botão Fixar no Topo -->
-                  <div class="contact-detail-item">
-                    <q-icon name="mdi-pin" class="detail-icon" />
-                    <span class="detail-text">
-                      Fixar no topo
-                    </span>
-                    <q-toggle
-                      :model-value="ticketFocado.isPinned"
-                      @update:model-value="togglePinnedTicket"
-                      :loading="loadingTogglePinned"
-                      color="primary"
-                      size="sm"
-                    />
-                  </div>
-
                   <!-- Informações de contato -->
                   <div v-if="ticketFocado.contact.email" class="contact-detail-item">
                     <q-icon name="mdi-email" class="detail-icon" />
@@ -553,6 +538,22 @@
                   @click="abrirModalListarObservacoes"
                   class="col"
                 >Ver todas</q-btn>
+            </div>
+            <!-- Toggle Fixar atendimento no topo -->
+            <div v-if="ticketFocado.id" class="q-pa-md q-mt-sm" style="border-top: 1px solid #e0e0e0;">
+              <q-checkbox
+                :model-value="ticketFocado.isPinned"
+                @update:model-value="togglePinnedTicket"
+                :loading="loadingTogglePinned"
+                color="primary"
+                size="sm"
+                dense
+                style="min-height: 22px;"
+              >
+                <template v-slot:default>
+                  <span style="margin-left: 6px; font-size: 12px;">Fixar atendimento no topo</span>
+                </template>
+              </q-checkbox>
             </div>
           </div>
       </q-drawer>
@@ -1801,11 +1802,12 @@ export default {
         // Buscar tickets atualizados para refletir a nova ordem
         this.BuscarTicketFiltro()
 
-        this.$q.notify({
-          type: 'positive',
-          message: updatedTicket.isPinned ? 'Ticket fixado no topo!' : 'Ticket desfixado!',
-          position: 'bottom-right'
-        })
+        // Removido: notificação de sucesso ao fixar/desfixar
+        // this.$q.notify({
+        //   type: 'positive',
+        //   message: updatedTicket.isPinned ? 'Ticket fixado no topo!' : 'Ticket desfixado!',
+        //   position: 'bottom-right'
+        // })
       } catch (error) {
         console.error('Erro ao alternar status de fixado:', error)
         const errorMessage = error.response?.data?.error || 'Erro ao alternar status de fixado. Tente novamente.'
@@ -3637,5 +3639,20 @@ export default {
   border: 1px solid rgba(0,0,0,0.12) !important;
   box-shadow: none !important;
   height: auto !important;
+}
+</style>
+
+<style scoped>
+/* ... estilos existentes ... */
+.q-checkbox.q-checkbox--left-label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+}
+.q-checkbox__inner {
+  order: 0 !important;
+}
+.q-checkbox__label {
+  order: 1 !important;
 }
 </style>
