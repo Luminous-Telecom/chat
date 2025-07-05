@@ -131,6 +131,7 @@
         bordered
         side="right"
         content-class="bg-grey-1"
+        :width="350"
       >
 
 
