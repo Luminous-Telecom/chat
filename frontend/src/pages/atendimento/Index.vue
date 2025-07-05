@@ -300,6 +300,7 @@
                 color="primary"
                 icon="mdi-send-circle"
                 label="Iniciar o atendimento"
+                no-caps
                 @click="iniciarAtendimento(ticketFocado)"
                 :loading="loading"
               />
@@ -308,6 +309,7 @@
                 color="primary"
                 icon="mdi-login"
                 label="Entrar na conversa"
+                no-caps
                 @click="entrarNaConversa"
                 :loading="loadingEntrarConversa"
               />
@@ -315,18 +317,21 @@
                 v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
                 color="primary"
                 label="Encerrar Ticket"
+                no-caps
                 @click="resolverTicket"
               />
               <q-btn
                 v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
                 color="primary"
                 label="Transferir"
+                no-caps
                 @click="abrirModalTransferirTicket"
               />
               <q-btn
                 v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
                 color="primary"
                 label="Timeline"
+                no-caps
                 @click="abrirModalTimeline"
               />
               <!-- Seletor de Etiquetas -->
@@ -479,6 +484,7 @@
                         dense
                         color="primary"
                         label="Ver mais..."
+                        no-caps
                         @click="abrirModalListarMensagensAgendadas"
                       />
                     </q-item-section>
@@ -541,6 +547,7 @@
                         dense
                         color="primary"
                         label="Ver mais..."
+                        no-caps
                         @click="abrirModalListarObservacoes"
                       />
                     </q-item-section>
