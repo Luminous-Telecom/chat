@@ -486,11 +486,13 @@
                   color="primary"
                   no-caps
                   @click="abrirModalAgendarMensagem"
+                  class="col"
                 >Nova mensagem</q-btn>
                 <q-btn
                   color="primary"
                   no-caps
                   @click="abrirModalListarMensagensAgendadas"
+                  class="col"
                 >Ver todas</q-btn>
               </div>
             </div>
@@ -528,11 +530,13 @@
                   color="primary"
                   no-caps
                   @click="abrirModalObservacao"
+                  class="col"
                 >Nova observação</q-btn>
                 <q-btn
                   color="primary"
                   no-caps
                   @click="abrirModalListarObservacoes"
+                  class="col"
                 >Ver todas</q-btn>
             </div>
           </div>
