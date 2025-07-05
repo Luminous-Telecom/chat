@@ -1165,16 +1165,8 @@ function urlBase64ToUint8Array (base64String) {
   color: #1976d2 !important;
 }
 
-.body--dark .q-item--active .q-icon {
-  color: #64b5f6 !important;
-}
-
 .router-link-active .q-icon {
   color: #1976d2 !important;
-}
-
-.body--dark .router-link-active .q-icon {
-  color: #64b5f6 !important;
 }
 
 /* Estilo para item ativo/selecionado */
