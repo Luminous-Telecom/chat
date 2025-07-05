@@ -84,11 +84,6 @@ export default {
         })
 
         this.$emit('observacao-salva', data)
-        this.$q.notify({
-          type: 'positive',
-          message: 'Observação salva com sucesso!',
-          position: 'bottom-right'
-        })
         this.observacao = ''
         this.anexo = null
         this.$emit('update:modelValue', false)

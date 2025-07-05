@@ -428,7 +428,7 @@
                   style="height: 200px"
                 >
                   <q-list>
-                    <q-item v-for="(message, idx) in ticketFocado.scheduledMessages.slice(0, 3)" :key="message.uniqueKey || `scheduled-message-${message.id || idx}`" class="q-mb-sm">
+                    <q-item v-for="(message, idx) in ticketFocado.scheduledMessages" :key="message.uniqueKey || `scheduled-message-${message.id || idx}`" class="q-mb-sm">
                       <q-item-section>
                         <q-item-label caption>{{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}</q-item-label>
                         <q-item-label>{{ message.mediaName || message.body }}</q-item-label>
@@ -461,7 +461,6 @@
                           flat
                           dense
                           color="primary"
-                          label="Ver mais..."
                           no-caps
                           @click="abrirModalListarMensagensAgendadas"
                         />
@@ -492,7 +491,7 @@
                   style="height: 200px"
                 >
                   <q-list>
-                    <q-item v-for="obs in observacoes.slice(0, 3)" :key="obs.id" class="q-mb-sm">
+                    <q-item v-for="obs in observacoes" :key="obs.id" class="q-mb-sm">
                       <q-item-section>
                         <q-item-label caption>{{ $formatarData(obs.createdAt, 'dd/MM/yyyy HH:mm') }} - {{ obs.user?.name }}</q-item-label>
                         <q-item-label>{{ obs.texto }}</q-item-label>
@@ -506,18 +505,6 @@
                             @click="abrirAnexo(obs.anexo)"
                           />
                         </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                    <q-item v-if="observacoes.length > 3" class="text-center">
-                      <q-item-section>
-                        <q-btn
-                          flat
-                          dense
-                          color="primary"
-                          label="Ver mais..."
-                          no-caps
-                          @click="abrirModalListarObservacoes"
-                        />
                       </q-item-section>
                     </q-item>
                   </q-list>
@@ -2449,7 +2436,6 @@ export default {
   color: var(--text-color-primary);
   font-size: 16px;
   outline: none;
-  transition: all 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -2483,7 +2469,6 @@ export default {
 /* Estilos elegantes para seleção de etiquetas */
 .elegant-select {
   border-radius: 8px !important;
-  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -2496,7 +2481,6 @@ export default {
 }
 
 .elegant-option {
-  transition: all 0.2s ease;
   border-radius: 4px;
   margin: 2px 4px;
 }
@@ -2508,7 +2492,6 @@ export default {
 .elegant-chip {
   border-radius: 16px !important;
   font-weight: 500;
-  transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
@@ -2555,7 +2538,6 @@ export default {
 
 .tag-option-item {
   padding: 8px 16px;
-  transition: background-color 0.2s;
 }
 
 .tag-option-item:hover {
@@ -2642,7 +2624,6 @@ export default {
   padding: 4px 8px;
   background: var(--background-color-default);
   border-radius: 4px;
-  transition: all 0.3s ease;
 }
 
 .participant-item:hover {
@@ -2697,20 +2678,8 @@ export default {
 }
 
 
-
-/* Enhanced scroll area customization */
-.observations-container .q-scrollarea__thumb {
-  background: #2e7d32;
-  border-radius: 12px;
-  opacity: 0.8;
-  border: 1px solid rgba(255,255,255,0.2);
-  transition: all 0.3s ease;
-  width: 5px;
-}
-
 .observations-container .q-scrollarea__thumb:hover {
   opacity: 1;
-  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.4);
 }
 
 .observations-container .q-scrollarea__track {
@@ -2742,7 +2711,6 @@ export default {
 .q-drawer .q-scroll-area::-webkit-scrollbar-thumb {
   background: rgba(0,0,0,0.3);
   border-radius: 15px;
-  transition: all 0.3s ease;
 }
 
 .q-drawer .q-scroll-area::-webkit-scrollbar-thumb:hover {
@@ -2764,7 +2732,6 @@ export default {
   background: rgba(96, 125, 139, 0.6);
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.3s ease;
 }
 
 .scroll-y::-webkit-scrollbar-thumb:hover {
@@ -2838,7 +2805,6 @@ export default {
       background: #ffffff;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
 }
 
 .scheduled-messages-container:hover {
@@ -2866,7 +2832,6 @@ export default {
   padding: 12px;
   background: var(--background-color-paper);
   border: 1px solid rgba(25, 118, 210, 0.2);
-  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -2878,7 +2843,6 @@ export default {
   top: 0;
   height: 100%;
   width: 4px;
-  transition: width 0.3s ease;
 }
 
 .scheduled-messages-container .q-item:hover::before {
@@ -2889,10 +2853,6 @@ export default {
   background: rgba(243, 229, 245, 0.5);
 }
 
-.scheduled-messages-container .q-btn {
-  transition: all 0.3s ease;
-}
-
 /* Observations styles */
 .observations-container {
   border: 1px solid #e8f5e8;
@@ -2900,7 +2860,6 @@ export default {
       background: #ffffff;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
 }
 
 .observations-container:hover {
@@ -2927,34 +2886,8 @@ export default {
   margin-bottom: 8px;
   padding: 12px;
   background: var(--background-color-paper);
-  border: 1px solid rgba(46, 125, 50, 0.2);
-  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-}
-
-.observations-container .q-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: #2e7d32;
-  transition: width 0.3s ease;
-}
-
-.observations-container .q-item:hover::before {
-  width: 6px;
-}
-
-.observations-container .q-item:hover {
-  background: rgba(241, 248, 233, 0.5);
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
-}
-
-.observations-container .q-btn {
-  transition: all 0.3s ease;
 }
 
 /* Dark mode styles for scheduled messages and observations */
