@@ -385,7 +385,7 @@
                 dense
                 :removable="ticketFocado.status !== 'closed'"
                 :style="{ backgroundColor: getTagColor(tag), color: getContrastColor(getTagColor(tag)) }"
-                class="q-ma-xs elegant-chip"
+                class="q-ma-xs ticket-tag-chip"
                 @remove="removeTagById(tag.id || tag)"
               >
                 {{ getTagName(tag) }}
@@ -3547,5 +3547,19 @@ export default {
 /* Espaçamento acima das etiquetas */
 .etiquetas-container {
   margin-top: 8px;
+}
+</style>
+
+<style scoped>
+.ticket-tag-chip {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 2px 4px !important;
+  border-radius: 8px !important;
+  min-height: 20px !important;
+  line-height: 1.2 !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  box-shadow: none !important;
+  height: auto !important;
 }
 </style>
