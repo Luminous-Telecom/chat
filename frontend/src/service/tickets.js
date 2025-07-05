@@ -135,3 +135,12 @@ export function ListarParticipantes (ticketId) {
     method: 'get'
   })
 }
+
+export function EditarEtiquetasTicket(ticketId, tags) {
+  const data = { tags }
+  return request({
+    url: `/api/ticket-tags/${ticketId}`,
+    method: 'put',
+    data
+  })
+}

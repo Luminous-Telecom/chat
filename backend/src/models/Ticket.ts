@@ -13,6 +13,7 @@ import {
   // AfterCreate,
   DataType,
   AllowNull,
+  BelongsToMany,
 } from "sequelize-typescript";
 
 import { format } from "date-fns";
@@ -29,6 +30,8 @@ import MessagesOffLine from "./MessageOffLine";
 import ChatFlow from "./ChatFlow";
 import TicketObservation from "./TicketObservation";
 import TicketParticipant from "./TicketParticipant";
+import Tag from "./Tag";
+import TicketTag from "./TicketTag";
 
 @Table
 class Ticket extends Model<Ticket> {
@@ -188,6 +191,9 @@ class Ticket extends Model<Ticket> {
 
   @HasMany(() => TicketParticipant)
   participants: TicketParticipant[];
+
+  @BelongsToMany(() => Tag, () => TicketTag, "ticketId", "tagId")
+  tags: Tag[];
 
   @Column(DataType.VIRTUAL)
   get protocol(): string {

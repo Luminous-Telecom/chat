@@ -27,6 +27,12 @@ ticketRoutes.post(
   TicketController.markAllAsRead
 );
 
+ticketRoutes.put(
+  "/ticket-tags/:ticketId",
+  isAuth,
+  TicketController.updateTicketTags
+);
+
 // Rotas para participantes da conversa
 ticketRoutes.post(
   "/tickets/:ticketId/join",

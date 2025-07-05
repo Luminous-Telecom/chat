@@ -27,6 +27,7 @@ import LogTicket from "../models/LogTicket";
 import ChatFlow from "../models/ChatFlow";
 import TicketObservation from "../models/TicketObservation";
 import TicketParticipant from "../models/TicketParticipant";
+import TicketTag from "../models/TicketTag";
 import * as QueueJobs from "../libs/Queue";
 import { logger } from "../utils/logger";
 
@@ -60,8 +61,8 @@ const models = [
   UserMessagesLog,
   FastReply,
   Tag,
-
   ContactTag,
+  TicketTag,
   Campaign,
   CampaignContacts,
   ApiConfig,

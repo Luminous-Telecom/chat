@@ -19,6 +19,7 @@ import CreateMessageSystemService from "../services/MessageServices/CreateMessag
 import { pupa } from "../utils/pupa";
 import SetTicketMessagesAsRead from "../helpers/SetTicketMessagesAsRead";
 import { logger } from "../utils/logger";
+import UpdateTicketTagsService from "../services/TicketServices/UpdateTicketTagsService";
 
 type IndexQuery = {
   searchParam: string;
@@ -190,6 +191,23 @@ export const update = async (
       ticket.update({ isFarewellMessage: true });
     }
   }
+
+  return res.status(200).json(ticket);
+};
+
+export const updateTicketTags = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { tags } = req.body;
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+
+  const ticket = await UpdateTicketTagsService({
+    tags,
+    ticketId,
+    tenantId
+  });
 
   return res.status(200).json(ticket);
 };

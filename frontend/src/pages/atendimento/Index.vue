@@ -1891,10 +1891,6 @@ export default {
         })
       }
     }
-
-    console.log('[mounted] ticketFocado:', this.ticketFocado)
-    console.log('[mounted] selectedTags:', this.selectedTags)
-    console.log('[mounted] etiquetas:', this.etiquetas)
   },
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
