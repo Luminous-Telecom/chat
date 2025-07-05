@@ -710,6 +710,7 @@ import { tocarSomNotificacao, solicitarPermissaoAudio, temPermissaoAudio } from 
 import { socketIO } from 'src/utils/socket'
 
 const socket = socketIO()
+import { EditarContato } from 'src/service/contatos'
 
 export default {
   name: 'IndexAtendimento',
@@ -1798,6 +1799,17 @@ export default {
           message: 'Nome do contato atualizado com sucesso!',
           position: 'bottom-right'
         })
+        // Atualiza o ticket focado na store para refletir o novo nome do contato
+        if (this.ticketFocado && this.ticketFocado.contact && this.ticketFocado.contact.id === data.id) {
+          const ticketAtualizado = {
+            ...this.ticketFocado,
+            contact: {
+              ...this.ticketFocado.contact,
+              name: data.name
+            }
+          };
+          this.$store.commit('TICKET_FOCADO', ticketAtualizado);
+        }
       } catch (error) {
         this.$q.notify({
           type: 'negative',
