@@ -12,12 +12,13 @@
     :style="style"
     :class="{
       'bg-white': !$q.dark.isActive,
-      'bg-dark': $q.dark.isActive
+      'bg-dark': $q.dark.isActive,
+      'has-ticket': ticketFocado.id
     }"
   >
-    <!-- Overlay de background igual WhatsApp Web -->
-    <div class="wa-bg-overlay x10l6tqk x13vifvy x1o0tod xh8yej3 x5yr21d x182nak8 x1wwuglj x1vs56c6" data-asset-chat-background-dark="true"></div>
-    <div v-if="$q.dark.isActive === false" class="wa-bg-color"></div>
+    <!-- Overlay de background igual WhatsApp Web - só aparece quando há ticket selecionado -->
+    <div v-if="ticketFocado.id" class="wa-bg-overlay x10l6tqk x13vifvy x1o0tod xh8yej3 x5yr21d x182nak8 x1wwuglj x1vs56c6" data-asset-chat-background-dark="true"></div>
+    <div v-if="ticketFocado.id && $q.dark.isActive === false" class="wa-bg-color"></div>
     <q-scroll-area
       ref="scrollContainer"
       class="scroll-y"
@@ -551,6 +552,10 @@ export default {
 }
 
 body.body--light .chat-container {
+  background-color: transparent !important;
+}
+
+body.body--light .chat-container.has-ticket {
   background-color: #ede7dc !important;
 }
 
