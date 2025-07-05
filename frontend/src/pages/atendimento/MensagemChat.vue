@@ -390,7 +390,8 @@
           </div>
         </q-chat-message>
           </div>
-          <div class="user-avatar-external">
+          <!-- Avatar: real na primeira mensagem do grupo, placeholder nas agrupadas -->
+          <div v-if="mensagem._mostrarHeaderUsuario" class="user-avatar-external">
             <q-avatar
               size="36px"
               color="#f3f4f6"
@@ -407,7 +408,7 @@
               <q-img
                 v-else
                 :src="getUserProfilePic(mensagem)"
-                style="width: 50px; height: 50px; border-radius: 50%;"
+                style="width: 36px; height: 36px; border-radius: 50%;"
               >
                 <template v-slot:error>
                   <q-icon name="mdi-account" size="1.5em" color="#616161" />
@@ -415,6 +416,7 @@
               </q-img>
             </q-avatar>
           </div>
+          <div v-else class="user-avatar-external avatar-placeholder"></div>
         </div>
 
         <!-- Todas as outras mensagens (recebidas e enviadas agrupadas) -->
@@ -1522,7 +1524,7 @@ export default {
         return false
       }
 
-      // Para mensagens enviadas, sempre mostrar header para primeira mensagem
+      // Sempre mostrar header para a primeira mensagem
       if (index === 0) {
         return true
       }
@@ -1539,16 +1541,6 @@ export default {
       const usuarioAnterior = this.getUserDisplayName(mensagemAnterior)
 
       if (usuarioAtual !== usuarioAnterior) {
-        return true
-      }
-
-      // Para mensagens enviadas, mostrar header com quebra de tempo menor (2 minutos)
-      const tempoAtual = new Date(mensagem.createdAt)
-      const tempoAnterior = new Date(mensagemAnterior.createdAt)
-      const diferencaMinutos = (tempoAtual - tempoAnterior) / (1000 * 60)
-
-      // Se passou mais de 2 minutos, mostrar header novamente
-      if (diferencaMinutos > 2) {
         return true
       }
 
@@ -1998,9 +1990,9 @@ export default {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   justify-content: flex-end;
-  padding-right: 8px;
+  padding-right: 4px;
   flex-direction: row;
 
   .user-info-column {
@@ -2479,6 +2471,11 @@ export default {
 .emoji-text span {
   font-size: inherit !important;
   line-height: inherit !important;
+}
+
+/* Adicionar ao CSS do componente */
+.avatar-placeholder {
+  visibility: hidden;
 }
 
 </style>
