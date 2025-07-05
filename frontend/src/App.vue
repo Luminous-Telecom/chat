@@ -47,3 +47,15 @@ export default {
 
 }
 </script>
+
+<style>
+/* Remove efeitos de hover de todos os botões do Quasar em todo o sistema */
+.q-btn,
+.q-btn:active,
+.q-btn:focus,
+.q-btn:hover {
+  transition: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+</style>
