@@ -388,9 +388,9 @@
             <!-- Espaçamento entre botões -->
             <div class="q-mt-md"></div>
             <!-- Tags selecionadas -->
-            <div v-if="ticketFocado.contact.tags && ticketFocado.contact.tags.length > 0" class="selected-tags-container q-mb-sm">
+            <div v-if="ticketFocado.tags && ticketFocado.tags.length > 0" class="selected-tags-container q-mb-sm">
               <q-chip
-                v-for="tag in ticketFocado.contact.tags"
+                v-for="tag in ticketFocado.tags"
                 :key="tag.uniqueKey || `tag-${tag.id || tag}`"
                 dense
                 removable
@@ -675,7 +675,7 @@ import ModalUsuario from 'src/pages/usuarios/ModalUsuario'
 import { ListarConfiguracoes } from 'src/service/configuracoes'
 import { ListarMensagensRapidas } from 'src/service/mensagensRapidas'
 import { ListarEtiquetas } from 'src/service/etiquetas'
-import { EditarEtiquetasContato, EditarContato } from 'src/service/contatos'
+import { EditarEtiquetasTicket } from 'src/service/tickets'
 import { RealizarLogout } from 'src/service/login'
 import { ListarUsuarios } from 'src/service/user'
 import MensagemChat from './MensagemChat.vue'
@@ -1136,17 +1136,17 @@ export default {
     },
     async tagSelecionada (tags) {
       const lista = Array.isArray(tags) ? tags : tags ? [tags] : [];
-      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, [...lista])
-      this.contatoEditado(data)
+      const { data } = await EditarEtiquetasTicket(this.ticketFocado.id, [...lista])
+      this.ticketEditado(data)
     },
     async removeTag (tagToRemove) {
-      const currentTags = this.ticketFocado.contact.tags || []
+      const currentTags = this.ticketFocado.tags || []
       const updatedTags = currentTags.filter(tag => tag.id !== tagToRemove.id)
-      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, updatedTags.map(tag => tag.id))
-      this.contatoEditado(data)
+      const { data } = await EditarEtiquetasTicket(this.ticketFocado.id, updatedTags.map(tag => tag.id))
+      this.ticketEditado(data)
     },
     async toggleTag (etiqueta) {
-      const currentTags = this.ticketFocado.contact.tags || []
+      const currentTags = this.ticketFocado.tags || []
       const tagIndex = currentTags.findIndex(tag => tag.id === etiqueta.id)
 
       let newTagIds
@@ -1158,11 +1158,11 @@ export default {
         newTagIds = [...currentTags.map(tag => tag.id), etiqueta.id]
       }
 
-      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, newTagIds)
-      this.contatoEditado(data)
+      const { data } = await EditarEtiquetasTicket(this.ticketFocado.id, newTagIds)
+      this.ticketEditado(data)
     },
     isTagSelected (tagId) {
-      return this.ticketFocado.contact.tags && this.ticketFocado.contact.tags.some(tag => tag.id === tagId)
+      return this.ticketFocado.tags && this.ticketFocado.tags.some(tag => tag.id === tagId)
     },
     getTagColor (tag) {
       const tagId = typeof tag === 'object' ? tag.id : tag
@@ -1175,10 +1175,10 @@ export default {
       return etiqueta ? etiqueta.tag : 'Tag não encontrada'
     },
     async removeTagById (tagId) {
-      const currentTags = this.ticketFocado.contact.tags || []
+      const currentTags = this.ticketFocado.tags || []
       const newTagIds = currentTags.filter(tag => tag.id !== tagId).map(tag => tag.id)
-      const { data } = await EditarEtiquetasContato(this.ticketFocado.contact.id, newTagIds)
-      this.contatoEditado(data)
+      const { data } = await EditarEtiquetasTicket(this.ticketFocado.id, newTagIds)
+      this.ticketEditado(data)
     },
 
 
@@ -1782,7 +1782,14 @@ export default {
     blurTags() {
       if (!this.selectedTags.length) this.selectedTags = [];
     },
-
+    ticketEditado(ticket) {
+      this.$store.commit('TICKET_FOCADO', ticket)
+      this.$q.notify({
+        type: 'positive',
+        message: 'Etiquetas atualizadas com sucesso!',
+        position: 'bottom-right'
+      })
+    },
   },
   beforeMount () {
     this.listarFilas()
@@ -1884,6 +1891,10 @@ export default {
         })
       }
     }
+
+    console.log('[mounted] ticketFocado:', this.ticketFocado)
+    console.log('[mounted] selectedTags:', this.selectedTags)
+    console.log('[mounted] etiquetas:', this.etiquetas)
   },
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
@@ -1987,9 +1998,15 @@ export default {
       },
       immediate: true
     },
-    'ticketFocado.contact': {
-      handler(novoContato) {
-        this.selectedTags = (novoContato.tags || []).map(tag => tag.id)
+    'ticketFocado.tags': {
+      handler(novasTags) {
+        if (Array.isArray(novasTags)) {
+          const novosIds = novasTags.map(tag => tag.id)
+          // Só atualiza se for diferente do valor atual
+          if (JSON.stringify(this.selectedTags) !== JSON.stringify(novosIds)) {
+            this.selectedTags = novosIds
+          }
+        }
       },
       immediate: true
     }
