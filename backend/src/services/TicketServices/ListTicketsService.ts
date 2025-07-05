@@ -202,6 +202,12 @@ const ListTicketsService = async ({
   u."name" as username,
   q.queue,
   jsonb_build_object('id', w.id, 'name', w."name") whatsapp,
+  (
+    SELECT COALESCE(json_agg(json_build_object('id', tg.id, 'tag', tg.tag, 'color', tg.color)), '[]'::json)
+    FROM "TicketTags" tktg
+    JOIN "Tags" tg ON tg.id = tktg."tagId"
+    WHERE tktg."ticketId" = t.id AND tktg."tenantId" = :tenantId
+  ) as tags,
   t.*
   from "Tickets" t
   left join "Whatsapps" w on (w.id = t."whatsappId")

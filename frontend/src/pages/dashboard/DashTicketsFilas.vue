@@ -155,7 +155,8 @@
               <ItemTicket v-for="(ticket, i) in item"
                 :key="i"
                 :ticket="ticket"
-                :filas="filas" />
+                :filas="filas"
+                :etiquetas="etiquetas" />
             </q-card-section>
           </q-card>
         </div>
@@ -174,6 +175,7 @@ const socket = socketIO()
 import ItemTicket from 'src/pages/atendimento/ItemTicket'
 import { ConsultarTicketsQueuesService } from 'src/service/estatisticas.js'
 import { ListarFilas } from 'src/service/filas'
+import { ListarEtiquetas } from 'src/service/etiquetas'
 const UserQueues = localStorage.getItem('queues')
 import { groupBy } from 'lodash'
 const profile = localStorage.getItem('profile')
@@ -202,6 +204,7 @@ export default {
       },
       tickets: [],
       filas: [],
+      etiquetas: [],
       sizes: { lg: 3, md: 3, sm: 2, xs: 1 }
     }
   },
@@ -421,6 +424,14 @@ export default {
     },
     onResize ({ height }) {
       this.height = height
+    },
+    async listarEtiquetas () {
+      try {
+        const { data } = await ListarEtiquetas(true)
+        this.etiquetas = data
+      } catch (error) {
+        console.error('Erro ao carregar etiquetas:', error)
+      }
     }
   },
 
@@ -428,6 +439,7 @@ export default {
     await ListarFilas().then(res => {
       this.filas = res.data
     })
+    await this.listarEtiquetas()
     await this.consultarTickets()
   },
   destroyed () {

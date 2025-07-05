@@ -18,6 +18,18 @@
         <div class="ticket-header">
           <div class="ticket-contact-name">
             {{ !ticket.name ? ticket.contact.name : ticket.name }}
+            <!-- Etiquetas -->
+            <div v-if="ticket.tags && ticket.tags.length > 0" class="ticket-tags-preview">
+              <q-chip
+                v-for="tag in ticket.tags"
+                :key="tag.id || tag"
+                size="sm"
+                :style="{ backgroundColor: getTagColor(tag), color: getContrastColor(getTagColor(tag)) }"
+                class="ticket-tag-chip"
+              >
+                {{ getTagName(tag) }}
+              </q-chip>
+            </div>
             <!-- Badge de mensagens não lidas -->
             <div
               v-if="ticket.unreadMessages && ticket.unreadMessages > 0"
@@ -174,6 +186,10 @@ export default {
     filas: {
       type: Array,
       default: () => []
+    },
+    etiquetas: {
+      type: Array,
+      default: () => []
     }
   },
   methods: {
@@ -194,6 +210,39 @@ export default {
         data = new Date(Number(timestamp))
       }
       return formatDistance(data, new Date(), { locale: ptBR })
+    },
+    getTagColor (tag) {
+      // Se for objeto, pega a cor, senão tenta buscar na lista de etiquetas
+      if (typeof tag === 'object' && tag.color) return tag.color
+      if (this.etiquetas && this.etiquetas.length > 0) {
+        const found = this.etiquetas.find(e => e.id === (tag.id || tag))
+        return found ? found.color : 'primary'
+      }
+      return 'primary'
+    },
+    getTagName (tag) {
+      if (typeof tag === 'object' && tag.tag) return tag.tag
+      if (this.etiquetas && this.etiquetas.length > 0) {
+        const found = this.etiquetas.find(e => e.id === (tag.id || tag))
+        return found ? found.tag : 'Tag'
+      }
+      return 'Tag'
+    },
+    getContrastColor (backgroundColor) {
+      // Função para determinar se usar texto branco ou preto baseado na cor de fundo
+      if (!backgroundColor) return '#000000'
+      
+      // Converter hex para RGB
+      const hex = backgroundColor.replace('#', '')
+      const r = parseInt(hex.substr(0, 2), 16)
+      const g = parseInt(hex.substr(2, 2), 16)
+      const b = parseInt(hex.substr(4, 2), 16)
+      
+      // Calcular luminância
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+      
+      // Retornar branco para fundos escuros, preto para fundos claros
+      return luminance > 0.5 ? '#000000' : '#ffffff'
     },
     async abrirChatContato (ticket) {
       // Permitir visualizar ticket sempre, removendo a restrição para tickets pendentes
@@ -282,6 +331,20 @@ export default {
   margin: 6px;
 }
 
+.ticket-tags-preview {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ticket-tag-chip {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 4px 8px !important;
+  border-radius: 8px !important;
+  min-height: 20px !important;
+  line-height: 1.2 !important;
+}
+
 .ticket-item {
   position: relative;
   background: #f1f1f1;
@@ -357,7 +420,6 @@ export default {
 .ticket-content {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   width: 100%;
 }
 
@@ -607,7 +669,6 @@ export default {
   .ticket-item {
     padding: 8px 10px;
     margin-bottom: 3px;
-    gap: 6px;
   }
 
   .ticket-content {
@@ -626,7 +687,6 @@ export default {
 
   .ticket-footer {
     font-size: 8px;
-    gap: 6px;
   }
 }
 </style>

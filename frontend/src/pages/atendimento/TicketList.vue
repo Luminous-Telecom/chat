@@ -13,6 +13,7 @@
           :key="`ticket-list-${key}`"
           :ticket="ticket"
           :filas="filas"
+          :etiquetas="etiquetas"
         />
 
         <!-- Empty state -->
@@ -58,6 +59,10 @@ export default {
   },
   props: {
     filas: {
+      type: Array,
+      default: () => []
+    },
+    etiquetas: {
       type: Array,
       default: () => []
     },

@@ -98,6 +98,7 @@
               :key="`ticket-${ticket.id}`"
               :ticket="ticket"
               :filas="filas"
+              :etiquetas="etiquetas"
               :buscaTicket="false"
 
             />
