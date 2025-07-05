@@ -136,7 +136,7 @@
         <q-separator />
         <q-scroll-area
           class="modern-scrollbar"
-          style="height: calc(100vh - 60px)"
+          style="height: 100vh"
         >
           <div class="contact-data-container">
             <!-- Espaçamento antes das informações do contato -->
