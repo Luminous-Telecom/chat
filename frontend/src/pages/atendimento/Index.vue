@@ -819,7 +819,11 @@ export default {
         return currentStatus.includes(ticket.status)
       })
 
-      return filteredTickets
+      // Ordenar: fixados no topo, mantendo a ordem dos demais
+      return filteredTickets.slice().sort((a, b) => {
+        if (a.isPinned === b.isPinned) return 0
+        return a.isPinned ? -1 : 1
+      })
     },
     cUserQueues () {
       try {
