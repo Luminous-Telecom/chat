@@ -2329,10 +2329,7 @@ export default {
   font-weight: 600;
   color: var(--text-color-primary);
   margin-bottom: 2px;
-  max-width: 180px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Removido max-width, white-space, overflow e text-overflow para mostrar nome completo */
 }
 
 .contact-number {
@@ -2344,15 +2341,12 @@ export default {
   padding: 2px 6px;
   border-radius: 4px;
   transition: all 0.3s ease;
-  max-width: 180px;
+  max-width: 100%;
+  margin: 0 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
-  &:hover {
-    background: rgba(74, 222, 128, 0.15);
-   }
- }
+}
 
 .contact-details-section {
   padding: 8px 12px;
