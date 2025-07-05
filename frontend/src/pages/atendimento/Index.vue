@@ -350,12 +350,14 @@
                 v-if="ticketFocado.status === 'closed'"
                 color="primary"
                 label="Novo Atendimento"
+                no-caps
                 @click="abrirModalEscolherCanal"
               />
               <q-btn
                 v-if="ticketFocado.status === 'closed'"
                 color="primary"
                 label="Timeline"
+                no-caps
                 @click="abrirModalTimeline"
               />
 
