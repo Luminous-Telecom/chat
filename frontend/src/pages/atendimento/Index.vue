@@ -134,11 +134,10 @@
         :width="350"
       >
 
-
         <div class="contact-data-container">
           <!-- Espaçamento antes das informações do contato -->
           <div class="q-mt-md"></div>
-            <q-card class="contact-info-card">
+            <q-card class="contact-info-card rounded-borders">
               <q-card-section class="contact-profile-section">
                 <div class="contact-profile-wrapper">
                   <div class="contact-avatar-container">
@@ -419,141 +418,121 @@
             </div>
 
             <!-- Mensagens Agendadas -->
-            <div class="scheduled-messages-container q-mb-md q-mt-md">
-              <div class="row items-center q-mb-sm">
-                <div class="text-body1">Mensagens Agendadas</div>
-                <q-space />
-                <q-btn
-                  flat
-                  dense
-                  round
-                  color="primary"
-                  icon="mdi-eye"
-                  @click="abrirModalListarMensagensAgendadas"
-                  class="q-mr-sm"
-                >
-                  <q-tooltip>Ver todas</q-tooltip>
-                </q-btn>
-                <q-btn
-                  flat
-                  dense
-                  round
-                  color="primary"
-                  icon="mdi-plus"
-                  @click="abrirModalAgendarMensagem"
-                >
-                  <q-tooltip>Nova Mensagem Agendada</q-tooltip>
-                </q-btn>
-              </div>
-              <q-scroll-area
-                class="thin-scrollbar"
-                style="height: 200px"
-              >
-                <q-list>
-                  <q-item v-for="(message, idx) in ticketFocado.scheduledMessages.slice(0, 3)" :key="message.uniqueKey || `scheduled-message-${message.id || idx}`" class="q-mb-sm">
-                    <q-item-section>
-                      <q-item-label caption>{{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}</q-item-label>
-                      <q-item-label>{{ message.mediaName || message.body }}</q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="mdi-trash-can-outline"
-                        size="sm"
-                        color="negative"
-                        @click="deletarMensagem(message)"
-                      >
-                        <q-tooltip>Excluir</q-tooltip>
-                      </q-btn>
-                    </q-item-section>
-                    <q-tooltip :delay="500">
-                      <MensagemChat
-                        :mensagens="[message]"
-                        :ticketFocado="ticketFocado"
-                        :isShowOptions="false"
-                        :isLineDate="false"
-                      />
-                    </q-tooltip>
-                  </q-item>
-                  <q-item v-if="ticketFocado.scheduledMessages.length > 3" class="text-center">
-                    <q-item-section>
-                      <q-btn
-                        flat
-                        dense
-                        color="primary"
-                        label="Ver mais..."
-                        no-caps
-                        @click="abrirModalListarMensagensAgendadas"
-                      />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-scroll-area>
+            <div class="q-mb-xs">
+                <div class="text-body1 q-mb-sm text-primary" style="width: 100%; text-align: center; display: block; margin: 0 auto;">Mensagens agendadas</div>
             </div>
-            <!-- Observações -->
-            <div class="observations-container q-mb-md">
-              <div class="row items-center q-mb-sm">
-                <div class="text-body1">Observações</div>
-                <q-space />
-                <q-btn
-                  flat
-                  dense
-                  round
-                  color="primary"
-                  icon="mdi-eye"
-                  @click="abrirModalListarObservacoes"
-                  class="q-mr-sm"
+            <div class="scheduled-messages-container q-mb-md q-mt-md" style="background: none; border-radius: 5px; border: 1px solid rgb(95 95 95 / 27%);">
+                <q-scroll-area
+                  class="thin-scrollbar"
+                  style="height: 200px"
                 >
-                  <q-tooltip>Ver todas</q-tooltip>
-                </q-btn>
-                <q-btn
-                  flat
-                  dense
-                  round
-                  color="primary"
-                  icon="mdi-plus"
-                  @click="abrirModalObservacao"
-                >
-                  <q-tooltip>Nova Observação</q-tooltip>
-                </q-btn>
-              </div>
-              <q-scroll-area
-                class="thin-scrollbar"
-                style="height: 200px"
-              >
-                <q-list>
-                  <q-item v-for="obs in observacoes.slice(0, 3)" :key="obs.id" class="q-mb-sm">
-                    <q-item-section>
-                      <q-item-label caption>{{ $formatarData(obs.createdAt, 'dd/MM/yyyy HH:mm') }} - {{ obs.user?.name }}</q-item-label>
-                      <q-item-label>{{ obs.texto }}</q-item-label>
-                      <q-item-label v-if="obs.anexo" caption>
+                  <q-list>
+                    <q-item v-for="(message, idx) in ticketFocado.scheduledMessages.slice(0, 3)" :key="message.uniqueKey || `scheduled-message-${message.id || idx}`" class="q-mb-sm">
+                      <q-item-section>
+                        <q-item-label caption>{{ $formatarData(message.scheduleDate, 'dd/MM/yyyy HH:mm') }}</q-item-label>
+                        <q-item-label>{{ message.mediaName || message.body }}</q-item-label>
+                      </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          dense
+                          icon="mdi-trash-can-outline"
+                          size="sm"
+                          color="negative"
+                          @click="deletarMensagem(message)"
+                        >
+                          <q-tooltip>Excluir</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
+                      <q-tooltip :delay="500">
+                        <MensagemChat
+                          :mensagens="[message]"
+                          :ticketFocado="ticketFocado"
+                          :isShowOptions="false"
+                          :isLineDate="false"
+                        />
+                      </q-tooltip>
+                    </q-item>
+                    <q-item v-if="ticketFocado.scheduledMessages.length > 3" class="text-center">
+                      <q-item-section>
                         <q-btn
                           flat
                           dense
-                          size="sm"
-                          icon="mdi-paperclip"
-                          :label="obs.anexo"
-                          @click="abrirAnexo(obs.anexo)"
+                          color="primary"
+                          label="Ver mais..."
+                          no-caps
+                          @click="abrirModalListarMensagensAgendadas"
                         />
-                      </q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item v-if="observacoes.length > 3" class="text-center">
-                    <q-item-section>
-                      <q-btn
-                        flat
-                        dense
-                        color="primary"
-                        label="Ver mais..."
-                        no-caps
-                        @click="abrirModalListarObservacoes"
-                      />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-scroll-area>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-scroll-area>
+            </div>
+            <div class="row q-gutter-x-sm q-mb-md justify-center">
+                <q-btn
+                  color="primary"
+                  no-caps
+                  @click="abrirModalAgendarMensagem"
+                >Nova mensagem</q-btn>
+                <q-btn
+                  color="primary"
+                  no-caps
+                  @click="abrirModalListarMensagensAgendadas"
+                >Ver todas</q-btn>
+            </div>
+            <!-- Observações -->
+            <div class="q-mb-xs">
+                <div class="text-body1 q-mb-sm text-primary" style="width: 100%; text-align: center; display: block; margin: 0 auto;">Observações</div>
+            </div>
+            <div class="observations-container q-mb-md" style="background: none; border-radius: 5px; border: 1px solid rgb(95 95 95 / 27%);">
+                <q-scroll-area
+                  class="thin-scrollbar"
+                  style="height: 200px"
+                >
+                  <q-list>
+                    <q-item v-for="obs in observacoes.slice(0, 3)" :key="obs.id" class="q-mb-sm">
+                      <q-item-section>
+                        <q-item-label caption>{{ $formatarData(obs.createdAt, 'dd/MM/yyyy HH:mm') }} - {{ obs.user?.name }}</q-item-label>
+                        <q-item-label>{{ obs.texto }}</q-item-label>
+                        <q-item-label v-if="obs.anexo" caption>
+                          <q-btn
+                            flat
+                            dense
+                            size="sm"
+                            icon="mdi-paperclip"
+                            :label="obs.anexo"
+                            @click="abrirAnexo(obs.anexo)"
+                          />
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                    <q-item v-if="observacoes.length > 3" class="text-center">
+                      <q-item-section>
+                        <q-btn
+                          flat
+                          dense
+                          color="primary"
+                          label="Ver mais..."
+                          no-caps
+                          @click="abrirModalListarObservacoes"
+                        />
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-scroll-area>
+            </div>
+            <div class="row q-gutter-x-sm q-mb-md justify-center">
+                <q-btn
+                  color="primary"
+                  no-caps
+                  @click="abrirModalObservacao"
+                >Nova observação</q-btn>
+                <q-btn
+                  color="primary"
+                  no-caps
+                  @click="abrirModalListarObservacoes"
+                >Ver todas</q-btn>
             </div>
           </div>
       </q-drawer>
@@ -2201,7 +2180,7 @@ export default {
 .body--dark {
   .contact-info-card {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(95, 95, 95, 0.27);
   }
 
   .contact-profile-section {
@@ -2217,14 +2196,6 @@ export default {
     color: var(--text-color-primary);
   }
 
-  .contact-number {
-    color: var(--primary-color);
-
-    &:hover {
-      background: rgba(74, 222, 128, 0.15);
-    }
-  }
-
   .contact-detail-item {
     background: rgba(255, 255, 255, 0.03);
 
@@ -2233,22 +2204,14 @@ export default {
     }
   }
 
-  .detail-icon {
-    color: var(--primary-color) !important;
-  }
-
-  .detail-text {
-    color: var(--primary-color) !important;
-  }
-
   .action-card {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(95, 95, 95, 0.27);
   }
 
   .tags-card {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(95, 95, 95, 0.27);
   }
 
   .tags-title {
@@ -2350,7 +2313,6 @@ export default {
 
 .contact-number {
   font-size: 12px;
-  color: var(--primary-color);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2453,14 +2415,6 @@ export default {
     &:hover {
       background-color: rgba(25, 118, 210, 0.08) !important;
       transform: translateX(2px);
-
-      .detail-icon {
-        color: #1976d2 !important;
-      }
-
-      .detail-text {
-        color: #1976d2 !important;
-      }
     }
 
     &:active {
@@ -2498,7 +2452,6 @@ export default {
 }
 
 .custom-search-input:focus {
-  border-color: var(--primary-color);
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
@@ -2581,7 +2534,6 @@ export default {
 
 .custom-tag-selector:hover {
   background-color: var(--background-color-default);
-  border-color: var(--primary-color);
 }
 
 .selected-tags-container {
@@ -2718,7 +2670,7 @@ export default {
 /* Dark mode for participants */
 .body--dark .participants-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(95, 95, 95, 0.27);
 }
 
 .body--dark .participant-item {
@@ -2735,10 +2687,6 @@ export default {
 
 .body--dark .participant-name {
   color: var(--text-color-primary);
-}
-
-.body--dark .participant-icon {
-  color: var(--primary-color);
 }
 
 .body--dark .participant-icon--owner {
@@ -2909,7 +2857,6 @@ export default {
 .scheduled-messages-container .text-body1 {
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary-color);
   display: flex;
   align-items: center;
 }
@@ -2940,7 +2887,6 @@ export default {
   top: 0;
   height: 100%;
   width: 4px;
-  background: #1976d2;
   transition: width 0.3s ease;
 }
 
@@ -2949,8 +2895,7 @@ export default {
 }
 
 .scheduled-messages-container .q-item:hover {
-      background: rgba(243, 229, 245, 0.5);
-  border-color: var(--primary-color);
+  background: rgba(243, 229, 245, 0.5);
   transform: translateX(4px);
 }
 
@@ -2980,7 +2925,6 @@ export default {
 .observations-container .text-body1 {
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary-color);
   display: flex;
   align-items: center;
 }
@@ -3020,8 +2964,7 @@ export default {
 }
 
 .observations-container .q-item:hover {
-      background: rgba(241, 248, 233, 0.5);
-  border-color: var(--primary-color);
+  background: rgba(241, 248, 233, 0.5);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
 }
@@ -3123,7 +3066,6 @@ export default {
  }
 
  .body--dark .scheduled-messages-container::-webkit-scrollbar-thumb:hover {
-   background: #64b5f6;
    box-shadow: 0 2px 8px rgba(144, 202, 249, 0.4);
  }
 
@@ -3192,7 +3134,6 @@ export default {
 /* Botão de contatos */
 .contacts-btn {
   background-color: var(--background-color-default);
-  color: var(--primary-color);
   border: 1px solid rgba(25, 118, 210, 0.2);
   transition: all 0.3s ease;
   width: 40px;
@@ -3200,7 +3141,6 @@ export default {
 }
 
 .contacts-btn:hover {
-  background-color: var(--primary-color);
   color: var(--text-color-primary);
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
@@ -3213,12 +3153,12 @@ export default {
 /* Modo escuro para o botão de contatos */
 .body--dark .contacts-btn {
   background-color: rgba(255, 255, 255, 0.1);
-  color: var(--primary-color);
+
   border-color: rgba(144, 202, 249, 0.3);
 }
 
 .body--dark .contacts-btn:hover {
-  background-color: var(--primary-color);
+
   color: var(--text-color-primary);
 }
 
@@ -3246,13 +3186,11 @@ export default {
   width: 40px;
   height: 40px;
   background: #f5f5f5;
-  color: #1976d2;
   border-radius: 50%;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
 
   &:hover {
-    background: #1976d2;
     color: white;
     transform: scale(1.05);
   }
@@ -3331,7 +3269,6 @@ export default {
   }
 
   &--active {
-    border-color: #1976d2;
 
     &:hover {
       background: #1565c0;
@@ -3377,7 +3314,6 @@ export default {
     }
 
     &--active {
-      background: #1976d2;
 
       &:hover {
         background: var(--dark-accent);
@@ -3579,6 +3515,29 @@ export default {
   box-shadow: none !important;
   border-color: #44444400 !important;
 }
+.contact-info-card {
+  border-radius: 5px !important;
+  overflow: hidden !important;
+}
+.contact-info-card > .q-card__section:first-child {
+  border-top-left-radius: 5px !important;
+  border-top-right-radius: 5px !important;
+}
+.contact-info-card > .q-card__section:last-child {
+  border-bottom-left-radius: 5px !important;
+  border-bottom-right-radius: 5px !important;
+}
+
+/* Nome do contato */
+.contact-info-details .contact-name span {
+  font-size: 1em !important;
+}
+
+/* Títulos das seções */
+.text-body1.text-primary {
+  font-size: 14px !important;
+  font-weight: 600;
+}
 </style>
 
 <style>
@@ -3634,4 +3593,12 @@ export default {
 .q-drawer[side="right"]:hover .q-drawer__content.fit.overflow-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5) !important;
 }
+
+.body--dark .text-body1.text-primary,
+.body--dark .text-body1[class*="text-primary"],
+.body--dark .text-body1.text-primary[style],
+.body--dark .text-body1[class*="text-primary"][style] {
+  color: #fff !important;
+}
+
 </style>
