@@ -333,23 +333,6 @@
                 no-caps
                 @click="abrirModalTimeline"
               />
-              <!-- Seletor de Etiquetas -->
-              <q-select
-                v-model="selectedTags"
-                :options="etiquetas"
-                option-label="tag"
-                option-value="id"
-                outlined
-                dense
-                label="Etiquetas"
-                class="q-mx-xs"
-                :class="{'q-select--without-value': !selectedTags.length}"
-                style="height: 40px; min-width: 180px; max-width: 240px; width: 100%;"
-                @update:model-value="tagSelecionada"
-                @blur="blurTags"
-                multiple
-                display-value=""
-              />
               <q-btn
                 v-if="ticketFocado.status === 'closed'"
                 color="primary"
@@ -364,7 +347,40 @@
                 no-caps
                 @click="abrirModalTimeline"
               />
+            </div>
 
+            <!-- Select de Etiquetas separado dos chips -->
+            <div style="margin: 8px 0 0 0;">
+              <q-select
+                v-model="selectedTags"
+                :options="etiquetas"
+                option-label="tag"
+                option-value="id"
+                outlined
+                dense
+                label="Etiquetas"
+                :class="{'q-select--without-value': !selectedTags.length}"
+                style="height: 40px; max-width: 100%; min-width: 0;"
+                @update:model-value="tagSelecionada"
+                @blur="blurTags"
+                multiple
+                display-value=""
+              />
+            </div>
+
+            <!-- Chips de etiquetas -->
+            <div v-if="ticketFocado.tags && ticketFocado.tags.length > 0" class="selected-tags-container q-mb-sm" style="padding-left: 8px;">
+              <q-chip
+                v-for="tag in ticketFocado.tags"
+                :key="tag.uniqueKey || `tag-${tag.id || tag}`"
+                dense
+                removable
+                :style="{ backgroundColor: getTagColor(tag), color: getContrastColor(getTagColor(tag)) }"
+                class="q-ma-xs elegant-chip"
+                @remove="removeTagById(tag.id || tag)"
+              >
+                {{ getTagName(tag) }}
+              </q-chip>
             </div>
 
             <!-- Participantes da Conversa -->
@@ -402,21 +418,6 @@
 
             <!-- Espaçamento entre botões -->
             <div class="q-mt-md"></div>
-            <!-- Tags selecionadas -->
-            <div v-if="ticketFocado.tags && ticketFocado.tags.length > 0" class="selected-tags-container q-mb-sm">
-              <q-chip
-                v-for="tag in ticketFocado.tags"
-                :key="tag.uniqueKey || `tag-${tag.id || tag}`"
-                dense
-                removable
-                :style="{ backgroundColor: getTagColor(tag), color: getContrastColor(getTagColor(tag)) }"
-                class="q-ma-xs elegant-chip"
-                @remove="removeTagById(tag.id || tag)"
-              >
-                {{ getTagName(tag) }}
-              </q-chip>
-            </div>
-
             <!-- Mensagens Agendadas -->
             <div class="q-mb-xs">
                 <div class="text-body1 q-mb-sm text-primary" style="width: 100%; text-align: center; display: block; margin: 0 auto;">Mensagens agendadas</div>
@@ -1810,7 +1811,12 @@ export default {
       if (!this.selectedTags.length) this.selectedTags = [];
     },
     ticketEditado(ticket) {
-      this.$store.commit('TICKET_FOCADO', ticket)
+      // Mescla o contact antigo com o novo, preservando todos os campos
+      ticket.contact = {
+        ...(this.ticketFocado.contact || {}),
+        ...(ticket.contact || {})
+      };
+      this.$store.commit('TICKET_FOCADO', ticket);
     },
     abrirModalEscolherCanal() {
       this.canalSelecionado = null;
@@ -3601,4 +3607,13 @@ export default {
   color: #fff !important;
 }
 
+</style>
+
+<style scoped>
+/* Garantir que o select ocupe 100% da largura do container */
+.q-select.full-width {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
 </style>
