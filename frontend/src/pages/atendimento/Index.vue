@@ -819,10 +819,15 @@ export default {
         return currentStatus.includes(ticket.status)
       })
 
-      // Ordenar: fixados no topo, mantendo a ordem dos demais
+      // Ordenar: fixados no topo (por data/hora da última mensagem), depois os demais (também por data/hora)
       return filteredTickets.slice().sort((a, b) => {
-        if (a.isPinned === b.isPinned) return 0
-        return a.isPinned ? -1 : 1
+        // Fixados primeiro
+        if (a.isPinned && !b.isPinned) return -1
+        if (!a.isPinned && b.isPinned) return 1
+        // Entre fixados ou entre não fixados, ordenar por data/hora da última mensagem (mais recente primeiro)
+        const aTime = a.lastMessageAt || a.updatedAt || 0
+        const bTime = b.lastMessageAt || b.updatedAt || 0
+        return bTime - aTime
       })
     },
     cUserQueues () {
