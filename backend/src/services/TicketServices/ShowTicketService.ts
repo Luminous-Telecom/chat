@@ -3,6 +3,7 @@ import AppError from "../../errors/AppError";
 import Contact from "../../models/Contact";
 import User from "../../models/User";
 import TicketParticipant from "../../models/TicketParticipant";
+import Tag from "../../models/Tag";
 
 interface Request {
   id: string | number;
@@ -30,6 +31,11 @@ const ShowTicketService = async ({
       {
         association: "whatsapp",
         attributes: ["id", "name"],
+      },
+      {
+        model: Tag,
+        as: "tags",
+        through: { attributes: [] }
       },
     ],
   });
