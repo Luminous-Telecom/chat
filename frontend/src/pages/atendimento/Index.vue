@@ -1757,12 +1757,6 @@ export default {
       // Força atualização do ticket focado para mostrar a nova mensagem agendada
       this.$forceUpdate()
 
-      this.$q.notify({
-        type: 'info',
-        message: `Mensagem agendada para ${this.$formatarData(mensagem.scheduleDate, 'dd/MM/yyyy HH:mm')}`,
-        position: 'bottom-right',
-        timeout: 3000
-      })
     },
 
     handleMensagemCancelada (mensagemId) {
@@ -2146,7 +2140,6 @@ export default {
     transition: all 0.3s ease;
 
     &:hover {
-      transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
   }
@@ -2176,7 +2169,6 @@ export default {
 
   &::-webkit-scrollbar-thumb:hover {
     background: rgba(25, 118, 210, 0.8);
-    transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
   }
 
@@ -2345,7 +2337,6 @@ export default {
 
   &:hover {
     background: rgba(74, 222, 128, 0.15);
-    transform: scale(1.02);
    }
  }
 
@@ -2369,7 +2360,6 @@ export default {
 
   &:hover {
     background: var(--background-color-paper);
-    transform: translateX(1px);
   }
 }
 
@@ -2432,11 +2422,9 @@ export default {
 
     &:hover {
       background-color: rgba(25, 118, 210, 0.08) !important;
-      transform: translateX(2px);
     }
 
     &:active {
-      transform: translateX(1px);
       background-color: rgba(25, 118, 210, 0.12) !important;
     }
   }
@@ -2515,7 +2503,6 @@ export default {
 
 .elegant-option:hover {
   background-color: rgba(25, 118, 210, 0.08) !important;
-  transform: translateX(2px);
 }
 
 .elegant-chip {
@@ -2526,7 +2513,6 @@ export default {
 }
 
 .elegant-chip:hover {
-  transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
 }
 
@@ -2661,7 +2647,6 @@ export default {
 
 .participant-item:hover {
   background: var(--background-color-paper);
-  transform: translateX(1px);
 }
 
 .participant-icon {
@@ -2725,7 +2710,6 @@ export default {
 
 .observations-container .q-scrollarea__thumb:hover {
   opacity: 1;
-  transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(46, 125, 50, 0.4);
 }
 
@@ -2738,7 +2722,6 @@ export default {
 
 .scheduled-messages-container::-webkit-scrollbar-thumb:hover {
   background: #1565c0;
-  transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(25, 118, 210, 0.4);
 }
 
@@ -2764,7 +2747,6 @@ export default {
 
 .q-drawer .q-scroll-area::-webkit-scrollbar-thumb:hover {
   background: rgba(0,0,0,0.5);
-  transform: scale(1.2);
 }
 
 /* Chat area scrollbar */
@@ -2787,7 +2769,6 @@ export default {
 
 .scroll-y::-webkit-scrollbar-thumb:hover {
   background: rgba(96, 125, 139, 0.8);
-  transform: scale(1.1);
   box-shadow: 0 2px 6px rgba(96, 125, 139, 0.3);
 }
 
@@ -2829,17 +2810,10 @@ export default {
 @keyframes slideInLeft {
   from {
     opacity: 0;
-    transform: translateX(-20px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
   }
-}
-
-.scheduled-message-item,
-.observations-container .q-item {
-  animation: slideInLeft 0.3s ease-out;
 }
 
 /* Responsive adjustments */
@@ -2869,7 +2843,6 @@ export default {
 
 .scheduled-messages-container:hover {
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-  transform: translateY(-1px);
 }
 
 .scheduled-messages-container .text-body1 {
@@ -2914,15 +2887,10 @@ export default {
 
 .scheduled-messages-container .q-item:hover {
   background: rgba(243, 229, 245, 0.5);
-  transform: translateX(4px);
 }
 
 .scheduled-messages-container .q-btn {
   transition: all 0.3s ease;
-}
-
-.scheduled-messages-container .q-btn:hover {
-  transform: scale(1.1);
 }
 
 /* Observations styles */
@@ -2937,7 +2905,6 @@ export default {
 
 .observations-container:hover {
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-  transform: translateY(-1px);
 }
 
 .observations-container .text-body1 {
@@ -2983,16 +2950,11 @@ export default {
 
 .observations-container .q-item:hover {
   background: rgba(241, 248, 233, 0.5);
-  transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
 }
 
 .observations-container .q-btn {
   transition: all 0.3s ease;
-}
-
-.observations-container .q-btn:hover {
-  transform: scale(1.1);
 }
 
 /* Dark mode styles for scheduled messages and observations */
@@ -3160,13 +3122,10 @@ export default {
 
 .contacts-btn:hover {
   color: var(--text-color-primary);
-  transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
 }
 
-.contacts-btn:active {
-  transform: scale(0.95);
-}
+
 
 /* Modo escuro para o botão de contatos */
 .body--dark .contacts-btn {
@@ -3210,11 +3169,6 @@ export default {
 
   &:hover {
     color: white;
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
   }
 }
 
@@ -3280,7 +3234,6 @@ export default {
 
   &:hover {
     background: #f3f8ff;
-    transform: translateY(-2px);
     &::before {
       left: 100%;
     }
@@ -3290,7 +3243,6 @@ export default {
 
     &:hover {
       background: #1565c0;
-      transform: translateY(-2px);
     }
   }
 
@@ -3363,23 +3315,6 @@ export default {
     padding: 3px 6px;
     font-size: 11px;
   }
-}
-
-/* Animation for filter changes */
-@keyframes filter-pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.filter-chip--active {
-  animation: filter-pulse 0.3s ease-out;
 }
 
 /* Layout do drawer de tickets */
