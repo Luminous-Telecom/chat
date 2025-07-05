@@ -294,7 +294,7 @@
             </q-card>
 
             <!-- Botões de ação principais -->
-            <div class="q-gutter-sm flex flex-center" style="margin-top: 8px;">
+            <div class="action-buttons-container" style="margin-top: 8px;">
               <q-btn
                 v-if="ticketFocado.status === 'pending'"
                 color="primary"
@@ -303,6 +303,7 @@
                 no-caps
                 @click="iniciarAtendimento(ticketFocado)"
                 :loading="loading"
+                class="full-width-btn"
               />
               <q-btn
                 v-if="ticketFocado.status === 'open' && !cTicketPertenceAoUsuario"
@@ -312,46 +313,53 @@
                 no-caps
                 @click="entrarNaConversa"
                 :loading="loadingEntrarConversa"
+                class="full-width-btn"
               />
-              <q-btn
-                v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
-                color="primary"
-                label="Encerrar Ticket"
-                no-caps
-                @click="resolverTicket"
-              />
-              <q-btn
-                v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
-                color="primary"
-                label="Transferir"
-                no-caps
-                @click="abrirModalTransferirTicket"
-              />
-              <q-btn
-                v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario"
-                color="primary"
-                label="Timeline"
-                no-caps
-                @click="abrirModalTimeline"
-              />
-              <q-btn
-                v-if="ticketFocado.status === 'closed'"
-                color="primary"
-                label="Novo Atendimento"
-                no-caps
-                @click="abrirModalEscolherCanal"
-              />
-              <q-btn
-                v-if="ticketFocado.status === 'closed'"
-                color="primary"
-                label="Timeline"
-                no-caps
-                @click="abrirModalTimeline"
-              />
+              <template v-if="ticketFocado.status === 'open' && cTicketPertenceAoUsuario">
+                <div class="row">
+                  <q-btn
+                    color="primary"
+                    label="Timeline"
+                    no-caps
+                    @click="abrirModalTimeline"
+                    class="col"
+                  />
+                  <q-btn
+                    color="primary"
+                    label="Transferir"
+                    no-caps
+                    @click="abrirModalTransferirTicket"
+                    class="col"
+                  />
+                </div>
+                <q-btn
+                  color="primary"
+                  label="Encerrar"
+                  no-caps
+                  @click="resolverTicket"
+                  class="full-width-btn"
+                />
+              </template>
+              <template v-if="ticketFocado.status === 'closed'">
+                <q-btn
+                  color="primary"
+                  label="Timeline"
+                  no-caps
+                  @click="abrirModalTimeline"
+                  class="full-width-btn"
+                />
+                <q-btn
+                  color="primary"
+                  label="Novo Atendimento"
+                  no-caps
+                  @click="abrirModalEscolherCanal"
+                  class="full-width-btn"
+                />
+              </template>
             </div>
 
             <!-- Select de Etiquetas separado dos chips -->
-            <div style="margin: 8px 0 0 0;">
+            <div class="etiquetas-container">
               <q-select
                 v-model="selectedTags"
                 :options="etiquetas"
@@ -370,7 +378,7 @@
             </div>
 
             <!-- Chips de etiquetas -->
-            <div v-if="ticketFocado.tags && ticketFocado.tags.length > 0" class="selected-tags-container q-mb-sm" style="padding-left: 8px;">
+            <div v-if="ticketFocado.tags && ticketFocado.tags.length > 0" class="selected-tags-container" style="margin-top: 8px;">
               <q-chip
                 v-for="tag in ticketFocado.tags"
                 :key="tag.uniqueKey || `tag-${tag.id || tag}`"
@@ -584,7 +592,7 @@
             <div class="text-subtitle2">Selecione o destino para o ticket #{{ ticketFocado.id }}</div>
           </q-card-section>
           <q-card-section class="modal-content">
-            <div class="row q-gutter-sm">
+            <div class="row">
               <div class="col-12">
                 <q-select
                   dense
@@ -2527,7 +2535,6 @@ export default {
 .selected-tags-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
   max-height: 80px;
   overflow-y: auto;
 }
@@ -3496,5 +3503,45 @@ export default {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
+}
+
+/* Container dos botões de ação */
+.action-buttons-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Botões que ocupam toda a largura */
+.full-width-btn {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Container para botões lado a lado (Timeline e Transferir) */
+.action-buttons-container .row {
+  width: 100%;
+  margin: 0;
+  display: flex;
+  gap: 12px;
+}
+
+.action-buttons-container .row .col {
+  padding: 0;
+}
+
+.action-buttons-container .row .col:first-child {
+  padding-left: 0;
+}
+
+.action-buttons-container .row .col:last-child {
+  padding-right: 0;
+}
+
+/* Espaçamento acima das etiquetas */
+.etiquetas-container {
+  margin-top: 8px;
 }
 </style>
