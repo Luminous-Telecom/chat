@@ -72,12 +72,9 @@
       v-if="!ticketFocado.id"
     >
       <div class="empty-state-content">
-        <img
-          src="/lumi-suite-logo.png"
-          alt="Lumi Suite"
-          class="empty-logo"
-          style="width: 200px; height: auto; opacity: 0.7;"
-        />
+        <div class="empty-logo-icon">
+          <div class="lumi-logo"></div>
+        </div>
         <h1 class="text-grey-6 empty-title">
           Selecione um ticket para começar
         </h1>
@@ -645,14 +642,29 @@ body.body--dark .wa-bg-overlay {
 
 .empty-logo {
   margin-bottom: 20px;
-  transition: all 0.3s ease;
-  filter: grayscale(0.3);
 }
 
-.empty-logo:hover {
-  transform: scale(1.05);
-  filter: grayscale(0);
-  opacity: 1 !important;
+.empty-logo-icon {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.lumi-logo {
+  width: 300px;
+  height: 120px;
+  margin: 0 auto;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url('/lumi-suite-logo.png');
+}
+
+.body--dark .lumi-logo {
+  background-image: url('/lumi-suite-logo.png');
+}
+
+.body--light .lumi-logo {
+  background-image: url('/Lumi Suite Logo cor azul claro.png');
 }
 
 .empty-title {
