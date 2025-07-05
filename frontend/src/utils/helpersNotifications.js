@@ -2,6 +2,13 @@ import { Notify } from 'quasar'
 import Errors from 'src/utils/errors'
 
 export const notificarErro = (msg, error = null) => {
+  // Não exibir erro se for 409 (ticket já existente) ou mensagem simples já tratada
+  if (
+    (error && error.response && error.response.status === 409) ||
+    (typeof msg === 'string' && msg.includes('Já existe um atendimento em andamento para este contato'))
+  ) {
+    return
+  }
   let erro = ''
   if (error) {
     erro = error?.data?.error || error?.data?.msg || error?.data?.message || error?.response?.data.error || 'Não identificado'

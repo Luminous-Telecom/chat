@@ -93,8 +93,8 @@ service.interceptors.response.use(
         // Use router navigation instead of window.location
         router.push('/login')
       }
-    } else if (!silentError) {
-      // Só mostrar erro se não for silenciado
+    } else if (!silentError && error.response?.status !== 409) {
+      // Só mostrar erro se não for silenciado e não for 409
       handlerError(error)
     }
     return Promise.reject(error)
