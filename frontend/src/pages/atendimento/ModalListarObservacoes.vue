@@ -32,39 +32,32 @@
             <q-item
               v-for="obs in observacoes"
               :key="obs.id"
-              class="q-mb-md"
-              style="display: block;"
+              class="observacao-item"
             >
               <q-item-section>
                 <q-item-label caption>
                   {{ formatarData(obs.createdAt) }} - {{ obs.user.name }}
                 </q-item-label>
                 <q-item-label class="text-body1 q-mt-sm">{{ obs.texto }}</q-item-label>
-                <div v-if="obs.anexo && isImage(obs.anexo)" style="margin-bottom: 24px;">
-                  <q-img
+                <div v-if="obs.anexo && isImage(obs.anexo)" class="observacao-anexo-thumb" v-viewer>
+                  <img
                     :src="getAnexoUrl(obs.anexo)"
-                    style="max-width: 150px; max-height: 150px; display: block; margin-top: 8px; object-fit: cover; border-radius: 8px;"
-                    class="rounded-borders cursor-pointer"
-                    @click="abrirModalImagem(obs.anexo)"
-                    @error="() => {}"
-                  >
-                    <template v-slot:loading>
-                      <q-spinner-dots color="primary" />
-                    </template>
-                    <template v-slot:error>
-                      <div class="absolute-full flex flex-center bg-negative text-white">
-                        Erro ao carregar imagem
-                      </div>
-                    </template>
-                  </q-img>
-                  <VueEasyLightbox
-                    :visible="showLightbox"
-                    :imgs="[getAnexoUrl(currentImage)]"
-                    :index="0"
-                    @hide="showLightbox = false"
+                    class="img-preview-chat"
+                    style="cursor: pointer; max-width: 80px; max-height: 80px; border-radius: 14px;"
+                    alt="imagem do chat"
                   />
                 </div>
-                <div v-else-if="obs.anexo" style="margin-bottom: 24px;">
+                <div v-else-if="obs.anexo && isVideo(obs.anexo)" class="observacao-anexo-thumb">
+                  <video
+                    :src="getAnexoUrl(obs.anexo)"
+                    style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                  ></video>
+                </div>
+                <div v-else-if="obs.anexo" class="observacao-anexo-thumb">
                   <q-btn
                     flat
                     dense
@@ -146,6 +139,12 @@ export default {
       const ext = filename.toLowerCase().split('.').pop()
       return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
     },
+    isVideo (filename) {
+      if (!filename) return false
+      const ext = filename.toLowerCase().split('.')
+        .pop()
+      return ['mp4', 'webm', 'ogg'].includes(ext)
+    },
     getAnexoUrl (filename) {
       if (!filename) return ''
       return `${process.env.VUE_URL_API}/public/sent/${filename}`
@@ -219,5 +218,37 @@ export default {
       background-color: rgba(255, 255, 255, 0.1);
     }
   }
+}
+
+// Ajuste visual para cada observação
+.observacao-item {
+  width: 100%;
+  margin-bottom: 24px;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
+// Miniatura de anexo (imagem ou vídeo)
+.observacao-anexo-thumb {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+</style>
+
+<style>
+/* Garante que o overlay do Viewer.js fique acima do modal do Quasar */
+.viewer-container,
+.viewer-backdrop,
+.viewer-toolbar,
+.viewer-navbar,
+.viewer-title,
+.viewer-mask {
+  z-index: 10000 !important;
 }
 </style>
