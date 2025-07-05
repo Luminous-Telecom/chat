@@ -1884,7 +1884,21 @@ export default {
         
       } catch (error) {
         console.error(error);
-        this.$notificarErro('Ocorreu um erro ao iniciar o atendimento!', error);
+        // Tratar erro 409 (ticket já existente) de forma simples
+        if (error.response && error.response.status === 409) {
+          this.$q.notify({
+            message: 'Já existe um atendimento em andamento para este contato.',
+            type: 'warning',
+            position: 'bottom-right',
+            actions: [{
+              icon: 'close',
+              round: true,
+              color: 'white'
+            }]
+          });
+        } else {
+          this.$notificarErro('Ocorreu um erro ao iniciar o atendimento!', error);
+        }
       }
       this.loading = false;
     },
