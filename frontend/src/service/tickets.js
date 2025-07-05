@@ -144,3 +144,24 @@ export function EditarEtiquetasTicket(ticketId, tags) {
     data
   })
 }
+
+export function MarcarComoLido(ticketId) {
+  return request({
+    url: `/api/tickets/${ticketId}/read`,
+    method: 'post'
+  })
+}
+
+export function MarcarComoNaoLido(ticketId) {
+  return request({
+    url: `/api/tickets/${ticketId}/unread`,
+    method: 'post'
+  })
+}
+
+export function TogglePinnedTicket(ticketId) {
+  return request({
+    url: `/api/tickets/${ticketId}/toggle-pinned`,
+    method: 'put'
+  })
+}

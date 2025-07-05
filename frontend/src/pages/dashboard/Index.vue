@@ -1541,8 +1541,17 @@ onMounted(async () => {
         e.preventDefault()
       }
     })
-    // Bloqueia botão direito do mouse
+    // Bloqueia botão direito do mouse apenas em elementos específicos do dashboard
     document.addEventListener('contextmenu', function (e) {
+      // Permitir menu de contexto em componentes que precisam dele
+      if (e.target.closest('.ticket-item-container') || 
+          e.target.closest('.ticket-item') ||
+          e.target.closest('.ticket-context-menu') ||
+          e.target.closest('.tickets-drawer') ||
+          e.target.closest('.tickets-scroll-area') ||
+          e.target.closest('[data-allow-context-menu]')) {
+        return // Não bloquear o menu de contexto
+      }
       e.preventDefault()
     })
     // Garantir que params está definido

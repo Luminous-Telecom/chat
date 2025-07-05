@@ -272,6 +272,70 @@ export const markAllAsRead = async (
   }
 };
 
+export const markAsUnread = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { ticketId } = req.params;
+  const { tenantId } = req.user;
+
+  try {
+    const ticket = await ShowTicketService({ id: ticketId, tenantId });
+    if (!ticket) {
+      logger.warn(
+        `[markAsUnread] Ticket não encontrado. TicketId: ${ticketId}`
+      );
+      return res.status(404).json({ error: "Ticket not found" });
+    }
+
+    // Marcar todas as mensagens como não lidas
+    await Message.update(
+      { read: false },
+      {
+        where: {
+          ticketId: ticket.id,
+          fromMe: false,
+        },
+      }
+    );
+
+    // Contar mensagens não lidas
+    let unreadCount = await Message.count({
+      where: {
+        ticketId: ticket.id,
+        read: false,
+        fromMe: false,
+      },
+    });
+
+    // Se não houver mensagens não lidas, force o campo do ticket para 1
+    if (unreadCount === 0) {
+      unreadCount = 1;
+    }
+
+    // Atualizar ticket com novo contador
+    await ticket.update({ unreadMessages: unreadCount });
+
+    // Emitir evento para o frontend
+    const io = getIO();
+    io.to(tenantId.toString()).emit(`${tenantId}:ticketList`, {
+      type: "chat:messagesUnread",
+      payload: {
+        ticketId: ticket.id,
+        unreadMessages: unreadCount,
+      },
+    });
+
+    return res.status(200).json({ 
+      message: "Ticket marked as unread",
+      unreadMessages: unreadCount
+    });
+  } catch (error) {
+    logger.error("[markAsUnread] Erro ao marcar ticket como não lido:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 export const joinConversation = async (
   req: Request,
   res: Response

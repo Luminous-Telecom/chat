@@ -3,6 +3,7 @@
     <div
       clickable
       @click="abrirChatContato(ticket)"
+      @contextmenu.prevent="showContextMenu($event)"
       :class="{
         'ticket-item': true,
         'ticket-item--pending': ticket.status === 'pending',
@@ -116,6 +117,53 @@
         </div>
       </div>
     </div>
+
+    <!-- Menu de Contexto -->
+    <q-menu
+      ref="contextMenu"
+      v-model="showMenu"
+      class="ticket-context-menu"
+      context-menu
+      auto-close
+    >
+      <q-list style="min-width: 200px;">
+        <q-item
+          clickable
+          v-close-popup
+          @click="toggleReadStatus"
+          class="context-menu-item"
+        >
+          <q-item-section avatar>
+            <q-icon 
+              :name="ticket.unreadMessages > 0 ? 'mdi-email-check' : 'mdi-email-outline'" 
+              :color="ticket.unreadMessages > 0 ? 'primary' : 'grey-6'"
+            />
+          </q-item-section>
+          <q-item-section>
+            {{ ticket.unreadMessages > 0 ? 'Marcar como lido' : 'Marcar como não lido' }}
+          </q-item-section>
+        </q-item>
+
+        <q-separator />
+
+        <q-item
+          clickable
+          v-close-popup
+          @click="togglePinnedStatus"
+          class="context-menu-item"
+        >
+          <q-item-section avatar>
+            <q-icon 
+              :name="ticket.isPinned ? 'mdi-pin-off' : 'mdi-pin'" 
+              :color="ticket.isPinned ? 'negative' : 'primary'"
+            />
+          </q-item-section>
+          <q-item-section>
+            {{ ticket.isPinned ? 'Desfixar do topo' : 'Fixar no topo' }}
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-menu>
   </div>
 </template>
 
@@ -124,6 +172,7 @@ import { formatDistance, parseJSON } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
 import mixinCommon from './mixinCommon'
+import { MarcarComoLido, MarcarComoNaoLido, TogglePinnedTicket } from 'src/service/tickets'
 
 export default {
   name: 'ItemTicket',
@@ -131,7 +180,8 @@ export default {
   data () {
     return {
       recalcularHora: 1,
-      recarregando: false // Estado para controlar loading do recarregamento
+      recarregando: false, // Estado para controlar loading do recarregamento
+      showMenu: false // Controle para mostrar/ocultar o menu de contexto
     }
   },
   computed: {
@@ -324,6 +374,71 @@ export default {
         })
       } finally {
         this.recarregando = false
+      }
+    },
+
+    showContextMenu(event) {
+      // Usar a API do q-menu para context menu
+      this.$refs.contextMenu.show(event);
+    },
+
+    async toggleReadStatus () {
+      try {
+        if (this.ticket.unreadMessages > 0) {
+          // Marcar como lido
+          await MarcarComoLido(this.ticket.id)
+          
+          // Atualizar o ticket na lista
+          this.$store.commit('UPDATE_TICKET', {
+            ...this.ticket,
+            unreadMessages: 0
+          })
+        } else {
+          // Marcar como não lido
+          await MarcarComoNaoLido(this.ticket.id)
+          
+          // Atualizar o ticket na lista (assumindo que há pelo menos 1 mensagem)
+          this.$store.commit('UPDATE_TICKET', {
+            ...this.ticket,
+            unreadMessages: 1
+          })
+        }
+        
+        this.showMenu = false
+      } catch (error) {
+        console.error('Erro ao alterar status de leitura:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao alterar status de leitura. Tente novamente.',
+          position: 'bottom-right'
+        })
+      }
+    },
+
+    async togglePinnedStatus () {
+      try {
+        const response = await TogglePinnedTicket(this.ticket.id)
+        const updatedTicket = response.data
+        
+        // Atualizar o ticket na lista
+        this.$store.commit('UPDATE_TICKET', {
+          ...this.ticket,
+          isPinned: updatedTicket.isPinned
+        })
+        
+        // Buscar tickets atualizados para refletir a nova ordem
+        if (this.$parent && typeof this.$parent.BuscarTicketFiltro === 'function') {
+          this.$parent.BuscarTicketFiltro()
+        }
+        
+        this.showMenu = false
+      } catch (error) {
+        console.error('Erro ao alternar status de fixado:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: 'Erro ao fixar/desfixar ticket. Tente novamente.',
+          position: 'bottom-right'
+        })
       }
     }
   },
@@ -778,5 +893,57 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
   word-break: break-word;
+}
+
+/* Responsive para o drawer de tickets */
+@media (max-width: 768px) {
+  .tickets-drawer {
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+
+  .tickets-drawer-header {
+    flex-shrink: 0;
+    max-height: 140px;
+    min-height: 140px;
+  }
+
+  .tickets-scroll-area {
+    height: calc(100vh - 140px) !important;
+    min-height: calc(100vh - 140px) !important;
+  }
+}
+
+/* Estilos para o menu de contexto */
+.ticket-context-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin: 2px 4px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(25, 118, 210, 0.1);
+  }
+}
+
+/* Dark mode para o menu de contexto */
+.body--dark {
+  .ticket-context-menu {
+    background: var(--q-color-dark);
+    border-color: var(--dark-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .context-menu-item {
+    &:hover {
+      background-color: rgba(144, 202, 249, 0.1);
+    }
+  }
 }
 </style>

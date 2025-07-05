@@ -27,6 +27,12 @@ ticketRoutes.post(
   TicketController.markAllAsRead
 );
 
+ticketRoutes.post(
+  "/tickets/:ticketId/unread",
+  isAuth,
+  TicketController.markAsUnread
+);
+
 ticketRoutes.put(
   "/ticket-tags/:ticketId",
   isAuth,
