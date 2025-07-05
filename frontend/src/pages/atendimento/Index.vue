@@ -346,6 +346,12 @@
                 multiple
                 display-value=""
               />
+              <q-btn
+                v-if="ticketFocado.status === 'closed'"
+                color="primary"
+                label="Novo Atendimento"
+                @click="abrirModalEscolherCanal"
+              />
 
             </div>
 
@@ -650,6 +656,26 @@
         </q-card>
       </q-dialog>
 
+      <q-dialog v-model="modalEscolherCanal">
+        <q-card style="min-width:300px;">
+          <q-card-section>
+            <div class="text-h6">Escolha o canal para o novo atendimento</div>
+          </q-card-section>
+          <q-card-section>
+            <q-option-group
+              v-model="canalSelecionado"
+              :options="canaisDisponiveis"
+              type="radio"
+              color="primary"
+            />
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat label="Cancelar" color="negative" v-close-popup />
+            <q-btn flat label="Confirmar" color="primary" :disable="!canalSelecionado" @click="criarNovoTicketParaContatoAtual" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
     </q-layout>
   </div>
 </template>
@@ -658,6 +684,7 @@
 import ContatoModal from 'src/pages/contatos/ContatoModal'
 import ItemTicket from './ItemTicket'
 import { ConsultarTickets, DeletarMensagem, AtualizarTicket, EntrarNaConversa, ListarParticipantes } from 'src/service/tickets'
+import { CriarTicket } from 'src/service/tickets'
 import { mapGetters } from 'vuex'
 import mixinSockets from './mixinSockets'
 import mixinAtualizarStatusTicket from './mixinAtualizarStatusTicket'
@@ -752,7 +779,8 @@ export default {
       editandoNomeContato: false,
       novoNomeContato: '',
       selectedTags: [],
-
+      modalEscolherCanal: false,
+      canalSelecionado: null,
     }
   },
   computed: {
@@ -852,7 +880,16 @@ export default {
       }
 
       return false
-    }
+    },
+    canaisDisponiveis() {
+      const contato = this.ticketFocado?.contact || {};
+      const canais = [];
+      if (contato.whatsappId || contato.number) canais.push({ label: 'WhatsApp', value: 'whatsapp' });
+      if (contato.telegramId) canais.push({ label: 'Telegram', value: 'telegram' });
+      if (contato.messengerId) canais.push({ label: 'Messenger', value: 'messenger' });
+      if (contato.instagramPK) canais.push({ label: 'Instagram', value: 'instagram' });
+      return canais;
+    },
   },
   methods: {
     // Método para atualizar dados do usuário
@@ -1780,6 +1817,70 @@ export default {
     },
     ticketEditado(ticket) {
       this.$store.commit('TICKET_FOCADO', ticket)
+    },
+    abrirModalEscolherCanal() {
+      this.canalSelecionado = null;
+      this.modalEscolherCanal = true;
+    },
+    async criarNovoTicketParaContatoAtual() {
+      if (!this.ticketFocado.contact?.id || !this.canalSelecionado) return;
+      this.loading = true;
+      try {
+        const payload = {
+          contactId: this.ticketFocado.contact.id,
+          isActiveDemand: true,
+          userId: +localStorage.getItem('userId'),
+          status: 'open',
+          channel: this.canalSelecionado
+        };
+        // Usar diretamente a função CriarTicket do service
+        const { data: ticket } = await CriarTicket(payload);
+        
+        // Fechar o modal primeiro
+        this.modalEscolherCanal = false;
+        
+        // Limpar o ticket focado atual
+        this.$store.commit('TICKET_FOCADO', {});
+        
+        // Aguardar um pouco para garantir que a limpeza foi processada
+        await this.$nextTick();
+        
+        // Configurar o novo ticket
+        await this.$store.commit('SET_HAS_MORE', true);
+        
+        // Navegar para o atendimento se não estiver lá
+        if (this.$route.name !== 'atendimento') {
+          this.$router.push({ name: 'atendimento' });
+        }
+        
+        // Aguardar a navegação e então abrir o chat
+        setTimeout(async () => {
+          // Focar o ticket primeiro
+          this.$store.commit('TICKET_FOCADO', ticket);
+          
+          // Aguardar um pouco e então abrir o chat
+          setTimeout(async () => {
+            await this.$store.dispatch('AbrirChatMensagens', ticket);
+          }, 200);
+          
+          // Mudar para "Meus atendimentos" para mostrar o novo ticket
+          this.pesquisaTickets.status = ['open'];
+          this.pesquisaTickets.showAll = false;
+          this.pesquisaTickets.isNotAssignedUser = false;
+          this.pesquisaTickets.queuesIds = [];
+          this.pesquisaTickets.onlyUserTickets = true;
+          this.pesquisaTickets.withUnreadMessages = false;
+          
+          // Salvar filtros e recarregar a lista
+          localStorage.setItem('filtrosAtendimento', JSON.stringify(this.pesquisaTickets));
+          await this.BuscarTicketFiltro();
+        }, 100);
+        
+      } catch (error) {
+        console.error(error);
+        this.$notificarErro('Ocorreu um erro ao iniciar o atendimento!', error);
+      }
+      this.loading = false;
     },
   },
   beforeMount () {
