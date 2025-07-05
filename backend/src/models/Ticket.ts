@@ -14,6 +14,8 @@ import {
   DataType,
   AllowNull,
   BelongsToMany,
+  BeforeCreate,
+  BeforeUpdate,
 } from "sequelize-typescript";
 
 import { format } from "date-fns";
@@ -195,12 +197,18 @@ class Ticket extends Model<Ticket> {
   @BelongsToMany(() => Tag, () => TicketTag, "ticketId", "tagId")
   tags: Tag[];
 
-  @Column(DataType.VIRTUAL)
-  get protocol(): string {
-    const date = this.getDataValue("createdAt");
-    const formatDate = format(new Date(date), "yyyyddMMHHmmss");
-    const id = this.getDataValue("id");
-    return `${formatDate}${id}`;
+  @Column
+  protocol: string;
+
+  @BeforeCreate
+  @BeforeUpdate
+  static generateProtocol(instance: Ticket) {
+    if (!instance.protocol) {
+      const date = instance.createdAt || new Date();
+      const formatDate = format(new Date(date), "yyyyddMMHHmmss");
+      const id = instance.id || Math.floor(Math.random() * 1000000);
+      instance.protocol = `${formatDate}${id}`;
+    }
   }
 }
 

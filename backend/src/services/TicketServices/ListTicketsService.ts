@@ -232,7 +232,7 @@ const ListTicketsService = async ({
   and ((:isSearchParam = 'S' and ( /*exists (
     select 1 from "Messages" m where m."ticketId" = t.id
     and upper(m.body) like upper(:searchParam)
-    ) or */ (t.id::varchar like :searchParam) or (exists (select 1 from "Contacts" c where c.id = t."contactId" and (upper(c."name") like upper(:searchParam) or c."number" like :searchParam)))) OR (:isSearchParam = 'N'))
+    ) or */ (t.id::varchar like :searchParam) or (t.protocol like :searchParam) or (exists (select 1 from "Contacts" c where c.id = t."contactId" and (upper(c."name") like upper(:searchParam) or c."number" like :searchParam)))) OR (:isSearchParam = 'N'))
   )
   order by t."updatedAt" desc
   limit :limit offset :offset ;
