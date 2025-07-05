@@ -1784,11 +1784,6 @@ export default {
     },
     ticketEditado(ticket) {
       this.$store.commit('TICKET_FOCADO', ticket)
-      this.$q.notify({
-        type: 'positive',
-        message: 'Etiquetas atualizadas com sucesso!',
-        position: 'bottom-right'
-      })
     },
   },
   beforeMount () {
